@@ -12,7 +12,7 @@ export default async function AdminPage() {
     .eq('id', session!.user.id)
     .single()
 
-  if (!profile || !['staff','admin'].includes(profile.role)) {
+  if (!profile || !['staff','admin'].includes((profile as any).role)) {
     redirect('/book')
   }
 
