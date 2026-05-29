@@ -60,7 +60,7 @@ export default function BookingFlow({
     if (!selectedCourt || !selectedTime) return
     setSubmitting(true)
 
-    const { error } = await supabase.from('bookings').insert({
+    const { error } = await (supabase as any).from('bookings').insert({
       user_id: profile?.id,
       court_id: selectedCourt.id,
       date: selectedDate,
