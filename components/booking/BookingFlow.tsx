@@ -238,7 +238,7 @@ export default function BookingFlow({
               ['Date', formatDate(selectedDate)],
               ['Time', `${selectedTime} – ${addHours(selectedTime, 1)}`],
               ['Duration', '1 hour'],
-              ['Member', profile?.full_name ?? 'You' ?? 'You'],
+              ['Member', profile?.full_name ?? 'You'],
               ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% (${memConfig.name} member)`]] : []),
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between py-2 border-b border-gray-100 text-sm last:border-0">
