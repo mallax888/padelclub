@@ -49,7 +49,7 @@ export default function AdminDashboard({
 
   const cancelBooking = async (id: string) => {
     if (!confirm('Cancel this booking?')) return
-    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
+    await (supabase as any).from('bookings').update({ status: 'cancelled' }).eq('id', id)
     toast.success('Booking cancelled')
     router.refresh()
   }
