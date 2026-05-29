@@ -57,7 +57,7 @@ export default function AdminDashboard({
   const blockCourt = async () => {
     const court = courts.find(c => c.id === blockForm.courtId)
     if (!court) return
-    const { error } = await supabase.from('bookings').insert({
+    const { error } = await (supabase as any).from('bookings').insert({
       user_id: (await supabase.auth.getUser()).data.user!.id,
       court_id: blockForm.courtId,
       date: blockForm.date,
