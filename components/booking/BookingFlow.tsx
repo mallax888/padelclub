@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatNzd, formatDate, getNextNDates, generateTimeSlots, addHours } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
-import type { Court, Profile, Booking } from '@/types/database'
+import type { Court, Profile } from '@/types/database'
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -27,7 +27,8 @@ export default function BookingFlow({
   const supabase = createClient()
   const router = useRouter()
 
-  const memConfig = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
+  const tier = profile?.membership_tier ?? 'casual'
+  const memConfig = MEMBERSHIP_CONFIG[tier] ?? MEMBERSHIP_CONFIG['casual']
   const windowDays = memConfig.bookingWindowDays
   const dates = getNextNDates(windowDays)
 
@@ -39,7 +40,6 @@ export default function BookingFlow({
   const [payMethod, setPayMethod] = useState<string>('card')
   const [submitting, setSubmitting] = useState(false)
 
-  // Fetch taken slots whenever court or date changes
   useEffect(() => {
     if (!selectedCourt || !selectedDate) return
     supabase
@@ -49,19 +49,23 @@ export default function BookingFlow({
       .eq('date', selectedDate)
       .in('status', ['confirmed', 'blocked'])
       .then(({ data }) => {
-        setTakenSlots((data ?? []).map(b => b.start_time.slice(0, 5)))
+        setTakenSlots((data ?? []).map((b: any) => b.start_time.slice(0, 5)))
       })
   }, [selectedCourt?.id, selectedDate])
 
   const discount = memConfig.discount
   const courtPrice = selectedCourt ? selectedCourt.price_per_hour * (1 - discount) : 0
+  const userCredits = profile?.credits ?? 0
+  const memberTier = profile?.membership_tier ?? 'casual'
+  const memberName = profile?.full_name ?? 'You'
 
   const handleConfirm = async () => {
-    if (!selectedCourt || !selectedTime) return
+    if (!selectedCourt || !selectedTime || !profile?.id) return
     setSubmitting(true)
 
-    const { error } = await (supabase as any).from('bookings').insert({
-      user_id: profile?.id,
+    const sb = supabase as any
+    const { error } = await sb.from('bookings').insert({
+      user_id: profile.id,
       court_id: selectedCourt.id,
       date: selectedDate,
       start_time: selectedTime + ':00',
@@ -70,7 +74,7 @@ export default function BookingFlow({
       status: 'confirmed',
       price_nzd: parseFloat(courtPrice.toFixed(2)),
       discount_applied: discount,
-      payment_method: payMethod as 'card' | 'credits' | 'membership_allowance',
+      payment_method: payMethod,
     })
 
     if (error) {
@@ -88,7 +92,6 @@ export default function BookingFlow({
 
   return (
     <div>
-      {/* Step indicator */}
       <div className="flex items-center gap-2 mb-8">
         {['Select court','Pick time','Confirm'].map((label, i) => {
           const n = i + 1
@@ -118,10 +121,8 @@ export default function BookingFlow({
         })}
       </div>
 
-      {/* ── STEP 1: Date + Court ── */}
       {step === 1 && (
         <div>
-          {/* Date strip */}
           <h2 className="text-sm font-medium text-gray-700 mb-3">Choose a date</h2>
           <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
             {dates.map(d => {
@@ -145,7 +146,6 @@ export default function BookingFlow({
             })}
           </div>
 
-          {/* Courts */}
           <h2 className="text-sm font-medium text-gray-700 mb-3">Choose a court</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             {courts.map(court => (
@@ -172,18 +172,13 @@ export default function BookingFlow({
           </div>
 
           <div className="flex justify-end">
-            <button
-              className="btn btn-primary"
-              disabled={!selectedCourt}
-              onClick={() => setStep(2)}
-            >
+            <button className="btn btn-primary" disabled={!selectedCourt} onClick={() => setStep(2)}>
               Next: pick a time →
             </button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 2: Time slot ── */}
       {step === 2 && selectedCourt && (
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -203,11 +198,7 @@ export default function BookingFlow({
                   key={time}
                   disabled={taken}
                   onClick={() => setSelectedTime(time)}
-                  className={cn(
-                    'slot',
-                    taken && 'slot-taken',
-                    selected && 'slot-selected'
-                  )}
+                  className={cn('slot', taken && 'slot-taken', selected && 'slot-selected')}
                 >
                   {time}
                   <div className="text-[10px] opacity-70 mt-0.5">{taken ? 'Taken' : '1 hr'}</div>
@@ -217,18 +208,13 @@ export default function BookingFlow({
           </div>
 
           <div className="flex justify-end">
-            <button
-              className="btn btn-primary"
-              disabled={!selectedTime}
-              onClick={() => setStep(3)}
-            >
+            <button className="btn btn-primary" disabled={!selectedTime} onClick={() => setStep(3)}>
               Next: confirm →
             </button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 3: Confirm ── */}
       {step === 3 && selectedCourt && selectedTime && (
         <div className="max-w-md">
           <div className="card mb-4">
@@ -238,7 +224,7 @@ export default function BookingFlow({
               ['Date', formatDate(selectedDate)],
               ['Time', `${selectedTime} – ${addHours(selectedTime, 1)}`],
               ['Duration', '1 hour'],
-              ['Member', profile?.full_name ?? 'You'],
+              ['Member', memberName],
               ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% (${memConfig.name} member)`]] : []),
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between py-2 border-b border-gray-100 text-sm last:border-0">
@@ -254,16 +240,12 @@ export default function BookingFlow({
 
           <div className="mb-4">
             <label className="label">Pay with</label>
-            <select
-              className="input"
-              value={payMethod}
-              onChange={e => setPayMethod(e.target.value)}
-            >
+            <select className="input" value={payMethod} onChange={e => setPayMethod(e.target.value)}>
               <option value="card">Credit / debit card</option>
-              {profile?.credits ?? 0 > 0 && (
-                <option value="credits">Session credits ({profile?.credits ?? 0} remaining)</option>
+              {userCredits > 0 && (
+                <option value="credits">Session credits ({userCredits} remaining)</option>
               )}
-              {profile?.membership_tier ?? 'casual' !== 'casual' && (
+              {memberTier !== 'casual' && (
                 <option value="membership_allowance">Monthly allowance</option>
               )}
             </select>
@@ -271,11 +253,7 @@ export default function BookingFlow({
 
           <div className="flex gap-3">
             <button className="btn" onClick={() => setStep(2)}>← Back</button>
-            <button
-              className="btn btn-primary flex-1 justify-center"
-              disabled={submitting}
-              onClick={handleConfirm}
-            >
+            <button className="btn btn-primary flex-1 justify-center" disabled={submitting} onClick={handleConfirm}>
               {submitting ? 'Confirming…' : '✓ Confirm booking'}
             </button>
           </div>
