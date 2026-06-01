@@ -3,13 +3,12 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from './AuthProvider'
-import { getInitials } from '@/lib/utils'
-import { cn } from '@/lib/utils'
+import { getInitials, cn } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { href: '/book',        label: 'Book a court' },
-  { href: '/mybookings',  label: 'My bookings' },
-  { href: '/membership',  label: 'Membership' },
+  { href: '/book',       label: 'Book a court' },
+  { href: '/mybookings', label: 'My bookings' },
+  { href: '/membership', label: 'Membership' },
 ]
 
 export default function Navbar() {
@@ -25,25 +24,20 @@ export default function Navbar() {
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
 
   return (
-    <nav className="sticky top-0 z-40 bg-white border-b border-gray-200">
+    <nav className="sticky top-0 z-40" style={{background:'#242424',borderBottom:'1px solid #333'}}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
-        {/* Logo */}
         <Link href="/book" className="flex items-center gap-2 font-semibold text-base shrink-0">
-          <span className="text-brand-400 text-xl">●</span>
-          <span>Padel<span className="text-brand-400">Club</span></span>
+          <div style={{width:10,height:10,borderRadius:'50%',background:'#1D9E75'}}></div>
+          <span style={{color:'#fff'}}>Padel<span style={{color:'#1D9E75'}}>Club</span></span>
         </Link>
 
-        {/* Nav links */}
         <div className="hidden md:flex items-center gap-1">
           {NAV_ITEMS.map(item => (
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                'nav-tab',
-                pathname.startsWith(item.href) && 'nav-tab-active'
-              )}
+              className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}
             >
               {item.label}
             </Link>
@@ -51,30 +45,24 @@ export default function Navbar() {
           {isStaff && (
             <Link
               href="/admin"
-              className={cn(
-                'nav-tab',
-                pathname.startsWith('/admin') && 'nav-tab-active'
-              )}
+              className={cn('nav-tab', pathname.startsWith('/admin') && 'nav-tab-active')}
             >
               Admin
             </Link>
           )}
         </div>
 
-        {/* User area */}
         <div className="flex items-center gap-3 shrink-0">
           {profile ? (
             <>
-              <span className={cn('badge', profile?.role ?? 'member' === 'member' ? 'badge-member' : 'badge-staff')}>
-                {profile?.role ?? 'member' === 'member'
-                  ? profile.membership_tier.charAt(0).toUpperCase() + profile.membership_tier.slice(1)
-                  : profile?.role ?? 'member'}
+              <span className="badge badge-member">
+                {profile.membership_tier.charAt(0).toUpperCase() + profile.membership_tier.slice(1)}
               </span>
-              <span className="text-sm text-gray-500 hidden sm:block">{profile?.full_name}</span>
-              <div className="w-8 h-8 rounded-full bg-brand-400 text-white flex items-center justify-center text-xs font-medium">
-                {getInitials(profile?.full_name)}
+              <span className="text-sm hidden sm:block" style={{color:'#aaa'}}>{profile.full_name}</span>
+              <div style={{width:30,height:30,borderRadius:'50%',background:'#1D9E75',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:500}}>
+                {getInitials(profile.full_name)}
               </div>
-              <button onClick={handleSignOut} className="btn btn-sm text-gray-500">
+              <button onClick={handleSignOut} className="btn btn-sm" style={{color:'#aaa',borderColor:'#444',background:'transparent'}}>
                 Sign out
               </button>
             </>
