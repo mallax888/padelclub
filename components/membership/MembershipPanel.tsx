@@ -95,7 +95,7 @@ export default function MembershipPanel({
             className={cn(
               'card relative',
               mem.featured && 'border-brand-400 ring-2 ring-brand-50',
-              profile?.membership_tier ?? 'casual' === mem.id && 'bg-brand-50'
+              (profile?.membership_tier ?? 'casual') === mem.id && 'bg-brand-50'
             )}
           >
             {mem.featured && (
@@ -118,10 +118,10 @@ export default function MembershipPanel({
             </ul>
             <button
               className={cn('btn w-full justify-center', mem.id !== 'casual' && 'btn-primary')}
-              disabled={profile?.membership_tier ?? 'casual' === mem.id || upgrading}
+              disabled={(profile?.membership_tier ?? 'casual') === mem.id || upgrading}
               onClick={() => handleUpgrade(mem.id)}
             >
-              {profile?.membership_tier ?? 'casual' === mem.id ? 'Current plan' : `Select ${mem.name}`}
+              {(profile?.membership_tier ?? 'casual') === mem.id ? 'Current plan' : `Select ${mem.name}`}
             </button>
           </div>
         ))}
