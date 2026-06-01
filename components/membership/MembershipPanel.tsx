@@ -30,7 +30,7 @@ export default function MembershipPanel({
   const currentMem = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual']
 
   const handleUpgrade = async (tier: MembershipTier) => {
-    if (tier === profile?.membership_tier ?? 'casual') return
+    if (tier === (profile?.membership_tier ?? 'casual')) return
     setUpgrading(true)
     // In production this triggers Stripe checkout — for now update directly
     const { error } = await (supabase as any)
