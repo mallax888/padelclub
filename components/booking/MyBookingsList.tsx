@@ -39,7 +39,7 @@ export default function MyBookingsList({
   const handleCancel = async (id: string) => {
     if (!confirm('Cancel this booking?')) return
     setCancelling(id)
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('bookings')
       .update({ status: 'cancelled' })
       .eq('id', id)

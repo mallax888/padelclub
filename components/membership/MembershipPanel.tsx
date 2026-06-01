@@ -33,7 +33,7 @@ export default function MembershipPanel({
     if (tier === profile?.membership_tier ?? 'casual') return
     setUpgrading(true)
     // In production this triggers Stripe checkout — for now update directly
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('profiles')
       .update({ membership_tier: tier })
       .eq('id', profile?.id)
@@ -53,7 +53,7 @@ export default function MembershipPanel({
     setPurchasing(true)
 
     // In production this goes through Stripe — for now credit directly
-    const { error: txErr } = await supabase.from('credit_transactions').insert({
+    const { error: txErr } = await (supabase as any).from('credit_transactions').insert({
       user_id: profile?.id,
       amount: pack.sessions,
       type: 'purchase',
@@ -61,7 +61,7 @@ export default function MembershipPanel({
     })
 
     if (!txErr) {
-      await supabase
+      await (supabase as any)
         .from('profiles')
         .update({ credits: profile?.credits ?? 0 + pack.sessions })
         .eq('id', profile?.id)
