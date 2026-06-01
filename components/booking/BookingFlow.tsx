@@ -60,9 +60,11 @@ export default function BookingFlow({
   const memberName = profile?.full_name ?? 'You'
 
   const handleConfirm = async () => {
-    if (!selectedCourt || !selectedTime || !profile?.id) return
+    if (!selectedCourt || !selectedTime || !profile?.id) {
+      toast.error('Please sign in to make a booking.')
+      return
+    }
     setSubmitting(true)
-
     const sb = supabase as any
     const { error } = await sb.from('bookings').insert({
       user_id: profile.id,
@@ -76,14 +78,11 @@ export default function BookingFlow({
       discount_applied: discount,
       payment_method: payMethod,
     })
-
-  if (error) {
+    if (error) {
       toast.error(error.code === '23505'
         ? 'That slot was just taken — please choose another time.'
         : 'Booking failed: ' + error.message
       )
-    } else if (!profile?.id) {
-      toast.error('Please sign in to make a booking.')
     } else {
       toast.success('Court booked!')
       router.push('/mybookings')
@@ -93,40 +92,43 @@ export default function BookingFlow({
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-8">
-        {['Select court','Pick time','Confirm'].map((label, i) => {
+    <div className="w-full max-w-2xl mx-auto">
+
+      {/* Step indicator */}
+      <div className="flex items-center justify-center gap-2 mb-6">
+        {['Court','Time','Confirm'].map((label, i) => {
           const n = i + 1
           const done = step > n
           const active = step === n
           return (
-            <div key={n} className="flex items-center gap-2">
-              {i > 0 && <div className="w-8 h-px bg-gray-200" />}
+            <div key={n} className="flex items-center gap-1">
+              {i > 0 && <div className="w-6 h-px bg-gray-200" />}
               <div className={cn(
-                'flex items-center gap-2 text-sm',
-                active && 'text-gray-900 font-medium',
+                'flex items-center gap-1 text-xs font-medium',
+                active && 'text-gray-900',
                 done && 'text-brand-600',
                 !active && !done && 'text-gray-400'
               )}>
                 <div className={cn(
-                  'w-6 h-6 rounded-full border flex items-center justify-center text-xs',
+                  'w-5 h-5 rounded-full border flex items-center justify-center text-xs shrink-0',
                   active && 'bg-brand-400 border-brand-400 text-white',
                   done && 'bg-brand-50 border-brand-400 text-brand-600',
                   !active && !done && 'border-gray-300 text-gray-400'
                 )}>
                   {done ? '✓' : n}
                 </div>
-                {label}
+                <span className="hidden sm:inline">{label}</span>
               </div>
             </div>
           )
         })}
       </div>
 
+      {/* STEP 1 — Date + Court */}
       {step === 1 && (
         <div>
-          <h2 className="text-sm font-medium text-gray-700 mb-3">Choose a date</h2>
-          <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
+          <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a date</h2>
+          <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
               return (
@@ -134,64 +136,69 @@ export default function BookingFlow({
                   key={d}
                   onClick={() => setSelectedDate(d)}
                   className={cn(
-                    'min-w-[56px] p-2 rounded-lg border text-center transition-all',
+                    'min-w-[52px] p-2 rounded-lg border text-center transition-all shrink-0',
                     selectedDate === d
                       ? 'bg-brand-400 border-brand-400 text-white'
-                      : 'bg-white border-gray-200 hover:border-brand-400'
+                      : 'bg-white border-gray-200'
                   )}
                 >
                   <div className="text-[10px] opacity-75">{day}</div>
-                  <div className="text-base font-medium leading-tight">{num}</div>
+                  <div className="text-sm font-semibold leading-tight">{num}</div>
                   <div className="text-[10px] opacity-75">{month}</div>
                 </button>
               )
             })}
           </div>
 
-          <h2 className="text-sm font-medium text-gray-700 mb-3">Choose a court</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a court</h2>
+          <div className="grid grid-cols-2 gap-2 mb-5">
             {courts.map(court => (
               <div
                 key={court.id}
                 onClick={() => setSelectedCourt(court)}
                 className={cn(
-                  'card cursor-pointer transition-all hover:border-brand-400',
-                  selectedCourt?.id === court.id && 'border-brand-400 ring-2 ring-brand-50'
+                  'card cursor-pointer transition-all p-3',
+                  selectedCourt?.id === court.id
+                    ? 'border-brand-400 ring-2 ring-brand-50'
+                    : 'hover:border-brand-400'
                 )}
               >
-                <div className="font-medium text-sm mb-0.5">{court.name}</div>
-                <div className="text-xs text-gray-400 mb-3">
+                <div className="font-medium text-sm">{court.name}</div>
+                <div className="text-xs text-gray-400 my-1">
                   {court.is_indoor ? '🏢' : '☀️'} {court.type}
                 </div>
-                <div className="text-sm font-medium text-brand-600">
+                <div className="text-sm font-semibold text-brand-600">
                   {formatNzd(court.price_per_hour * (1 - discount))}/hr
-                  {discount > 0 && (
-                    <span className="text-xs text-brand-400 ml-1">({(discount*100).toFixed(0)}% off)</span>
-                  )}
                 </div>
+                {discount > 0 && (
+                  <div className="text-xs text-brand-400">{(discount*100).toFixed(0)}% off</div>
+                )}
               </div>
             ))}
           </div>
 
-          <div className="flex justify-end">
-            <button className="btn btn-primary" disabled={!selectedCourt} onClick={() => setStep(2)}>
-              Next: pick a time →
-            </button>
-          </div>
+          <button
+            className="btn btn-primary w-full justify-center"
+            disabled={!selectedCourt}
+            onClick={() => setStep(2)}
+          >
+            Next: pick a time →
+          </button>
         </div>
       )}
 
+      {/* STEP 2 — Time */}
       {step === 2 && selectedCourt && (
         <div>
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <div className="font-medium">{selectedCourt.name} — {selectedCourt.type}</div>
-              <div className="text-sm text-gray-500">{formatDate(selectedDate)} · {formatNzd(courtPrice)}/hr</div>
+              <div className="font-medium text-sm">{selectedCourt.name}</div>
+              <div className="text-xs text-gray-500">{formatDate(selectedDate)} · {formatNzd(courtPrice)}/hr</div>
             </div>
             <button className="btn btn-sm" onClick={() => setStep(1)}>← Back</button>
           </div>
 
-          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 mb-6">
+          <div className="grid grid-cols-4 gap-2 mb-5">
             {TIME_SLOTS.map(time => {
               const taken = takenSlots.includes(time)
               const selected = selectedTime === time
@@ -200,43 +207,50 @@ export default function BookingFlow({
                   key={time}
                   disabled={taken}
                   onClick={() => setSelectedTime(time)}
-                  className={cn('slot', taken && 'slot-taken', selected && 'slot-selected')}
+                  className={cn(
+                    'p-2 rounded-lg border text-center text-xs transition-all',
+                    taken && 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-100',
+                    selected && 'bg-brand-400 text-white border-brand-400',
+                    !taken && !selected && 'bg-white border-gray-200 hover:border-brand-400'
+                  )}
                 >
                   {time}
-                  <div className="text-[10px] opacity-70 mt-0.5">{taken ? 'Taken' : '1 hr'}</div>
+                  <div className="text-[10px] opacity-70 mt-0.5">{taken ? 'Taken' : '1hr'}</div>
                 </button>
               )
             })}
           </div>
 
-          <div className="flex justify-end">
-            <button className="btn btn-primary" disabled={!selectedTime} onClick={() => setStep(3)}>
-              Next: confirm →
-            </button>
-          </div>
+          <button
+            className="btn btn-primary w-full justify-center"
+            disabled={!selectedTime}
+            onClick={() => setStep(3)}
+          >
+            Next: confirm →
+          </button>
         </div>
       )}
 
+      {/* STEP 3 — Confirm */}
       {step === 3 && selectedCourt && selectedTime && (
-        <div className="max-w-md">
-          <div className="card mb-4">
-            <div className="font-medium mb-4">Booking summary</div>
+        <div>
+          <div className="card mb-4 p-4">
+            <div className="font-medium mb-3">Booking summary</div>
             {[
               ['Court', `${selectedCourt.name} — ${selectedCourt.type}`],
               ['Date', formatDate(selectedDate)],
               ['Time', `${selectedTime} – ${addHours(selectedTime, 1)}`],
-              ['Duration', '1 hour'],
               ['Member', memberName],
-              ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% (${memConfig.name} member)`]] : []),
+              ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% off`]] : []),
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between py-2 border-b border-gray-100 text-sm last:border-0">
+              <div key={label} className="flex justify-between py-1.5 border-b border-gray-100 text-sm last:border-0">
                 <span className="text-gray-500">{label}</span>
-                <span className={cn('font-medium', label === 'Discount' && 'text-brand-600')}>{value}</span>
+                <span className="font-medium text-right ml-2">{value}</span>
               </div>
             ))}
-            <div className="flex justify-between pt-3">
-              <span className="font-medium">Total</span>
-              <span className="text-lg font-semibold text-brand-600">{formatNzd(courtPrice)}</span>
+            <div className="flex justify-between pt-2 mt-1">
+              <span className="font-semibold">Total</span>
+              <span className="text-lg font-bold text-brand-600">{formatNzd(courtPrice)}</span>
             </div>
           </div>
 
@@ -245,7 +259,7 @@ export default function BookingFlow({
             <select className="input" value={payMethod} onChange={e => setPayMethod(e.target.value)}>
               <option value="card">Credit / debit card</option>
               {userCredits > 0 && (
-                <option value="credits">Session credits ({userCredits} remaining)</option>
+                <option value="credits">Credits ({userCredits} remaining)</option>
               )}
               {memberTier !== 'casual' && (
                 <option value="membership_allowance">Monthly allowance</option>
@@ -253,9 +267,13 @@ export default function BookingFlow({
             </select>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button className="btn" onClick={() => setStep(2)}>← Back</button>
-            <button className="btn btn-primary flex-1 justify-center" disabled={submitting} onClick={handleConfirm}>
+            <button
+              className="btn btn-primary flex-1 justify-center"
+              disabled={submitting}
+              onClick={handleConfirm}
+            >
               {submitting ? 'Confirming…' : '✓ Confirm booking'}
             </button>
           </div>
