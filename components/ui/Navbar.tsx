@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 ]
 
 export default function Navbar() {
-  const { profile, signOut } = useAuth()
+  const { profile, session, signOut } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
 
@@ -63,7 +63,7 @@ export default function Navbar() {
 
         {/* User area */}
         <div className="flex items-center gap-3 shrink-0">
-          {profile ? (
+          {session ? (
             <>
               <span className={cn('badge', profile?.role ?? 'member' === 'member' ? 'badge-member' : 'badge-staff')}>
                 {profile?.role ?? 'member' === 'member'
