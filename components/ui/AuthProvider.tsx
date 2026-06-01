@@ -44,11 +44,14 @@ export default function AuthProvider({
       setIsLoading(false)
     }
 
-    if (session?.user) {
-      fetchProfile(session.user.id)
-    } else {
-      setIsLoading(false)
-    }
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession)
+      if (currentSession?.user) {
+        fetchProfile(currentSession.user.id)
+      } else {
+        setIsLoading(false)
+      }
+    })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, newSession) => {
@@ -57,16 +60,18 @@ export default function AuthProvider({
           fetchProfile(newSession.user.id)
         } else {
           setProfile(null)
+          setIsLoading(false)
         }
       }
     )
 
     return () => subscription.unsubscribe()
-  }, [session?.user?.id])
+  }, [])
 
   const signOut = async () => {
     await supabase.auth.signOut()
     setProfile(null)
+    setSession(null)
   }
 
   return (

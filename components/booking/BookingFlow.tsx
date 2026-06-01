@@ -20,9 +20,11 @@ function dateLabel(dateStr: string) {
 export default function BookingFlow({
   courts,
   profile,
+  userId,
 }: {
   courts: Court[]
   profile: Profile
+  userId: string
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -60,14 +62,17 @@ export default function BookingFlow({
   const memberName = profile?.full_name ?? 'You'
 
   const handleConfirm = async () => {
-    if (!selectedCourt || !selectedTime || !profile?.id) {
+    if (!selectedCourt || !selectedTime || !userId) {
+      toast.error('Please sign in to make a booking.')
+      return
+    }
       toast.error('Please sign in to make a booking.')
       return
     }
     setSubmitting(true)
     const sb = supabase as any
     const { error } = await sb.from('bookings').insert({
-      user_id: profile.id,
+      user_id: userId,
       court_id: selectedCourt.id,
       date: selectedDate,
       start_time: selectedTime + ':00',

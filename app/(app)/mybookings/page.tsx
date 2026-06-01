@@ -9,7 +9,7 @@ export default async function MyBookingsPage() {
     supabase
       .from('bookings')
       .select('*, courts(*)')
-      .eq('user_id', session!.user.id)
+      .eq('user_id', session!.user.iad)
       .order('date', { ascending: true })
       .order('start_time', { ascending: true }),
     supabase.from('profiles').select('*').eq('id', session!.user.id).single(),
