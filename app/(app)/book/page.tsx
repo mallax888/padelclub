@@ -21,7 +21,7 @@ export default async function BookPage() {
         <h1 className="text-2xl font-semibold">Book a court</h1>
         <p className="text-sm text-gray-500 mt-1">Select a date, court and time to make your booking</p>
       </div>
-      <BookingFlow courts={courts ?? []} profile={profile!} />
+      <BookingFlow courts={courts ?? []} profile={profile!} userId={session.user.id} />
     </div>
   )
 }
