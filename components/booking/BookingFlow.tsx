@@ -77,11 +77,13 @@ export default function BookingFlow({
       payment_method: payMethod,
     })
 
-    if (error) {
+  if (error) {
       toast.error(error.code === '23505'
         ? 'That slot was just taken — please choose another time.'
-        : error.message
+        : 'Booking failed: ' + error.message
       )
+    } else if (!profile?.id) {
+      toast.error('Please sign in to make a booking.')
     } else {
       toast.success('Court booked!')
       router.push('/mybookings')
