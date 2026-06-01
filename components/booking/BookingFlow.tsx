@@ -66,9 +66,6 @@ export default function BookingFlow({
       toast.error('Please sign in to make a booking.')
       return
     }
-      toast.error('Please sign in to make a booking.')
-      return
-    }
     setSubmitting(true)
     const sb = supabase as any
     const { error } = await sb.from('bookings').insert({
@@ -99,7 +96,6 @@ export default function BookingFlow({
   return (
     <div className="w-full max-w-2xl mx-auto">
 
-      {/* Step indicator */}
       <div className="flex items-center justify-center gap-2 mb-6">
         {['Court','Time','Confirm'].map((label, i) => {
           const n = i + 1
@@ -129,7 +125,6 @@ export default function BookingFlow({
         })}
       </div>
 
-      {/* STEP 1 — Date + Court */}
       {step === 1 && (
         <div>
           <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a date</h2>
@@ -192,7 +187,6 @@ export default function BookingFlow({
         </div>
       )}
 
-      {/* STEP 2 — Time */}
       {step === 2 && selectedCourt && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -236,7 +230,6 @@ export default function BookingFlow({
         </div>
       )}
 
-      {/* STEP 3 — Confirm */}
       {step === 3 && selectedCourt && selectedTime && (
         <div>
           <div className="card mb-4 p-4">
