@@ -40,6 +40,7 @@ export default function BookingFlow({
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [takenSlots, setTakenSlots] = useState<string[]>([])
   const [payMethod, setPayMethod] = useState<string>('card')
+  const [duration, setDuration] = useState<number>(1)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function BookingFlow({
   }, [selectedCourt?.id, selectedDate])
 
   const discount = memConfig.discount
-  const courtPrice = selectedCourt ? selectedCourt.price_per_hour * (1 - discount) : 0
+  const courtPrice = selectedCourt ? selectedCourt.price_per_hour * (1 - discount) * duration : 0
   const userCredits = profile?.credits ?? 0
   const memberTier = profile?.membership_tier ?? 'casual'
   const memberName = profile?.full_name ?? 'You'
@@ -73,7 +74,8 @@ export default function BookingFlow({
       court_id: selectedCourt.id,
       date: selectedDate,
       start_time: selectedTime + ':00',
-      end_time: addHours(selectedTime, 1) + ':00',
+      end_time: addHours(selectedTime, duration) + ':00',
+      duration_minutes: duration * 60,
       duration_minutes: 60,
       status: 'confirmed',
       price_nzd: parseFloat(courtPrice.toFixed(2)),
@@ -237,7 +239,8 @@ export default function BookingFlow({
             {[
               ['Court', `${selectedCourt.name} — ${selectedCourt.type}`],
               ['Date', formatDate(selectedDate)],
-              ['Time', `${selectedTime} – ${addHours(selectedTime, 1)}`],
+              ['Time', `${selectedTime} – ${addHours(selectedTime, duration)}`],
+['Duration', `${duration} hour${duration > 1 ? 's' : ''}`],
               ['Member', memberName],
               ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% off`]] : []),
             ].map(([label, value]) => (
@@ -250,6 +253,15 @@ export default function BookingFlow({
               <span className="font-semibold">Total</span>
               <span className="text-lg font-bold text-brand-600">{formatNzd(courtPrice)}</span>
             </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="label">Duration</label>
+            <select className="input" value={duration} onChange={e => setDuration(Number(e.target.value))}>
+              <option value={1}>1 hour</option>
+              <option value={2}>2 hours</option>
+              <option value={3}>3 hours</option>
+            </select>
           </div>
 
           <div className="mb-4">
