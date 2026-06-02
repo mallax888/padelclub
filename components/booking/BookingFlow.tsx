@@ -76,7 +76,6 @@ export default function BookingFlow({
       start_time: selectedTime + ':00',
       end_time: addHours(selectedTime, duration) + ':00',
       duration_minutes: duration * 60,
-      duration_minutes: 60,
       status: 'confirmed',
       price_nzd: parseFloat(courtPrice.toFixed(2)),
       discount_applied: discount,
