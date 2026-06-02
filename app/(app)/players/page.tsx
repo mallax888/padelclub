@@ -5,11 +5,13 @@ import { getInitials } from '@/lib/utils'
 export default async function PlayersPage() {
   const supabase = createServerClient()
 
-  const { data: players } = await supabase
+  const { data } = await supabase
     .from('profiles')
     .select('*')
     .eq('role', 'member')
     .order('ranking_points', { ascending: false })
+
+  const players = (data ?? []) as any[]
 
   return (
     <div>
@@ -19,7 +21,7 @@ export default async function PlayersPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {(players ?? []).map((player, index) => (
+        {players.map((player, index) => (
           <Link key={player.id} href={`/players/${player.id}`}>
             <div className="card hover:border-brand-400 transition-all cursor-pointer">
               <div className="flex items-center gap-3 mb-4">
@@ -39,21 +41,27 @@ export default async function PlayersPage() {
 
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-lg font-semibold text-brand-600">{player.ranking_points}</div>
+                  <div className="text-lg font-semibold text-brand-600">{player.ranking_points ?? 0}</div>
                   <div className="text-[10px] text-gray-400">Points</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-lg font-semibold text-green-600">{player.wins}</div>
+                  <div className="text-lg font-semibold text-green-600">{player.wins ?? 0}</div>
                   <div className="text-[10px] text-gray-400">Wins</div>
                 </div>
                 <div className="bg-gray-50 rounded-lg p-2">
-                  <div className="text-lg font-semibold text-red-500">{player.losses}</div>
+                  <div className="text-lg font-semibold text-red-500">{player.losses ?? 0}</div>
                   <div className="text-[10px] text-gray-400">Losses</div>
                 </div>
               </div>
             </div>
           </Link>
         ))}
+
+        {players.length === 0 && (
+          <div className="col-span-3 card text-center py-12 text-gray-400">
+            No players yet
+          </div>
+        )}
       </div>
     </div>
   )
