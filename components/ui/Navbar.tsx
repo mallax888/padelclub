@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/book',       label: 'Book a court' },
   { href: '/mybookings', label: 'My bookings' },
   { href: '/membership', label: 'Membership' },
+  { href: '/players',    label: 'Players' },
 ]
 
 export default function Navbar() {
