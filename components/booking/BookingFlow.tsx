@@ -109,8 +109,24 @@ export default function BookingFlow({
         ? 'That slot was just taken — please choose another time.'
         : 'Booking failed: ' + error.message
       )
-    } else {
-      toast.success('Court booked!')
+ } else {
+      try {
+        const user = await supabase.auth.getUser()
+        await fetch('/api/send-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: user.data.user?.email,
+            name: memberName,
+            court: `${selectedCourt.name} — ${selectedCourt.type}`,
+            date: formatDate(selectedDate),
+            time: `${selectedTime} – ${addHours(selectedTime, duration)}`,
+            duration: `${duration} hour${duration > 1 ? 's' : ''}`,
+            total: formatNzd(courtPrice),
+          }),
+        })
+      } catch {}
+      toast.success('Court booked! Check your email.')
       router.push('/mybookings')
       router.refresh()
     }
