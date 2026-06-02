@@ -38,29 +38,52 @@ export default function BookingFlow({
   const [selectedDate, setSelectedDate] = useState(dates[0])
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
+  const [duration, setDuration] = useState<number>(1)
   const [takenSlots, setTakenSlots] = useState<string[]>([])
   const [payMethod, setPayMethod] = useState<string>('card')
-  const [duration, setDuration] = useState<number>(1)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!selectedCourt || !selectedDate) return
     supabase
       .from('bookings')
-      .select('start_time')
+      .select('start_time, duration_minutes')
       .eq('court_id', selectedCourt.id)
       .eq('date', selectedDate)
       .in('status', ['confirmed', 'blocked'])
       .then(({ data }) => {
-        setTakenSlots((data ?? []).map((b: any) => b.start_time.slice(0, 5)))
+        // Mark all slots taken by existing bookings (including multi-hour)
+        const taken: string[] = []
+        ;(data ?? []).forEach((b: any) => {
+          const startHour = parseInt(b.start_time.slice(0, 2))
+          const hrs = (b.duration_minutes ?? 60) / 60
+          for (let i = 0; i < hrs; i++) {
+            const h = String(startHour + i).padStart(2, '0')
+            taken.push(`${h}:00`)
+          }
+        })
+        setTakenSlots(taken)
       })
   }, [selectedCourt?.id, selectedDate])
 
   const discount = memConfig.discount
-  const courtPrice = selectedCourt ? selectedCourt.price_per_hour * (1 - discount) * duration : 0
+  const courtPrice = selectedCourt
+    ? selectedCourt.price_per_hour * (1 - discount) * duration
+    : 0
   const userCredits = profile?.credits ?? 0
   const memberTier = profile?.membership_tier ?? 'casual'
   const memberName = profile?.full_name ?? 'You'
+
+  // Check if a time slot is available for the selected duration
+  const isSlotAvailable = (time: string) => {
+    const startHour = parseInt(time.slice(0, 2))
+    for (let i = 0; i < duration; i++) {
+      const h = String(startHour + i).padStart(2, '0')
+      if (takenSlots.includes(`${h}:00`)) return false
+      if (startHour + i >= 22) return false // past closing
+    }
+    return true
+  }
 
   const handleConfirm = async () => {
     if (!selectedCourt || !selectedTime || !userId) {
@@ -97,6 +120,7 @@ export default function BookingFlow({
   return (
     <div className="w-full max-w-2xl mx-auto">
 
+      {/* Step indicator */}
       <div className="flex items-center justify-center gap-2 mb-6">
         {['Court','Time','Confirm'].map((label, i) => {
           const n = i + 1
@@ -126,6 +150,7 @@ export default function BookingFlow({
         })}
       </div>
 
+      {/* STEP 1 — Date + Court */}
       {step === 1 && (
         <div>
           <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a date</h2>
@@ -188,34 +213,61 @@ export default function BookingFlow({
         </div>
       )}
 
+      {/* STEP 2 — Duration + Time */}
       {step === 2 && selectedCourt && (
         <div>
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-4">
             <div>
               <div className="font-medium text-sm">{selectedCourt.name}</div>
-              <div className="text-xs text-gray-500">{formatDate(selectedDate)} · {formatNzd(courtPrice)}/hr</div>
+              <div className="text-xs text-gray-500">{formatDate(selectedDate)}</div>
             </div>
             <button className="btn btn-sm" onClick={() => setStep(1)}>← Back</button>
           </div>
 
+          {/* Duration selector */}
+          <h2 className="text-sm font-medium text-gray-600 mb-2">How long?</h2>
+          <div className="flex gap-2 mb-5">
+            {[1, 2, 3].map(h => (
+              <button
+                key={h}
+                onClick={() => { setDuration(h); setSelectedTime(null) }}
+                className={cn(
+                  'flex-1 py-3 rounded-lg border text-sm font-medium transition-all',
+                  duration === h
+                    ? 'bg-brand-400 border-brand-400 text-white'
+                    : 'bg-white border-gray-200 hover:border-brand-400'
+                )}
+              >
+                {h} hour{h > 1 ? 's' : ''}
+                <div className="text-xs opacity-70 mt-0.5">
+                  {formatNzd(selectedCourt.price_per_hour * (1 - discount) * h)}
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Time slots */}
+          <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a start time</h2>
           <div className="grid grid-cols-4 gap-2 mb-5">
             {TIME_SLOTS.map(time => {
-              const taken = takenSlots.includes(time)
+              const available = isSlotAvailable(time)
               const selected = selectedTime === time
               return (
                 <button
                   key={time}
-                  disabled={taken}
+                  disabled={!available}
                   onClick={() => setSelectedTime(time)}
                   className={cn(
                     'p-2 rounded-lg border text-center text-xs transition-all',
-                    taken && 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-100',
+                    !available && 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-100',
                     selected && 'bg-brand-400 text-white border-brand-400',
-                    !taken && !selected && 'bg-white border-gray-200 hover:border-brand-400'
+                    available && !selected && 'bg-white border-gray-200 hover:border-brand-400'
                   )}
                 >
                   {time}
-                  <div className="text-[10px] opacity-70 mt-0.5">{taken ? 'Taken' : '1hr'}</div>
+                  <div className="text-[10px] opacity-70 mt-0.5">
+                    {!available ? 'Taken' : `→ ${addHours(time, duration)}`}
+                  </div>
                 </button>
               )
             })}
@@ -231,6 +283,7 @@ export default function BookingFlow({
         </div>
       )}
 
+      {/* STEP 3 — Confirm */}
       {step === 3 && selectedCourt && selectedTime && (
         <div>
           <div className="card mb-4 p-4">
@@ -239,7 +292,7 @@ export default function BookingFlow({
               ['Court', `${selectedCourt.name} — ${selectedCourt.type}`],
               ['Date', formatDate(selectedDate)],
               ['Time', `${selectedTime} – ${addHours(selectedTime, duration)}`],
-['Duration', `${duration} hour${duration > 1 ? 's' : ''}`],
+              ['Duration', `${duration} hour${duration > 1 ? 's' : ''}`],
               ['Member', memberName],
               ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% off`]] : []),
             ].map(([label, value]) => (
@@ -252,15 +305,6 @@ export default function BookingFlow({
               <span className="font-semibold">Total</span>
               <span className="text-lg font-bold text-brand-600">{formatNzd(courtPrice)}</span>
             </div>
-          </div>
-
-          <div className="mb-4">
-            <label className="label">Duration</label>
-            <select className="input" value={duration} onChange={e => setDuration(Number(e.target.value))}>
-              <option value={1}>1 hour</option>
-              <option value={2}>2 hours</option>
-              <option value={3}>3 hours</option>
-            </select>
           </div>
 
           <div className="mb-4">
