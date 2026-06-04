@@ -16,9 +16,7 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-
     if (error) {
       toast.error(error.message)
     } else {
@@ -35,10 +33,19 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="text-3xl font-semibold mb-1">
-            Padel<span className="text-brand-400">Club</span>
+          {/* Tennis ball SVG */}
+          <div className="flex justify-center mb-4">
+            <svg width="64" height="64" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="30" fill="#FFE000" stroke="#E6C800" strokeWidth="1.5"/>
+              <path d="M32 2 Q48 16 48 32 Q48 48 32 62" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" opacity="0.6"/>
+              <path d="M32 2 Q16 16 16 32 Q16 48 32 62" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" opacity="0.6"/>
+              <circle cx="32" cy="32" r="30" fill="none" stroke="#E6C800" strokeWidth="1.5"/>
+            </svg>
           </div>
-          <p className="text-sm text-gray-500">Sign in to your account</p>
+          <div className="mb-1" style={{fontFamily:'Georgia,serif',fontSize:32,fontWeight:700,letterSpacing:'-0.5px',color:'#fff'}}>
+            Padel<span style={{color:'#00FF87'}}>Club</span>
+          </div>
+          <p className="text-xs text-gray-500 tracking-widest uppercase">Sign in to your account</p>
         </div>
 
         <div className="card">
@@ -79,7 +86,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-gray-500 mt-4">
           No account?{' '}
-          <Link href="/auth/signup" className="text-brand-600 hover:underline font-medium">
+          <Link href="/auth/signup" className="hover:underline font-medium" style={{color:'#00FF87'}}>
             Create one
           </Link>
         </p>
