@@ -15,9 +15,9 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#2A2A2A]">
       <Navbar />
-      <main className="max-w-6xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-6 overflow-x-hidden">
         {children}
       </main>
     </div>

@@ -25,12 +25,12 @@ export default function Navbar() {
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
 
   return (
-    <nav className="sticky top-0 z-40" style={{background:'#242424',borderBottom:'1px solid #333'}}>
+    <nav className="sticky top-0 z-40" style={{background:'#222',borderBottom:'1px solid #2E2E2E'}}>
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
-        <Link href="/book" className="flex items-center gap-2 font-semibold text-base shrink-0">
-          <div style={{width:10,height:10,borderRadius:'50%',background:'#1D9E75'}}></div>
-          <span style={{color:'#fff'}}>Padel<span style={{color:'#1D9E75'}}>Club</span></span>
+        <Link href="/book" className="flex items-center gap-2 font-bold text-sm shrink-0 tracking-widest">
+          <div style={{width:8,height:8,borderRadius:'50%',background:'#00FF87'}}></div>
+          <span style={{color:'#fff',letterSpacing:'2px'}}>PADEL<span style={{color:'#00FF87'}}>CLUB</span></span>
         </Link>
 
         <div className="hidden md:flex items-center gap-1">
@@ -56,14 +56,14 @@ export default function Navbar() {
         <div className="flex items-center gap-3 shrink-0">
           {profile ? (
             <>
-              <span className="badge badge-member">
-                {profile.membership_tier.charAt(0).toUpperCase() + profile.membership_tier.slice(1)}
+              <span className="badge badge-member capitalize hidden sm:inline-flex">
+                {profile.membership_tier}
               </span>
-              <span className="text-sm hidden sm:block" style={{color:'#aaa'}}>{profile.full_name}</span>
-              <div style={{width:30,height:30,borderRadius:'50%',background:'#1D9E75',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:500}}>
+              <span className="text-sm hidden sm:block text-gray-400">{profile.full_name}</span>
+              <div style={{width:30,height:30,borderRadius:'50%',background:'#00FF87',color:'#000',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700}}>
                 {getInitials(profile.full_name)}
               </div>
-              <button onClick={handleSignOut} className="btn btn-sm" style={{color:'#aaa',borderColor:'#444',background:'transparent'}}>
+              <button onClick={handleSignOut} className="btn btn-sm">
                 Sign out
               </button>
             </>

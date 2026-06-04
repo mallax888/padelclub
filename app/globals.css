@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-[#F0EEEB] text-gray-900 antialiased;
+    @apply bg-[#2A2A2A] text-white antialiased;
   }
   * {
     @apply box-border;
@@ -13,27 +13,27 @@
 
 @layer components {
   .btn {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200
-           bg-white text-sm font-medium transition-all duration-150 cursor-pointer
-           hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#3A3A3A]
+           bg-[#333] text-sm font-medium transition-all duration-150 cursor-pointer
+           hover:bg-[#3A3A3A] disabled:opacity-40 disabled:cursor-not-allowed text-white;
   }
   .btn-primary {
-    @apply bg-brand-400 text-white border-brand-400
-           hover:bg-brand-600 hover:border-brand-600;
+    @apply bg-[#00FF87] text-black border-[#00FF87]
+           hover:bg-[#00CC6A] hover:border-[#00CC6A];
   }
   .btn-danger {
-    @apply text-red-600 border-red-300 hover:bg-red-50;
+    @apply text-red-400 border-red-800 hover:bg-red-900/30;
   }
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
   }
   .card {
-    @apply bg-white border border-gray-200 rounded-xl p-5;
+    @apply bg-[#333] border border-[#3A3A3A] rounded-xl p-5;
   }
   .input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white
-           focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent
-           placeholder:text-gray-400;
+    @apply w-full px-3 py-2 border border-[#3A3A3A] rounded-lg text-sm bg-[#2A2A2A] text-white
+           focus:outline-none focus:ring-2 focus:ring-[#00FF87] focus:border-transparent
+           placeholder:text-gray-600;
   }
   .label {
     @apply block text-xs text-gray-500 mb-1.5 font-medium uppercase tracking-wide;
@@ -41,29 +41,29 @@
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
-  .badge-member { @apply bg-brand-50 text-brand-600; }
-  .badge-staff  { @apply bg-purple-100 text-purple-700; }
-  .status-confirmed  { @apply bg-brand-50 text-brand-600; }
-  .status-pending    { @apply bg-amber-100 text-amber-700; }
-  .status-cancelled  { @apply bg-red-100 text-red-700; }
-  .status-completed  { @apply bg-gray-100 text-gray-600; }
-  .status-blocked    { @apply bg-gray-200 text-gray-600; }
+  .badge-member { @apply bg-[#00FF8715] text-[#00FF87]; }
+  .badge-staff  { @apply bg-purple-900/50 text-purple-300; }
+  .status-confirmed  { @apply bg-[#00FF8715] text-[#00FF87]; }
+  .status-pending    { @apply bg-amber-900/30 text-amber-400; }
+  .status-cancelled  { @apply bg-red-900/30 text-red-400; }
+  .status-completed  { @apply bg-gray-700 text-gray-400; }
+  .status-blocked    { @apply bg-gray-700 text-gray-500; }
   .nav-tab {
-    @apply px-3 py-1.5 rounded-lg text-sm text-gray-400 hover:bg-white/10
+    @apply px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-[#2E2E2E]
            transition-colors cursor-pointer;
   }
   .nav-tab-active {
-    @apply bg-white/10 text-white font-medium;
+    @apply bg-[#2E2E2E] text-white font-medium;
   }
   .slot {
-    @apply p-2 rounded-lg border border-gray-200 text-center text-sm cursor-pointer
-           transition-all hover:border-brand-400 bg-white;
+    @apply p-2 rounded-lg border border-[#3A3A3A] text-center text-sm cursor-pointer
+           transition-all hover:border-[#00FF87] bg-[#333] text-white;
   }
   .slot-selected {
-    @apply bg-brand-400 text-white border-brand-400;
+    @apply bg-[#00FF87] text-black border-[#00FF87] font-medium;
   }
   .slot-taken {
-    @apply bg-gray-100 text-gray-400 cursor-not-allowed border-gray-100;
+    @apply bg-[#2A2A2A] text-gray-600 cursor-not-allowed border-[#2E2E2E];
   }
 }
 
