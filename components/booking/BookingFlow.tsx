@@ -181,7 +181,7 @@ export default function BookingFlow({
                     'min-w-[52px] p-2 rounded-lg border text-center transition-all shrink-0',
                     selectedDate === d
                       ? 'bg-brand-400 border-brand-400 text-white'
-                      : 'bg-white border-gray-200'
+                      : 'bg-[#333] border-[#3A3A3A] text-white'
                   )}
                 >
                   <div className="text-[10px] opacity-75">{day}</div>
