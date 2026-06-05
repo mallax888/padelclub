@@ -94,8 +94,8 @@ export default function MembershipPanel({
             key={mem.id}
             className={cn(
               'card relative',
-              mem.featured && 'border-brand-400 ring-2 ring-brand-50',
-              (profile?.membership_tier ?? 'casual') === mem.id && 'bg-brand-50'
+              mem.featured && 'border-[#00FF87] ring-2 ring-[#00FF87]/10',
+              (profile?.membership_tier ?? 'casual') === mem.id && 'bg-[#00FF87]/5 border-[#00FF87]'
             )}
           >
             {mem.featured && (
