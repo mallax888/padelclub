@@ -243,15 +243,15 @@ export default function BookingFlow({
           {/* Duration selector */}
           <h2 className="text-sm font-medium text-gray-600 mb-2">How long?</h2>
           <div className="flex gap-2 mb-5">
-            {[1, 2, 3].map(h => (
+         {[1, 2, 3].map(h => (
               <button
                 key={h}
                 onClick={() => { setDuration(h); setSelectedTime(null) }}
                 className={cn(
                   'flex-1 py-3 rounded-lg border text-sm font-medium transition-all',
                   duration === h
-                    ? 'bg-brand-400 border-brand-400 text-white'
-                    : 'bg-white border-gray-200 hover:border-brand-400'
+                    ? 'bg-[#00FF87] border-[#00FF87] text-black'
+                    : 'bg-[#333] border-[#3A3A3A] text-white hover:border-[#00FF87]'
                 )}
               >
                 {h} hour{h > 1 ? 's' : ''}
@@ -277,7 +277,7 @@ export default function BookingFlow({
                     'p-2 rounded-lg border text-center text-xs transition-all',
                     !available && 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-100',
                     selected && 'bg-brand-400 text-white border-brand-400',
-                    available && !selected && 'bg-white border-gray-200 hover:border-brand-400'
+                    available && !selected && 'bg-[#333] border-[#3A3A3A] text-white hover:border-[#00FF87]'
                   )}
                 >
                   {time}
