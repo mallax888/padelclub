@@ -34,16 +34,26 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           {/* Tennis ball SVG */}
-          <div className="flex justify-center mb-4">
-            <svg width="64" height="64" viewBox="0 0 64 64">
-              <circle cx="32" cy="32" r="30" fill="#FFE000" stroke="#E6C800" strokeWidth="1.5"/>
-              <path d="M32 2 Q48 16 48 32 Q48 48 32 62" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" opacity="0.6"/>
-              <path d="M32 2 Q16 16 16 32 Q16 48 32 62" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" opacity="0.6"/>
-              <circle cx="32" cy="32" r="30" fill="none" stroke="#E6C800" strokeWidth="1.5"/>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <svg width="44" height="44" viewBox="0 0 100 100">
+              <defs>
+                <radialGradient id="ball" cx="38%" cy="30%" r="65%">
+                  <stop offset="0%" stopColor="#FFFF80"/>
+                  <stop offset="40%" stopColor="#FFE000"/>
+                  <stop offset="100%" stopColor="#AAAA00"/>
+                </radialGradient>
+                <filter id="fuzz">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="n"/>
+                  <feDisplacementMap in="SourceGraphic" in2="n" scale="2" xChannelSelector="R" yChannelSelector="G"/>
+                </filter>
+              </defs>
+              <circle cx="50" cy="50" r="46" fill="url(#ball)" filter="url(#fuzz)"/>
+              <ellipse cx="38" cy="32" rx="14" ry="9" fill="white" opacity="0.25" transform="rotate(-25 38 32)"/>
+              <circle cx="50" cy="50" r="46" fill="none" stroke="#AA8800" strokeWidth="1"/>
             </svg>
-          </div>
-          <div className="mb-1" style={{fontFamily:'Georgia,serif',fontSize:32,fontWeight:700,letterSpacing:'-0.5px',color:'#fff'}}>
-            Padel<span style={{color:'#00FF87'}}>Club</span>
+            <div style={{fontFamily:'Georgia,serif',fontSize:32,fontWeight:700,color:'#fff'}}>
+              Padel<span style={{color:'#00FF87'}}>Club</span>
+            </div>
           </div>
           <p className="text-xs text-gray-500 tracking-widest uppercase">Sign in to your account</p>
         </div>
