@@ -100,8 +100,8 @@ export default function MembershipPanel({
               key={mem.id}
               className={cn(
                 'card relative flex flex-col',
-                mem.featured && 'border-[#00FF87] ring-2 ring-[#00FF87]/10',
-                isCurrent && 'border-[#00FF87]'
+                
+                isCurrent && 'border-[#00FF87] ring-2 ring-[#00FF87]/20 border-2'
               )}
             >
               {mem.featured && (
