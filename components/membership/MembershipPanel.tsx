@@ -123,9 +123,14 @@ export default function MembershipPanel({
                 ))}
               </ul>
               <button
-                className={cn('btn w-full justify-center mt-4', !isCurrent && 'btn-primary')}
+className={cn(
+                  'btn w-full justify-center mt-4',
+                  !isCurrent && mem.id !== 'casual' && 'btn-primary',
+                  isCurrent && 'opacity-50',
+                  mem.id === 'casual' && !isCurrent && 'border-gray-600 text-gray-400'
+                )}
                 disabled={isCurrent || upgrading}
-                style={isCurrent ? { cursor: 'default', opacity: 0.5 } : {}}
+                style={{ cursor: isCurrent ? 'default' : 'pointer', userSelect: 'none' }}
                 onClick={() => handleUpgrade(mem.id as MembershipTier)}
               >
                 {isCurrent ? 'Current plan' : `Select ${mem.name}`}
