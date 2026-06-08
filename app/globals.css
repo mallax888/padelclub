@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-[#4A4A4A] text-gray-100 antialiased;
+    @apply bg-[#5A5A5A] text-white antialiased;
   }
   * {
     @apply box-border;
@@ -28,7 +28,7 @@
     @apply px-3 py-1.5 text-xs;
   }
   .card {
-    @apply bg-[#333] border border-[#3A3A3A] rounded-xl p-5;
+    @apply bg-[#3A3A3A] border border-[#444] rounded-xl p-5;
   }
   .input {
     @apply w-full px-3 py-2 border border-[#3A3A3A] rounded-lg text-sm bg-[#4A4A4A] text-white
