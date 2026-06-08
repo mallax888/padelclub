@@ -114,7 +114,7 @@ export default function MembershipPanel({
                 {mem.priceNzd === 0 ? 'Free' : formatNzd(mem.priceNzd)}
                 <span className="text-sm font-normal text-gray-500">{mem.period !== 'free' ? mem.period : ''}</span>
               </div>
-              <ul className="space-y-1.5 mt-3 flex-1">
+              <ul className="space-y-1.5 mt-3 flex-1 select-none">
                 {mem.features.map(f => (
                   <li key={f} className="text-sm text-gray-400 flex items-start gap-2">
                     <span className="text-[#00FF87] mt-0.5 shrink-0">✓</span>
