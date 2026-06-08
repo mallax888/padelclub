@@ -24,6 +24,7 @@ export function formatDate(dateStr: string): string {
 export function getNextNDates(n: number): string[] {
   const dates: string[] = []
   const now = new Date()
+  now.setHours(12, 0, 0, 0)
   for (let i = 0; i < n; i++) {
     const d = new Date(now)
     d.setDate(now.getDate() + i)
@@ -31,7 +32,6 @@ export function getNextNDates(n: number): string[] {
   }
   return dates
 }
-
 export function generateTimeSlots(
   openHour = 7,
   closeHour = 22,
