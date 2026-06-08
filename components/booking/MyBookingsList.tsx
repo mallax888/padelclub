@@ -31,6 +31,7 @@ export default function MyBookingsList({
   const supabase = createClient()
   const router = useRouter()
   const [cancelling, setCancelling] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
 
   const mem = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
   const today = new Date().toISOString().slice(0, 10)
@@ -133,20 +134,25 @@ export default function MyBookingsList({
         )}
       </div>
 
-      {/* Past */}
+      {/* Past — collapsible */}
       {past.length > 0 && (
         <div>
-          <h2 className="text-base font-medium mb-3 text-gray-400">Past & cancelled</h2>
-          <div className="space-y-2 opacity-60">
-            {past.map(b => (
-              <BookingRow key={b.id} booking={b} past />
-            ))}
-          </div>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors mb-3"
+          >
+            <span>{showHistory ? '▼' : '▶'}</span>
+            <span>{showHistory ? 'Hide' : 'Show'} history ({past.length})</span>
+          </button>
+          {showHistory && (
+            <div className="space-y-2 opacity-60">
+              {past.map(b => (
+                <BookingRow key={b.id} booking={b} past />
+              ))}
+            </div>
+          )}
         </div>
       )}
-    </div>
-  )
-}
 
 function BookingRow({
   booking: b,
