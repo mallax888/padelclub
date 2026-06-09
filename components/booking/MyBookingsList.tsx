@@ -62,7 +62,6 @@ export default function MyBookingsList({
       toast.error('Could not cancel — please try again.')
     } else {
       if (hoursUntil < 24) {
-        // 50% back as credit
         const creditAmount = Math.round(booking.price_nzd * 0.5)
         await (supabase as any)
           .from('profiles')
@@ -79,7 +78,6 @@ export default function MyBookingsList({
           })
         toast.success(`Booking cancelled. ${formatNzd(creditAmount)} credit added to your account.`)
       } else {
-        // Full refund to card
         toast.success('Booking cancelled. Full refund will appear on your card in 5-10 business days.')
       }
       router.refresh()
@@ -96,29 +94,29 @@ export default function MyBookingsList({
           { label: 'Credits', value: `$${profile?.credits ?? 0}` },
           { label: 'Membership', value: mem.name },
         ].map(({ label, value }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl p-4">
-            <div className="text-xs text-gray-500 mb-1">{label}</div>
-            <div className="text-xl font-semibold">{value}</div>
+          <div key={label} className="card">
+            <div className="text-xs text-gray-400 mb-1">{label}</div>
+            <div className="text-xl font-semibold text-white">{value}</div>
           </div>
         ))}
       </div>
 
       {/* Cancellation policy notice */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-xs text-amber-700">
+      <div className="bg-amber-900/20 border border-amber-700/30 rounded-xl p-3 mb-4 text-xs text-amber-400">
         <strong>Cancellation policy:</strong> Cancel 24hrs+ before = full refund to card. Cancel under 24hrs = 50% back as account credit.
       </div>
 
       {/* Upcoming */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-medium">Upcoming</h2>
+          <h2 className="text-base font-medium text-white">Upcoming</h2>
           <Link href="/book" className="btn btn-primary btn-sm">+ New booking</Link>
         </div>
 
         {upcoming.length === 0 ? (
           <div className="card text-center py-8 text-gray-400 text-sm">
             No upcoming bookings —{' '}
-            <Link href="/book" className="text-brand-600 hover:underline">book a court</Link>
+            <Link href="/book" className="text-[#00FF87] hover:underline">book a court</Link>
           </div>
         ) : (
           <div className="space-y-2">
@@ -153,6 +151,9 @@ export default function MyBookingsList({
           )}
         </div>
       )}
+    </div>
+  )
+}
 
 function BookingRow({
   booking: b,
@@ -173,12 +174,12 @@ function BookingRow({
 
   return (
     <div className="card flex items-center gap-4 py-3 px-4">
-      <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center text-brand-600 text-lg shrink-0">
+      <div className="w-10 h-10 rounded-lg bg-[#00FF87]/10 flex items-center justify-center text-[#00FF87] text-lg shrink-0">
         🎾
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm">{b.courts?.name} — {b.courts?.type}</div>
-        <div className="text-xs text-gray-500 mt-0.5">
+        <div className="font-medium text-sm text-white">{b.courts?.name} — {b.courts?.type}</div>
+        <div className="text-xs text-gray-400 mt-0.5">
           {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {formatNzd(b.price_nzd)}
         </div>
       </div>
@@ -194,7 +195,7 @@ function BookingRow({
           >
             {cancelling ? '…' : 'Cancel'}
           </button>
-          <span className="text-[10px] text-gray-400">
+          <span className="text-[10px] text-gray-500">
             {isLateCancel ? '50% credit' : 'Full refund'}
           </span>
         </div>
