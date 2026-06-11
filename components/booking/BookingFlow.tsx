@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -52,7 +52,6 @@ export default function BookingFlow({
       .eq('date', selectedDate)
       .in('status', ['confirmed', 'blocked'])
       .then(({ data }) => {
-        // Mark all slots taken by existing bookings (including multi-hour)
         const taken: string[] = []
         ;(data ?? []).forEach((b: any) => {
           const startHour = parseInt(b.start_time.slice(0, 2))
@@ -74,13 +73,12 @@ export default function BookingFlow({
   const memberTier = profile?.membership_tier ?? 'casual'
   const memberName = profile?.full_name ?? 'You'
 
-  // Check if a time slot is available for the selected duration
   const isSlotAvailable = (time: string) => {
     const startHour = parseInt(time.slice(0, 2))
     for (let i = 0; i < duration; i++) {
       const h = String(startHour + i).padStart(2, '0')
       if (takenSlots.includes(`${h}:00`)) return false
-      if (startHour + i >= 22) return false // past closing
+      if (startHour + i >= 22) return false
     }
     return true
   }
@@ -109,7 +107,7 @@ export default function BookingFlow({
         ? 'That slot was just taken — please choose another time.'
         : 'Booking failed: ' + error.message
       )
- } else {
+    } else {
       try {
         const user = await supabase.auth.getUser()
         await fetch('/api/send-confirmation', {
@@ -120,7 +118,7 @@ export default function BookingFlow({
             name: memberName,
             court: `${selectedCourt.name} — ${selectedCourt.type}`,
             date: formatDate(selectedDate),
-            time: `${selectedTime} – ${addHours(selectedTime, duration)}`,
+            time: `${selectedTime} — ${addHours(selectedTime, duration)}`,
             duration: `${duration} hour${duration > 1 ? 's' : ''}`,
             total: formatNzd(courtPrice),
           }),
@@ -136,27 +134,27 @@ export default function BookingFlow({
   return (
     <div className="w-full max-w-2xl mx-auto">
 
-      {/* Step indicator */}
       <div className="flex items-center justify-center gap-2 mb-6">
-        {['Court','Time','Confirm'].map((label, i) => {
+        {['Court', 'Time', 'Confirm'].map((label, i) => {
           const n = i + 1
           const done = step > n
           const active = step === n
           return (
             <div key={n} className="flex items-center gap-1">
-              {i > 0 && <div className="w-6 h-px bg-gray-200" />}
-              <div className={cn(
-                'flex items-center gap-1 text-xs font-medium',
-                active && 'text-gray-900',
-                done && 'text-brand-600',
-                !active && !done && 'text-gray-400'
-              )}>
-                <div className={cn(
-                  'w-5 h-5 rounded-full border flex items-center justify-center text-xs shrink-0',
-                  active && 'bg-brand-400 border-brand-400 text-white',
-                  done && 'bg-brand-50 border-brand-400 text-brand-600',
-                  !active && !done && 'border-gray-300 text-gray-400'
-                )}>
+              {i > 0 && (
+                <div className="w-6 h-px" style={{ background: 'var(--border)' }} />
+              )}
+              <div className="flex items-center gap-1.5 text-xs font-medium transition-colors"
+                style={{ color: active || done ? 'var(--brand-primary)' : 'var(--text-subtle)' }}>
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs shrink-0 transition-all"
+                  style={{
+                    background: active ? 'var(--brand-primary)' : done ? 'var(--brand-primary-muted)' : 'transparent',
+                    border: `1px solid ${active || done ? 'var(--brand-primary)' : 'var(--border)'}`,
+                    color: active ? 'var(--brand-primary-on)' : done ? 'var(--brand-primary)' : 'var(--text-subtle)',
+                    boxShadow: active ? 'var(--glow-primary)' : 'none',
+                  }}
+                >
                   {done ? '✓' : n}
                 </div>
                 <span className="hidden sm:inline">{label}</span>
@@ -166,24 +164,23 @@ export default function BookingFlow({
         })}
       </div>
 
-      {/* STEP 1 — Date + Court */}
       {step === 1 && (
         <div>
-          <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a date</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wide mb-2"
+            style={{ color: 'var(--text-muted)' }}>Choose a date</h2>
           <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
+              const selected = selectedDate === d
               return (
-                <button
-                  key={d}
-                  onClick={() => setSelectedDate(d)}
-                  className={cn(
-                    'min-w-[52px] p-2 rounded-lg border text-center transition-all shrink-0',
-                    selectedDate === d
-                      ? 'bg-brand-400 border-brand-400 text-white'
-                      : 'bg-[#333] border-[#3A3A3A] text-white'
-                  )}
-                >
+                <button key={d} onClick={() => setSelectedDate(d)}
+                  className="min-w-[52px] p-2 rounded-lg text-center transition-all shrink-0"
+                  style={{
+                    background: selected ? 'var(--brand-primary)' : 'var(--bg-surface)',
+                    border: `1px solid ${selected ? 'var(--brand-primary)' : 'var(--border)'}`,
+                    color: selected ? 'var(--brand-primary-on)' : 'var(--text-primary)',
+                    boxShadow: selected ? 'var(--glow-primary)' : 'none',
+                  }}>
                   <div className="text-[10px] opacity-75">{day}</div>
                   <div className="text-sm font-semibold leading-tight">{num}</div>
                   <div className="text-[10px] opacity-75">{month}</div>
@@ -192,94 +189,91 @@ export default function BookingFlow({
             })}
           </div>
 
-          <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a court</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wide mb-2"
+            style={{ color: 'var(--text-muted)' }}>Choose a court</h2>
           <div className="grid grid-cols-2 gap-2 mb-5">
-            {courts.map(court => (
-              <div
-                key={court.id}
-                onClick={() => setSelectedCourt(court)}
-                className={cn(
-                  'card cursor-pointer transition-all p-3',
-                  selectedCourt?.id === court.id
-                    ? 'border-brand-400 ring-2 ring-brand-50'
-                    : 'hover:border-brand-400'
-                )}
-              >
-                <div className="font-medium text-sm">{court.name}</div>
-                <div className="text-xs text-gray-400 my-1">
-                  {court.is_indoor ? '🏢' : '☀️'} {court.type}
+            {courts.map(court => {
+              const selected = selectedCourt?.id === court.id
+              return (
+                <div key={court.id} onClick={() => setSelectedCourt(court)}
+                  className="cursor-pointer transition-all p-4 rounded-xl"
+                  style={{
+                    background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-surface)',
+                    border: `1px solid ${selected ? 'var(--brand-primary)' : 'var(--border)'}`,
+                    boxShadow: selected ? 'var(--glow-primary)' : 'none',
+                  }}>
+                  <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{court.name}</div>
+                  <div className="text-xs my-1" style={{ color: 'var(--text-subtle)' }}>
+                    {court.is_indoor ? '🏢' : '☀️'} {court.type}
+                  </div>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--brand-primary)' }}>
+                    {formatNzd(court.price_per_hour * (1 - discount))}/hr
+                  </div>
+                  {discount > 0 && (
+                    <div className="text-xs" style={{ color: 'var(--brand-accent)' }}>
+                      {(discount * 100).toFixed(0)}% off
+                    </div>
+                  )}
                 </div>
-                <div className="text-sm font-semibold text-brand-600">
-                  {formatNzd(court.price_per_hour * (1 - discount))}/hr
-                </div>
-                {discount > 0 && (
-                  <div className="text-xs text-brand-400">{(discount*100).toFixed(0)}% off</div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
-
-          <button
-            className="btn btn-primary w-full justify-center"
-            disabled={!selectedCourt}
-            onClick={() => setStep(2)}
-          >
+          <button className="btn btn-primary w-full justify-center"
+            disabled={!selectedCourt} onClick={() => setStep(2)}>
             Next: pick a time →
           </button>
         </div>
       )}
 
-      {/* STEP 2 — Duration + Time */}
       {step === 2 && selectedCourt && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-medium text-sm">{selectedCourt.name}</div>
-              <div className="text-xs text-gray-500">{formatDate(selectedDate)}</div>
+              <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{selectedCourt.name}</div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{formatDate(selectedDate)}</div>
             </div>
             <button className="btn btn-sm" onClick={() => setStep(1)}>← Back</button>
           </div>
 
-          {/* Duration selector */}
-          <h2 className="text-sm font-medium text-gray-600 mb-2">How long?</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wide mb-2"
+            style={{ color: 'var(--text-muted)' }}>How long?</h2>
           <div className="flex gap-2 mb-5">
-         {[1, 2, 3].map(h => (
-              <button
-                key={h}
-                onClick={() => { setDuration(h); setSelectedTime(null) }}
-                className={cn(
-                  'flex-1 py-3 rounded-lg border text-sm font-medium transition-all',
-                  duration === h
-                    ? 'bg-[#00FF87] border-[#00FF87] text-black'
-                    : 'bg-[#333] border-[#3A3A3A] text-white hover:border-[#00FF87]'
-                )}
-              >
-                {h} hour{h > 1 ? 's' : ''}
-                <div className="text-xs opacity-70 mt-0.5">
-                  {formatNzd(selectedCourt.price_per_hour * (1 - discount) * h)}
-                </div>
-              </button>
-            ))}
+            {[1, 2, 3].map(h => {
+              const selected = duration === h
+              return (
+                <button key={h} onClick={() => { setDuration(h); setSelectedTime(null) }}
+                  className="flex-1 py-3 rounded-lg text-sm font-medium transition-all"
+                  style={{
+                    background: selected ? 'var(--brand-primary)' : 'var(--bg-surface)',
+                    border: `1px solid ${selected ? 'var(--brand-primary)' : 'var(--border)'}`,
+                    color: selected ? 'var(--brand-primary-on)' : 'var(--text-primary)',
+                    boxShadow: selected ? 'var(--glow-primary)' : 'none',
+                  }}>
+                  {h} hour{h > 1 ? 's' : ''}
+                  <div className="text-xs opacity-70 mt-0.5">
+                    {formatNzd(selectedCourt.price_per_hour * (1 - discount) * h)}
+                  </div>
+                </button>
+              )
+            })}
           </div>
 
-          {/* Time slots */}
-          <h2 className="text-sm font-medium text-gray-600 mb-2">Choose a start time</h2>
+          <h2 className="text-xs font-medium uppercase tracking-wide mb-2"
+            style={{ color: 'var(--text-muted)' }}>Choose a start time</h2>
           <div className="grid grid-cols-4 gap-2 mb-5">
             {TIME_SLOTS.map(time => {
               const available = isSlotAvailable(time)
               const selected = selectedTime === time
               return (
-                <button
-                  key={time}
-                  disabled={!available}
-                  onClick={() => setSelectedTime(time)}
-                  className={cn(
-                    'p-2 rounded-lg border text-center text-xs transition-all',
-                    !available && 'bg-gray-100 text-gray-400 cursor-not-allowed border-gray-100',
-                    selected && 'bg-brand-400 text-white border-brand-400',
-                    available && !selected && 'bg-[#333] border-[#3A3A3A] text-white hover:border-[#00FF87]'
-                  )}
-                >
+                <button key={time} disabled={!available} onClick={() => setSelectedTime(time)}
+                  className="p-2 rounded-lg text-center text-xs transition-all"
+                  style={{
+                    background: !available ? 'var(--bg-raised)' : selected ? 'var(--brand-primary)' : 'var(--bg-surface)',
+                    border: `1px solid ${!available ? 'transparent' : selected ? 'var(--brand-primary)' : 'var(--border)'}`,
+                    color: !available ? 'var(--text-subtle)' : selected ? 'var(--brand-primary-on)' : 'var(--text-primary)',
+                    cursor: !available ? 'not-allowed' : 'pointer',
+                    boxShadow: selected ? 'var(--glow-primary)' : 'none',
+                  }}>
                   {time}
                   <div className="text-[10px] opacity-70 mt-0.5">
                     {!available ? 'Taken' : `→ ${addHours(time, duration)}`}
@@ -288,38 +282,35 @@ export default function BookingFlow({
               )
             })}
           </div>
-
-          <button
-            className="btn btn-primary w-full justify-center"
-            disabled={!selectedTime}
-            onClick={() => setStep(3)}
-          >
+          <button className="btn btn-primary w-full justify-center"
+            disabled={!selectedTime} onClick={() => setStep(3)}>
             Next: confirm →
           </button>
         </div>
       )}
 
-      {/* STEP 3 — Confirm */}
       {step === 3 && selectedCourt && selectedTime && (
         <div>
-          <div className="card mb-4 p-4">
-            <div className="font-medium mb-3">Booking summary</div>
+          <div className="rounded-xl p-4 mb-4"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Booking summary</div>
             {[
               ['Court', `${selectedCourt.name} — ${selectedCourt.type}`],
               ['Date', formatDate(selectedDate)],
-              ['Time', `${selectedTime} – ${addHours(selectedTime, duration)}`],
+              ['Time', `${selectedTime} — ${addHours(selectedTime, duration)}`],
               ['Duration', `${duration} hour${duration > 1 ? 's' : ''}`],
               ['Member', memberName],
-              ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% off`]] : []),
+              ...(discount > 0 ? [['Discount', `${(discount * 100).toFixed(0)}% off`]] : []),
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between py-1.5 border-b border-gray-100 text-sm last:border-0">
-                <span className="text-gray-500">{label}</span>
-                <span className="font-medium text-right ml-2">{value}</span>
+              <div key={label} className="flex justify-between py-1.5 text-sm last:border-0"
+                style={{ borderBottom: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                <span className="font-medium text-right ml-2" style={{ color: 'var(--text-primary)' }}>{value}</span>
               </div>
             ))}
-            <div className="flex justify-between pt-2 mt-1">
-              <span className="font-semibold">Total</span>
-              <span className="text-lg font-bold text-brand-600">{formatNzd(courtPrice)}</span>
+            <div className="flex justify-between pt-3 mt-1">
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
+              <span className="text-lg font-bold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice)}</span>
             </div>
           </div>
 
@@ -338,11 +329,8 @@ export default function BookingFlow({
 
           <div className="flex gap-2">
             <button className="btn" onClick={() => setStep(2)}>← Back</button>
-            <button
-              className="btn btn-primary flex-1 justify-center"
-              disabled={submitting}
-              onClick={handleConfirm}
-            >
+            <button className="btn btn-primary flex-1 justify-center"
+              disabled={submitting} onClick={handleConfirm}>
               {submitting ? 'Confirming…' : '✓ Confirm booking'}
             </button>
           </div>

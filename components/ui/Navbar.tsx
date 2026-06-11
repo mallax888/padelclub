@@ -1,9 +1,30 @@
-'use client'
-
+﻿'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from './AuthProvider'
 import { getInitials, cn } from '@/lib/utils'
+import ThemeToggle from '@/components/ThemeToggle'
+
+const NAV_ITEMS = [
+  { href: '/book',       label: 'Book a court' },
+  { href: '/mybookings', label: 'My bookings' },
+  { href: '/membership', label: 'Membership' },
+  { href: '/players',    label: 'Players' },
+]
+
+export default function Navbar() {
+  const { profile, signOut } = useAuth()
+  const pathname = usePathname()
+  const router = useRouter()
+
+  const handleSig
+@'
+'use client'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from './AuthProvider'
+import { getInitials, cn } from '@/lib/utils'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const NAV_ITEMS = [
   { href: '/book',       label: 'Book a court' },
@@ -25,14 +46,26 @@ export default function Navbar() {
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
 
   return (
-    <nav className="sticky top-0 z-40" style={{background:'#222',borderBottom:'1px solid #2E2E2E'}}>
+    <nav
+      className="sticky top-0 z-40"
+      style={{
+        background: 'var(--bg-base)',
+        borderBottom: '1px solid var(--border)',
+      }}
+    >
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-
-        <Link href="/book" className="flex items-center gap-2 font-bold text-sm shrink-0 tracking-widest">
-          <div style={{width:8,height:8,borderRadius:'50%',background:'#00FF87'}}></div>
-          <span style={{color:'#fff',letterSpacing:'2px'}}>PADEL<span style={{color:'#00FF87'}}>CLUB</span></span>
+        <Link href="/book" className="flex items-center gap-2 font-bold text-sm shrink-0">
+          <div style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: 'var(--brand-primary)',
+            boxShadow: 'var(--glow-primary)',
+          }} />
+          <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
+            PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
+          </span>
         </Link>
-
         <div className="hidden md:flex items-center gap-1">
           {NAV_ITEMS.map(item => (
             <Link
@@ -52,26 +85,42 @@ export default function Navbar() {
             </Link>
           )}
         </div>
-
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {profile ? (
             <>
               <span className="badge badge-member capitalize hidden sm:inline-flex">
                 {profile.membership_tier}
               </span>
-              <span className="text-sm hidden sm:block text-gray-400">{profile.full_name}</span>
-              <div style={{width:30,height:30,borderRadius:'50%',background:'#00FF87',color:'#000',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700}}>
+              <span className="text-sm hidden sm:block" style={{ color: 'var(--text-muted)' }}>
+                {profile.full_name}
+              </span>
+              <div style={{
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                background: 'var(--brand-primary)',
+                color: 'var(--brand-primary-on)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 11,
+                fontWeight: 700,
+                boxShadow: 'var(--glow-primary)',
+              }}>
                 {getInitials(profile.full_name)}
               </div>
+              <ThemeToggle />
               <button onClick={handleSignOut} className="btn btn-sm">
                 Sign out
               </button>
             </>
           ) : (
-            <Link href="/auth/login" className="btn btn-primary btn-sm">Sign in</Link>
+            <>
+              <ThemeToggle />
+              <Link href="/auth/login" className="btn btn-primary btn-sm">Sign in</Link>
+            </>
           )}
         </div>
-
       </div>
     </nav>
   )
