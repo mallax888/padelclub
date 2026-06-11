@@ -1,5 +1,4 @@
-'use client'
-
+﻿'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
@@ -28,12 +27,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#222] px-4">
+    <div className="min-h-screen flex items-center justify-center px-4"
+      style={{ background: 'var(--bg-base)' }}>
       <div className="w-full max-w-sm">
 
         {/* Logo */}
         <div className="text-center mb-8">
-          {/* Tennis ball SVG */}
           <div className="flex items-center justify-center gap-3 mb-2">
             <svg width="44" height="44" viewBox="0 0 100 100">
               <defs>
@@ -51,14 +50,17 @@ export default function LoginPage() {
               <ellipse cx="38" cy="32" rx="14" ry="9" fill="white" opacity="0.25" transform="rotate(-25 38 32)"/>
               <circle cx="50" cy="50" r="46" fill="none" stroke="#AA8800" strokeWidth="1"/>
             </svg>
-            <div style={{fontFamily:'Georgia,serif',fontSize:32,fontWeight:700,color:'#fff'}}>
-              Padel<span style={{color:'#00FF87'}}>Club</span>
+            <div style={{ fontFamily: 'Georgia,serif', fontSize: 32, fontWeight: 700, color: 'var(--text-primary)', userSelect: 'none' }}>
+              Padel<span style={{ color: '#39FF6E' }}>Club</span>
             </div>
           </div>
-          <p className="text-xs text-gray-500 tracking-widest uppercase">Sign in to your account</p>
+          <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-subtle)' }}>
+            Sign in to your account
+          </p>
         </div>
 
-        <div className="card">
+        {/* Card */}
+        <div className="rounded-xl p-5 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="label">Email address</label>
@@ -86,7 +88,12 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              className="btn btn-primary w-full justify-center"
+              className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
+              style={{
+                background: '#39FF6E',
+                color: '#001F0D',
+                boxShadow: '0 0 16px 0 #39FF6E44',
+              }}
               disabled={loading}
             >
               {loading ? 'Signing in…' : 'Sign in'}
@@ -94,9 +101,9 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
+        <p className="text-center text-sm mt-4" style={{ color: 'var(--text-muted)' }}>
           No account?{' '}
-          <Link href="/auth/signup" className="hover:underline font-medium" style={{color:'#00FF87'}}>
+          <Link href="/auth/signup" className="font-medium hover:underline" style={{ color: '#39FF6E' }}>
             Create one
           </Link>
         </p>
