@@ -17,27 +17,6 @@ export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
 
-  const handleSig
-@'
-'use client'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { useAuth } from './AuthProvider'
-import { getInitials, cn } from '@/lib/utils'
-import ThemeToggle from '@/components/ThemeToggle'
-
-const NAV_ITEMS = [
-  { href: '/book',       label: 'Book a court' },
-  { href: '/mybookings', label: 'My bookings' },
-  { href: '/membership', label: 'Membership' },
-  { href: '/players',    label: 'Players' },
-]
-
-export default function Navbar() {
-  const { profile, signOut } = useAuth()
-  const pathname = usePathname()
-  const router = useRouter()
-
   const handleSignOut = async () => {
     await signOut()
     router.push('/auth/login')
