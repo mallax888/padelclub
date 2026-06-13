@@ -16,9 +16,9 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
   const maxX = Math.max(...venue.courts.map(c => c.x)) + 1
   const maxY = Math.max(...venue.courts.map(c => c.y)) + 1
 
-  const cellW = 110
-  const cellH = 80
-  const gap = 8
+  const cellW = 140
+  const cellH = 90
+  const gap = 10
   const pad = 16
 
   const svgW = maxX * cellW + (maxX - 1) * gap + pad * 2
@@ -69,23 +69,23 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
                   strokeWidth={1}
                 />
                 <line
-                  x1={x + cellW / 2} y1={y + 8}
-                  x2={x + cellW / 2} y2={y + cellH - 8}
+                  x1={x + cellW / 2} y1={y + 10}
+                  x2={x + cellW / 2} y2={y + cellH - 10}
                   stroke={stroke}
                   strokeWidth={1}
                   strokeDasharray="3 3"
-                  opacity={0.6}
+                  opacity={0.4}
                 />
-                <text x={x + cellW / 2} y={y + 28} textAnchor="middle"
-                  fontSize="12" fontWeight="500" fill={textColor}>
+                <text x={x + cellW / 2} y={y + 24} textAnchor="middle"
+                  fontSize="13" fontWeight="500" fill={textColor}>
                   {court.name}
                 </text>
-                <text x={x + cellW / 2} y={y + 46} textAnchor="middle"
-                  fontSize="10" fill="var(--text-subtle)">
+                <text x={x + cellW / 2} y={y + 44} textAnchor="middle"
+                  fontSize="11" fill="var(--text-subtle)">
                   {court.type}
                 </text>
-                <text x={x + cellW / 2} y={y + 62} textAnchor="middle"
-                  fontSize="10" fill="var(--text-subtle)">
+                <text x={x + cellW / 2} y={y + 64} textAnchor="middle"
+                  fontSize="11" fill="var(--text-subtle)">
                   {court.isIndoor ? 'Indoor' : 'Outdoor'}
                 </text>
               </g>
