@@ -1,0 +1,64 @@
+﻿'use client'
+
+import { VENUES, type Venue } from '@/lib/venues'
+
+export default function VenueSwitcher({
+  selected,
+  onChange,
+}: {
+  selected: Venue
+  onChange: (venue: Venue) => void
+}) {
+  return (
+    <div className="mb-5">
+      <h2 className="text-xs font-medium uppercase tracking-wide mb-2"
+        style={{ color: 'var(--text-muted)' }}>
+        Choose a venue
+      </h2>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {VENUES.map(venue => {
+          const isSelected = selected.slug === venue.slug
+          return (
+            <button
+              key={venue.slug}
+              onClick={() => onChange(venue)}
+              className="shrink-0 rounded-lg px-4 py-2.5 text-left transition-all"
+              style={{
+                background: isSelected ? 'var(--brand-primary)' : 'var(--bg-surface)',
+                border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border)'}`,
+                boxShadow: isSelected ? 'var(--glow-primary)' : 'none',
+                minWidth: 160,
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: isSelected ? 'var(--brand-primary-on)' : 'var(--text-primary)' }}
+                >
+                  {venue.region}
+                </span>
+                {!venue.isLive && (
+                  <span
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: isSelected ? 'rgba(0,0,0,0.15)' : 'var(--brand-accent-muted)',
+                      color: isSelected ? 'var(--brand-primary-on)' : 'var(--brand-accent)',
+                    }}
+                  >
+                    Soon
+                  </span>
+                )}
+              </div>
+              <div
+                className="text-xs mt-0.5"
+                style={{ color: isSelected ? 'var(--brand-primary-on)' : 'var(--text-subtle)', opacity: isSelected ? 0.8 : 1 }}
+              >
+                {venue.courts.length} courts · {venue.address}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}

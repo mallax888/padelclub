@@ -7,6 +7,9 @@ import toast from 'react-hot-toast'
 import { cn, formatNzd, formatDate, getNextNDates, generateTimeSlots, addHours } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
+import { VENUES, type Venue } from '@/lib/venues'
+import VenueSwitcher from '@/components/venue/VenueSwitcher'
+import VenueLayout from '@/components/venue/VenueLayout'
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -35,6 +38,7 @@ export default function BookingFlow({
   const dates = getNextNDates(windowDays)
 
   const [step, setStep] = useState(1)
+  const [selectedVenue, setSelectedVenue] = useState<Venue>(VENUES[0])
   const [selectedDate, setSelectedDate] = useState(dates[0])
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
@@ -165,6 +169,13 @@ export default function BookingFlow({
       </div>
 
       {step === 1 && (
+        <>
+          <VenueSwitcher selected={selectedVenue} onChange={setSelectedVenue} />
+          <VenueLayout venue={selectedVenue} />
+        </>
+      )}
+
+      {step === 1 && selectedVenue.isLive && (
         <div>
           <h2 className="text-xs font-medium uppercase tracking-wide mb-2"
             style={{ color: 'var(--text-muted)' }}>Choose a date</h2>
@@ -222,6 +233,17 @@ export default function BookingFlow({
             disabled={!selectedCourt} onClick={() => setStep(2)}>
             Next: pick a time →
           </button>
+        </div>
+      )}
+
+      {step === 1 && !selectedVenue.isLive && (
+        <div className="rounded-xl p-6 text-center" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+            {selectedVenue.region} is opening soon
+          </div>
+          <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+            Online bookings for this venue aren't live yet — check back shortly, or book a court in Auckland for now.
+          </div>
         </div>
       )}
 
