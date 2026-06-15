@@ -73,7 +73,7 @@ export default function MembershipPanel({
   }
 
   return (
-    <div>
+    <div style={{ userSelect: 'none' }}>
       {/* Current plan summary */}
       <div className="rounded-xl p-5 mb-6 flex items-center gap-4"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
@@ -92,7 +92,7 @@ export default function MembershipPanel({
       </div>
 
       {/* Plan cards */}
-      <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)', userSelect: 'none' }}>
+      <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
         Choose a plan
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
@@ -121,7 +121,7 @@ export default function MembershipPanel({
                   {mem.period !== 'free' ? mem.period : ''}
                 </span>
               </div>
-              <ul className="space-y-1.5 mt-3 flex-1" style={{ userSelect: 'none' }}>
+              <ul className="space-y-1.5 mt-3 flex-1">
                 {mem.features.map(f => (
                   <li key={f} className="text-sm flex items-start gap-2" style={{ color: 'var(--text-muted)' }}>
                     <span className="mt-0.5 shrink-0" style={{ color: 'var(--brand-primary)' }}>✓</span>
@@ -134,7 +134,6 @@ export default function MembershipPanel({
                 disabled={isCurrent || upgrading}
                 style={{
                   cursor: isCurrent ? 'default' : 'pointer',
-                  userSelect: 'none',
                   opacity: isCurrent ? 0.5 : 1,
                 }}
                 onClick={() => handleUpgrade(mem.id as MembershipTier)}
@@ -147,7 +146,7 @@ export default function MembershipPanel({
       </div>
 
       {/* Credit packs */}
-      <h2 className="text-base font-medium mb-1" style={{ color: 'var(--text-primary)', userSelect: 'none' }}>
+      <h2 className="text-base font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
         Session credit packs
       </h2>
       <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
@@ -165,7 +164,6 @@ export default function MembershipPanel({
                 background: isSelected ? 'var(--brand-primary-muted)' : 'var(--bg-surface)',
                 border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border)'}`,
                 boxShadow: isSelected ? 'var(--glow-primary)' : 'none',
-                userSelect: 'none',
               }}
             >
               <div className="text-3xl font-semibold" style={{ color: 'var(--brand-primary)' }}>
@@ -198,7 +196,7 @@ export default function MembershipPanel({
       {/* Transaction history */}
       {transactions.length > 0 && (
         <div>
-          <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)', userSelect: 'none' }}>
+          <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
             Credit history
           </h2>
           <div className="rounded-xl overflow-hidden"
@@ -222,7 +220,9 @@ export default function MembershipPanel({
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-subtle)' }}>
                       {tx.created_at.slice(0, 10)}
                     </td>
-                    <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)' }}>{tx.description}</td>
+                    <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)', userSelect: 'text' }}>
+                      {tx.description}
+                    </td>
                     <td className="px-4 py-2.5 text-right font-medium"
                       style={{ color: tx.amount > 0 ? 'var(--brand-primary)' : '#FF2D78' }}>
                       {tx.amount > 0 ? '+' : ''}{tx.amount}
