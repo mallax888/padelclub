@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -37,7 +37,6 @@ export default function MembershipPanel({
       .from('profiles')
       .update({ membership_tier: tier })
       .eq('id', profile.id)
-
     if (error) {
       toast.error('Could not update membership.')
     } else {
@@ -51,7 +50,6 @@ export default function MembershipPanel({
     if (!selectedPack) return
     const pack = CREDIT_PACKS.find(p => p.id === selectedPack)!
     setPurchasing(true)
-
     const { error: txErr } = await (supabase as any)
       .from('credit_transactions')
       .insert({
@@ -60,7 +58,6 @@ export default function MembershipPanel({
         type: 'purchase',
         description: `Purchased ${pack.sessions}-session pack`,
       })
-
     if (!txErr) {
       await (supabase as any)
         .from('profiles')
@@ -78,59 +75,68 @@ export default function MembershipPanel({
   return (
     <div>
       {/* Current plan summary */}
-      <div className="card mb-6 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-[#00FF87]/10 flex items-center justify-center text-2xl shrink-0">🏅</div>
+      <div className="rounded-xl p-5 mb-6 flex items-center gap-4"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
+          style={{ background: 'var(--brand-primary-muted)' }}>🏅</div>
         <div className="flex-1">
-          <div className="text-xs text-gray-500 mb-0.5">Current plan</div>
-          <div className="font-semibold capitalize">{currentMem.name} member</div>
-          <div className="text-sm text-gray-500">
-            {currentMem.discount > 0 ? `${(currentMem.discount*100).toFixed(0)}% discount · ` : ''}
+          <div className="text-xs mb-0.5" style={{ color: 'var(--text-subtle)' }}>Current plan</div>
+          <div className="font-semibold capitalize" style={{ color: 'var(--text-primary)' }}>
+            {currentMem.name} member
+          </div>
+          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            {currentMem.discount > 0 ? `${(currentMem.discount * 100).toFixed(0)}% discount · ` : ''}
             {profile?.credits ?? 0} credits remaining
           </div>
         </div>
       </div>
 
       {/* Plan cards */}
-      <h2 className="text-base font-medium mb-3">Choose a plan</h2>
+      <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)', userSelect: 'none' }}>
+        Choose a plan
+      </h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {Object.values(MEMBERSHIP_CONFIG).map(mem => {
           const isCurrent = currentTier === mem.id
           return (
             <div
               key={mem.id}
-              className={cn(
-                'card relative flex flex-col',
-                
-                isCurrent && 'border-[#00FF87] ring-2 ring-[#00FF87]/20 border-2'
-              )}
+              className="relative flex flex-col rounded-xl p-5"
+              style={{
+                background: 'var(--bg-surface)',
+                border: `${isCurrent ? '2px' : '1px'} solid ${isCurrent ? 'var(--brand-primary)' : 'var(--border)'}`,
+                boxShadow: isCurrent ? 'var(--glow-primary)' : 'none',
+              }}
             >
               {mem.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#00FF87] text-black text-xs px-3 py-1 rounded-full whitespace-nowrap font-semibold">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1 rounded-full whitespace-nowrap font-semibold"
+                  style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
                   Most popular
                 </div>
               )}
-              <div className="font-semibold mb-1">{mem.name}</div>
-              <div className="text-2xl font-semibold mb-1 text-white">
+              <div className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{mem.name}</div>
+              <div className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
                 {mem.priceNzd === 0 ? 'Free' : formatNzd(mem.priceNzd)}
-                <span className="text-sm font-normal text-gray-500">{mem.period !== 'free' ? mem.period : ''}</span>
+                <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>
+                  {mem.period !== 'free' ? mem.period : ''}
+                </span>
               </div>
-              <ul className="space-y-1.5 mt-3 flex-1 select-none">
+              <ul className="space-y-1.5 mt-3 flex-1" style={{ userSelect: 'none' }}>
                 {mem.features.map(f => (
-                  <li key={f} className="text-sm text-gray-400 flex items-start gap-2">
-                    <span className="text-[#00FF87] mt-0.5 shrink-0">✓</span>
+                  <li key={f} className="text-sm flex items-start gap-2" style={{ color: 'var(--text-muted)' }}>
+                    <span className="mt-0.5 shrink-0" style={{ color: 'var(--brand-primary)' }}>✓</span>
                     {f}
                   </li>
                 ))}
               </ul>
               <button
-className={cn(
-                  'btn w-full justify-center mt-4',
-                  !isCurrent && mem.id !== 'casual' && 'btn-primary',
-                  isCurrent && 'opacity-50',
-                  mem.id === 'casual' && !isCurrent && 'border-gray-600 text-gray-400'
-                )}
+                className="btn btn-primary w-full justify-center mt-4"
                 disabled={isCurrent || upgrading}
-                style={{ cursor: isCurrent ? 'default' : 'pointer', userSelect: 'none' }}
+                style={{
+                  cursor: isCurrent ? 'default' : 'pointer',
+                  userSelect: 'none',
+                  opacity: isCurrent ? 0.5 : 1,
+                }}
                 onClick={() => handleUpgrade(mem.id as MembershipTier)}
               >
                 {isCurrent ? 'Current plan' : `Select ${mem.name}`}
@@ -141,37 +147,49 @@ className={cn(
       </div>
 
       {/* Credit packs */}
-      <h2 className="text-base font-medium mb-1">Session credit packs</h2>
-      <p className="text-sm text-gray-500 mb-3">Pre-buy sessions at a discount — use any time, on any court</p>
+      <h2 className="text-base font-medium mb-1" style={{ color: 'var(--text-primary)', userSelect: 'none' }}>
+        Session credit packs
+      </h2>
+      <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
+        Pre-buy sessions at a discount — use any time, on any court
+      </p>
       <div className="grid grid-cols-3 gap-3 mb-4">
-        {CREDIT_PACKS.map(pack => (
-          <div
-            key={pack.id}
-            onClick={() => setSelectedPack(selectedPack === pack.id ? null : pack.id)}
-            className={cn(
-              'card cursor-pointer text-center transition-all hover:border-[#00FF87]',
-              selectedPack === pack.id && 'border-[#00FF87] ring-2 ring-[#00FF87]/10'
-            )}
-          >
-            <div className="text-3xl font-semibold text-[#00FF87]">{pack.sessions}</div>
-            <div className="text-xs text-gray-500 mb-1">sessions</div>
-            <div className="font-semibold text-sm text-white">{formatNzd(pack.priceNzd)}</div>
-            {pack.save && <div className="text-xs text-[#00FF87] mt-0.5">{pack.save}</div>}
-          </div>
-        ))}
+        {CREDIT_PACKS.map(pack => {
+          const isSelected = selectedPack === pack.id
+          return (
+            <div
+              key={pack.id}
+              onClick={() => setSelectedPack(isSelected ? null : pack.id)}
+              className="cursor-pointer text-center transition-all rounded-xl p-5"
+              style={{
+                background: isSelected ? 'var(--brand-primary-muted)' : 'var(--bg-surface)',
+                border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border)'}`,
+                boxShadow: isSelected ? 'var(--glow-primary)' : 'none',
+                userSelect: 'none',
+              }}
+            >
+              <div className="text-3xl font-semibold" style={{ color: 'var(--brand-primary)' }}>
+                {pack.sessions}
+              </div>
+              <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>sessions</div>
+              <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                {formatNzd(pack.priceNzd)}
+              </div>
+              {pack.save && (
+                <div className="text-xs mt-0.5" style={{ color: 'var(--brand-accent)' }}>{pack.save}</div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {selectedPack && (
         <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 text-sm text-gray-500">
+          <div className="flex-1 text-sm" style={{ color: 'var(--text-muted)' }}>
             {CREDIT_PACKS.find(p => p.id === selectedPack)?.sessions} sessions for{' '}
             {formatNzd(CREDIT_PACKS.find(p => p.id === selectedPack)?.priceNzd ?? 0)}
           </div>
-          <button
-            className="btn btn-primary"
-            disabled={purchasing}
-            onClick={handlePurchase}
-          >
+          <button className="btn btn-primary" disabled={purchasing} onClick={handlePurchase}>
             {purchasing ? 'Processing…' : 'Purchase credits'}
           </button>
         </div>
@@ -180,22 +198,33 @@ className={cn(
       {/* Transaction history */}
       {transactions.length > 0 && (
         <div>
-          <h2 className="text-base font-medium mb-3">Credit history</h2>
-          <div className="card overflow-hidden p-0">
+          <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)', userSelect: 'none' }}>
+            Credit history
+          </h2>
+          <div className="rounded-xl overflow-hidden"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-[#3A3A3A]">
-                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Date</th>
-                  <th className="text-left px-4 py-2.5 text-xs text-gray-500 font-medium">Description</th>
-                  <th className="text-right px-4 py-2.5 text-xs text-gray-500 font-medium">Credits</th>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>Date</th>
+                  <th className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>Description</th>
+                  <th className="text-right px-4 py-2.5 text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>Credits</th>
                 </tr>
               </thead>
               <tbody>
                 {transactions.map(tx => (
-                  <tr key={tx.id} className="border-b border-[#3A3A3A] last:border-0 hover:bg-[#2A2A2A]">
-                    <td className="px-4 py-2.5 text-gray-500 text-xs">{tx.created_at.slice(0,10)}</td>
-                    <td className="px-4 py-2.5 text-gray-300">{tx.description}</td>
-                    <td className={cn('px-4 py-2.5 text-right font-medium', tx.amount > 0 ? 'text-[#00FF87]' : 'text-red-400')}>
+                  <tr key={tx.id}
+                    className="last:border-0 transition-colors"
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-subtle)' }}>
+                      {tx.created_at.slice(0, 10)}
+                    </td>
+                    <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)' }}>{tx.description}</td>
+                    <td className="px-4 py-2.5 text-right font-medium"
+                      style={{ color: tx.amount > 0 ? 'var(--brand-primary)' : '#FF2D78' }}>
                       {tx.amount > 0 ? '+' : ''}{tx.amount}
                     </td>
                   </tr>
