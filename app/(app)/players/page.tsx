@@ -4,14 +4,20 @@ import { getInitials } from '@/lib/utils'
 
 export default async function PlayersPage() {
   const supabase = createServerClient()
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('ranking_points', { ascending: false })
 
-  const players = ((data ?? []) as any[]).filter(
-    p => p.role !== 'staff' && p.role !== 'admin'
-  )
+  let players: any[] = []
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, skill_level, membership_tier, ranking_points, wins, losses, role')
+      .order('ranking_points', { ascending: false })
+
+    if (!error && data) {
+      players = data.filter(p => p.role !== 'staff' && p.role !== 'admin')
+    }
+  } catch (e) {
+    console.error('Players page error:', e)
+  }
 
   return (
     <div>
@@ -25,21 +31,14 @@ export default async function PlayersPage() {
           <Link key={player.id} href={`/players/${player.id}`}>
             <div
               className="rounded-xl p-5 cursor-pointer transition-all hover:scale-[1.01]"
-              style={{
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border)',
-              }}
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div className="flex items-center gap-3 mb-4">
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center font-medium text-sm shrink-0"
-                  style={{
-                    background: 'var(--brand-primary)',
-                    color: 'var(--brand-primary-on)',
-                    boxShadow: 'var(--glow-primary)',
-                  }}
+                  style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
                 >
                   {getInitials(player.full_name)}
                 </div>
@@ -85,7 +84,7 @@ export default async function PlayersPage() {
         {players.length === 0 && (
           <div className="col-span-3 rounded-xl text-center py-12"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-subtle)' }}>
-            No players yet
+            No players found
           </div>
         )}
       </div>
