@@ -7,14 +7,14 @@ export default async function PlayersPage() {
   const { data } = await supabase
     .from('profiles')
     .select('*')
-    .eq('role', 'member')
+    .not('role', 'in', '("staff","admin")')
     .order('ranking_points', { ascending: false })
 
   const players = (data ?? []) as any[]
 
   return (
     <div>
-      <div className="mb-6">
+      <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Players</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>All club members and their stats</p>
       </div>
@@ -47,7 +47,7 @@ export default async function PlayersPage() {
                     {player.full_name ?? 'Unknown'}
                   </div>
                   <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
-                    {player.skill_level ?? 'beginner'} · {player.membership_tier}
+                    {player.skill_level ?? 'beginner'} · {player.membership_tier ?? 'casual'}
                   </div>
                 </div>
                 {index < 3 && (
