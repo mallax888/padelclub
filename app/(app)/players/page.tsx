@@ -7,10 +7,11 @@ export default async function PlayersPage() {
   const { data } = await supabase
     .from('profiles')
     .select('*')
-    .not('role', 'in', '("staff","admin")')
     .order('ranking_points', { ascending: false })
 
-  const players = (data ?? []) as any[]
+  const players = ((data ?? []) as any[]).filter(
+    p => p.role !== 'staff' && p.role !== 'admin'
+  )
 
   return (
     <div>
