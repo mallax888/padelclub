@@ -9,13 +9,11 @@ export default async function PlayersPage() {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, skill_level, membership_tier, ranking_points, wins, losses, role')
-      .order('ranking_points', { ascending: false })
+      .select('id, full_name, nickname, member_number, skill_level, membership_tier, ranking_points, wins, losses, role')
+      .order('member_number', { ascending: true })
 
     if (!error && data) {
-      players = (data as any[]).filter(
-        (p: any) => p.role !== 'staff' && p.role !== 'admin'
-      )
+      players = (data as any[]).filter((p: any) => p.role !== 'staff' && p.role !== 'admin')
     }
   } catch (e) {
     console.error('Players page error:', e)
@@ -38,18 +36,31 @@ export default async function PlayersPage() {
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div className="flex items-center gap-3 mb-4">
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center font-medium text-sm shrink-0"
-                  style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
-                >
-                  {getInitials(player.full_name)}
+                <div className="relative">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center font-medium text-sm shrink-0"
+                    style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
+                  >
+                    {getInitials(player.full_name)}
+                  </div>
+                  <div
+                    className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                    style={{ background: 'var(--bg-base)', color: 'var(--text-subtle)', border: '1px solid var(--border)' }}
+                  >
+                    {player.member_number}
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                    {player.full_name ?? 'Unknown'}
+                    {player.nickname ?? player.full_name ?? 'Unknown'}
                   </div>
+                  {player.nickname && (
+                    <div className="text-xs truncate" style={{ color: 'var(--text-subtle)' }}>
+                      {player.full_name}
+                    </div>
+                  )}
                   <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
-                    {player.skill_level ?? 'beginner'} · {player.membership_tier ?? 'casual'}
+                    #{player.member_number} · {player.skill_level ?? 'beginner'} · {player.membership_tier ?? 'casual'}
                   </div>
                 </div>
                 {index < 3 && (
