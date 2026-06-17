@@ -31,8 +31,8 @@ export default async function PlayersPage() {
 
       <div className="flex gap-6 items-start">
 
-        {/* Player cards — main, 2 col grid */}
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Player cards — 2 col grid */}
+        <div className="flex-1 grid grid-cols-2 gap-4">
           {players.map((player, index) => (
             <PlayerCard key={player.id} player={player} index={index} />
           ))}
@@ -44,11 +44,10 @@ export default async function PlayersPage() {
           )}
         </div>
 
-        {/* Leaderboard — sticky sidebar */}
-        <div className="w-64 shrink-0 sticky top-20 rounded-xl overflow-hidden"
+        {/* Leaderboard sidebar — scrollable, not sticky-clipped */}
+        <div className="w-64 shrink-0 rounded-xl overflow-hidden"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
 
-          {/* Header */}
           <div className="px-4 py-3 flex items-center justify-between"
             style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
             <div className="flex items-center gap-2">
@@ -58,7 +57,6 @@ export default async function PlayersPage() {
             <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>by pts</div>
           </div>
 
-          {/* All players ranked */}
           {leaderboard.map((player, index) => (
             <Link key={player.id} href={`/players/${player.id}`}>
               <div
@@ -68,7 +66,6 @@ export default async function PlayersPage() {
                   background: index === 0 ? 'var(--brand-primary-muted)' : 'transparent',
                 }}
               >
-                {/* Rank */}
                 <div className="w-5 text-center shrink-0">
                   {index === 0 ? <span className="text-base">🥇</span>
                     : index === 1 ? <span className="text-base">🥈</span>
@@ -76,8 +73,6 @@ export default async function PlayersPage() {
                     : <span className="text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>{index + 1}</span>
                   }
                 </div>
-
-                {/* Avatar */}
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
                   style={{
@@ -89,8 +84,6 @@ export default async function PlayersPage() {
                 >
                   {getInitials(player.full_name)}
                 </div>
-
-                {/* Name */}
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                     {player.nickname ?? player.full_name ?? 'Unknown'}
@@ -99,8 +92,6 @@ export default async function PlayersPage() {
                     #{player.member_number}
                   </div>
                 </div>
-
-                {/* Points */}
                 <div className="text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary)' }}>
                   {player.ranking_points ?? 0}
                 </div>
@@ -115,7 +106,7 @@ export default async function PlayersPage() {
           )}
 
           <div className="px-4 py-2 text-center text-[10px]" style={{ color: 'var(--text-subtle)' }}>
-            Updates after each match
+            Updates after each match · {leaderboard.length} members
           </div>
         </div>
 
