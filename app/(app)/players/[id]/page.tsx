@@ -7,18 +7,19 @@ import NicknameEditor from '@/components/players/NicknameEditor'
 export default async function PlayerDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerClient()
 
-  const { data: player, error } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', params.id)
     .single()
 
-  if (error || !player) notFound()
+  if (error || !data) notFound()
 
+  const player = data as any
   const { data: { session } } = await supabase.auth.getSession()
   const isOwnProfile = session?.user?.id === params.id
 
-  const { data: bookings } = await supabase
+  const { data: bookingsData } = await supabase
     .from('bookings')
     .select('id, date, start_time, status')
     .eq('user_id', params.id)
@@ -26,7 +27,8 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
     .order('date', { ascending: false })
     .limit(5)
 
-  const totalBookings = bookings?.length ?? 0
+  const bookings = (bookingsData ?? []) as any[]
+  const totalBookings = bookings.length
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -108,10 +110,10 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
         ))}
       </div>
 
-      {bookings && bookings.length > 0 && (
+      {bookings.length > 0 && (
         <div className="rounded-xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Recent bookings</div>
-          {bookings.map(b => (
+          {bookings.map((b: any) => (
             <div key={b.id} className="flex justify-between py-2 text-sm"
               style={{ borderBottom: '1px solid var(--border)' }}>
               <span style={{ color: 'var(--text-muted)' }}>{b.date}</span>
