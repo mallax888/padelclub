@@ -13,7 +13,9 @@ export default async function PlayersPage() {
       .order('ranking_points', { ascending: false })
 
     if (!error && data) {
-      players = data.filter(p => p.role !== 'staff' && p.role !== 'admin')
+      players = (data as any[]).filter(
+        (p: any) => p.role !== 'staff' && p.role !== 'admin'
+      )
     }
   } catch (e) {
     console.error('Players page error:', e)
