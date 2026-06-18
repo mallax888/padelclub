@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -41,23 +41,18 @@ export default function MyBookingsList({
   const handleCancel = async (id: string) => {
     const booking = bookings.find(b => b.id === id)
     if (!booking) return
-
     const bookingDateTime = new Date(`${booking.date}T${booking.start_time}`)
     const now = new Date()
     const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
-
     const policy = hoursUntil >= 24
       ? `Cancel this booking?\n\nSince it is more than 24 hours away you will receive a FULL REFUND to your card within 5-10 business days.`
       : `Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (${formatNzd(booking.price_nzd * 0.5)}) as account credit.`
-
     if (!confirm(policy)) return
     setCancelling(id)
-
     const { error } = await (supabase as any)
       .from('bookings')
       .update({ status: 'cancelled' })
       .eq('id', id)
-
     if (error) {
       toast.error('Could not cancel — please try again.')
     } else {
@@ -90,33 +85,37 @@ export default function MyBookingsList({
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: 'Upcoming', value: upcoming.length },
-          { label: 'Credits', value: `$${profile?.credits ?? 0}` },
-          { label: 'Membership', value: mem.name },
-        ].map(({ label, value }) => (
-          <div key={label} className="card">
-            <div className="text-xs text-gray-400 mb-1">{label}</div>
-            <div className="text-xl font-semibold text-white">{value}</div>
+          { label: 'Upcoming', value: upcoming.length, color: 'var(--brand-primary)' },
+          { label: 'Credits', value: `$${profile?.credits ?? 0}`, color: 'var(--brand-accent)' },
+          { label: 'Membership', value: mem.name, color: 'var(--text-primary)' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-xl p-4"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
+            <div className="text-xl font-semibold" style={{ color }}>{value}</div>
           </div>
         ))}
       </div>
 
-      {/* Cancellation policy notice */}
-      <div className="bg-amber-900/20 border border-amber-700/30 rounded-xl p-3 mb-4 text-xs text-amber-400">
+      {/* Cancellation policy */}
+      <div className="rounded-xl p-3 mb-4 text-xs"
+        style={{ background: 'rgba(255, 180, 0, 0.08)', border: '1px solid rgba(255, 180, 0, 0.2)', color: '#F0A500' }}>
         <strong>Cancellation policy:</strong> Cancel 24hrs+ before = full refund to card. Cancel under 24hrs = 50% back as account credit.
       </div>
 
       {/* Upcoming */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-medium text-white">Upcoming</h2>
+          <h2 className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
           <Link href="/book" className="btn btn-primary btn-sm">+ New booking</Link>
         </div>
-
         {upcoming.length === 0 ? (
-          <div className="card text-center py-8 text-gray-400 text-sm">
+          <div className="rounded-xl text-center py-8 text-sm"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             No upcoming bookings —{' '}
-            <Link href="/book" className="text-[#00FF87] hover:underline">book a court</Link>
+            <Link href="/book" style={{ color: 'var(--brand-primary)' }} className="hover:underline">
+              book a court
+            </Link>
           </div>
         ) : (
           <div className="space-y-2">
@@ -137,7 +136,8 @@ export default function MyBookingsList({
         <div>
           <button
             onClick={() => setShowHistory(!showHistory)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-300 transition-colors mb-3"
+            className="flex items-center gap-2 text-sm mb-3 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
           >
             <span>{showHistory ? '▼' : '▶'}</span>
             <span>{showHistory ? 'Hide' : 'Show'} history ({past.length})</span>
@@ -173,13 +173,17 @@ function BookingRow({
   const isLateCancel = hoursUntil < 24
 
   return (
-    <div className="card flex items-center gap-4 py-3 px-4">
-      <div className="w-10 h-10 rounded-lg bg-[#00FF87]/10 flex items-center justify-center text-[#00FF87] text-lg shrink-0">
+    <div className="flex items-center gap-4 py-3 px-4 rounded-xl"
+      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg shrink-0"
+        style={{ background: 'var(--brand-primary-muted)' }}>
         🎾
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm text-white">{b.courts?.name} — {b.courts?.type}</div>
-        <div className="text-xs text-gray-400 mt-0.5">
+        <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+          {b.courts?.name} — {b.courts?.type}
+        </div>
+        <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
           {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {formatNzd(b.price_nzd)}
         </div>
       </div>
@@ -195,7 +199,7 @@ function BookingRow({
           >
             {cancelling ? '…' : 'Cancel'}
           </button>
-          <span className="text-[10px] text-gray-500">
+          <span className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>
             {isLateCancel ? '50% credit' : 'Full refund'}
           </span>
         </div>
