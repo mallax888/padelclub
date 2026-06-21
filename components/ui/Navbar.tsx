@@ -6,10 +6,11 @@ import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
 
 const NAV_ITEMS = [
-  { href: '/book',       label: 'Book a court' },
-  { href: '/mybookings', label: 'My bookings' },
-  { href: '/membership', label: 'Membership' },
-  { href: '/players',    label: 'Players' },
+  { href: '/book',         label: 'Book a court' },
+  { href: '/find-a-game',  label: 'Find a game' },
+  { href: '/mybookings',   label: 'My bookings' },
+  { href: '/membership',   label: 'Membership' },
+  { href: '/players',      label: 'Players' },
 ]
 
 export default function Navbar() {
@@ -27,39 +28,24 @@ export default function Navbar() {
   return (
     <nav
       className="sticky top-0 z-40"
-      style={{
-        background: 'var(--bg-base)',
-        borderBottom: '1px solid var(--border)',
-      }}
+      style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border)' }}
     >
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
         <Link href="/book" className="flex items-center gap-2 font-bold text-sm shrink-0">
-          <div style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: 'var(--brand-primary)',
-            boxShadow: 'var(--glow-primary)',
-          }} />
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
           <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
             PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
           </span>
         </Link>
         <div className="hidden md:flex items-center gap-1">
           {NAV_ITEMS.map(item => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}
-            >
+            <Link key={item.href} href={item.href}
+              className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}>
               {item.label}
             </Link>
           ))}
           {isStaff && (
-            <Link
-              href="/admin"
-              className={cn('nav-tab', pathname.startsWith('/admin') && 'nav-tab-active')}
-            >
+            <Link href="/admin" className={cn('nav-tab', pathname.startsWith('/admin') && 'nav-tab-active')}>
               Admin
             </Link>
           )}
@@ -67,31 +53,17 @@ export default function Navbar() {
         <div className="flex items-center gap-2 shrink-0">
           {profile ? (
             <>
-              <span className="badge badge-member capitalize hidden sm:inline-flex">
-                {profile.membership_tier}
-              </span>
-              <span className="text-sm hidden sm:block" style={{ color: 'var(--text-muted)' }}>
-                {profile.full_name}
-              </span>
+              <span className="badge badge-member capitalize hidden sm:inline-flex">{profile.membership_tier}</span>
+              <span className="text-sm hidden sm:block" style={{ color: 'var(--text-muted)' }}>{profile.full_name}</span>
               <div style={{
-                width: 30,
-                height: 30,
-                borderRadius: '50%',
-                background: 'var(--brand-primary)',
-                color: 'var(--brand-primary-on)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 11,
-                fontWeight: 700,
-                boxShadow: 'var(--glow-primary)',
+                width: 30, height: 30, borderRadius: '50%', background: 'var(--brand-primary)',
+                color: 'var(--brand-primary-on)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, boxShadow: 'var(--glow-primary)',
               }}>
                 {getInitials(profile.full_name)}
               </div>
               <ThemeToggle />
-              <button onClick={handleSignOut} className="btn btn-sm">
-                Sign out
-              </button>
+              <button onClick={handleSignOut} className="btn btn-sm">Sign out</button>
             </>
           ) : (
             <>
