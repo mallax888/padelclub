@@ -234,3 +234,18 @@ button *, .btn *, .badge *, .nav-tab * {
     max-width: 100vw;
   }
 }
+
+/* ───────────────────────────────────────────────
+   GLOBAL: disable text selection everywhere by default
+   Only inputs/textareas remain selectable
+─────────────────────────────────────────────── */
+* {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+input, textarea, select {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
