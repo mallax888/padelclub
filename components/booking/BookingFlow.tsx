@@ -51,6 +51,7 @@ export default function BookingFlow({
   const [makePublic, setMakePublic] = useState(false)
   const [matchType, setMatchType] = useState<'casual' | 'competitive'>('casual')
   const [matchNotes, setMatchNotes] = useState('')
+  const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
 
   useEffect(() => {
     if (!selectedCourt || !selectedDate) return
@@ -133,6 +134,8 @@ export default function BookingFlow({
         end_time: addHours(selectedTime, duration) + ':00',
         visibility: 'public',
         match_type: matchType,
+        skill_min: skillFilter === 'all' ? 0 : skillFilter === 'beginner' ? 0 : skillFilter === 'intermediate' ? 2.5 : 4,
+        skill_max: skillFilter === 'all' ? 7 : skillFilter === 'beginner' ? 2.5 : skillFilter === 'intermediate' ? 4 : 7,
         spots_total: 4,
         notes: matchNotes || null,
       })
@@ -505,6 +508,27 @@ export default function BookingFlow({
                     </button>
                   ))}
                 </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {([
+                    ['all', 'All levels'],
+                    ['beginner', 'Beginner'],
+                    ['intermediate', 'Intermediate'],
+                    ['advanced', 'Advanced'],
+                  ] as const).map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => setSkillFilter(val)}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium transition-all"
+                      style={{
+                        background: skillFilter === val ? 'var(--brand-primary)' : 'var(--bg-raised)',
+                        color: skillFilter === val ? 'var(--brand-primary-on)' : 'var(--text-muted)',
+                        border: '1px solid var(--border)',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 <input
                   type="text"
                   className="input text-sm"
@@ -550,3 +574,5 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
