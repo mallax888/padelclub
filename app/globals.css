@@ -215,3 +215,21 @@
     max-width: 100vw;
   }
 }
+@layer base {
+  /* Disable text selection on UI chrome — headings, labels, buttons, nav, badges */
+  h1, h2, h3, h4, h5, h6,
+  label,
+  button,
+  .btn,
+  .badge,
+  .nav-tab,
+  nav a,
+  .label {
+    user-select: none;
+  }
+
+  /* Re-enable selection for genuine readable content */
+  p, span, td, .input, input, textarea {
+    user-select: text;
+  }
+}
