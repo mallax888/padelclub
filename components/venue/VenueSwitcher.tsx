@@ -22,15 +22,16 @@ export default function VenueSwitcher({
             <button
               key={venue.slug}
               onClick={() => onChange(venue)}
-              className="shrink-0 rounded-lg px-4 py-2.5 text-left transition-all"
+              className="shrink-0 rounded-lg px-3 py-2.5 text-left transition-all"
               style={{
                 background: isSelected ? 'var(--brand-primary)' : 'var(--bg-surface)',
                 border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border)'}`,
                 boxShadow: isSelected ? 'var(--glow-primary)' : 'none',
-                minWidth: 160,
+                minWidth: 150,
+                maxWidth: 150,
               }}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span
                   className="text-sm font-medium"
                   style={{ color: isSelected ? 'var(--brand-primary-on)' : 'var(--text-primary)' }}
@@ -39,7 +40,7 @@ export default function VenueSwitcher({
                 </span>
                 {!venue.isLive && (
                   <span
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                    className="text-[9px] font-medium px-1.5 py-0.5 rounded-full"
                     style={{
                       background: isSelected ? 'rgba(0,0,0,0.15)' : 'var(--brand-accent-muted)',
                       color: isSelected ? 'var(--brand-primary-on)' : 'var(--brand-accent)',
@@ -50,10 +51,10 @@ export default function VenueSwitcher({
                 )}
               </div>
               <div
-                className="text-xs mt-0.5"
+                className="text-xs mt-0.5 truncate"
                 style={{ color: isSelected ? 'var(--brand-primary-on)' : 'var(--text-subtle)', opacity: isSelected ? 0.8 : 1 }}
               >
-                {venue.courts.length} courts · {venue.address}
+                {venue.courts.length} courts
               </div>
             </button>
           )
