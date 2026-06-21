@@ -209,27 +209,28 @@
   .glow-accent  { box-shadow: var(--glow-accent); }
 }
 
+/* Disable text selection on UI chrome site-wide — headings, labels, buttons, nav, badges */
+h1, h2, h3, h4, h5, h6,
+label,
+button,
+.btn,
+.badge,
+.nav-tab,
+.label,
+nav {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+h1 *, h2 *, h3 *, h4 *, h5 *, h6 *,
+button *, .btn *, .badge *, .nav-tab * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
 @media (max-width: 640px) {
   html, body {
     overflow-x: hidden;
     max-width: 100vw;
-  }
-}
-@layer base {
-  /* Disable text selection on UI chrome — headings, labels, buttons, nav, badges */
-  h1, h2, h3, h4, h5, h6,
-  label,
-  button,
-  .btn,
-  .badge,
-  .nav-tab,
-  nav a,
-  .label {
-    user-select: none;
-  }
-
-  /* Re-enable selection for genuine readable content */
-  p, span, td, .input, input, textarea {
-    user-select: text;
   }
 }
