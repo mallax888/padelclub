@@ -55,13 +55,13 @@
   }
   h1, h2, h3, h4, h5, h6 {
     color: var(--text-primary);
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight select-none;
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed;
     border: 1px solid var(--border);
     background: var(--bg-raised);
     color: var(--text-primary);
@@ -138,11 +138,11 @@
     box-shadow: 0 0 0 2px var(--brand-primary-muted);
   }
   .label {
-    @apply block text-xs font-medium uppercase tracking-wide mb-1.5;
+    @apply block text-xs font-medium uppercase tracking-wide mb-1.5 select-none;
     color: var(--text-muted);
   }
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none;
   }
   .badge-primary {
     background: var(--brand-primary-muted);
@@ -159,13 +159,13 @@
   .badge-staff {
     @apply bg-purple-900/50 text-purple-300;
   }
-  .status-confirmed  { background: var(--brand-primary-muted); color: var(--brand-primary); @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; }
-  .status-pending    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-900/30 text-amber-400; }
-  .status-cancelled  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-400; }
-  .status-completed  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; background: var(--bg-raised); color: var(--text-subtle); }
-  .status-blocked    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium; background: var(--bg-raised); color: var(--text-subtle); }
+  .status-confirmed  { background: var(--brand-primary-muted); color: var(--brand-primary); @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; }
+  .status-pending    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-900/30 text-amber-400 select-none; }
+  .status-cancelled  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-400 select-none; }
+  .status-completed  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
+  .status-blocked    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
   .nav-tab {
-    @apply px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer;
+    @apply px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer select-none;
     color: var(--text-muted);
   }
   .nav-tab:hover {
@@ -178,7 +178,7 @@
     @apply font-medium;
   }
   .slot {
-    @apply p-2 rounded-lg text-center text-sm cursor-pointer transition-all;
+    @apply p-2 rounded-lg text-center text-sm cursor-pointer select-none transition-all;
     background: var(--bg-surface);
     border: 1px solid var(--border);
     color: var(--text-primary);
@@ -209,23 +209,10 @@
   .glow-accent  { box-shadow: var(--glow-accent); }
 }
 
-/* Disable text selection on UI chrome site-wide — headings, labels, buttons, nav, badges */
-h1, h2, h3, h4, h5, h6,
-label,
-button,
-.btn,
-.badge,
-.nav-tab,
-.label,
-nav {
-  user-select: none !important;
-  -webkit-user-select: none !important;
-}
-
-h1 *, h2 *, h3 *, h4 *, h5 *, h6 *,
-button *, .btn *, .badge *, .nav-tab * {
-  user-select: none !important;
-  -webkit-user-select: none !important;
+/* Disable selection on clickable cards (court selection, venue switcher, etc) */
+.cursor-pointer {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 @media (max-width: 640px) {
@@ -233,19 +220,4 @@ button *, .btn *, .badge *, .nav-tab * {
     overflow-x: hidden;
     max-width: 100vw;
   }
-}
-
-/* ───────────────────────────────────────────────
-   GLOBAL: disable text selection everywhere by default
-   Only inputs/textareas remain selectable
-─────────────────────────────────────────────── */
-* {
-  user-select: none !important;
-  -webkit-user-select: none !important;
-  -webkit-touch-callout: none !important;
-}
-
-input, textarea, select {
-  user-select: text !important;
-  -webkit-user-select: text !important;
 }
