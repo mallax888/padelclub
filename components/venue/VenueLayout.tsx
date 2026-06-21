@@ -13,17 +13,6 @@ const ICON_MAP: Record<string, string> = {
 }
 
 export default function VenueLayout({ venue }: { venue: Venue }) {
-  const maxX = Math.max(...venue.courts.map(c => c.x)) + 1
-  const maxY = Math.max(...venue.courts.map(c => c.y)) + 1
-
-  const cellW = 140
-  const cellH = 90
-  const gap = 10
-  const pad = 16
-
-  const svgW = maxX * cellW + (maxX - 1) * gap + pad * 2
-  const svgH = maxY * cellH + (maxY - 1) * gap + pad * 2
-
   return (
     <div className="rounded-xl p-4 mb-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
       <div className="flex items-center justify-between mb-3">
@@ -45,56 +34,33 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
         )}
       </div>
 
-      <div className="flex justify-center mb-4 overflow-x-auto">
-        <svg
-          width={svgW}
-          height={svgH}
-          viewBox={`0 0 ${svgW} ${svgH}`}
-          role="img"
-          aria-label={`Court layout for ${venue.name}`}
-          style={{ userSelect: 'none' }}
-        >
-          <title>Court layout for {venue.name}</title>
-          {venue.courts.map(court => {
-            const x = pad + court.x * (cellW + gap)
-            const y = pad + court.y * (cellH + gap)
-            const fill = court.isIndoor ? 'var(--brand-primary-muted)' : 'var(--bg-raised)'
-            const stroke = court.isIndoor ? 'var(--brand-primary)' : 'var(--border)'
-            const textColor = court.isIndoor ? 'var(--brand-primary)' : 'var(--text-muted)'
-            return (
-              <g key={court.id}>
-                <rect
-                  x={x} y={y} width={cellW} height={cellH} rx={8}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={1}
-                />
-                <line
-                  x1={x + cellW / 2} y1={y + 10}
-                  x2={x + cellW / 2} y2={y + cellH - 10}
-                  stroke={stroke}
-                  strokeWidth={1}
-                  strokeDasharray="3 3"
-                  opacity={0.4}
-                />
-                <text x={x + cellW / 2} y={y + 24} textAnchor="middle"
-                  fontSize="13" fontWeight="500" fill={textColor}>
-                  {court.name}
-                </text>
-                <text x={x + cellW / 2} y={y + 44} textAnchor="middle"
-                  fontSize="11" fill="var(--text-subtle)">
-                  {court.type}
-                </text>
-                <text x={x + cellW / 2} y={y + 64} textAnchor="middle"
-                  fontSize="11" fill="var(--text-subtle)">
-                  {court.isIndoor ? 'Indoor' : 'Outdoor'}
-                </text>
-              </g>
-            )
-          })}
-        </svg>
+      {/* Court image grid — badge above each image */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+        {venue.courts.map(court => (
+          <div key={court.id} className="flex flex-col items-center gap-2">
+            <span
+              className="text-xs font-medium px-3 py-1 rounded-full"
+              style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}
+            >
+              {court.name}
+            </span>
+            <div className="w-full rounded-lg overflow-hidden"
+              style={{ border: '1px solid var(--border)', background: '#e8e8e8' }}>
+              <img
+                src="/courts/court-plan.png"
+                alt={`${court.name} — ${court.type}`}
+                className="w-full h-auto block"
+                style={{ aspectRatio: '898 / 562', objectFit: 'cover' }}
+              />
+            </div>
+            <div className="text-[10px] text-center" style={{ color: 'var(--text-subtle)' }}>
+              {court.type} · {court.isIndoor ? 'Indoor' : 'Outdoor'}
+            </div>
+          </div>
+        ))}
       </div>
 
+      {/* Amenities */}
       <div className="flex flex-wrap gap-2">
         {venue.amenities.map(a => (
           <div
