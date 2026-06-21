@@ -10,7 +10,7 @@ export default async function FindGamePage() {
     .select(`
       *,
       courts(name, type),
-      open_match_players(player_id, profiles(id, full_name, nickname, skill_rating))
+      open_match_players(player_id, profiles(id, full_name, nickname, skill_rating, skill_level))
     `)
     .eq('visibility', 'public')
     .eq('status', 'open')

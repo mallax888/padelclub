@@ -21,8 +21,23 @@ type OpenMatch = {
   courts: { name: string; type: string } | null
   open_match_players: {
     player_id: string
-    profiles: { id: string; full_name: string | null; nickname: string | null; skill_rating: number } | null
+    profiles: { id: string; full_name: string | null; nickname: string | null; skill_rating: number; skill_level?: string | null } | null
   }[]
+}
+
+function skillLabel(rating: number | null | undefined, skillLevel?: string | null) {
+  if (skillLevel) return skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
+  if (rating == null) return 'Beginner'
+  if (rating < 2.5) return 'Beginner'
+  if (rating < 4) return 'Intermediate'
+  if (rating < 5.5) return 'Advanced'
+  return 'Pro'
+}
+
+function skillLabelForRange(min: number, max: number) {
+  const lo = skillLabel(min)
+  const hi = skillLabel(max)
+  return lo === hi ? lo : `${lo} – ${hi}`
 }
 
 export default function FindGameList({
@@ -111,40 +126,63 @@ export default function FindGameList({
             </div>
 
             <div className="text-xs mb-3" style={{ color: 'var(--text-subtle)' }}>
-              Skill level {match.skill_min.toFixed(1)}–{match.skill_max.toFixed(1)}
+              Skill level: {skillLabelForRange(match.skill_min, match.skill_max)}
             </div>
 
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex -space-x-2">
-                {joinedPlayers.map(p => (
-                  <div key={p.player_id}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
-                    style={{
-                      background: 'var(--brand-primary)',
-                      color: 'var(--brand-primary-on)',
-                      border: '2px solid var(--bg-surface)',
-                    }}
-                    title={p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
-                  >
-                    {getInitials(p.profiles?.full_name ?? '?')}
-                  </div>
-                ))}
-                {Array.from({ length: Math.max(spotsLeft, 0) }).map((_, i) => (
-                  <div key={`empty-${i}`}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs"
-                    style={{
-                      background: 'var(--bg-raised)',
-                      border: '2px dashed var(--border)',
-                      color: 'var(--text-subtle)',
-                    }}
-                  >
-                    +
-                  </div>
-                ))}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex -space-x-2">
+                  {joinedPlayers.map(p => (
+                    <div key={p.player_id}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
+                      style={{
+                        background: 'var(--brand-primary)',
+                        color: 'var(--brand-primary-on)',
+                        border: '2px solid var(--bg-surface)',
+                      }}
+                      title={p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
+                    >
+                      {getInitials(p.profiles?.full_name ?? '?')}
+                    </div>
+                  ))}
+                  {Array.from({ length: Math.max(spotsLeft, 0) }).map((_, i) => (
+                    <div key={`empty-${i}`}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-xs"
+                      style={{
+                        background: 'var(--bg-raised)',
+                        border: '2px dashed var(--border)',
+                        color: 'var(--text-subtle)',
+                      }}
+                    >
+                      +
+                    </div>
+                  ))}
+                </div>
+                <span className="text-xs ml-1" style={{ color: 'var(--text-subtle)' }}>
+                  {joinedPlayers.length}/{match.spots_total} players
+                </span>
               </div>
-              <span className="text-xs ml-1" style={{ color: 'var(--text-subtle)' }}>
-                {joinedPlayers.length}/{match.spots_total} players
-              </span>
+
+              {joinedPlayers.length > 0 && (
+                <div className="space-y-1 mt-2">
+                  {joinedPlayers.map(p => (
+                    <div key={p.player_id} className="flex items-center justify-between text-xs">
+                      <span style={{ color: 'var(--text-primary)' }}>
+                        {p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
+                        {p.player_id === match.organizer_id && (
+                          <span style={{ color: 'var(--text-subtle)' }}> · organizer</span>
+                        )}
+                      </span>
+                      <span
+                        className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        style={{ background: 'var(--bg-raised)', color: 'var(--brand-primary)' }}
+                      >
+                        {skillLabel(p.profiles?.skill_rating, p.profiles?.skill_level)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {match.notes && (
