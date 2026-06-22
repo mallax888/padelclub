@@ -3,6 +3,7 @@ import { getInitials } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import NicknameEditor from '@/components/players/NicknameEditor'
+import SkillEditor from '@/components/players/SkillEditor'
 
 export default async function PlayerDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerClient()
@@ -71,7 +72,10 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
               </span>
             </div>
             {isOwnProfile && (
-              <NicknameEditor userId={player.id} currentNickname={player.nickname} />
+              <div className="flex flex-col gap-1 mt-1">
+                <NicknameEditor userId={player.id} currentNickname={player.nickname} />
+                <SkillEditor userId={player.id} currentSkillLevel={player.skill_level} />
+              </div>
             )}
           </div>
         </div>
@@ -99,6 +103,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
         <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Player details</div>
         {[
           ['Member number', `#${player.member_number}`],
+          ['Skill level', player.skill_level ? player.skill_level.charAt(0).toUpperCase() + player.skill_level.slice(1) : 'Beginner'],
           ['Favourite court', player.favourite_court ?? '—'],
           ['Member since', player.created_at?.slice(0, 10) ?? '—'],
         ].map(([label, value]) => (
