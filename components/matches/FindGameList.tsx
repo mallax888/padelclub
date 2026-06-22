@@ -21,7 +21,7 @@ type OpenMatch = {
   courts: { name: string; type: string } | null
   open_match_players: {
     player_id: string
-    profiles: { id: string; full_name: string | null; nickname: string | null; skill_rating: number; skill_level?: string | null } | null
+    profiles: { id: string; full_name: string | null; nickname: string | null; skill_rating: number; skill_level?: string | null; email?: string | null } | null
   }[]
 }
 
@@ -51,18 +51,94 @@ export default function FindGameList({
   const router = useRouter()
   const [joining, setJoining] = useState<string | null>(null)
 
-  const handleJoin = async (matchId: string) => {
-    setJoining(matchId)
+  const handleJoin = async (match: OpenMatch) => {
+    setJoining(match.id)
+
+    // 1. Join the match
     const { error } = await (supabase as any)
       .from('open_match_players')
-      .insert({ match_id: matchId, player_id: currentUserId })
+      .insert({ match_id: match.id, player_id: currentUserId })
 
     if (error) {
       toast.error(error.code === '23505' ? "You're already in this match!" : 'Could not join — please try again.')
-    } else {
-      toast.success("You're in! See you on the court.")
-      router.refresh()
+      setJoining(null)
+      return
     }
+
+    toast.success("You're in! See you on the court.")
+
+    // 2. Get current user's profile for the notification
+    const { data: myProfile } = await (supabase as any)
+      .from('profiles')
+      .select('full_name, nickname, email')
+      .eq('id', currentUserId)
+      .single()
+
+    const myName = myProfile?.nickname ?? myProfile?.full_name ?? 'A player'
+    const myEmail = myProfile?.email
+    const matchUrl = `${window.location.origin}/find-a-game`
+    const courtName = match.courts?.name ?? 'Court'
+    const matchDate = formatDate(match.date)
+    const matchTime = `${match.start_time.slice(0,5)}–${match.end_time.slice(0,5)}`
+
+    // 3. Get organizer profile to notify them
+    const organizer = match.open_match_players.find(p => p.player_id === match.organizer_id)
+    if (organizer?.profiles) {
+      try {
+        await fetch('/api/notify-player-joined', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            organizerEmail: organizer.profiles.email,
+            organizerName: organizer.profiles.nickname ?? organizer.profiles.full_name ?? 'Organizer',
+            playerName: myName,
+            court: courtName,
+            date: matchDate,
+            time: matchTime,
+            matchUrl,
+          }),
+        })
+      } catch {}
+    }
+
+    // 4. Check if match is now full — if so notify all players
+    const newCount = match.open_match_players.length + 1
+    if (newCount >= match.spots_total) {
+      // Get all player emails
+      const { data: allPlayers } = await (supabase as any)
+        .from('open_match_players')
+        .select('profiles(full_name, nickname, email)')
+        .eq('match_id', match.id)
+
+      const players = [
+        ...(allPlayers ?? []).map((p: any) => ({
+          email: p.profiles?.email,
+          name: p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player',
+        })),
+        { email: myEmail, name: myName },
+      ].filter(p => p.email)
+
+      try {
+        await fetch('/api/notify-match-full', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            players,
+            court: courtName,
+            date: matchDate,
+            time: matchTime,
+            matchUrl,
+          }),
+        })
+        // Update match status to full
+        await (supabase as any)
+          .from('open_matches')
+          .update({ status: 'full' })
+          .eq('id', match.id)
+      } catch {}
+    }
+
+    router.refresh()
     setJoining(null)
   }
 
@@ -173,10 +249,8 @@ export default function FindGameList({
                           <span style={{ color: 'var(--text-subtle)' }}> · organizer</span>
                         )}
                       </span>
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                        style={{ background: 'var(--bg-raised)', color: 'var(--brand-primary)' }}
-                      >
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                        style={{ background: 'var(--bg-raised)', color: 'var(--brand-primary)' }}>
                         {skillLabel(p.profiles?.skill_rating, p.profiles?.skill_level)}
                       </span>
                     </div>
@@ -197,19 +271,15 @@ export default function FindGameList({
                 You're organizing this match
               </div>
             ) : isJoined ? (
-              <button
-                className="btn btn-danger w-full justify-center btn-sm"
+              <button className="btn btn-danger w-full justify-center btn-sm"
                 disabled={joining === match.id}
-                onClick={() => handleLeave(match.id)}
-              >
+                onClick={() => handleLeave(match.id)}>
                 {joining === match.id ? '…' : 'Leave match'}
               </button>
             ) : (
-              <button
-                className="btn btn-primary w-full justify-center btn-sm"
+              <button className="btn btn-primary w-full justify-center btn-sm"
                 disabled={isFull || joining === match.id}
-                onClick={() => handleJoin(match.id)}
-              >
+                onClick={() => handleJoin(match)}>
                 {joining === match.id ? '…' : isFull ? 'Match full' : 'Join match'}
               </button>
             )}
