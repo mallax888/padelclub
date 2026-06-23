@@ -47,7 +47,7 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
             <div className="w-full rounded-lg overflow-hidden"
               style={{ border: '1px solid var(--border)', background: '#e8e8e8' }}>
               <img
-                src="/courts/court-plan.png"
+                src="/courts/court-plan.png" onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                 alt={`${court.name} — ${court.type}`}
                 className="w-full h-auto block"
                 style={{ aspectRatio: '898 / 562', objectFit: 'cover' }}
@@ -76,3 +76,4 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
     </div>
   )
 }
+

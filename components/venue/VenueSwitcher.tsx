@@ -4,9 +4,9 @@ import { useState } from 'react'
 import { VENUES, type Venue } from '@/lib/venues'
 
 const REGIONS = [
-  { name: 'Auckland',     emoji: '📍', desc: 'North Island' },
-  { name: 'Wellington',   emoji: '📍', desc: 'North Island' },
-  { name: 'Christchurch', emoji: '📍', desc: 'South Island' },
+  { name: 'Auckland',     island: 'North Island' },
+  { name: 'Wellington',   island: 'North Island' },
+  { name: 'Christchurch', island: 'South Island' },
 ]
 
 export default function VenueSwitcher({
@@ -18,7 +18,6 @@ export default function VenueSwitcher({
 }) {
   const [activeRegion, setActiveRegion] = useState(selected.region)
   const regionVenues = VENUES.filter(v => v.region === activeRegion)
-  const totalCourts = regionVenues.reduce((sum, v) => sum + v.courts.length, 0)
 
   return (
     <div className="mb-5">
@@ -45,7 +44,10 @@ export default function VenueSwitcher({
               }}
             >
               <div className="flex items-start justify-between mb-2">
-                <span className="text-lg">📍</span>
+                <span style={{
+                  fontSize: 18,
+                  color: isActive ? 'var(--brand-primary-on)' : 'var(--brand-primary)',
+                }}>⊙</span>
                 {!hasLive && (
                   <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full"
                     style={{
@@ -56,13 +58,25 @@ export default function VenueSwitcher({
                   </span>
                 )}
               </div>
-              <div className="text-base font-semibold mb-0.5"
+              <div className="text-base font-semibold mb-1"
                 style={{ color: isActive ? 'var(--brand-primary-on)' : 'var(--text-primary)' }}>
                 {region.name}
               </div>
-              <div className="text-xs"
-                style={{ color: isActive ? 'var(--brand-primary-on)' : 'var(--text-subtle)', opacity: isActive ? 0.8 : 1 }}>
-                {venues.length} venue{venues.length > 1 ? 's' : ''} · {courts} courts
+              <div className="flex gap-2">
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+                  style={{
+                    background: isActive ? 'rgba(0,0,0,0.15)' : 'var(--bg-raised)',
+                    color: isActive ? 'var(--brand-primary-on)' : 'var(--text-muted)',
+                  }}>
+                  {venues.length} venue{venues.length > 1 ? 's' : ''}
+                </span>
+                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+                  style={{
+                    background: isActive ? 'rgba(0,0,0,0.15)' : 'var(--bg-raised)',
+                    color: isActive ? 'var(--brand-primary-on)' : 'var(--text-muted)',
+                  }}>
+                  {courts} courts
+                </span>
               </div>
             </button>
           )
@@ -96,8 +110,7 @@ export default function VenueSwitcher({
                     </span>
                   )}
                 </div>
-                <div className="text-[10px] truncate"
-                  style={{ color: 'var(--text-subtle)' }}>
+                <div className="text-[10px] truncate" style={{ color: 'var(--text-subtle)' }}>
                   {venue.courts.length} courts · {venue.address.split(',')[0]}
                 </div>
               </button>
