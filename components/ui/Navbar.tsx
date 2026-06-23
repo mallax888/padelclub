@@ -23,18 +23,20 @@ export default function Navbar() {
   const handleSignOut = async () => {
     await signOut()
     router.push('/auth/login')
+    setMenuOpen(false)
   }
 
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
 
   return (
     <>
-      <nav className="sticky top-0 z-40"
+      <nav className="sticky top-0 z-50"
         style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border)' }}>
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
 
           {/* Logo */}
-          <Link href="/book" className="flex items-center gap-2 font-bold text-sm shrink-0">
+          <Link href="/book" className="flex items-center gap-2 font-bold text-sm shrink-0"
+            onClick={() => setMenuOpen(false)}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
             <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
               PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
@@ -65,55 +67,61 @@ export default function Navbar() {
               </span>
             )}
             <ThemeToggle />
-            {profile ? (
-              <>
-                <div style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  background: 'var(--brand-primary)', color: 'var(--brand-primary-on)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, boxShadow: 'var(--glow-primary)',
-                }}>
-                  {getInitials(profile.full_name)}
-                </div>
-                <button onClick={handleSignOut} className="btn btn-sm hidden md:inline-flex">
-                  Sign out
-                </button>
-              </>
-            ) : (
-              <Link href="/auth/login" className="btn btn-primary btn-sm hidden md:inline-flex">
-                Sign in
-              </Link>
+            {profile && (
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%',
+                background: 'var(--brand-primary)', color: 'var(--brand-primary-on)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, boxShadow: 'var(--glow-primary)',
+              }}>
+                {getInitials(profile.full_name)}
+              </div>
             )}
+            <button onClick={handleSignOut} className="btn btn-sm hidden md:inline-flex">
+              Sign out
+            </button>
 
             {/* Hamburger — mobile only */}
             <button
-              className="flex md:hidden flex-col gap-1.5 p-1.5 rounded-lg transition-colors"
-              style={{ color: 'var(--text-muted)' }}
+              className="flex md:hidden items-center justify-center w-9 h-9 rounded-lg"
+              style={{ color: 'var(--text-muted)', background: menuOpen ? 'var(--bg-raised)' : 'transparent' }}
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
             >
-              <span style={{ display: 'block', width: 20, height: 2, background: 'currentColor', borderRadius: 2, transition: 'all 0.2s',
-                transform: menuOpen ? 'translateY(5px) rotate(45deg)' : 'none' }} />
-              <span style={{ display: 'block', width: 20, height: 2, background: 'currentColor', borderRadius: 2, transition: 'all 0.2s',
-                opacity: menuOpen ? 0 : 1 }} />
-              <span style={{ display: 'block', width: 20, height: 2, background: 'currentColor', borderRadius: 2, transition: 'all 0.2s',
-                transform: menuOpen ? 'translateY(-5px) rotate(-45deg)' : 'none' }} />
+              {menuOpen ? (
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="2" y1="2" x2="16" y2="16"/>
+                  <line x1="16" y1="2" x2="2" y2="16"/>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="2" y1="4" x2="16" y2="4"/>
+                  <line x1="2" y1="9" x2="16" y2="9"/>
+                  <line x1="2" y1="14" x2="16" y2="14"/>
+                </svg>
+              )}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile menu drawer */}
+      {/* Mobile menu — full overlay */}
       {menuOpen && (
-        <div className="fixed inset-0 z-30 md:hidden" onClick={() => setMenuOpen(false)}>
-          <div className="absolute top-14 left-0 right-0 shadow-xl"
-            style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
-            onClick={e => e.stopPropagation()}>
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-40 md:hidden"
+            style={{ background: 'rgba(0,0,0,0.5)' }}
+            onClick={() => setMenuOpen(false)}
+          />
+          {/* Menu panel */}
+          <div className="fixed top-14 left-0 right-0 z-50 md:hidden"
+            style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
             <div className="px-4 py-3 space-y-1">
               {NAV_ITEMS.map(item => (
                 <Link key={item.href} href={item.href}
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center px-3 py-2.5 rounded-lg text-sm transition-colors"
+                  className="flex items-center px-3 py-3 rounded-lg text-base transition-colors"
                   style={{
                     background: pathname.startsWith(item.href) ? 'var(--bg-raised)' : 'transparent',
                     color: pathname.startsWith(item.href) ? 'var(--brand-primary)' : 'var(--text-primary)',
@@ -124,13 +132,13 @@ export default function Navbar() {
               ))}
               {isStaff && (
                 <Link href="/admin" onClick={() => setMenuOpen(false)}
-                  className="flex items-center px-3 py-2.5 rounded-lg text-sm"
+                  className="flex items-center px-3 py-3 rounded-lg text-base"
                   style={{ color: 'var(--text-primary)' }}>
                   Admin
                 </Link>
               )}
-              <div className="pt-2 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                {profile ? (
+              <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                {profile && (
                   <div className="flex items-center justify-between px-3 py-2">
                     <div>
                       <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -144,16 +152,11 @@ export default function Navbar() {
                       Sign out
                     </button>
                   </div>
-                ) : (
-                  <Link href="/auth/login" onClick={() => setMenuOpen(false)}
-                    className="btn btn-primary w-full justify-center">
-                    Sign in
-                  </Link>
                 )}
               </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </>
   )

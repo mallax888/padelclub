@@ -29,10 +29,10 @@ export default async function PlayersPage() {
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>All club members and their stats</p>
       </div>
 
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-        {/* Player cards — 2 col grid */}
-        <div className="flex-1 grid grid-cols-2 gap-4">
+        {/* Player cards */}
+        <div className="w-full lg:flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {players.map((player, index) => (
             <PlayerCard key={player.id} player={player} index={index} />
           ))}
@@ -44,10 +44,9 @@ export default async function PlayersPage() {
           )}
         </div>
 
-        {/* Leaderboard sidebar — scrollable, not sticky-clipped */}
-        <div className="w-64 shrink-0 rounded-xl overflow-hidden"
+        {/* Leaderboard — full width on mobile, sidebar on desktop */}
+        <div className="w-full lg:w-64 lg:shrink-0 rounded-xl overflow-hidden"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-
           <div className="px-4 py-3 flex items-center justify-between"
             style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
             <div className="flex items-center gap-2">
@@ -59,13 +58,11 @@ export default async function PlayersPage() {
 
           {leaderboard.map((player, index) => (
             <Link key={player.id} href={`/players/${player.id}`}>
-              <div
-                className="flex items-center gap-3 px-4 py-2.5 transition-colors"
+              <div className="flex items-center gap-3 px-4 py-2.5 transition-colors"
                 style={{
                   borderBottom: '1px solid var(--border)',
                   background: index === 0 ? 'var(--brand-primary-muted)' : 'transparent',
-                }}
-              >
+                }}>
                 <div className="w-5 text-center shrink-0">
                   {index === 0 ? <span className="text-base">🥇</span>
                     : index === 1 ? <span className="text-base">🥈</span>
@@ -73,15 +70,13 @@ export default async function PlayersPage() {
                     : <span className="text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>{index + 1}</span>
                   }
                 </div>
-                <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
                   style={{
                     background: index < 3 ? 'var(--brand-primary)' : 'var(--bg-raised)',
                     color: index < 3 ? 'var(--brand-primary-on)' : 'var(--text-muted)',
                     boxShadow: index === 0 ? 'var(--glow-primary)' : 'none',
                     border: '1px solid var(--border)',
-                  }}
-                >
+                  }}>
                   {getInitials(player.full_name)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -99,17 +94,10 @@ export default async function PlayersPage() {
             </Link>
           ))}
 
-          {leaderboard.length === 0 && (
-            <div className="px-4 py-8 text-center text-xs" style={{ color: 'var(--text-subtle)' }}>
-              No players yet
-            </div>
-          )}
-
           <div className="px-4 py-2 text-center text-[10px]" style={{ color: 'var(--text-subtle)' }}>
             Updates after each match · {leaderboard.length} members
           </div>
         </div>
-
       </div>
     </div>
   )
