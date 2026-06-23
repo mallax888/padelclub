@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { VENUES, type Venue } from '@/lib/venues'
 
 const REGIONS = [
-  { name: 'Auckland',     island: 'North Island' },
-  { name: 'Wellington',   island: 'North Island' },
-  { name: 'Christchurch', island: 'South Island' },
+  { name: 'Auckland',     island: 'New Zealand' },
+  { name: 'Wellington',   island: 'New Zealand' },
+  { name: 'Christchurch', island: 'New Zealand' },
+  { name: 'Nelspruit',    island: 'South Africa' },
 ]
 
 export default function VenueSwitcher({
@@ -21,8 +22,8 @@ export default function VenueSwitcher({
 
   return (
     <div className="mb-5">
-      {/* Region buttons — full width */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      {/* Region buttons */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
         {REGIONS.map(region => {
           const isActive = activeRegion === region.name
           const venues = VENUES.filter(v => v.region === region.name)
@@ -44,10 +45,7 @@ export default function VenueSwitcher({
               }}
             >
               <div className="flex items-start justify-between mb-2">
-                <span style={{
-                  fontSize: 18,
-                  color: isActive ? 'var(--brand-primary-on)' : 'var(--brand-primary)',
-                }}>⊙</span>
+                <span style={{ fontSize: 18, color: isActive ? 'var(--brand-primary-on)' : 'var(--brand-primary)' }}>⊙</span>
                 {!hasLive && (
                   <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full"
                     style={{
@@ -62,15 +60,19 @@ export default function VenueSwitcher({
                 style={{ color: isActive ? 'var(--brand-primary-on)' : 'var(--text-primary)' }}>
                 {region.name}
               </div>
-              <div className="flex gap-2">
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+              <div className="text-[10px] mb-2"
+                style={{ color: isActive ? 'var(--brand-primary-on)' : 'var(--text-subtle)', opacity: 0.8 }}>
+                {region.island}
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
                   style={{
                     background: isActive ? 'rgba(0,0,0,0.15)' : 'var(--bg-raised)',
                     color: isActive ? 'var(--brand-primary-on)' : 'var(--text-muted)',
                   }}>
                   {venues.length} venue{venues.length > 1 ? 's' : ''}
                 </span>
-                <span className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
                   style={{
                     background: isActive ? 'rgba(0,0,0,0.15)' : 'var(--bg-raised)',
                     color: isActive ? 'var(--brand-primary-on)' : 'var(--text-muted)',
@@ -83,7 +85,7 @@ export default function VenueSwitcher({
         })}
       </div>
 
-      {/* Venue cards for selected region */}
+      {/* Sub-venue cards */}
       {regionVenues.length > 1 && (
         <div className="grid grid-cols-2 gap-2 mb-1">
           {regionVenues.map(venue => {

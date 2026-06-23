@@ -134,6 +134,41 @@ export const VENUES: Venue[] = [
       { label: 'Social events',        icon: 'ti-calendar' },
     ],
   },
+  {
+    slug: 'nelspruit-play360',
+    name: 'Play 360 Nelspruit',
+    region: 'Nelspruit',
+    address: '1692 Hermansburg Rd, Stonehenge, Mbombela 1211',
+    isLive: true,
+    courts: [
+      { id: 'p360-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
+      { id: 'p360-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
+    ],
+    amenities: [
+      { label: 'Riverside setting',  icon: 'ti-bulb' },
+      { label: 'Friend Cafe nearby', icon: 'ti-coffee' },
+      { label: 'Free parking',       icon: 'ti-parking' },
+      { label: 'Social events',      icon: 'ti-calendar' },
+    ],
+  },
+  {
+    slug: 'nelspruit-padel24',
+    name: 'Padel 24 Nelspruit',
+    region: 'Nelspruit',
+    address: 'LVCC, 1 Aurora Drive, Mbombela',
+    isLive: true,
+    courts: [
+      { id: 'p24-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
+      { id: 'p24-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
+      { id: 'p24-3', name: 'Court 3', type: 'Glass-backed', isIndoor: false, x: 2, y: 0 },
+    ],
+    amenities: [
+      { label: 'Pro shop',        icon: 'ti-shopping-bag' },
+      { label: 'Changing rooms',  icon: 'ti-shirt' },
+      { label: 'Free parking',    icon: 'ti-parking' },
+      { label: 'Social events',   icon: 'ti-calendar' },
+    ],
+  },
 ]
 
 export function getVenue(slug: string): Venue {
