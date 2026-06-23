@@ -179,7 +179,7 @@ export default function BookingFlow({
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-4xl mx-auto">
 
       {/* Step indicator */}
       <div className="flex items-center justify-center gap-2 mb-6">
@@ -574,5 +574,6 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
