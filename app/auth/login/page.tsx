@@ -31,7 +31,6 @@ export default function LoginPage() {
       style={{ background: 'var(--bg-base)' }}>
       <div className="w-full max-w-sm">
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <svg width="44" height="44" viewBox="0 0 100 100">
@@ -59,7 +58,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="rounded-xl p-5 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
@@ -89,11 +87,7 @@ export default function LoginPage() {
             <button
               type="submit"
               className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
-              style={{
-                background: '#39FF6E',
-                color: '#001F0D',
-                boxShadow: '0 0 16px 0 #39FF6E44',
-              }}
+              style={{ background: '#39FF6E', color: '#001F0D', boxShadow: '0 0 16px 0 #39FF6E44' }}
               disabled={loading}
             >
               {loading ? 'Signing in…' : 'Sign in'}
@@ -101,15 +95,21 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-sm mt-4" style={{ color: 'var(--text-muted)' }}>
-          Forgot your password? <a href="/auth/forgot-password" style="color:#39FF6E">Reset it</a> &nbsp;·&nbsp; Forgot your password? <a href="/auth/forgot-password" style="color:#39FF6E">Reset it</a> &nbsp;·&nbsp; No account?{' '}
-          <Link href="/auth/signup" className="font-medium hover:underline" style={{ color: '#39FF6E' }}>
-            Create one
-          </Link>
-        </p>
+        <div className="text-center text-sm space-y-2">
+          <p style={{ color: 'var(--text-muted)' }}>
+            <Link href="/auth/forgot-password" className="font-medium hover:underline" style={{ color: 'var(--brand-primary)' }}>
+              Forgot your password?
+            </Link>
+          </p>
+          <p style={{ color: 'var(--text-muted)' }}>
+            No account?{' '}
+            <Link href="/auth/signup" className="font-medium hover:underline" style={{ color: '#39FF6E' }}>
+              Create one
+            </Link>
+          </p>
+        </div>
+
       </div>
     </div>
   )
 }
-
-
