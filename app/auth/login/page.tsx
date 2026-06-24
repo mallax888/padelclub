@@ -102,7 +102,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-sm mt-4" style={{ color: 'var(--text-muted)' }}>
-          Forgot your password? <a href="/auth/forgot-password" style="color:#39FF6E">Reset it</a> &nbsp;·&nbsp; No account?{' '}
+          Forgot your password? <a href="/auth/forgot-password" style="color:#39FF6E">Reset it</a> &nbsp;·&nbsp; Forgot your password? <a href="/auth/forgot-password" style="color:#39FF6E">Reset it</a> &nbsp;·&nbsp; No account?{' '}
           <Link href="/auth/signup" className="font-medium hover:underline" style={{ color: '#39FF6E' }}>
             Create one
           </Link>
@@ -111,4 +111,5 @@ export default function LoginPage() {
     </div>
   )
 }
+
 
