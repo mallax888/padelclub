@@ -10,10 +10,10 @@ export default async function FindGamePage() {
     .select(`
       *,
       courts(name, type),
-      open_match_players(player_id, profiles(id, full_name, nickname, skill_rating, skill_level))
+      open_match_players(player_id, status, profiles(id, full_name, nickname, skill_rating, skill_level, email))
     `)
     .eq('visibility', 'public')
-    .eq('status', 'open')
+    .in('status', ['open', 'full'])
     .gte('date', new Date().toISOString().slice(0, 10))
     .order('date', { ascending: true })
     .order('start_time', { ascending: true })
