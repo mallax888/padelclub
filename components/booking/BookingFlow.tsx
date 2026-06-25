@@ -233,22 +233,27 @@ export default function BookingFlow({
             return (
               <button key={r}
                 onClick={() => { setRegion(r); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('venue') }}
-                className="rounded-xl p-5 text-left transition-all"
-                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+                className="rounded-xl p-5 text-left transition-all flex flex-col justify-between"
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 160 }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
               >
-                <div className="text-2xl mb-2">📍</div>
-                <div className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{r}</div>
-                <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-                  {venues.length} venue{venues.length > 1 ? 's' : ''} · {totalCourts} courts
+                <div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary)', marginBottom: 12 }}>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{r}</div>
+                  <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+                    {venues.length} venue{venues.length > 1 ? 's' : ''} · {totalCourts} courts
+                  </div>
                 </div>
                 {!hasLive && (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full mt-2 inline-block"
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full mt-3 inline-block"
                     style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
                     Coming soon
                   </span>
                 )}
+                {hasLive && <div style={{ height: 20 }} />}
               </button>
             )
           })}
@@ -492,3 +497,5 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
