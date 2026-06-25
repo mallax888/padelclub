@@ -10,7 +10,20 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'PadelClub – Book a court',
-  description: 'Book padel courts online. Memberships available.',
+  description: 'Book padel courts, find a game, split payments.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'PadelClub',
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'apple-mobile-web-app-title': 'PadelClub',
+    'theme-color': '#4DFFEE',
+  },
 }
 
 export default async function RootLayout({
@@ -20,9 +33,13 @@ export default async function RootLayout({
 }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
-
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+        <meta name="theme-color" content="#4DFFEE" />
+      </head>
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider session={session}>
