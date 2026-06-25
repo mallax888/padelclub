@@ -194,7 +194,7 @@ export default function FindGameList({
       {matches.map(match => {
         const allPlayers = match.open_match_players ?? []
         const acceptedPlayers = allPlayers.filter(p => p.status === 'accepted')
-        const pendingPlayers = allPlayers.filter(p => p.status === 'pending')
+        const pendingPlayers = allPlayers.filter(p => p.status === 'pending' && p.player_id !== match.organizer_id)
         const spotsLeft = match.spots_total - acceptedPlayers.length
         const isOrganizer = match.organizer_id === currentUserId
         const myEntry = allPlayers.find(p => p.player_id === currentUserId)
@@ -371,3 +371,5 @@ export default function FindGameList({
     </div>
   )
 }
+
+
