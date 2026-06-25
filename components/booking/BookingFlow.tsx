@@ -172,9 +172,30 @@ export default function BookingFlow({
       })
     } catch {}
 
-    toast.success(makePublic ? 'Court booked and match opened for players!' : 'Court booked! Check your email.')
-    router.push(makePublic ? '/find-a-game' : '/mybookings')
-    router.refresh()
+    if (payMethod === 'card') {
+      const res = await fetch('/api/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          bookingId: bookingData.id,
+          courtName: selectedCourt.name + " — " + selectedCourt.type,
+          date: formatDate(selectedDate),
+          time: selectedTime + " — " + addHours(selectedTime, duration),
+          amount: courtPrice,
+          splitCount: makePublic ? 4 : 1,
+        }),
+      })
+      const { url, error: stripeError } = await res.json()
+      if (stripeError) {
+        toast.error(stripeError)
+      } else {
+        window.location.href = url
+      }
+    } else {
+      toast.success(makePublic ? 'Court booked and match opened for players!' : 'Court booked! Check your email.')
+      router.push(makePublic ? '/find-a-game' : '/mybookings')
+      router.refresh()
+    }
     setSubmitting(false)
   }
 
@@ -574,6 +595,9 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
+
 
 
 
