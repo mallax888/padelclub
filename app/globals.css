@@ -16,7 +16,7 @@ input, textarea, select, [contenteditable] {
 @tailwind utilities;
 
 :root {
-  --bg-base:            #E8E8E8;
+  --bg-base:            #18181B;
   --bg-surface:         #27272A;
   --bg-raised:          #3F3F46;
   --text-primary:       #F4F4F5;
@@ -34,7 +34,7 @@ input, textarea, select, [contenteditable] {
 }
 
 .light {
-  --bg-base:            #E8E8E8;
+  --bg-base:            #18181B;
   --bg-surface:         #FFFFFF;
   --bg-raised:          #F5F5F5;
   --text-primary:       #111111;
@@ -69,6 +69,11 @@ input, textarea, select, [contenteditable] {
   h1, h2, h3, h4, h5, h6 {
     color: var(--text-primary);
     @apply font-semibold tracking-tight select-none;
+  }
+  h1 {
+    border-left: 3px solid var(--brand-primary);
+    padding-left: 12px;
+    box-shadow: -4px 0 12px 0 var(--brand-primary-muted);
   }
 }
 
@@ -240,6 +245,8 @@ h1, h2, h3, h4, h5, h6 {
   user-select: none;
   -webkit-user-select: none;
 }
+
+
 
 
 
