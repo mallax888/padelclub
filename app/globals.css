@@ -1,21 +1,26 @@
 ﻿@tailwind base;
-/* ─── Global selection control ──────────────────
-   Disable text cursor/selection on all UI elements.
-   Only form inputs remain selectable.
-─────────────────────────────────────────────── */
-html {
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-input, textarea, select, [contenteditable] {
-  user-select: text;
-  -webkit-user-select: text;
-}
 @tailwind components;
 @tailwind utilities;
 
 :root {
+  --bg-base:            #E8E8E8;
+  --bg-surface:         #FFFFFF;
+  --bg-raised:          #F5F5F5;
+  --text-primary:       #111111;
+  --text-muted:         #555555;
+  --text-subtle:        #888888;
+  --border:             #D1D1D6;
+  --brand-primary:      #00A896;
+  --brand-primary-on:   #FFFFFF;
+  --brand-accent:       #C4005A;
+  --brand-accent-on:    #FFFFFF;
+  --brand-primary-muted:#00A8961A;
+  --brand-accent-muted: #C4005A1A;
+  --glow-primary:       0 0 16px 0 #00A89633;
+  --glow-accent:        0 0 16px 0 #C4005A33;
+}
+
+.dark {
   --bg-base:            #18181B;
   --bg-surface:         #27272A;
   --bg-raised:          #3F3F46;
@@ -31,24 +36,6 @@ input, textarea, select, [contenteditable] {
   --brand-accent-muted: #FF2D781A;
   --glow-primary:       0 0 16px 0 #4DFFEE33;
   --glow-accent:        0 0 16px 0 #FF2D7833;
-}
-
-.light {
-  --bg-base:            #18181B;
-  --bg-surface:         #FFFFFF;
-  --bg-raised:          #F5F5F5;
-  --text-primary:       #111111;
-  --text-muted:         #555555;
-  --text-subtle:        #888888;
-  --border:             #D1D1D6;
-  --brand-primary:      #00A896;
-  --brand-primary-on:   #FFFFFF;
-  --brand-accent:       #C4005A;
-  --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#00A8961A;
-  --brand-accent-muted: #C4005A1A;
-  --glow-primary:       0 0 16px 0 #00A89633;
-  --glow-accent:        0 0 16px 0 #C4005A33;
 }
 
 @layer base {
@@ -73,7 +60,6 @@ input, textarea, select, [contenteditable] {
   h1 {
     border-left: 3px solid var(--brand-primary);
     padding-left: 12px;
-    box-shadow: -4px 0 12px 0 var(--brand-primary-muted);
   }
 }
 
@@ -112,18 +98,13 @@ input, textarea, select, [contenteditable] {
   .btn-outline-primary:hover:not(:disabled) {
     background: var(--brand-primary-muted);
   }
-  .btn-outline-accent {
-    background: transparent;
-    color: var(--brand-accent);
-    border-color: var(--brand-accent);
-  }
   .btn-danger {
-    @apply text-red-400;
-    border-color: #7F1D1D;
+    @apply text-red-500;
+    border-color: #FECACA;
   }
   .btn-danger:hover:not(:disabled) {
-    background: rgba(239,68,68,0.15);
-    color: #F87171;
+    background: rgba(239,68,68,0.1);
+    color: #DC2626;
   }
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
@@ -134,11 +115,6 @@ input, textarea, select, [contenteditable] {
   .card {
     @apply rounded-xl p-5;
     background: var(--bg-surface);
-    border: 1px solid var(--border);
-  }
-  .card-raised {
-    @apply rounded-xl p-5;
-    background: var(--bg-raised);
     border: 1px solid var(--border);
   }
   .input {
@@ -162,24 +138,13 @@ input, textarea, select, [contenteditable] {
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none;
   }
-  .badge-primary {
-    background: var(--brand-primary-muted);
-    color: var(--brand-primary);
-  }
-  .badge-accent {
-    background: var(--brand-accent-muted);
-    color: var(--brand-accent);
-  }
   .badge-member {
     background: var(--brand-primary-muted);
     color: var(--brand-primary);
   }
-  .badge-staff {
-    @apply bg-purple-900/50 text-purple-300;
-  }
   .status-confirmed  { background: var(--brand-primary-muted); color: var(--brand-primary); @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; }
-  .status-pending    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-900/30 text-amber-400 select-none; }
-  .status-cancelled  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-900/30 text-red-400 select-none; }
+  .status-pending    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none bg-amber-100 text-amber-700; }
+  .status-cancelled  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none bg-red-100 text-red-600; }
   .status-completed  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
   .status-blocked    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
   .nav-tab {
@@ -218,16 +183,26 @@ input, textarea, select, [contenteditable] {
     color: var(--text-subtle);
     border-color: transparent;
   }
-  .divider {
-    height: 1px;
-    background: var(--border);
-    @apply my-6;
-  }
   .glow-primary { box-shadow: var(--glow-primary); }
   .glow-accent  { box-shadow: var(--glow-accent); }
 }
 
-/* Disable selection on clickable cards (court selection, venue switcher, etc) */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input, textarea, select, [contenteditable] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 .cursor-pointer {
   user-select: none;
   -webkit-user-select: none;
@@ -239,15 +214,3 @@ input, textarea, select, [contenteditable] {
     max-width: 100vw;
   }
 }
-
-/* Direct heading selection fix — outside Tailwind layers so it wins */
-h1, h2, h3, h4, h5, h6 {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-
-
-
-
-
