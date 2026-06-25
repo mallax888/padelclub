@@ -34,13 +34,13 @@ input, textarea, select, [contenteditable] {
 }
 
 .light {
-  --bg-base:            #FFFFFF;
-  --bg-surface:         #F4F4F5;
-  --bg-raised:          #E4E4E7;
-  --text-primary:       #18181B;
-  --text-muted:         #71717A;
-  --text-subtle:        #A1A1AA;
-  --border:             #E4E4E7;
+  --bg-base:            #E8E8E8;
+  --bg-surface:         #FFFFFF;
+  --bg-raised:          #F5F5F5;
+  --text-primary:       #111111;
+  --text-muted:         #555555;
+  --text-subtle:        #888888;
+  --border:             #D1D1D6;
   --brand-primary:      #00A896;
   --brand-primary-on:   #FFFFFF;
   --brand-accent:       #C4005A;
@@ -240,4 +240,5 @@ h1, h2, h3, h4, h5, h6 {
   user-select: none;
   -webkit-user-select: none;
 }
+
 
