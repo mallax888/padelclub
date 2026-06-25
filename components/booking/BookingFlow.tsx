@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
+import { formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, type Venue } from '@/lib/venues'
@@ -465,8 +465,8 @@ export default function BookingFlow({
               ['Venue', venue?.name],
               ['Court', court?.name + ' — ' + court?.type],
               ['Date', date ? formatDate(date) : ''],
-              ['Time', time + ' — ' + addHours(time!, duration!)],
-              ['Duration', duration + ' hour' + (duration! > 1 ? 's' : '')],
+              ['Time', time && duration ? time + ' — ' + addHours(time, duration) : ''],
+              ['Duration', duration ? duration + ' hour' + (duration > 1 ? 's' : '') : ''],
               ...(discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between py-1.5 text-sm"
@@ -491,4 +491,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
+
 
