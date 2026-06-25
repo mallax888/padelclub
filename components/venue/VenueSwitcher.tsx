@@ -76,7 +76,7 @@ export default function VenueSwitcher({
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
           </svg>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-base font-semibold truncate" style={{ color: 'var(--brand-primary)' }}>
               {selected.name}
             </div>
             <div className="text-xs truncate" style={{ color: 'var(--text-subtle)' }}>
@@ -264,4 +264,5 @@ export default function VenueSwitcher({
     </div>
   )
 }
+
 
