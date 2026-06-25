@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { VENUES, type Venue } from '@/lib/venues'
 
-const REGIONS = [...new Set(VENUES.map(v => v.region))]
+const REGIONS = VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
 
 export default function VenueSwitcher({
   selected,
@@ -264,3 +264,4 @@ export default function VenueSwitcher({
     </div>
   )
 }
+
