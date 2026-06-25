@@ -16,7 +16,7 @@ input, textarea, select, [contenteditable] {
 @tailwind utilities;
 
 :root {
-  --bg-base:            #18181B;
+  --bg-base:            #E8E8E8;
   --bg-surface:         #27272A;
   --bg-raised:          #3F3F46;
   --text-primary:       #F4F4F5;
@@ -240,6 +240,7 @@ h1, h2, h3, h4, h5, h6 {
   user-select: none;
   -webkit-user-select: none;
 }
+
 
 
 
