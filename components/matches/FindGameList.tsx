@@ -6,6 +6,12 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatDate, getInitials } from '@/lib/utils'
 
+type MatchPlayer = {
+  player_id: string
+  status: string
+  profiles: { id: string; full_name: string | null; nickname: string | null; skill_rating: number; skill_level?: string | null; email?: string | null } | null
+}
+
 type OpenMatch = {
   id: string
   date: string
@@ -19,10 +25,7 @@ type OpenMatch = {
   notes: string | null
   organizer_id: string
   courts: { name: string; type: string } | null
-  open_match_players: {
-    player_id: string
-    profiles: { id: string; full_name: string | null; nickname: string | null; skill_rating: number; skill_level?: string | null; email?: string | null } | null
-  }[]
+  open_match_players: MatchPlayer[]
 }
 
 function skillLabel(rating: number | null | undefined, skillLevel?: string | null) {
@@ -49,25 +52,24 @@ export default function FindGameList({
 }) {
   const supabase = createClient()
   const router = useRouter()
-  const [joining, setJoining] = useState<string | null>(null)
+  const [loading, setLoading] = useState<string | null>(null)
 
-  const handleJoin = async (match: OpenMatch) => {
-    setJoining(match.id)
+  const handleRequest = async (match: OpenMatch) => {
+    setLoading(match.id + '-request')
 
-    // 1. Join the match
     const { error } = await (supabase as any)
       .from('open_match_players')
-      .insert({ match_id: match.id, player_id: currentUserId })
+      .insert({ match_id: match.id, player_id: currentUserId, status: 'pending' })
 
     if (error) {
-      toast.error(error.code === '23505' ? "You're already in this match!" : 'Could not join — please try again.')
-      setJoining(null)
+      toast.error(error.code === '23505' ? "You've already requested to join!" : 'Could not send request — please try again.')
+      setLoading(null)
       return
     }
 
-    toast.success("You're in! See you on the court.")
+    toast.success('Request sent! Waiting for the organizer to accept.')
 
-    // 2. Get current user's profile for the notification
+    // Get current user profile
     const { data: myProfile } = await (supabase as any)
       .from('profiles')
       .select('full_name, nickname, email')
@@ -75,17 +77,16 @@ export default function FindGameList({
       .single()
 
     const myName = myProfile?.nickname ?? myProfile?.full_name ?? 'A player'
-    const myEmail = myProfile?.email
     const matchUrl = `${window.location.origin}/find-a-game`
     const courtName = match.courts?.name ?? 'Court'
     const matchDate = formatDate(match.date)
     const matchTime = `${match.start_time.slice(0,5)}–${match.end_time.slice(0,5)}`
 
-    // 3. Get organizer profile to notify them
+    // Notify organizer
     const organizer = match.open_match_players.find(p => p.player_id === match.organizer_id)
-    if (organizer?.profiles) {
+    if (organizer?.profiles?.email) {
       try {
-        await fetch('/api/notify-player-joined', {
+        await fetch('/api/notify-join-request', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -101,49 +102,67 @@ export default function FindGameList({
       } catch {}
     }
 
-    // 4. Check if match is now full — if so notify all players
-    const newCount = match.open_match_players.length + 1
-    if (newCount >= match.spots_total) {
-      // Get all player emails
-      const { data: allPlayers } = await (supabase as any)
-        .from('open_match_players')
-        .select('profiles(full_name, nickname, email)')
-        .eq('match_id', match.id)
+    router.refresh()
+    setLoading(null)
+  }
 
-      const players = [
-        ...(allPlayers ?? []).map((p: any) => ({
-          email: p.profiles?.email,
-          name: p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player',
-        })),
-        { email: myEmail, name: myName },
-      ].filter(p => p.email)
+  const handleResponse = async (match: OpenMatch, playerId: string, accept: boolean) => {
+    setLoading(match.id + '-' + playerId)
 
+    const { error } = await (supabase as any)
+      .from('open_match_players')
+      .update({ status: accept ? 'accepted' : 'declined' })
+      .eq('match_id', match.id)
+      .eq('player_id', playerId)
+
+    if (error) {
+      toast.error('Could not update request')
+      setLoading(null)
+      return
+    }
+
+    toast.success(accept ? 'Player accepted!' : 'Request declined.')
+
+    // Notify player of response
+    const player = match.open_match_players.find(p => p.player_id === playerId)
+    if (player?.profiles?.email) {
       try {
-        await fetch('/api/notify-match-full', {
+        await fetch('/api/notify-join-response', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            players,
-            court: courtName,
-            date: matchDate,
-            time: matchTime,
-            matchUrl,
+            playerEmail: player.profiles.email,
+            playerName: player.profiles.nickname ?? player.profiles.full_name ?? 'Player',
+            accepted: accept,
+            court: match.courts?.name ?? 'Court',
+            date: formatDate(match.date),
+            time: `${match.start_time.slice(0,5)}–${match.end_time.slice(0,5)}`,
+            matchUrl: `${window.location.origin}/find-a-game`,
           }),
         })
-        // Update match status to full
+      } catch {}
+    }
+
+    // If accepted and match is now full, notify all accepted players
+    if (accept) {
+      const acceptedCount = match.open_match_players.filter(p =>
+        p.status === 'accepted' || p.player_id === playerId
+      ).length
+
+      if (acceptedCount >= match.spots_total) {
         await (supabase as any)
           .from('open_matches')
           .update({ status: 'full' })
           .eq('id', match.id)
-      } catch {}
+      }
     }
 
     router.refresh()
-    setJoining(null)
+    setLoading(null)
   }
 
   const handleLeave = async (matchId: string) => {
-    setJoining(matchId)
+    setLoading(matchId + '-leave')
     const { error } = await (supabase as any)
       .from('open_match_players')
       .delete()
@@ -151,12 +170,12 @@ export default function FindGameList({
       .eq('player_id', currentUserId)
 
     if (error) {
-      toast.error('Could not leave — please try again.')
+      toast.error('Could not leave match')
     } else {
       toast.success('Left the match.')
       router.refresh()
     }
-    setJoining(null)
+    setLoading(null)
   }
 
   if (matches.length === 0) {
@@ -173,16 +192,19 @@ export default function FindGameList({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {matches.map(match => {
-        const joinedPlayers = match.open_match_players ?? []
-        const spotsLeft = match.spots_total - joinedPlayers.length
-        const isJoined = joinedPlayers.some(p => p.player_id === currentUserId)
+        const allPlayers = match.open_match_players ?? []
+        const acceptedPlayers = allPlayers.filter(p => p.status === 'accepted')
+        const pendingPlayers = allPlayers.filter(p => p.status === 'pending')
+        const spotsLeft = match.spots_total - acceptedPlayers.length
         const isOrganizer = match.organizer_id === currentUserId
+        const myEntry = allPlayers.find(p => p.player_id === currentUserId)
         const isFull = spotsLeft <= 0
 
         return (
           <div key={match.id} className="rounded-xl p-5"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
 
+            {/* Header */}
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
@@ -201,14 +223,16 @@ export default function FindGameList({
               </span>
             </div>
 
+            {/* Skill range */}
             <div className="text-xs mb-3" style={{ color: 'var(--text-subtle)' }}>
               Skill level: {skillLabelForRange(match.skill_min, match.skill_max)}
             </div>
 
-            <div className="mb-4">
+            {/* Accepted players */}
+            <div className="mb-3">
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex -space-x-2">
-                  {joinedPlayers.map(p => (
+                  {acceptedPlayers.map(p => (
                     <div key={p.player_id}
                       className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
                       style={{
@@ -235,13 +259,14 @@ export default function FindGameList({
                   ))}
                 </div>
                 <span className="text-xs ml-1" style={{ color: 'var(--text-subtle)' }}>
-                  {joinedPlayers.length}/{match.spots_total} players
+                  {acceptedPlayers.length}/{match.spots_total} players
                 </span>
               </div>
 
-              {joinedPlayers.length > 0 && (
-                <div className="space-y-1 mt-2">
-                  {joinedPlayers.map(p => (
+              {/* Accepted player list */}
+              {acceptedPlayers.length > 0 && (
+                <div className="space-y-1">
+                  {acceptedPlayers.map(p => (
                     <div key={p.player_id} className="flex items-center justify-between text-xs">
                       <span style={{ color: 'var(--text-primary)' }}>
                         {p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
@@ -259,28 +284,85 @@ export default function FindGameList({
               )}
             </div>
 
+            {/* Pending requests — only visible to organizer */}
+            {isOrganizer && pendingPlayers.length > 0 && (
+              <div className="rounded-lg p-3 mb-3"
+                style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+                <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+                  {pendingPlayers.length} pending request{pendingPlayers.length > 1 ? 's' : ''}
+                </div>
+                {pendingPlayers.map(p => (
+                  <div key={p.player_id} className="flex items-center justify-between gap-2 py-1.5"
+                    style={{ borderTop: '1px solid var(--border)' }}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                        {getInitials(p.profiles?.full_name ?? '?')}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                          {p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
+                        </div>
+                        <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>
+                          {skillLabel(p.profiles?.skill_rating, p.profiles?.skill_level)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5 shrink-0">
+                      <button
+                        className="text-xs px-2.5 py-1 rounded-lg font-medium transition-all"
+                        style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}
+                        disabled={loading === match.id + '-' + p.player_id}
+                        onClick={() => handleResponse(match, p.player_id, true)}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="text-xs px-2.5 py-1 rounded-lg font-medium transition-all"
+                        style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}
+                        disabled={loading === match.id + '-' + p.player_id}
+                        onClick={() => handleResponse(match, p.player_id, false)}
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {match.notes && (
-              <div className="text-xs mb-4 italic" style={{ color: 'var(--text-subtle)' }}>
+              <div className="text-xs mb-3 italic" style={{ color: 'var(--text-subtle)' }}>
                 "{match.notes}"
               </div>
             )}
 
+            {/* Action button */}
             {isOrganizer ? (
               <div className="text-xs text-center py-2 rounded-lg"
                 style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>
                 You're organizing this match
               </div>
-            ) : isJoined ? (
-              <button className="btn btn-danger w-full justify-center btn-sm"
-                disabled={joining === match.id}
-                onClick={() => handleLeave(match.id)}>
-                {joining === match.id ? '…' : 'Leave match'}
+            ) : myEntry?.status === 'accepted' ? (
+              <button
+                className="btn btn-danger w-full justify-center btn-sm"
+                disabled={loading === match.id + '-leave'}
+                onClick={() => handleLeave(match.id)}
+              >
+                {loading === match.id + '-leave' ? '…' : 'Leave match'}
               </button>
+            ) : myEntry?.status === 'pending' ? (
+              <div className="text-xs text-center py-2 rounded-lg"
+                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                Request pending — waiting for organizer
+              </div>
             ) : (
-              <button className="btn btn-primary w-full justify-center btn-sm"
-                disabled={isFull || joining === match.id}
-                onClick={() => handleJoin(match)}>
-                {joining === match.id ? '…' : isFull ? 'Match full' : 'Join match'}
+              <button
+                className="btn btn-primary w-full justify-center btn-sm"
+                disabled={isFull || loading === match.id + '-request'}
+                onClick={() => handleRequest(match)}
+              >
+                {loading === match.id + '-request' ? '…' : isFull ? 'Match full' : 'Request to join'}
               </button>
             )}
           </div>
