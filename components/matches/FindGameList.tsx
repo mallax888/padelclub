@@ -90,6 +90,7 @@ export default function FindGameList({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            organizerId: match.organizer_id,
             organizerEmail: organizer.profiles.email,
             organizerName: organizer.profiles.nickname ?? organizer.profiles.full_name ?? 'Organizer',
             playerName: myName,
@@ -371,5 +372,6 @@ export default function FindGameList({
     </div>
   )
 }
+
 
 
