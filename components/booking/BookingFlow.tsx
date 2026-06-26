@@ -15,10 +15,10 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const REGIONS = VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
 
 const DURATIONS = [
-  { value: 0.5, label: '30 min' },
-  { value: 1,   label: '1 hour' },
-  { value: 1.5, label: '90 min' },
-  { value: 2,   label: '2 hours' },
+  { value: 0.5, label: '30 min'  },
+  { value: 1,   label: '60 min'  },
+  { value: 1.5, label: '90 min'  },
+  { value: 2,   label: '120 min' },
 ]
 
 function isPeakTime(dateStr: string | null, timeStr: string | null): boolean {
@@ -33,8 +33,9 @@ function isPeakTime(dateStr: string | null, timeStr: string | null): boolean {
 
 function durationLabel(d: number) {
   if (d === 0.5) return '30 min'
+  if (d === 1)   return '60 min'
   if (d === 1.5) return '90 min'
-  return d + ' hour' + (d > 1 ? 's' : '')
+  return '120 min'
 }
 
 type Step = 'region' | 'venue' | 'date' | 'court' | 'duration' | 'time' | 'confirm'
@@ -552,3 +553,5 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
