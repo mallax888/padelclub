@@ -290,12 +290,20 @@ export default function BookingFlow({
                     {venues.length} venue{venues.length > 1 ? 's' : ''} · {totalCourts} courts
                   </div>
                 </div>
-                {!hasLive ? (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full mt-3 inline-block"
-                    style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
-                    Coming soon
-                  </span>
-                ) : <div style={{ height: 20 }} />}
+                <div className="flex gap-1 mt-3 flex-wrap">
+                  {venues.slice(0,2).map(v => (
+                    <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>
+                      {v.name.split(' ').slice(-2).join(' ')}
+                    </span>
+                  ))}
+                  {venues.length > 2 && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full"
+                      style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>
+                      +{venues.length - 2} more
+                    </span>
+                  )}
+                </div>
               </button>
             )
           })}
@@ -553,5 +561,6 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
