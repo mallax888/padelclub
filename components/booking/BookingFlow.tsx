@@ -8,7 +8,7 @@ import { formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, type Venue } from '@/lib/venues'
-import { playSelectionSound } from '@/lib/sounds'
+import { playSelectionSound, playBackSound } from '@/lib/sounds'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -248,7 +248,7 @@ export default function BookingFlow({
       {/* Back arrow + step title */}
       <div className="flex items-center gap-3 mb-6">
         {step !== 'country' && (
-          <button onClick={goBack}
+          <button onClick={() => { goBack(); playBackSound() }}
             className="w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -592,6 +592,8 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
 
 
 
