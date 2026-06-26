@@ -280,8 +280,8 @@ export default function BookingFlow({
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
           {COUNTRIES.map(c => (
             <button key={c.name}
+              onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region') }}
               className="rounded-xl p-5 text-left transition-all flex flex-col items-center gap-3"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
 
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
