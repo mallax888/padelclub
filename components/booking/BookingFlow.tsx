@@ -286,8 +286,8 @@ export default function BookingFlow({
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                   </svg>
                   <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{r}</div>
-                  <div className="text-xs" style={{ color: '#F4F4F5' }}>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{totalCourts}</span> courts
                   </div>
                 </div>
                 <div className="flex gap-1 mt-3 flex-wrap">
