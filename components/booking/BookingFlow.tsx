@@ -280,16 +280,16 @@ export default function BookingFlow({
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
           {COUNTRIES.map(c => (
             <button key={c.name}
-              onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region') }}
-              className="rounded-xl p-6 text-left transition-all flex flex-col items-center justify-center gap-3"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 160, position: 'relative' }}
+              className="rounded-xl p-5 text-left transition-all flex flex-col items-center gap-3"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
+
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
-              <div style={{ position: 'absolute', top: 12, right: 12 }}>
-                <img src={c.flag} alt={c.name} style={{ width: 48, height: 32, objectFit: 'cover', borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                <img src={c.flag} alt={c.name} style={{ width: 80, height: 53, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
               </div>
-              <div className="text-base font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
+              <div className="text-lg font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
               <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
                 {c.regions.length} cities · {VENUES.filter(v => c.regions.includes(v.region)).length} venues · {VENUES.filter(v => c.regions.includes(v.region)).reduce((s, v) => s + v.courts.length, 0)} courts
               </div>
