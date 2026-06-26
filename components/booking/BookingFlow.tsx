@@ -8,6 +8,7 @@ import { formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, type Venue } from '@/lib/venues'
+import { playSelectionSound } from '@/lib/sounds'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -280,7 +281,7 @@ export default function BookingFlow({
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
           {COUNTRIES.map(c => (
             <button key={c.name}
-              onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region') }}
+              onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
               className="rounded-xl p-5 transition-all flex flex-col items-center gap-3"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
@@ -305,7 +306,7 @@ export default function BookingFlow({
             const hasLive = venues.some(v => v.isLive)
             return (
               <button key={r}
-                onClick={() => { setRegion(r); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('venue') }}
+                onClick={() => { setRegion(r); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('venue'); playSelectionSound() }}
                 className="rounded-xl p-5 text-left transition-all flex flex-col justify-between"
                 style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 160 }}
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
@@ -345,7 +346,7 @@ export default function BookingFlow({
         <div className="space-y-2 animate-fade-in">
           {regionVenues.map(v => (
             <button key={v.slug}
-              onClick={() => { setVenue(v); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('date') }}
+              onClick={() => { setVenue(v); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('date'); playSelectionSound() }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
@@ -384,7 +385,7 @@ export default function BookingFlow({
               const { day, num, month } = dateLabel(d)
               return (
                 <button key={d}
-                  onClick={() => { setDate(d); setCourt(null); setDuration(null); setTime(null); setStep('court') }}
+                  onClick={() => { setDate(d); setCourt(null); setDuration(null); setTime(null); setStep('court'); playSelectionSound() }}
                   className="rounded-xl p-3 text-center transition-all"
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
@@ -405,7 +406,7 @@ export default function BookingFlow({
         <div className="space-y-2 animate-fade-in">
           {courts.map(c => (
             <button key={c.id}
-              onClick={() => { setCourt(c); setDuration(null); setTime(null); setStep('duration') }}
+              onClick={() => { setCourt(c); setDuration(null); setTime(null); setStep('duration'); playSelectionSound() }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
@@ -437,7 +438,7 @@ export default function BookingFlow({
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
           {DURATIONS.map(d => (
             <button key={d.value}
-              onClick={() => { setDuration(d.value); setTime(null); setStep('time') }}
+              onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
               className="rounded-xl p-5 text-center transition-all"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
@@ -473,7 +474,7 @@ export default function BookingFlow({
               const peak = isPeakTime(date, t)
               return (
                 <button key={t} disabled={!available}
-                  onClick={() => { setTime(t); setStep('confirm') }}
+                  onClick={() => { setTime(t); setStep('confirm'); playSelectionSound() }}
                   className="rounded-xl p-3 text-center transition-all"
                   style={{
                     background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
@@ -591,6 +592,14 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
+
+
+
+
+
+
 
 
 
