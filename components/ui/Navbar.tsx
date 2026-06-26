@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from './AuthProvider'
 import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
+import NotificationBell from '@/components/ui/NotificationBell'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
@@ -67,6 +68,7 @@ export default function Navbar() {
               </span>
             )}
             <ThemeToggle />
+            {profile && <NotificationBell userId={profile.id} />}
             {profile && (
               <div style={{
                 width: 30, height: 30, borderRadius: '50%',
@@ -161,3 +163,5 @@ export default function Navbar() {
     </>
   )
 }
+
+

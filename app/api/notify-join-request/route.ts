@@ -1,11 +1,12 @@
 ﻿import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(request: Request) {
   try {
-    const { organizerEmail, organizerName, playerName, court, date, time, matchUrl } = await request.json()
+    const { organizerEmail, organizerName, playerName, court, date, time, matchUrl, organizerId } = await request.json()
 
     await resend.emails.send({
       from: 'PadelClub <onboarding@resend.dev>',
@@ -32,6 +33,19 @@ export async function POST(request: Request) {
         </div>
       `,
     })
+
+    if (organizerId) {
+      const sb = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      )
+      await sb.from('notifications').insert({
+        user_id: organizerId,
+        type: 'join_request',
+        message: playerName + ' wants to join your match on ' + court + ' — ' + date + ' at ' + time,
+      })
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 })
