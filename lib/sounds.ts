@@ -1,30 +1,53 @@
-let audioCtx: AudioContext | null = null
-function getCtx(): AudioContext {
-  if (!audioCtx) audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
-  return audioCtx
-}
+﻿let audioCtx: AudioContext | null = null
+
 export function playSelectionSound() {
   try {
-    const ctx = getCtx()
+    // Create context inside the gesture for iOS compatibility
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    const ctx = audioCtx
+    if (ctx.state === 'suspended') ctx.resume()
     const now = ctx.currentTime
-    const osc = ctx.createOscillator()
-    const g = ctx.createGain()
-    osc.type = "sine"
-    osc.frequency.setValueAtTime(140, now)
-    osc.frequency.exponentialRampToValueAtTime(55, now + 0.07)
-    g.gain.setValueAtTime(0.12, now)
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.1)
-    osc.connect(g); g.connect(ctx.destination)
-    osc.start(); osc.stop(now + 0.12)
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.03, ctx.sampleRate)
-    const d = buf.getChannelData(0)
-    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.006))
+
+    const o1 = ctx.createOscillator()
+    const g1 = ctx.createGain()
+    o1.type = 'sine'
+    o1.frequency.setValueAtTime(120, now)
+    o1.frequency.exponentialRampToValueAtTime(28, now + 0.35)
+    g1.gain.setValueAtTime(0.22, now)
+    g1.gain.setValueAtTime(0.24, now + 0.005)
+    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.35)
+    o1.connect(g1); g1.connect(ctx.destination)
+    o1.start(); o1.stop(now + 0.35)
+
+    const o2 = ctx.createOscillator()
+    const g2 = ctx.createGain()
+    o2.type = 'sine'
+    o2.frequency.setValueAtTime(60, now)
+    o2.frequency.exponentialRampToValueAtTime(14, now + 0.35)
+    g2.gain.setValueAtTime(0.13, now)
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.28)
+    o2.connect(g2); g2.connect(ctx.destination)
+    o2.start(); o2.stop(now + 0.28)
+
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.025, ctx.sampleRate)
+    const data = buf.getChannelData(0)
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.005))
+    }
     const src = ctx.createBufferSource()
     src.buffer = buf
+    const nf = ctx.createBiquadFilter()
+    nf.type = 'bandpass'
+    nf.frequency.value = 300
+    nf.Q.value = 1.2
     const ng = ctx.createGain()
-    ng.gain.setValueAtTime(0.08, now)
-    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.04)
-    src.connect(ng); ng.connect(ctx.destination)
-    src.start(); src.stop(now + 0.04)
-  } catch (e) {}
+    ng.gain.setValueAtTime(0.25, now)
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.025)
+    src.connect(nf); nf.connect(ng); ng.connect(ctx.destination)
+    src.start(); src.stop(now + 0.025)
+  } catch (e) {
+    // Silently fail
+  }
 }

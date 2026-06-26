@@ -65,7 +65,7 @@ export default async function RootLayout({
               aria-label="Chat on WhatsApp"
               style={{
                 position: 'fixed',
-                bottom: '80px',
+                bottom: '90px',
                 right: '20px',
                 width: '52px',
                 height: '52px',
