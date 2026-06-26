@@ -287,7 +287,7 @@ export default function BookingFlow({
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div style={{ position: 'absolute', top: 12, right: 12 }}>
-                <img src={c.flag} alt={c.name} style={{ width: 48, height: 'auto', borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
+                <img src={c.flag} alt={c.name} style={{ width: 48, height: 32, objectFit: 'cover', borderRadius: 4, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} />
               </div>
               <div className="text-base font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
               <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
