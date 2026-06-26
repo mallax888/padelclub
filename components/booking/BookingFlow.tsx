@@ -286,20 +286,20 @@ export default function BookingFlow({
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                   </svg>
                   <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{r}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-                    {venues.length} venue{venues.length > 1 ? 's' : ''} · {totalCourts} courts
+                  <div className="text-xs" style={{ color: '#F4F4F5' }}>
+                    <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{totalCourts}</span> courts
                   </div>
                 </div>
                 <div className="flex gap-1 mt-3 flex-wrap">
                   {venues.slice(0,2).map(v => (
                     <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>
+                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid #4DFFEE30' }}>
                       {v.name.split(' ').slice(-2).join(' ')}
                     </span>
                   ))}
                   {venues.length > 2 && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>
+                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary-muted)' }}>
                       +{venues.length - 2} more
                     </span>
                   )}
@@ -561,6 +561,13 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
+
+
+
+
+
 
 
 
