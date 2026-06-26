@@ -19,12 +19,61 @@ if (typeof window !== 'undefined') {
   window.addEventListener('click', unlock, { once: true, passive: true })
 }
 
+function getCtx(): AudioContext {
+  if (!ctx) ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+  if (ctx.state === 'suspended') ctx.resume()
+  return ctx
+}
+
+export function playBackSound() {
+  try {
+    const ctx = getCtx()
+    const now = ctx.currentTime
+
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.08, ctx.sampleRate)
+    const data = buf.getChannelData(0)
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.012))
+    }
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    const nf = ctx.createBiquadFilter()
+    nf.type = 'bandpass'
+    nf.frequency.value = 900
+    nf.Q.value = 0.8
+    const ng = ctx.createGain()
+    ng.gain.setValueAtTime(0.5, now)
+    ng.gain.exponentialRampToValueAtTime(0.001, now + 0.08)
+    src.connect(nf); nf.connect(ng); ng.connect(ctx.destination)
+    src.start(); src.stop(now + 0.08)
+
+    const o1 = ctx.createOscillator()
+    const g1 = ctx.createGain()
+    o1.type = 'sine'
+    o1.frequency.setValueAtTime(420, now + 0.01)
+    o1.frequency.exponentialRampToValueAtTime(380, now + 0.3)
+    g1.gain.setValueAtTime(0.0, now)
+    g1.gain.setValueAtTime(0.18, now + 0.01)
+    g1.gain.exponentialRampToValueAtTime(0.001, now + 0.3)
+    o1.connect(g1); g1.connect(ctx.destination)
+    o1.start(); o1.stop(now + 0.3)
+
+    const o2 = ctx.createOscillator()
+    const g2 = ctx.createGain()
+    o2.type = 'sine'
+    o2.frequency.setValueAtTime(210, now + 0.01)
+    o2.frequency.exponentialRampToValueAtTime(180, now + 0.25)
+    g2.gain.setValueAtTime(0.0, now)
+    g2.gain.setValueAtTime(0.12, now + 0.01)
+    g2.gain.exponentialRampToValueAtTime(0.001, now + 0.25)
+    o2.connect(g2); g2.connect(ctx.destination)
+    o2.start(); o2.stop(now + 0.25)
+  } catch (e) {}
+}
+
 export function playSelectionSound() {
   try {
-    if (!ctx) {
-      ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-    }
-    if (ctx.state === 'suspended') ctx.resume()
+    const ctx = getCtx()
     const now = ctx.currentTime
 
     const o1 = ctx.createOscillator()
@@ -66,5 +115,3 @@ export function playSelectionSound() {
     src.start(); src.stop(now + 0.025)
   } catch (e) {}
 }
-
-
