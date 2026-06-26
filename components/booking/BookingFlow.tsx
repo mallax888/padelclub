@@ -12,6 +12,10 @@ import { VENUES, type Venue } from '@/lib/venues'
 const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+const COUNTRIES = [
+  { name: 'New Zealand', flag: '🇳🇿', regions: ['Auckland', 'Wellington', 'Christchurch'] },
+  { name: 'South Africa', flag: '🇿🇦', regions: ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'] },
+]
 const REGIONS = VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
 
 const DURATIONS = [
@@ -38,8 +42,8 @@ function durationLabel(d: number) {
   return '120 min'
 }
 
-type Step = 'region' | 'venue' | 'date' | 'court' | 'duration' | 'time' | 'confirm'
-const STEPS: Step[] = ['region', 'venue', 'date', 'court', 'duration', 'time', 'confirm']
+type Step = 'country' | 'region' | 'venue' | 'date' | 'court' | 'duration' | 'time' | 'confirm'
+const STEPS: Step[] = ['country', 'region', 'venue', 'date', 'court', 'duration', 'time', 'confirm']
 
 function dateLabel(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -67,7 +71,8 @@ export default function BookingFlow({
     return d.toISOString().slice(0, 10)
   })
 
-  const [step, setStep] = useState<Step>('region')
+  const [step, setStep] = useState<Step>('country')
+  const [country, setCountry] = useState<string | null>(null)
   const [region, setRegion] = useState<string | null>(null)
   const [venue, setVenue] = useState<Venue | null>(null)
   const [date, setDate] = useState<string | null>(null)
@@ -221,9 +226,13 @@ export default function BookingFlow({
   }
 
   const regionVenues = region ? VENUES.filter(v => v.region === region) : []
+  const countryFilteredRegions = country ? REGIONS.filter(r => COUNTRIES.find(c => c.name === country)?.regions.includes(r)) : REGIONS
+
+
 
   const stepMeta: Record<Step, { title: string; subtitle?: string }> = {
-    region:   { title: 'Where do you want to play?' },
+    country:  { title: 'Where are you based?' },
+    region:   { title: 'Choose a city', subtitle: country ?? '' },
     venue:    { title: 'Choose a venue', subtitle: region ?? '' },
     date:     { title: 'When?', subtitle: venue?.name ?? '' },
     court:    { title: 'Which court?', subtitle: date ? formatDate(date) : '' },
@@ -237,7 +246,7 @@ export default function BookingFlow({
 
       {/* Back arrow + step title */}
       <div className="flex items-center gap-3 mb-6">
-        {step !== 'region' && (
+        {step !== 'country' && (
           <button onClick={goBack}
             className="w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
@@ -266,10 +275,31 @@ export default function BookingFlow({
         ))}
       </div>
 
+      {/* STEP: Country */}
+      {step === 'country' && (
+        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+          {COUNTRIES.map(c => (
+            <button key={c.name}
+              onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region') }}
+              className="rounded-xl p-6 text-left transition-all flex flex-col items-center justify-center gap-3"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 160 }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+            >
+              <div style={{ fontSize: 48 }}>{c.flag}</div>
+              <div className="text-base font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
+              <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+                {c.regions.length} cities · {VENUES.filter(v => c.regions.includes(v.region)).length} venues · {VENUES.filter(v => c.regions.includes(v.region)).reduce((s, v) => s + v.courts.length, 0)} courts
+              </div>
+            </button>
+          ))}  
+        </div>
+      )}
+
       {/* STEP: Region */}
       {step === 'region' && (
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          {REGIONS.map(r => {
+          {countryFilteredRegions.map(r => {
             const venues = VENUES.filter(v => v.region === r)
             const totalCourts = venues.reduce((s, v) => s + v.courts.length, 0)
             const hasLive = venues.some(v => v.isLive)
@@ -561,6 +591,13 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
+
+
+
+
+
 
 
 
