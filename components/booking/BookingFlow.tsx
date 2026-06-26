@@ -9,10 +9,33 @@ import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, type Venue } from '@/lib/venues'
 
-const TIME_SLOTS = generateTimeSlots(7, 22, 60)
+const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const REGIONS = VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
+
+const DURATIONS = [
+  { value: 0.5, label: '30 min' },
+  { value: 1,   label: '1 hour' },
+  { value: 1.5, label: '90 min' },
+  { value: 2,   label: '2 hours' },
+]
+
+function isPeakTime(dateStr: string | null, timeStr: string | null): boolean {
+  if (!dateStr || !timeStr) return false
+  const d = new Date(dateStr + 'T00:00:00')
+  const day = d.getDay()
+  const hour = parseInt(timeStr.slice(0, 2))
+  const isWeekend = day === 0 || day === 6
+  const isEvening = hour >= 17 && hour < 21
+  return isWeekend || isEvening
+}
+
+function durationLabel(d: number) {
+  if (d === 0.5) return '30 min'
+  if (d === 1.5) return '90 min'
+  return d + ' hour' + (d > 1 ? 's' : '')
+}
 
 type Step = 'region' | 'venue' | 'date' | 'court' | 'duration' | 'time' | 'confirm'
 const STEPS: Step[] = ['region', 'venue', 'date', 'court', 'duration', 'time', 'confirm']
@@ -69,9 +92,14 @@ export default function BookingFlow({
         const taken: string[] = []
         ;(data ?? []).forEach((b: any) => {
           const startHour = parseInt(b.start_time.slice(0, 2))
-          const hrs = (b.duration_minutes ?? 60) / 60
-          for (let i = 0; i < hrs; i++) {
-            taken.push(`${String(startHour + i).padStart(2, '0')}:00`)
+          const startMin = parseInt(b.start_time.slice(3, 5))
+          const totalMins = (b.duration_minutes ?? 60)
+          const startTotal = startHour * 60 + startMin
+          for (let m = 0; m < totalMins; m += 30) {
+            const t = startTotal + m
+            const h = String(Math.floor(t / 60)).padStart(2, '0')
+            const min = String(t % 60).padStart(2, '0')
+            taken.push(`${h}:${min}`)
           }
         })
         setTakenSlots(taken)
@@ -80,33 +108,50 @@ export default function BookingFlow({
 
   const isSlotAvailable = (t: string) => {
     if (!duration) return false
-    const startHour = parseInt(t.slice(0, 2))
-    for (let i = 0; i < duration; i++) {
-      const h = String(startHour + i).padStart(2, '0')
-      if (takenSlots.includes(`${h}:00`)) return false
-      if (startHour + i >= 22) return false
+    const [h, m] = t.split(':').map(Number)
+    const startTotal = h * 60 + m
+    const totalMins = duration * 60
+    for (let offset = 0; offset < totalMins; offset += 30) {
+      const cur = startTotal + offset
+      const curH = String(Math.floor(cur / 60)).padStart(2, '0')
+      const curM = String(cur % 60).padStart(2, '0')
+      if (takenSlots.includes(`${curH}:${curM}`)) return false
+      if (Math.floor(cur / 60) >= 22) return false
     }
     return true
   }
 
-  const courtPrice = court && duration ? court.price_per_hour * (1 - discount) * duration : 0
+  const isPeak = isPeakTime(date, time)
+  const basePrice = court
+    ? (isPeak && (court as any).price_per_hour_peak
+        ? (court as any).price_per_hour_peak
+        : court.price_per_hour)
+    : 0
+  const courtPrice = court && duration ? basePrice * (1 - discount) * duration : 0
 
   const goBack = () => {
     const idx = STEPS.indexOf(step)
     if (idx > 0) setStep(STEPS[idx - 1])
   }
 
+  const addHoursDecimal = (timeStr: string, hrs: number) => {
+    const [h, m] = timeStr.split(':').map(Number)
+    const totalMins = h * 60 + m + hrs * 60
+    return `${String(Math.floor(totalMins / 60)).padStart(2, '0')}:${String(totalMins % 60).padStart(2, '0')}`
+  }
+
   const handleConfirm = async () => {
     if (!court || !time || !date || !userId || !duration) return
     setSubmitting(true)
     const sb = supabase as any
+    const endTime = addHoursDecimal(time, duration)
 
     const { data: bookingData, error } = await sb.from('bookings').insert({
       user_id: userId,
       court_id: court.id,
       date,
       start_time: time + ':00',
-      end_time: addHours(time, duration) + ':00',
+      end_time: endTime + ':00',
       duration_minutes: duration * 60,
       status: 'confirmed',
       price_nzd: parseFloat(courtPrice.toFixed(2)),
@@ -135,7 +180,7 @@ export default function BookingFlow({
         court_id: court.id,
         date,
         start_time: time + ':00',
-        end_time: addHours(time, duration) + ':00',
+        end_time: endTime + ':00',
         visibility: 'public',
         match_type: matchType,
         skill_min: min,
@@ -160,7 +205,7 @@ export default function BookingFlow({
         bookingId: bookingData.id,
         courtName: court.name + ' — ' + court.type,
         date: formatDate(date),
-        time: time + ' — ' + addHours(time, duration),
+        time: time + ' — ' + endTime,
         amount: courtPrice,
         splitCount: makePublic ? 4 : 1,
       }),
@@ -176,15 +221,14 @@ export default function BookingFlow({
 
   const regionVenues = region ? VENUES.filter(v => v.region === region) : []
 
-  // Step titles and subtitles
   const stepMeta: Record<Step, { title: string; subtitle?: string }> = {
     region:   { title: 'Where do you want to play?' },
     venue:    { title: 'Choose a venue', subtitle: region ?? '' },
     date:     { title: 'When?', subtitle: venue?.name ?? '' },
     court:    { title: 'Which court?', subtitle: date ? formatDate(date) : '' },
     duration: { title: 'How long?', subtitle: court?.name ?? '' },
-    time:     { title: 'What time?', subtitle: duration ? `${duration} hour${duration > 1 ? 's' : ''}` : '' },
-    confirm:  { title: 'Confirm booking', subtitle: time ?? '' },
+    time:     { title: 'What time?', subtitle: duration ? durationLabel(duration) : '' },
+    confirm:  { title: 'Confirm booking' },
   }
 
   return (
@@ -213,13 +257,11 @@ export default function BookingFlow({
         </div>
       </div>
 
-      {/* Progress dots */}
+      {/* Progress bar */}
       <div className="flex gap-1.5 mb-6">
         {STEPS.map((s, i) => (
           <div key={s} className="h-1 flex-1 rounded-full transition-all"
-            style={{
-              background: i <= STEPS.indexOf(step) ? 'var(--brand-primary)' : 'var(--bg-raised)',
-            }} />
+            style={{ background: i <= STEPS.indexOf(step) ? 'var(--brand-primary)' : 'var(--bg-raised)' }} />
         ))}
       </div>
 
@@ -247,13 +289,12 @@ export default function BookingFlow({
                     {venues.length} venue{venues.length > 1 ? 's' : ''} · {totalCourts} courts
                   </div>
                 </div>
-                {!hasLive && (
+                {!hasLive ? (
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full mt-3 inline-block"
                     style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
                     Coming soon
                   </span>
-                )}
-                {hasLive && <div style={{ height: 20 }} />}
+                ) : <div style={{ height: 20 }} />}
               </button>
             )
           })}
@@ -307,8 +348,8 @@ export default function BookingFlow({
                   onClick={() => { setDate(d); setCourt(null); setDuration(null); setTime(null); setStep('court') }}
                   className="rounded-xl p-3 text-center transition-all"
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--brand-primary)'; e.currentTarget.style.color = 'var(--brand-primary)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                 >
                   <div className="text-[10px] opacity-60">{day}</div>
                   <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{num}</div>
@@ -354,19 +395,19 @@ export default function BookingFlow({
 
       {/* STEP: Duration */}
       {step === 'duration' && (
-        <div className="grid grid-cols-3 gap-3 animate-fade-in">
-          {[1, 2, 3].map(h => (
-            <button key={h}
-              onClick={() => { setDuration(h); setTime(null); setStep('time') }}
+        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+          {DURATIONS.map(d => (
+            <button key={d.value}
+              onClick={() => { setDuration(d.value); setTime(null); setStep('time') }}
               className="rounded-xl p-5 text-center transition-all"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
-              <div className="text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{h}h</div>
+              <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{d.label}</div>
               {court && (
                 <div className="text-xs" style={{ color: 'var(--brand-primary)' }}>
-                  {formatNzd(court.price_per_hour * (1 - discount) * h)}
+                  from {formatNzd(court.price_per_hour * (1 - discount) * d.value)}
                 </div>
               )}
             </button>
@@ -377,16 +418,27 @@ export default function BookingFlow({
       {/* STEP: Time */}
       {step === 'time' && (
         <div className="animate-fade-in">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-accent)' }} />
+              <span style={{ color: 'var(--text-subtle)' }}>Peak (eve + weekends)</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-primary)' }} />
+              <span style={{ color: 'var(--text-subtle)' }}>Off-peak</span>
+            </div>
+          </div>
           <div className="grid grid-cols-3 gap-2">
             {TIME_SLOTS.map(t => {
               const available = isSlotAvailable(t)
+              const peak = isPeakTime(date, t)
               return (
                 <button key={t} disabled={!available}
                   onClick={() => { setTime(t); setStep('confirm') }}
                   className="rounded-xl p-3 text-center transition-all"
                   style={{
                     background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
-                    border: `1px solid ${!available ? 'transparent' : 'var(--border)'}`,
+                    border: available ? '1px solid var(--border)' : '1px solid transparent',
                     color: !available ? 'var(--text-subtle)' : 'var(--text-primary)',
                     cursor: !available ? 'not-allowed' : 'pointer',
                     opacity: !available ? 0.4 : 1,
@@ -395,8 +447,11 @@ export default function BookingFlow({
                   onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
                   <div className="text-sm font-semibold">{t}</div>
-                  {available && duration && (
-                    <div className="text-[10px] mt-0.5 opacity-60">→ {addHours(t, duration)}</div>
+                  {available && (
+                    <div className="text-[10px] mt-0.5 font-medium"
+                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary)' }}>
+                      {peak ? '⚡ Peak' : '✓ Off-peak'}
+                    </div>
                   )}
                   {!available && <div className="text-[10px] mt-0.5">Taken</div>}
                 </button>
@@ -409,14 +464,14 @@ export default function BookingFlow({
       {/* STEP: Confirm */}
       {step === 'confirm' && (
         <div className="animate-fade-in">
-          {/* Summary card */}
           <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             {[
               ['Venue', venue?.name],
               ['Court', court?.name + ' — ' + court?.type],
               ['Date', date ? formatDate(date) : ''],
-              ['Time', time && duration ? time + ' — ' + addHours(time, duration) : ''],
-              ['Duration', duration ? duration + ' hour' + (duration > 1 ? 's' : '') : ''],
+              ['Time', time && duration ? time + ' — ' + addHoursDecimal(time, duration) : ''],
+              ['Duration', duration ? durationLabel(duration) : ''],
+              ['Pricing', isPeak ? '⚡ Peak rate' : '✓ Off-peak rate'],
               ...(discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between py-2 text-sm"
@@ -497,5 +552,3 @@ export default function BookingFlow({
     </div>
   )
 }
-
-
