@@ -10,7 +10,7 @@ import Script from 'next/script'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'PadelClub â€“ Book a court',
+  title: 'PadelClub - Book a court',
   description: 'Book padel courts, find a game, split payments.',
   manifest: '/manifest.json',
   appleWebApp: {
