@@ -1,12 +1,29 @@
-﻿let audioCtx: AudioContext | null = null
+﻿let ctx: AudioContext | null = null
+let unlocked = false
+
+function unlock() {
+  if (unlocked) return
+  try {
+    ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    const buf = ctx.createBuffer(1, 1, 22050)
+    const src = ctx.createBufferSource()
+    src.buffer = buf
+    src.connect(ctx.destination)
+    src.start(0)
+    unlocked = true
+  } catch (e) {}
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('touchstart', unlock, { once: true, passive: true })
+  window.addEventListener('click', unlock, { once: true, passive: true })
+}
 
 export function playSelectionSound() {
   try {
-    // Create context inside the gesture for iOS compatibility
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    if (!ctx) {
+      ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
     }
-    const ctx = audioCtx
     if (ctx.state === 'suspended') ctx.resume()
     const now = ctx.currentTime
 
@@ -47,7 +64,5 @@ export function playSelectionSound() {
     ng.gain.exponentialRampToValueAtTime(0.001, now + 0.025)
     src.connect(nf); nf.connect(ng); ng.connect(ctx.destination)
     src.start(); src.stop(now + 0.025)
-  } catch (e) {
-    // Silently fail
-  }
+  } catch (e) {}
 }
