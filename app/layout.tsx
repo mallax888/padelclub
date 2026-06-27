@@ -39,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="theme-color" content="#4DFFEE" />
       </head>
       <body className={inter.className}>
-        <ThemeProvider>
+        <ThemeProvider defaultTheme="dark">
           <AuthProvider session={session}>
             {children}
             <Toaster position="bottom-right" containerStyle={{ right: 130, bottom: 30 }}
@@ -56,9 +56,3 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     </html>
   )
 }
-
-
-
-
-
-
