@@ -39,14 +39,12 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const w2 = setsWon(sets, 2)
   const matchWinner = w1 === 2 ? 1 : w2 === 2 ? 2 : null
   const needsSet3 = sets.length === 2 && w1 === 1 && w2 === 1
-  const showSet3 = needsSet3 && !matchWinner
   const currentSetIndex = sets.length
-  const awaitingSet = !matchWinner && currentSetIndex < 3 && (currentSetIndex < 2 || showSet3)
+  const awaitingSet = !matchWinner && currentSetIndex < 3 && (currentSetIndex < 2 || needsSet3)
 
   const handlePreset = (t1: number, t2: number, forSet: number) => {
     if (forSet < sets.length) {
-      const newSets = sets.slice(0, forSet)
-      setSets([...newSets, { t1, t2 }])
+      setSets([...sets.slice(0, forSet), { t1, t2 }])
       return
     }
     setSets(prev => [...prev, { t1, t2 }])
@@ -131,7 +129,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
               <span>{completedScore.t2}</span>
               <span className="ml-1 text-xs">T{winner} ✓</span>
             </div>
-            {!matchWinner && setIndex === sets.length - 1 && (
+            {setIndex === sets.length - 1 && (
               <button
                 onClick={() => handleRemoveSet(setIndex)}
                 className="text-xs px-2 py-1 rounded-lg"
@@ -213,7 +211,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Score</div>
         <SetChips setIndex={0} />
         {sets.length >= 1 && <SetChips setIndex={1} />}
-        {sets.length >= 2 && (showSet3 || sets.length === 3) && <SetChips setIndex={2} />}
+        {sets.length >= 2 && needsSet3 && <SetChips setIndex={2} />}
         {matchWinner && (
           <div
             className="text-center text-sm font-semibold py-3 rounded-xl"
