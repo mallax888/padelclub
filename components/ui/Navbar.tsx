@@ -12,9 +12,9 @@ const NAV_ITEMS = [
   { href: '/find-a-game', label: 'Find a game' },
   { href: '/mybookings',  label: 'My bookings' },
   { href: '/membership',  label: 'Membership' },
-  { href: '/players',     label: 'Players' },
+  { href: '/players',      label: 'Players' },
+  { href: '/record-match', label: 'Record match' },
 ]
-
 export default function Navbar() {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
