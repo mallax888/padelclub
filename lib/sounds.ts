@@ -25,6 +25,22 @@ function getCtx(): AudioContext {
   return ctx
 }
 
+export function playNumberSound() {
+  try {
+    const c = getCtx()
+    const now = c.currentTime
+    const o = c.createOscillator()
+    const g = c.createGain()
+    o.type = 'sine'
+    o.frequency.setValueAtTime(800, now)
+    o.frequency.exponentialRampToValueAtTime(600, now + 0.06)
+    g.gain.setValueAtTime(0.15, now)
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.08)
+    o.connect(g); g.connect(c.destination)
+    o.start(); o.stop(now + 0.08)
+  } catch (e) {}
+}
+
 export function playBackSound() {
   try {
     const c = getCtx()
@@ -91,4 +107,5 @@ export function playSelectionSound() {
     src.start(); src.stop(now + 0.025)
   } catch (e) {}
 }
+
 
