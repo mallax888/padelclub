@@ -43,7 +43,11 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const w2 = setsWon(sets, 2)
   const matchWinner = w1 === 2 ? 1 : w2 === 2 ? 2 : null
   const needsSet3 = sets.length === 2 && w1 === 1 && w2 === 1
-  const setsToShow = matchWinner ? sets.length : Math.min(sets.length + 1, needsSet3 || sets.length === 3 ? 3 : 2)
+
+  // Always show recorded sets + next empty one (unless match is won)
+  const setsToShow = matchWinner
+    ? sets.length
+    : Math.min(sets.length + 1, needsSet3 || sets.length === 3 ? 3 : 2)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -83,6 +87,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         setPendingT1(null)
         return
       }
+      // Replace the set at activeSet index, discard any sets after it
       const newSets = sets.slice(0, activeSet)
       newSets.push({ t1, t2 })
       setSets(newSets)
@@ -146,12 +151,13 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const SetRow = ({ setIndex }: { setIndex: number }) => {
     const score = sets[setIndex]
     const isOpen = activeSet === setIndex
-    const canOpen = setIndex <= sets.length
+    // Always allow tapping — either to enter a new score or re-edit an existing one
+    const canOpen = true
 
     const bubbleBase: React.CSSProperties = {
       width: 46, height: 46, borderRadius: 10, display: 'flex', alignItems: 'center',
       justifyContent: 'center', fontSize: 22, fontWeight: 700,
-      cursor: canOpen ? 'pointer' : 'default', transition: 'all 0.12s',
+      cursor: 'pointer', transition: 'all 0.12s',
     }
     const neutralBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid var(--border)', color: 'var(--text-subtle)' }
     const activeBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid rgba(255,255,255,0.4)', color: 'var(--text-primary)', boxShadow: '0 0 0 2px rgba(255,255,255,0.15)' }
@@ -163,13 +169,19 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         <div className="flex items-center gap-3">
           <span className="text-xs w-10 shrink-0" style={{ color: 'var(--text-subtle)' }}>Set {setIndex + 1}</span>
 
-          <div style={score !== undefined ? filledT1 : isOpen && activeTeam === 1 ? activeBubble : isOpen && activeTeam === 2 ? { ...filledT1, opacity: 0.7 } : neutralBubble} onClick={() => canOpen && openSet(setIndex)}>
+          <div
+            style={score !== undefined ? filledT1 : isOpen && activeTeam === 1 ? activeBubble : isOpen && activeTeam === 2 ? { ...filledT1, opacity: 0.7 } : neutralBubble}
+            onClick={() => openSet(setIndex)}
+          >
             {score !== undefined ? score.t1 : isOpen && activeTeam === 2 ? pendingT1 : '?'}
           </div>
 
           <span className="text-lg font-light" style={{ color: 'var(--text-subtle)' }}>–</span>
 
-          <div style={score !== undefined ? filledT2 : isOpen && activeTeam === 2 ? activeBubble : neutralBubble} onClick={() => canOpen && openSet(setIndex)}>
+          <div
+            style={score !== undefined ? filledT2 : isOpen && activeTeam === 2 ? activeBubble : neutralBubble}
+            onClick={() => openSet(setIndex)}
+          >
             {score !== undefined ? score.t2 : '?'}
           </div>
 
@@ -237,7 +249,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
 
       <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Score</div>
-        <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>Tap a set to enter the score</p>
+        <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>Tap a set to enter or edit the score</p>
         {Array.from({ length: setsToShow }).map((_, i) => <SetRow key={i} setIndex={i} />)}
         {matchWinner && (
           <div className="text-center text-sm font-semibold py-3 rounded-xl mt-2" style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}` }}>
