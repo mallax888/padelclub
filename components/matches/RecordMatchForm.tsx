@@ -1,27 +1,23 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 type Player = { id: string; full_name: string | null; nickname: string | null; ranking_points: number | null }
-
 type SetScore = { t1: number; t2: number }
 
 const POINTS = { win: 10, loss: 2, win_bonus: 5 }
 
-const SET_PRESETS: [number, number][] = [
+// Each entry: [team1_score, team2_score] where t1 > t2 (team 1 wins)
+// Popover shows both orientations in one grid
+const SCORES: [number, number][] = [
   [6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [7, 5], [7, 6],
 ]
 
-function setWinner(s: SetScore): 1 | 2 {
-  return s.t1 > s.t2 ? 1 : 2
-}
-
-function setsWon(sets: SetScore[], team: 1 | 2) {
-  return sets.filter(s => setWinner(s) === team).length
-}
+function setWinner(s: SetScore): 1 | 2 { return s.t1 > s.t2 ? 1 : 2 }
+function setsWon(sets: SetScore[], team: 1 | 2) { return sets.filter(s => setWinner(s) === team).length }
 
 export default function RecordMatchForm({ players, currentUserId }: { players: Player[]; currentUserId: string }) {
   const supabase = createClient()
@@ -32,26 +28,32 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const [team2p1, setTeam2p1] = useState('')
   const [team2p2, setTeam2p2] = useState('')
   const [sets, setSets] = useState<SetScore[]>([])
+  const [openSet, setOpenSet] = useState<number | null>(null)
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const popoverRef = useRef<HTMLDivElement>(null)
 
   const w1 = setsWon(sets, 1)
   const w2 = setsWon(sets, 2)
   const matchWinner = w1 === 2 ? 1 : w2 === 2 ? 2 : null
   const needsSet3 = sets.length === 2 && w1 === 1 && w2 === 1
-  const currentSetIndex = sets.length
-  const awaitingSet = !matchWinner && currentSetIndex < 3 && (currentSetIndex < 2 || needsSet3)
 
-  const handlePreset = (t1: number, t2: number, forSet: number) => {
-    if (forSet < sets.length) {
-      setSets([...sets.slice(0, forSet), { t1, t2 }])
-      return
+  // Close popover on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setOpenSet(null)
+      }
     }
-    setSets(prev => [...prev, { t1, t2 }])
-  }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
-  const handleRemoveSet = (index: number) => {
-    setSets(prev => prev.slice(0, index))
+  const handlePick = (t1: number, t2: number, setIndex: number) => {
+    const newSets = sets.slice(0, setIndex)
+    newSets.push({ t1, t2 })
+    setSets(newSets)
+    setOpenSet(null)
   }
 
   const handleSubmit = async () => {
@@ -59,7 +61,6 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     if (!matchWinner) { toast.error('Match is not complete yet'); return }
     setSubmitting(true)
     const sb = supabase as any
-
     const scoreText = sets.map(s => `${s.t1}-${s.t2}`).join(' ')
 
     const { error } = await sb.from('matches').insert({
@@ -106,84 +107,144 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     </select>
   )
 
-  const SetChips = ({ setIndex }: { setIndex: number }) => {
-    const completedScore = sets[setIndex]
-    const isActive = setIndex === currentSetIndex && awaitingSet
-
-    if (completedScore !== undefined) {
-      const winner = setWinner(completedScore)
-      return (
-        <div className="flex items-center gap-3">
-          <span className="text-xs w-10 shrink-0" style={{ color: 'var(--text-subtle)' }}>Set {setIndex + 1}</span>
-          <div className="flex items-center gap-2">
-            <div
-              className="flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-bold"
-              style={{
-                background: winner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)',
-                border: `1px solid ${winner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}`,
-                color: winner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)',
-              }}
-            >
-              <span>{completedScore.t1}</span>
-              <span style={{ opacity: 0.5 }}>–</span>
-              <span>{completedScore.t2}</span>
-              <span className="ml-1 text-xs">T{winner} ✓</span>
-            </div>
-            {setIndex === sets.length - 1 && (
-              <button
-                onClick={() => handleRemoveSet(setIndex)}
-                className="text-xs px-2 py-1 rounded-lg"
-                style={{ color: 'var(--text-muted)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-      )
-    }
-
-    if (!isActive) return null
+  const SetRow = ({ setIndex }: { setIndex: number }) => {
+    const score = sets[setIndex]
+    const isOpen = openSet === setIndex
+    const canOpen = setIndex === sets.length || (score !== undefined)
 
     return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
+      <div className="relative" ref={isOpen ? popoverRef : undefined}>
+        <div className="flex items-center gap-3">
           <span className="text-xs w-10 shrink-0" style={{ color: 'var(--text-subtle)' }}>Set {setIndex + 1}</span>
-          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Select score — Team 1 left · Team 2 right</span>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          {SET_PRESETS.map(([a, b]) => (
-            <button
-              key={`t1-${a}-${b}`}
-              onClick={() => handlePreset(a, b, setIndex)}
-              className="py-2 px-1 rounded-xl text-sm font-bold transition-all"
-              style={{ background: 'var(--bg-raised)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-primary-muted)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+
+          {/* Score bubbles - click to open popover */}
+          <button
+            onClick={() => canOpen ? setOpenSet(isOpen ? null : setIndex) : undefined}
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-bold transition-all"
+            style={{
+              background: score ? 'var(--brand-primary-muted)' : isOpen ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
+              border: `1.5px solid ${score || isOpen ? 'var(--brand-primary)' : 'var(--border)'}`,
+              color: score || isOpen ? 'var(--brand-primary)' : 'var(--text-subtle)',
+              boxShadow: isOpen ? '0 0 0 2px var(--brand-primary)' : 'none',
+            }}
+          >
+            {score !== undefined ? score.t1 : '?'}
+          </button>
+
+          <span className="text-sm font-light" style={{ color: 'var(--text-subtle)' }}>–</span>
+
+          <button
+            onClick={() => canOpen ? setOpenSet(isOpen ? null : setIndex) : undefined}
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-xl font-bold transition-all"
+            style={{
+              background: score ? 'var(--brand-accent-muted)' : isOpen ? 'var(--brand-accent-muted)' : 'var(--bg-raised)',
+              border: `1.5px solid ${score || isOpen ? 'var(--brand-accent)' : 'var(--border)'}`,
+              color: score || isOpen ? 'var(--brand-accent)' : 'var(--text-subtle)',
+              boxShadow: isOpen ? '0 0 0 2px var(--brand-accent)' : 'none',
+            }}
+          >
+            {score !== undefined ? score.t2 : '?'}
+          </button>
+
+          {score && (
+            <span
+              className="text-xs font-semibold px-2 py-1 rounded-lg ml-1"
+              style={{
+                background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)',
+                color: setWinner(score) === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)',
+              }}
             >
-              {a}–{b}
-            </button>
-          ))}
-          {SET_PRESETS.map(([a, b]) => (
+              T{setWinner(score)} ✓
+            </span>
+          )}
+
+          {score && setIndex === sets.length - 1 && (
             <button
-              key={`t2-${a}-${b}`}
-              onClick={() => handlePreset(b, a, setIndex)}
-              className="py-2 px-1 rounded-xl text-sm font-bold transition-all"
-              style={{ background: 'var(--bg-raised)', border: '1px solid var(--brand-accent)', color: 'var(--brand-accent)' }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-accent-muted)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+              onClick={() => { setSets(prev => prev.slice(0, setIndex)); setOpenSet(null) }}
+              className="text-xs px-2 py-1 rounded-lg ml-auto"
+              style={{ color: 'var(--text-subtle)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }}
             >
-              {b}–{a}
+              ✕
             </button>
-          ))}
+          )}
         </div>
-        <div className="flex gap-4 text-xs pt-1" style={{ color: 'var(--text-subtle)' }}>
-          <span><span style={{ color: 'var(--brand-primary)' }}>■</span> Team 1 wins set</span>
-          <span><span style={{ color: 'var(--brand-accent)' }}>■</span> Team 2 wins set</span>
-        </div>
+
+        {/* Popover */}
+        {isOpen && (
+          <div
+            className="absolute left-10 z-50 mt-2 rounded-2xl p-3"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+              minWidth: '260px',
+            }}
+          >
+            {/* Caret */}
+            <div
+              className="absolute -top-2 left-8"
+              style={{
+                width: 0, height: 0,
+                borderLeft: '7px solid transparent',
+                borderRight: '7px solid transparent',
+                borderBottom: '8px solid var(--border)',
+              }}
+            />
+            <div
+              className="absolute -top-1.5 left-8"
+              style={{
+                width: 0, height: 0,
+                borderLeft: '7px solid transparent',
+                borderRight: '7px solid transparent',
+                borderBottom: '8px solid var(--bg-surface)',
+              }}
+            />
+
+            {/* Column headers */}
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="text-center text-xs font-semibold py-1 rounded-lg" style={{ color: 'var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
+                Team 1 wins
+              </div>
+              <div className="text-center text-xs font-semibold py-1 rounded-lg" style={{ color: 'var(--brand-accent)', background: 'var(--brand-accent-muted)' }}>
+                Team 2 wins
+              </div>
+            </div>
+
+            {/* Score rows — one row per preset, T1 wins left, T2 wins right */}
+            <div className="flex flex-col gap-1.5">
+              {SCORES.map(([a, b]) => (
+                <div key={`${a}-${b}`} className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => handlePick(a, b, setIndex)}
+                    className="py-2 rounded-xl text-sm font-bold transition-all"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-primary-muted)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+                  >
+                    {a} – {b}
+                  </button>
+                  <button
+                    onClick={() => handlePick(b, a, setIndex)}
+                    className="py-2 rounded-xl text-sm font-bold transition-all"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--brand-accent)', color: 'var(--brand-accent)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-accent-muted)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+                  >
+                    {b} – {a}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
+
+  const setsToShow = Math.min(
+    sets.length + (matchWinner ? 0 : 1),
+    needsSet3 || sets.length === 3 ? 3 : 2
+  )
 
   return (
     <div className="max-w-lg mx-auto space-y-4">
@@ -207,14 +268,17 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
       </div>
 
       {/* Score */}
-      <div className="rounded-xl p-4 space-y-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="rounded-xl p-4 space-y-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Score</div>
-        <SetChips setIndex={0} />
-        {sets.length >= 1 && <SetChips setIndex={1} />}
-        {sets.length >= 2 && needsSet3 && <SetChips setIndex={2} />}
+        <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>Tap a set row to enter the score</p>
+
+        {Array.from({ length: setsToShow }).map((_, i) => (
+          <SetRow key={i} setIndex={i} />
+        ))}
+
         {matchWinner && (
           <div
-            className="text-center text-sm font-semibold py-3 rounded-xl"
+            className="text-center text-sm font-semibold py-3 rounded-xl mt-2"
             style={{
               background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)',
               color: matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)',
