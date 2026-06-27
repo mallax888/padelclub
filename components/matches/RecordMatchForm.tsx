@@ -61,10 +61,12 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
 
   const openSet = (setIndex: number) => {
     if (activeSet === setIndex) {
+      // toggle closed
       setActiveSet(null)
       setActiveTeam(1)
       setPendingT1(null)
     } else {
+      // always start fresh from Team 1
       setActiveSet(setIndex)
       setActiveTeam(1)
       setPendingT1(null)
@@ -81,14 +83,14 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
       const t2 = n
       if (!isValidSet(t1, t2)) {
         toast.error(`${t1}–${t2} is not a valid padel score`)
+        // reset back to Team 1 so they can start over
         setActiveTeam(1)
         setPendingT1(null)
         return
       }
-      // Replace set at activeSet, keep any sets after it
       const newSets = [...sets]
       newSets[activeSet] = { t1, t2 }
-      // Trim sets after this one — downstream sets may no longer make sense
+      // trim any sets entered after this one as they may no longer be valid
       setSets(newSets.slice(0, activeSet + 1))
       setActiveSet(null)
       setActiveTeam(1)
@@ -167,22 +169,22 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
           <span className="text-xs w-10 shrink-0" style={{ color: 'var(--text-subtle)' }}>Set {setIndex + 1}</span>
 
           <div
-            style={score !== undefined ? filledT1 : isOpen && activeTeam === 1 ? activeBubble : isOpen && activeTeam === 2 ? { ...filledT1, opacity: 0.7 } : neutralBubble}
+            style={score !== undefined ? (isOpen ? activeBubble : filledT1) : isOpen && activeTeam === 1 ? activeBubble : isOpen && activeTeam === 2 ? { ...filledT1, opacity: 0.7 } : neutralBubble}
             onClick={() => openSet(setIndex)}
           >
-            {score !== undefined ? score.t1 : isOpen && activeTeam === 2 ? pendingT1 : '?'}
+            {isOpen && activeTeam === 1 ? '?' : isOpen && activeTeam === 2 ? pendingT1 : score !== undefined ? score.t1 : '?'}
           </div>
 
           <span className="text-lg font-light" style={{ color: 'var(--text-subtle)' }}>–</span>
 
           <div
-            style={score !== undefined ? filledT2 : isOpen && activeTeam === 2 ? activeBubble : neutralBubble}
+            style={score !== undefined ? (isOpen ? activeBubble : filledT2) : isOpen && activeTeam === 2 ? activeBubble : neutralBubble}
             onClick={() => openSet(setIndex)}
           >
-            {score !== undefined ? score.t2 : '?'}
+            {isOpen ? '?' : score !== undefined ? score.t2 : '?'}
           </div>
 
-          {score !== undefined && (
+          {score !== undefined && !isOpen && (
             <span className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)' }}>
               T{setWinner(score)} ✓
             </span>
