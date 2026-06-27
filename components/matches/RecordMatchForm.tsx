@@ -148,6 +148,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const SetRow = ({ setIndex }: { setIndex: number }) => {
     const score = sets[setIndex]
     const isOpen = activeSet === setIndex
+    const winner = score !== undefined ? setWinner(score) : null
 
     const bubbleBase: React.CSSProperties = {
       flex: 1,
@@ -163,36 +164,42 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
       lineHeight: 1,
       letterSpacing: '-4px',
     }
+
     const neutralBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid var(--border)', color: 'var(--text-subtle)' }
     const activeBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid rgba(255,255,255,0.4)', color: 'var(--text-primary)', boxShadow: '0 0 0 2px rgba(255,255,255,0.15)' }
-    const filledT1: React.CSSProperties = { ...bubbleBase, background: 'var(--brand-primary-muted)', border: '1.5px solid var(--brand-primary)', color: 'var(--brand-primary)' }
-    const filledT2: React.CSSProperties = { ...bubbleBase, background: 'var(--brand-accent-muted)', border: '1.5px solid var(--brand-accent)', color: 'var(--brand-accent)' }
+    const winnerT1: React.CSSProperties = { ...bubbleBase, background: 'var(--brand-primary-muted)', border: '1.5px solid var(--brand-primary)', color: 'var(--brand-primary)' }
+    const winnerT2: React.CSSProperties = { ...bubbleBase, background: 'var(--brand-accent-muted)', border: '1.5px solid var(--brand-accent)', color: 'var(--brand-accent)' }
+    // Loser — same size, dark grey number, no colour
+    const loserBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid var(--border)', color: 'rgba(255,255,255,0.2)' }
+
+    const t1Style = score !== undefined && !isOpen
+      ? (winner === 1 ? winnerT1 : loserBubble)
+      : isOpen && activeTeam === 1 ? activeBubble
+      : isOpen && activeTeam === 2 ? { ...winnerT1, opacity: 0.7 }
+      : neutralBubble
+
+    const t2Style = score !== undefined && !isOpen
+      ? (winner === 2 ? winnerT2 : loserBubble)
+      : isOpen && activeTeam === 2 ? activeBubble
+      : neutralBubble
 
     return (
       <div className="relative">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>Set {setIndex + 1}</span>
           {score !== undefined && !isOpen && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg" style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)' }}>
-              T{setWinner(score)} ✓
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-lg" style={{ background: winner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: winner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)' }}>
+              T{winner} ✓
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-3">
-          <div
-            style={score !== undefined ? (isOpen ? activeBubble : filledT1) : isOpen && activeTeam === 1 ? activeBubble : isOpen && activeTeam === 2 ? { ...filledT1, opacity: 0.7 } : neutralBubble}
-            onClick={() => openSet(setIndex)}
-          >
+          <div style={t1Style} onClick={() => openSet(setIndex)}>
             {isOpen && activeTeam === 1 ? '?' : isOpen && activeTeam === 2 ? pendingT1 : score !== undefined ? score.t1 : '?'}
           </div>
-
           <span style={{ color: 'var(--text-subtle)', fontSize: 40, fontWeight: 200, flexShrink: 0 }}>–</span>
-
-          <div
-            style={score !== undefined ? (isOpen ? activeBubble : filledT2) : isOpen && activeTeam === 2 ? activeBubble : neutralBubble}
-            onClick={() => openSet(setIndex)}
-          >
+          <div style={t2Style} onClick={() => openSet(setIndex)}>
             {isOpen ? '?' : score !== undefined ? score.t2 : '?'}
           </div>
         </div>
