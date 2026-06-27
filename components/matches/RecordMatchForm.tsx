@@ -15,7 +15,7 @@ function isValidSet(t1: number, t2: number): boolean {
   const hi = Math.max(t1, t2)
   const lo = Math.min(t1, t2)
   if (hi === 7 && lo === 6) return true
-  if (hi === 7 && lo !== 6) return false
+  if (hi === 7) return false
   if (hi === 6 && lo <= 5) return true
   return false
 }
@@ -43,8 +43,6 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const w2 = setsWon(sets, 2)
   const matchWinner = w1 === 2 ? 1 : w2 === 2 ? 2 : null
   const needsSet3 = sets.length === 2 && w1 === 1 && w2 === 1
-
-  // Always show recorded sets + next empty one (unless match is won)
   const setsToShow = matchWinner
     ? sets.length
     : Math.min(sets.length + 1, needsSet3 || sets.length === 3 ? 3 : 2)
@@ -87,10 +85,11 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         setPendingT1(null)
         return
       }
-      // Replace the set at activeSet index, discard any sets after it
-      const newSets = sets.slice(0, activeSet)
-      newSets.push({ t1, t2 })
-      setSets(newSets)
+      // Replace set at activeSet, keep any sets after it
+      const newSets = [...sets]
+      newSets[activeSet] = { t1, t2 }
+      // Trim sets after this one — downstream sets may no longer make sense
+      setSets(newSets.slice(0, activeSet + 1))
       setActiveSet(null)
       setActiveTeam(1)
       setPendingT1(null)
@@ -151,8 +150,6 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const SetRow = ({ setIndex }: { setIndex: number }) => {
     const score = sets[setIndex]
     const isOpen = activeSet === setIndex
-    // Always allow tapping — either to enter a new score or re-edit an existing one
-    const canOpen = true
 
     const bubbleBase: React.CSSProperties = {
       width: 46, height: 46, borderRadius: 10, display: 'flex', alignItems: 'center',
