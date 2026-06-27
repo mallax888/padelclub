@@ -10,6 +10,16 @@ type SetScore = { t1: number; t2: number }
 
 const POINTS = { win: 10, loss: 2, win_bonus: 5 }
 
+function isValidSet(t1: number, t2: number): boolean {
+  if (t1 === t2) return false
+  const hi = Math.max(t1, t2)
+  const lo = Math.min(t1, t2)
+  if (hi === 7 && lo === 6) return true
+  if (hi === 7 && lo !== 6) return false
+  if (hi === 6 && lo <= 5) return true
+  return false
+}
+
 function setWinner(s: SetScore): 1 | 2 { return s.t1 > s.t2 ? 1 : 2 }
 function setsWon(sets: SetScore[], team: 1 | 2) { return sets.filter(s => setWinner(s) === team).length }
 
@@ -66,8 +76,15 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
       setActiveTeam(2)
     } else {
       const t1 = pendingT1 ?? 0
+      const t2 = n
+      if (!isValidSet(t1, t2)) {
+        toast.error(`${t1}–${t2} is not a valid padel score`)
+        setActiveTeam(1)
+        setPendingT1(null)
+        return
+      }
       const newSets = sets.slice(0, activeSet)
-      newSets.push({ t1, t2: n })
+      newSets.push({ t1, t2 })
       setSets(newSets)
       setActiveSet(null)
       setActiveTeam(1)
@@ -184,6 +201,15 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
                 </button>
               ))}
             </div>
+            {activeTeam === 2 && (
+              <button
+                onClick={() => { setActiveTeam(1); setPendingT1(null) }}
+                className="w-full mt-3 text-xs py-1.5 rounded-lg"
+                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-subtle)' }}
+              >
+                ← back
+              </button>
+            )}
           </div>
         )}
       </div>
