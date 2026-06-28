@@ -5,7 +5,7 @@ import { useAuth } from './AuthProvider'
 import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
-import { useState, Fragment } from 'react'
+import React, { useState } from 'react'
 
 const NAV_ITEMS = [
   { href: '/book',        label: 'Book a court' },
@@ -37,7 +37,7 @@ export default function Navbar() {
   const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
 
   return (
-    <Fragment>
+    <React.Fragment>
       <nav className="sticky top-0 z-50"
         style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border)' }}>
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
@@ -116,7 +116,7 @@ export default function Navbar() {
         </div>
       </nav>
       {menuOpen && (
-        <Fragment>
+        <React.Fragment>
           <div className="fixed inset-0 z-40 md:hidden" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setMenuOpen(false)} />
           <div className="fixed top-14 left-0 right-0 z-50 md:hidden"
             style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
@@ -153,8 +153,9 @@ export default function Navbar() {
               </div>
             </div>
           </div>
-        </Fragment>
+        </React.Fragment>
       )}
-    </Fragment>
+    </React.Fragment>
   )
 }
+
