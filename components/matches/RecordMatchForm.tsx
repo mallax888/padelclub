@@ -48,7 +48,7 @@ export default function RecordMatchForm({
   const [pendingT1, setPendingT1] = useState<number | null>(null)
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const popoverRef = useRef<HTMLDivElement>(null)
+  
 
   const w1 = setsWon(sets, 1)
   const w2 = setsWon(sets, 2)
@@ -59,12 +59,7 @@ export default function RecordMatchForm({
     : Math.min(sets.length + 1, needsSet3 || sets.length === 3 ? 3 : 2)
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setActiveSet(null)
-        setActiveTeam(1)
-        setPendingT1(null)
-      }
+    const handler = (e: MouseEvent) => { if (!(e.target as Element).closest(".popover-panel")) { setActiveSet(null); setActiveTeam(1); setPendingT1(null) } }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -195,7 +190,7 @@ export default function RecordMatchForm({
           </div>
         </div>
         {isOpen && (
-          <div ref={popoverRef} className="absolute z-50 mt-2" style={{ left: 0, right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
+          <div  className="absolute z-50 mt-2 popover-panel" style={{ left: 0, right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
             <div className="text-center text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
               Team {activeTeam} · Set {setIndex + 1}
             </div>
@@ -344,3 +339,4 @@ export default function RecordMatchForm({
     </div>
   )
 }
+
