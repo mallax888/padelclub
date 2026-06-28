@@ -25,7 +25,7 @@ export default async function RecordMatchPage() {
     pointsMap[p.id] = { name: p.nickname ?? p.full_name ?? 'Unknown', pts: 0 }
   }
 
-  for (const m of monthlyMatches ?? []) {
+  for (const m of (monthlyMatches ?? []) as any[]) {
     const winners = m.winner_team === 1
       ? [m.team1_player1_id, m.team1_player2_id]
       : [m.team2_player1_id, m.team2_player2_id]
@@ -63,4 +63,5 @@ export default async function RecordMatchPage() {
     </div>
   )
 }
+
 
