@@ -21,7 +21,7 @@ export default async function RecordMatchPage() {
 
   const pointsMap: Record<string, { name: string; pts: number }> = {}
 
-  for (const p of players ?? []) {
+  for (const p of (players ?? []) as any[]) {
     pointsMap[p.id] = { name: p.nickname ?? p.full_name ?? 'Unknown', pts: 0 }
   }
 
@@ -63,3 +63,4 @@ export default async function RecordMatchPage() {
     </div>
   )
 }
+
