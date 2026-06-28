@@ -59,9 +59,7 @@ export default function RecordMatchForm({
     : Math.min(sets.length + 1, needsSet3 || sets.length === 3 ? 3 : 2)
 
   useEffect(() => {
-    const handler = (e: MouseEvent) => { if (!(e.target as Element).closest(".popover-panel")) { setActiveSet(null); setActiveTeam(1); setPendingT1(null) } }
-    }
-    document.addEventListener('mousedown', handler)
+    const handler = (e: MouseEvent) => { if (!(e.target as Element).closest(".popover-panel")) { setActiveSet(null); setActiveTeam(1); setPendingT1(null) } }; document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
@@ -339,4 +337,5 @@ export default function RecordMatchForm({
     </div>
   )
 }
+
 
