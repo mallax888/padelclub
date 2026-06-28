@@ -1,4 +1,5 @@
-'use client'
+﻿const fs = require('fs');
+const content = `'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from './AuthProvider'
@@ -158,3 +159,6 @@ export default function Navbar() {
     </>
   )
 }
+`;
+fs.writeFileSync('components/ui/Navbar.tsx', content, 'utf8');
+console.log('Done');
