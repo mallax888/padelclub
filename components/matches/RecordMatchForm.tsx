@@ -155,8 +155,8 @@ export default function RecordMatchForm({
     const winner = score !== undefined ? setWinner(score) : null
 
     const bubbleBase: React.CSSProperties = {
-      flex: 1, height: 80, borderRadius: 14, display: 'flex', alignItems: 'center',
-      justifyContent: 'center', fontSize: 56, fontWeight: 900, cursor: 'pointer',
+      width: 52, height: 70, flex: "none", borderRadius: 14, display: 'flex', alignItems: 'center',
+      justifyContent: 'center', fontSize: 40, fontWeight: 900, cursor: 'pointer',
       transition: 'all 0.12s', lineHeight: 1, letterSpacing: '-2px',
     }
     const neutralBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid var(--border)', color: 'var(--text-subtle)' }
@@ -337,6 +337,7 @@ export default function RecordMatchForm({
     </div>
   )
 }
+
 
 
 
