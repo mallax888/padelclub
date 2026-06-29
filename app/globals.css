@@ -10,13 +10,13 @@
   --text-muted:         #555555;
   --text-subtle:        #888888;
   --border:             #D1D1D6;
-  --brand-primary:      #00A896;
+  --brand-primary:      #00CC6A;
   --brand-primary-on:   #FFFFFF;
   --brand-accent:       #C4005A;
   --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#00A8961A;
+  --brand-primary-muted:#00CC6A1A;
   --brand-accent-muted: #C4005A1A;
-  --glow-primary:       0 0 16px 0 #00A89633;
+  --glow-primary:       0 0 16px 0 #00CC6A33;
   --glow-accent:        0 0 16px 0 #C4005A33;
   --brand-blue:         #0066FF;
   --brand-blue-muted:   #0066FF1A;
@@ -36,13 +36,13 @@
   --text-muted:         #A1A1AA;
   --text-subtle:        #71717A;
   --border:             #3F3F46;
-  --brand-primary:      #4DFFEE;
-  --brand-primary-on:   #001F1D;
+  --brand-primary:      #00FF87;
+  --brand-primary-on:   #003320;
   --brand-accent:       #FF2D78;
   --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#4DFFEE1A;
+  --brand-primary-muted:#00FF871A;
   --brand-accent-muted: #FF2D781A;
-  --glow-primary:       0 0 16px 0 #4DFFEE33;
+  --glow-primary:       0 0 16px 0 #00FF8733;
   --glow-accent:        0 0 16px 0 #FF2D7833;
   --brand-blue:         #0066FF;
   --brand-blue-muted:   #0066FF1A;
@@ -260,5 +260,6 @@ h1, h2, h3, h4, h5, h6 {
   .whatsapp-btn { display: flex !important; }
   .tawkto-desktop { display: none !important; }
 }
+
 
 
