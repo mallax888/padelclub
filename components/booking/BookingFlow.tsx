@@ -87,8 +87,6 @@ export default function BookingFlow({
   const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
   const [splitEnabled, setSplitEnabled] = useState(false)
   const [splitPlayers, setSplitPlayers] = useState<string[]>([])
-  const [splitEnabled, setSplitEnabled] = useState(false)
-  const [splitPlayers, setSplitPlayers] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -628,6 +626,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
 
