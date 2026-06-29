@@ -1,0 +1,29 @@
+﻿const fs = require('fs');
+let c = fs.readFileSync('components/booking/BookingFlow.tsx', 'utf8');
+
+// 1. Add allPlayers prop
+c = c.replace(
+  "export default function BookingFlow({\n    courts,\n    profile,\n    userId,\n  }: {\n    courts: Court[]\n    profile: Profile\n    userId: string\n  })",
+  "export default function BookingFlow({\n    courts,\n    profile,\n    userId,\n    allPlayers = [],\n  }: {\n    courts: Court[]\n    profile: Profile\n    userId: string\n    allPlayers?: { id: string; full_name: string | null; nickname: string | null }[]\n  })"
+);
+
+// 2. Add split state vars after skillFilter state
+c = c.replace(
+  "const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')",
+  "const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')\n  const [splitEnabled, setSplitEnabled] = useState(false)\n  const [splitPlayers, setSplitPlayers] = useState<string[]>([])"
+);
+
+// 3. Add split logic after booking insert error check
+c = c.replace(
+  "      if (error) {\n        toast.error(error.code === '23505' ? 'That slot was just taken!' : error.message)\n        setSubmitting(false)\n        return\n      }",
+  "      if (error) {\n        toast.error(error.code === '23505' ? 'That slot was just taken!' : error.message)\n        setSubmitting(false)\n        return\n      }\n      if (splitEnabled && splitPlayers.length > 0 && bookingData) {\n        const splitAmount = parseFloat((courtPrice / (splitPlayers.length + 1)).toFixed(2))\n        for (const pid of splitPlayers) {\n          await sb.from('booking_splits').insert({ booking_id: bookingData.id, invited_by: userId, user_id: pid, amount_nzd: splitAmount, status: 'pending' })\n          await sb.from('notifications').insert({ user_id: pid, type: 'split_request', title: 'Court cost split', message: (profile?.nickname ?? profile?.full_name ?? 'Someone') + ' is requesting ' + splitAmount + ' for a court booking.', data: JSON.stringify({ booking_id: bookingData.id, amount: splitAmount }) })\n        }\n      }"
+);
+
+// 4. Add split UI before pay button
+c = c.replace(
+  "          <button className=\"w-full py-4 rounded-xl text-base font-semibold transition-all\"\n            style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}\n            disabled={submitting} onClick={handleConfirm}>\n            {submitting ? 'Confirming\u2026' : `Pay ${formatNzd(courtPrice)} \u2192`}\n          </button>",
+  "          <div className=\"rounded-xl p-4 mb-4\" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>\n            <div className=\"flex items-center justify-between\">\n              <div>\n                <div className=\"text-sm font-medium\" style={{ color: 'var(--text-primary)' }}>Split the cost?</div>\n                <div className=\"text-xs mt-0.5\" style={{ color: 'var(--text-subtle)' }}>Invite players to share the court fee</div>\n              </div>\n              <button onClick={() => setSplitEnabled(!splitEnabled)} style={{ width: 44, height: 24, borderRadius: 12, flexShrink: 0, background: splitEnabled ? 'var(--brand-primary)' : 'var(--bg-raised)', border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s' }}>\n                <div style={{ position: 'absolute', top: 2, left: splitEnabled ? 22 : 2, width: 18, height: 18, borderRadius: '50%', background: splitEnabled ? 'var(--brand-primary-on)' : 'var(--text-subtle)', transition: 'left 0.15s' }} />\n              </button>\n            </div>\n            {splitEnabled && (\n              <div className=\"mt-3 space-y-2\">\n                <div className=\"text-xs mb-1\" style={{ color: 'var(--text-subtle)' }}>Select up to 3 players to split with</div>\n                {allPlayers.filter(p => p.id !== userId).map(p => {\n                  const selected = splitPlayers.includes(p.id)\n                  return (\n                    <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}\n                      className=\"w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all\"\n                      style={{ background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)' }}>\n                      <span className=\"text-sm\" style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>\n                      {selected && <span className=\"text-xs font-semibold\" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice / (splitPlayers.length + 1))} each</span>}\n                    </button>\n                  )\n                })}\n                {splitPlayers.length > 0 && (\n                  <div className=\"text-xs pt-2 text-center\" style={{ color: 'var(--text-muted)' }}>\n                    You pay {formatNzd(courtPrice / (splitPlayers.length + 1))} - others notified to pay their share\n                  </div>\n                )}\n              </div>\n            )}\n          </div>\n          <button className=\"w-full py-4 rounded-xl text-base font-semibold transition-all\"\n            style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}\n            disabled={submitting} onClick={handleConfirm}>\n            {submitting ? 'Confirming\u2026' : `Pay ${formatNzd(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice)} \u2192`}\n          </button>"
+);
+
+fs.writeFileSync('components/booking/BookingFlow.tsx', c, 'utf8');
+console.log('Done');

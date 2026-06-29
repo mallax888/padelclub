@@ -85,10 +85,8 @@ export default function BookingFlow({
   const [matchType, setMatchType] = useState<'casual' | 'competitive'>('casual')
   const [matchNotes, setMatchNotes] = useState('')
   const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
-  const [splitPlayers, setSplitPlayers] = useState<string[]>([])
   const [splitEnabled, setSplitEnabled] = useState(false)
   const [splitPlayers, setSplitPlayers] = useState<string[]>([])
-  const [splitEnabled, setSplitEnabled] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
@@ -585,43 +583,42 @@ export default function BookingFlow({
             )}
           </div>
 
-          {/* Split payments */}
-          <div className='rounded-xl p-4 mb-4' style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className='flex items-center justify-between'>
+          <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-between">
               <div>
-                <div className='text-sm font-medium' style={{ color: 'var(--text-primary)' }}>Split the cost?</div>
-                <div className='text-xs mt-0.5' style={{ color: 'var(--text-subtle)' }}>Invite players to share the court fee</div>
+                <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Split the cost?</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>Invite players to share the court fee</div>
               </div>
               <button onClick={() => setSplitEnabled(!splitEnabled)} style={{ width: 44, height: 24, borderRadius: 12, flexShrink: 0, background: splitEnabled ? 'var(--brand-primary)' : 'var(--bg-raised)', border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s' }}>
                 <div style={{ position: 'absolute', top: 2, left: splitEnabled ? 22 : 2, width: 18, height: 18, borderRadius: '50%', background: splitEnabled ? 'var(--brand-primary-on)' : 'var(--text-subtle)', transition: 'left 0.15s' }} />
               </button>
             </div>
             {splitEnabled && (
-              <div className='mt-3 space-y-2'>
-                <div className='text-xs mb-1' style={{ color: 'var(--text-subtle)' }}>Select up to 3 players to split with</div>
+              <div className="mt-3 space-y-2">
+                <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Select up to 3 players to split with</div>
                 {allPlayers.filter(p => p.id !== userId).map(p => {
                   const selected = splitPlayers.includes(p.id)
                   return (
                     <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}
-                      className='w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all'
+                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all"
                       style={{ background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)' }}>
-                      <span className='text-sm' style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
-                      {selected && <span className='text-xs font-semibold' style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice / (splitPlayers.length + 1))} each</span>}
+                      <span className="text-sm" style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
+                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice / (splitPlayers.length + 1))} each</span>}
                     </button>
                   )
                 })}
                 {splitPlayers.length > 0 && (
-                  <div className='text-xs pt-2 text-center' style={{ color: 'var(--text-muted)' }}>
-                    You pay {formatNzd(courtPrice / (splitPlayers.length + 1))} · others notified to pay their share
+                  <div className="text-xs pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
+                    You pay {formatNzd(courtPrice / (splitPlayers.length + 1))} - others notified to pay their share
                   </div>
                 )}
               </div>
             )}
           </div>
-          <button className='w-full py-4 rounded-xl text-base font-semibold transition-all"
+          <button className="w-full py-4 rounded-xl text-base font-semibold transition-all"
             style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
             disabled={submitting} onClick={handleConfirm}>
-            {submitting ? 'Confirming…' : `Pay ${formatNzd(courtPrice)} →`}
+            {submitting ? 'Confirming…' : `Pay ${formatNzd(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice)} →`}
           </button>
         </div>
       )}
@@ -629,12 +626,6 @@ export default function BookingFlow({
     </div>
   )
 }
-
-
-
-
-
-
 
 
 
