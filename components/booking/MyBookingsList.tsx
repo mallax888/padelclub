@@ -22,6 +22,20 @@ interface BookingWithCourt {
   courts: { name: string; type: string; is_indoor: boolean } | null
 }
 
+interface SplitRequest {
+  id: string
+  booking_id: string
+  amount_nzd: number
+  status: string
+  bookings: {
+    date: string
+    start_time: string
+    end_time: string
+    courts: { name: string; type: string } | null
+  } | null
+  profiles: { nickname: string | null; full_name: string | null } | null
+}
+
 function paymentLabel(method: string, stripeId: string | null) {
   if (method === 'card' && stripeId) return { label: 'Paid', color: '#22c55e' }
   if (method === 'card' && !stripeId) return { label: 'Payment pending', color: '#f59e0b' }
@@ -42,9 +56,11 @@ function durationLabel(mins: number) {
 export default function MyBookingsList({
   bookings,
   profile,
+  splitRequests = [],
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
+  splitRequests?: SplitRequest[]
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -85,6 +101,35 @@ export default function MyBookingsList({
 
   return (
     <div>
+      {splitRequests.length > 0 && (
+        <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(220,50,50,0.06)', border: '1px solid #DC3232' }}>
+          <div className="text-sm font-semibold mb-3" style={{ color: '#DC3232' }}>Outstanding split requests</div>
+          <div className="space-y-3">
+            {splitRequests.map(s => {
+              const who = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
+              const court = s.bookings?.courts?.name ?? 'a court'
+              const date = s.bookings?.date ? formatDate(s.bookings.date) : ''
+              const time = s.bookings?.start_time?.slice(0,5) ?? ''
+              return (
+                <div key={s.id} className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium" style={{ color: '#DC3232' }}>You owe {who} {formatNzd(s.amount_nzd)}</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{court} · {date} · {time}</div>
+                  </div>
+                  <button
+                    className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0"
+                    style={{ background: '#DC3232', color: '#fff' }}
+                    onClick={() => alert('Stripe payment coming soon!')}
+                  >
+                    Pay {formatNzd(s.amount_nzd)}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
           { label: 'Upcoming', value: upcoming.length, color: 'var(--brand-primary)' },
