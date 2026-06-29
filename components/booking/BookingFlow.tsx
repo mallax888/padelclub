@@ -591,7 +591,7 @@ export default function BookingFlow({
                 <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Split the cost?</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>Invite players to share the court fee</div>
               </div>
-              <button onClick={() => setSplitEnabled(!splitEnabled)} style={{ width: 44, height: 24, borderRadius: 12, flexShrink: 0, background: splitEnabled ? 'var(--brand-crimson)' : 'var(--bg-raised)', border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s' }}>
+              <button onClick={() => setSplitEnabled(!splitEnabled)} style={{ width: 44, height: 24, borderRadius: 12, flexShrink: 0, background: splitEnabled ? 'var(--brand-primary)' : 'var(--bg-raised)', border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s' }}>
                 <div style={{ position: 'absolute', top: 2, left: splitEnabled ? 22 : 2, width: 18, height: 18, borderRadius: '50%', background: splitEnabled ? 'var(--brand-primary-on)' : 'var(--text-subtle)', transition: 'left 0.15s' }} />
               </button>
             </div>
@@ -603,8 +603,8 @@ export default function BookingFlow({
                   return (
                     <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all"
-                      style={{ background: selected ? 'var(--brand-crimson-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-crimson)' : '1px solid var(--border)' }}>
-                      <span className="text-sm" style={{ color: selected ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
+                      style={{ background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)' }}>
+                      <span className="text-sm" style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
                       {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice / (splitPlayers.length + 1))} each</span>}
                     </button>
                   )
