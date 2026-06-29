@@ -16,6 +16,7 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const COUNTRIES = [
   { name: 'New Zealand', flag: 'https://flagcdn.com/w80/nz.png', regions: ['Auckland', 'Wellington', 'Christchurch'] },
   { name: 'South Africa', flag: 'https://flagcdn.com/w80/za.png', regions: ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'] },
+  { name: 'Australia', flag: 'https://flagcdn.com/w80/au.png', regions: ['Sydney', 'Melbourne', 'Brisbane', 'Perth'] },
 ]
 const REGIONS = VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
 
@@ -648,6 +649,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
 
