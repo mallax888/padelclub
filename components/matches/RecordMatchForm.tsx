@@ -59,15 +59,19 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const openSet = (setIndex: number) => {
-    if (activeSet === setIndex) {
+  const openSet = (setIndex: number, team: 1 | 2 = 1) => {
+    if (activeSet === setIndex && activeTeam === team) {
       setActiveSet(null)
       setActiveTeam(1)
       setPendingT1(null)
     } else {
       setActiveSet(setIndex)
-      setActiveTeam(1)
-      setPendingT1(null)
+      setActiveTeam(team)
+      if (team === 2 && sets[setIndex] !== undefined) {
+        setPendingT1(sets[setIndex].t1)
+      } else {
+        setPendingT1(null)
+      }
     }
   }
 
@@ -195,11 +199,11 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         </div>
 
         <div className="flex items-center gap-3">
-          <div style={t1Style} onClick={() => openSet(setIndex)}>
+          <div style={t1Style} onClick={() => openSet(setIndex, 1)}>
             {isOpen && activeTeam === 1 ? '?' : isOpen && activeTeam === 2 ? pendingT1 : score !== undefined ? score.t1 : '?'}
           </div>
           <span style={{ color: 'var(--text-subtle)', fontSize: 40, fontWeight: 200, flexShrink: 0 }}>–</span>
-          <div style={t2Style} onClick={() => openSet(setIndex)}>
+          <div style={t2Style} onClick={() => openSet(setIndex, 2)}>
             {isOpen ? '?' : score !== undefined ? score.t2 : '?'}
           </div>
         </div>
