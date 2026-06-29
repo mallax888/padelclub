@@ -223,7 +223,7 @@ export default function BookingFlow({
           user_id: pid,
           type: 'split_request',
           title: 'Court cost split',
-          message: (profile?.nickname ?? profile?.full_name ?? 'Someone') + ' is requesting ' + formatNzd(splitAmount) + ' for a court booking.',
+          message: (profile?.full_name ?? 'Someone') + ' is requesting ' + formatNzd(splitAmount) + ' for a court booking.',
           data: JSON.stringify({ booking_id: bookingData.id, amount: splitAmount }),
         })
       }
@@ -648,6 +648,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
 
