@@ -276,7 +276,7 @@ export default function BookingFlow({
       <div className="flex gap-1.5 mb-6">
         {STEPS.map((s, i) => (
           <div key={s} className="h-1 flex-1 rounded-full transition-all"
-            style={{ background: i <= STEPS.indexOf(step) ? 'var(--brand-blue)' : 'var(--bg-raised)' }} />
+            style={{ background: i <= STEPS.indexOf(step) ? 'var(--brand-primary)' : 'var(--bg-raised)' }} />
         ))}
       </div>
 
@@ -288,7 +288,7 @@ export default function BookingFlow({
               onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
               className="rounded-xl p-5 transition-all flex flex-col items-center gap-3"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
@@ -313,28 +313,28 @@ export default function BookingFlow({
                 onClick={() => { setRegion(r); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('venue'); playSelectionSound() }}
                 className="rounded-xl p-5 text-left transition-all flex flex-col justify-between"
                 style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 160 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
               >
                 <div>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-blue)', marginBottom: 12 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary)', marginBottom: 12 }}>
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                   </svg>
                   <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{r}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'var(--brand-blue)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-blue)', fontWeight: 600 }}>{totalCourts}</span> courts
+                    <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{totalCourts}</span> courts
                   </div>
                 </div>
                 <div className="flex gap-1 mt-3 flex-wrap">
                   {venues.slice(0,2).map(v => (
                     <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-blue-muted)', color: 'var(--brand-blue)', border: '1px solid #4DFFEE30' }}>
+                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid #4DFFEE30' }}>
                       {v.name.split(' ').slice(-2).join(' ')}
                     </span>
                   ))}
                   {venues.length > 2 && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-blue-muted)', color: 'var(--brand-blue)', border: '1px solid var(--brand-blue-muted)' }}>
+                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary-muted)' }}>
                       +{venues.length - 2} more
                     </span>
                   )}
@@ -353,7 +353,7 @@ export default function BookingFlow({
               onClick={() => { setVenue(v); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('date'); playSelectionSound() }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div>
@@ -368,7 +368,7 @@ export default function BookingFlow({
               <div className="flex flex-col items-end gap-2">
                 {!v.isLive && (
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)' }}>
+                    style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
                     Soon
                   </span>
                 )}
@@ -392,7 +392,7 @@ export default function BookingFlow({
                   onClick={() => { setDate(d); setCourt(null); setDuration(null); setTime(null); setStep('court'); playSelectionSound() }}
                   className="rounded-xl p-3 text-center transition-all"
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
                   onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
                 >
                   <div className="text-[10px] opacity-60">{day}</div>
@@ -413,7 +413,7 @@ export default function BookingFlow({
               onClick={() => { setCourt(c); setDuration(null); setTime(null); setStep('duration'); playSelectionSound() }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div>
@@ -423,11 +423,11 @@ export default function BookingFlow({
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold" style={{ color: 'var(--brand-blue)' }}>
+                <div className="text-sm font-bold" style={{ color: 'var(--brand-primary)' }}>
                   {formatNzd(c.price_per_hour * (1 - discount))}/hr
                 </div>
                 {discount > 0 && (
-                  <div className="text-xs" style={{ color: 'var(--brand-yellow)' }}>
+                  <div className="text-xs" style={{ color: 'var(--brand-accent)' }}>
                     {(discount * 100).toFixed(0)}% off
                   </div>
                 )}
@@ -445,12 +445,12 @@ export default function BookingFlow({
               onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
               className="rounded-xl p-5 text-center transition-all"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-blue)')}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{d.label}</div>
               {court && (
-                <div className="text-xs" style={{ color: 'var(--brand-blue)' }}>
+                <div className="text-xs" style={{ color: 'var(--brand-primary)' }}>
                   from {formatNzd(court.price_per_hour * (1 - discount) * d.value)}
                 </div>
               )}
@@ -464,11 +464,11 @@ export default function BookingFlow({
         <div className="animate-fade-in">
           <div className="flex items-center gap-4 mb-3">
             <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-yellow)' }} />
+              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-accent)' }} />
               <span style={{ color: 'var(--text-subtle)' }}>Peak (eve + weekends)</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-blue)' }} />
+              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-primary)' }} />
               <span style={{ color: 'var(--text-subtle)' }}>Off-peak</span>
             </div>
           </div>
@@ -487,13 +487,13 @@ export default function BookingFlow({
                     cursor: !available ? 'not-allowed' : 'pointer',
                     opacity: !available ? 0.4 : 1,
                   }}
-                  onMouseEnter={e => { if (available) e.currentTarget.style.borderColor = 'var(--brand-blue)' }}
+                  onMouseEnter={e => { if (available) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
                   onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
                   <div className="text-sm font-semibold">{t}</div>
                   {available && (
                     <div className="text-[10px] mt-0.5 font-medium"
-                      style={{ color: peak ? 'var(--brand-yellow)' : 'var(--brand-blue)' }}>
+                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary)' }}>
                       {peak ? '⚡ Peak' : '✓ Off-peak'}
                     </div>
                   )}
@@ -526,7 +526,7 @@ export default function BookingFlow({
             ))}
             <div className="flex justify-between pt-3">
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl font-bold" style={{ color: 'var(--brand-blue)' }}>{formatNzd(courtPrice)}</span>
+              <span className="text-xl font-bold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice)}</span>
             </div>
           </div>
 
@@ -540,7 +540,7 @@ export default function BookingFlow({
               <button onClick={() => setMakePublic(!makePublic)}
                 style={{
                   width: 44, height: 24, borderRadius: 12, flexShrink: 0,
-                  background: makePublic ? 'var(--brand-blue)' : 'var(--bg-raised)',
+                  background: makePublic ? 'var(--brand-primary)' : 'var(--bg-raised)',
                   border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s',
                 }}>
                 <div style={{
@@ -558,7 +558,7 @@ export default function BookingFlow({
                     <button key={t} onClick={() => setMatchType(t)}
                       className="flex-1 py-2 rounded-lg text-xs font-medium capitalize"
                       style={{
-                        background: matchType === t ? 'var(--brand-blue)' : 'var(--bg-raised)',
+                        background: matchType === t ? 'var(--brand-primary)' : 'var(--bg-raised)',
                         color: matchType === t ? 'var(--brand-primary-on)' : 'var(--text-muted)',
                         border: '1px solid var(--border)',
                       }}>
@@ -571,7 +571,7 @@ export default function BookingFlow({
                     <button key={s} onClick={() => setSkillFilter(s)}
                       className="px-2.5 py-1 rounded-full text-[11px] font-medium capitalize"
                       style={{
-                        background: skillFilter === s ? 'var(--brand-blue)' : 'var(--bg-raised)',
+                        background: skillFilter === s ? 'var(--brand-primary)' : 'var(--bg-raised)',
                         color: skillFilter === s ? 'var(--brand-primary-on)' : 'var(--text-muted)',
                         border: '1px solid var(--border)',
                       }}>
@@ -605,7 +605,7 @@ export default function BookingFlow({
                       className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all"
                       style={{ background: selected ? 'var(--brand-crimson-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-crimson)' : '1px solid var(--border)' }}>
                       <span className="text-sm" style={{ color: selected ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
-                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-blue)' }}>{formatNzd(courtPrice / (splitPlayers.length + 1))} each</span>}
+                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice / (splitPlayers.length + 1))} each</span>}
                     </button>
                   )
                 })}
@@ -618,7 +618,7 @@ export default function BookingFlow({
             )}
           </div>
           <button className="w-full py-4 rounded-xl text-base font-semibold transition-all"
-            style={{ background: 'var(--brand-blue)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-blue)' }}
+            style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
             disabled={submitting} onClick={handleConfirm}>
             {submitting ? 'Confirming…' : `Pay ${formatNzd(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice)} →`}
           </button>
@@ -628,6 +628,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
 
