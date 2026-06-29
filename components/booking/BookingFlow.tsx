@@ -52,14 +52,16 @@ function dateLabel(dateStr: string) {
 }
 
 export default function BookingFlow({
-  courts,
-  profile,
-  userId,
-}: {
-  courts: Court[]
-  profile: Profile
-  userId: string
-}) {
+    courts,
+    profile,
+    userId,
+    allPlayers = [],
+  }: {
+    courts: Court[]
+    profile: Profile
+    userId: string
+    allPlayers?: { id: string; full_name: string | null; nickname: string | null }[]
+  }) {
   const supabase = createClient()
   const router = useRouter()
 
