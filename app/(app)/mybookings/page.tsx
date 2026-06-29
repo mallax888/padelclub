@@ -3,7 +3,7 @@ import MyBookingsList from '@/components/booking/MyBookingsList'
 export default async function MyBookingsPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
-  const [{ data: bookings }, { data: profile }, { data: splitRequests }] = await Promise.all([
+  const [{ data: bookings }, { data: profile }, { data: splitRequests }, { data: outgoingSplits }] = await Promise.all([
     supabase
       .from('bookings')
       .select('*, courts(*)')
@@ -16,6 +16,10 @@ export default async function MyBookingsPage() {
       .select('*, bookings(date, start_time, end_time, courts(name, type)), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
       .eq('user_id', session!.user.id)
       .eq('status', 'pending'),
+    supabase
+      .from('booking_splits')
+      .select('*, profiles!booking_splits_user_id_fkey(nickname, full_name)')
+      .eq('invited_by', session!.user.id),
   ])
   return (
     <div>
@@ -23,7 +27,7 @@ export default async function MyBookingsPage() {
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} />
     </div>
   )
 }

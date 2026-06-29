@@ -22,6 +22,14 @@ interface BookingWithCourt {
   courts: { name: string; type: string; is_indoor: boolean } | null
 }
 
+interface OutgoingSplit {
+  id: string
+  booking_id: string
+  amount_nzd: number
+  status: string
+  profiles: { nickname: string | null; full_name: string | null } | null
+}
+
 interface SplitRequest {
   id: string
   booking_id: string
@@ -57,10 +65,12 @@ export default function MyBookingsList({
   bookings,
   profile,
   splitRequests = [],
+  outgoingSplits = [],
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
   splitRequests?: SplitRequest[]
+  outgoingSplits?: OutgoingSplit[]
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -159,7 +169,7 @@ export default function MyBookingsList({
         ) : (
           <div className="space-y-2">
             {upcoming.map(b => (
-              <BookingRow key={b.id} booking={b} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} />
+              <BookingRow key={b.id} booking={b} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} />
             ))}
           </div>
         )}
@@ -173,7 +183,7 @@ export default function MyBookingsList({
           </button>
           {showHistory && (
             <div className="space-y-2 opacity-60">
-              {past.map(b => <BookingRow key={b.id} booking={b} past />)}
+              {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} />)}
             </div>
           )}
         </div>
@@ -182,7 +192,7 @@ export default function MyBookingsList({
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean }) {
+function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; splits?: OutgoingSplit[] }) {
   const bookingDateTime = new Date(b.date + 'T' + b.start_time)
   const now = new Date()
   const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
@@ -208,7 +218,25 @@ function BookingRow({ booking: b, onCancel, cancelling, past }: { booking: Booki
         </div>
         <span className={cn('badge', 'status-' + b.status)} style={{ flexShrink: 0 }}>{b.status}</span>
       </div>
-      <div className="flex items-center justify-between pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+      {splits.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+          <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Split with:</span>
+          {splits.map(s => {
+            const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
+            const paid = s.status === 'paid'
+            return (
+              <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
+                background: paid ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
+                color: paid ? 'var(--brand-primary)' : '#DC3232',
+                border: paid ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
+              }}>
+                {name} {paid ? '✓' : '⏳'}
+              </span>
+            )
+          })}
+        </div>
+      )}
+      <div className="flex items-center justify-between pt-2" style={{ borderTop: splits.length > 0 ? 'none' : '1px solid var(--border)' }}>
         <div className="flex items-center gap-3">
           <span className="text-xs font-medium" style={{ color: payment.color }}>{payment.label}</span>
           <span className="text-sm font-bold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</span>
