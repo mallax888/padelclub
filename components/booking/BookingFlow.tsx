@@ -308,7 +308,7 @@ export default function BookingFlow({
             <button key={c.name}
               onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
               className="rounded-xl p-5 transition-all flex flex-col items-center gap-3"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, height: 180, position: 'relative' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
@@ -322,7 +322,7 @@ export default function BookingFlow({
             </button>
           ))}
             <div className="rounded-xl p-5 flex flex-col items-center gap-3 opacity-80"
-              style={{ background: 'var(--bg-surface)', border: '1px dashed var(--brand-accent)', minHeight: 180, position: 'relative', cursor: 'default' }}>
+              style={{ background: 'var(--bg-surface)', border: '1px dashed var(--brand-accent)', minHeight: 180, height: 180, position: 'relative', cursor: 'default' }}>
               <div style={{ fontSize: 36 }}>🌍</div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
               <div className="text-xs text-center px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</div>
@@ -656,6 +656,8 @@ export default function BookingFlow({
     </div>
   )
 }
+
+
 
 
 
