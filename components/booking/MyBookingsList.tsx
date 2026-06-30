@@ -75,6 +75,7 @@ export default function MyBookingsList({
   const supabase = createClient()
   const router = useRouter()
   const [cancelling, setCancelling] = useState<string | null>(null)
+  const [payingSplit, setPayingSplit] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
 
   const mem = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
@@ -129,9 +130,24 @@ export default function MyBookingsList({
                   <button
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0"
                     style={{ background: '#DC3232', color: '#fff' }}
-                    onClick={() => alert('Stripe payment coming soon!')}
+                    disabled={payingSplit === s.id}
+                    onClick={async () => {
+                      setPayingSplit(s.id)
+                      const court = s.bookings?.courts?.name ?? 'Court'
+                      const date = s.bookings?.date ?? ''
+                      const time = s.bookings?.start_time?.slice(0,5) ?? ''
+                      const invitedByName = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
+                      const res = await fetch('/api/pay-split', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ splitId: s.id, amount: s.amount_nzd, courtName: court, date, time, invitedByName }),
+                      })
+                      const { url, error } = await res.json()
+                      if (error) { toast.error(error); setPayingSplit(null); return }
+                      window.location.href = url
+                    }}
                   >
-                    Pay {formatNzd(s.amount_nzd)}
+                    {payingSplit === s.id ? 'Loading...' : `Pay ${formatNzd(s.amount_nzd)}`}
                   </button>
                 </div>
               )
