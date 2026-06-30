@@ -5,7 +5,7 @@ export default async function BookPage() {
   const supabase = createServerClient()
 
   const [{ data: courts }, { data: { session } }] = await Promise.all([
-    supabase.from('courts').select('*').eq('is_active', true).order('name'),
+    supabase.from('courts').select('*').eq('is_active', true),
     supabase.auth.getSession(),
   ])
 
@@ -31,5 +31,6 @@ export default async function BookPage() {
     </div>
   )
 }
+
 
 

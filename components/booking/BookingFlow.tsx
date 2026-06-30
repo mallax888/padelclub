@@ -436,7 +436,7 @@ export default function BookingFlow({
       {/* STEP: Court */}
       {step === 'court' && (
         <div className="space-y-2 animate-fade-in">
-          {courts.filter(c => (c as any).venue_slug === venue?.slug).map(c => (
+          {courts.filter(c => (c as any).venue_slug === venue?.slug).sort((a, b) => parseInt(a.name.replace(/\D/g, '')) - parseInt(b.name.replace(/\D/g, ''))).map(c => (
             <button key={c.id}
               onClick={() => { setCourt(c); setDuration(null); setTime(null); setStep('duration'); playSelectionSound() }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
@@ -656,6 +656,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
 
