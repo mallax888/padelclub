@@ -320,7 +320,14 @@ export default function BookingFlow({
                 {c.regions.length} cities · {VENUES.filter(v => c.regions.includes(v.region)).length} venues · {VENUES.filter(v => c.regions.includes(v.region)).reduce((s, v) => s + v.courts.length, 0)} courts
               </div>
             </button>
-          ))}  
+          ))}
+            <div className="rounded-xl p-5 flex flex-col items-center gap-3 opacity-80"
+              style={{ background: 'var(--bg-surface)', border: '1px dashed var(--brand-accent)', minHeight: 180, position: 'relative', cursor: 'default' }}>
+              <div style={{ fontSize: 36 }}>🌍</div>
+              <div className="text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
+              <div className="text-xs text-center px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</div>
+              <div className="text-xs text-center" style={{ color: 'var(--text-subtle)' }}>UK · USA · UAE — vote for yours</div>
+            </div>  
         </div>
       )}
       {step === 'region' && (
