@@ -326,7 +326,7 @@ export default function BookingFlow({
               <div style={{ fontSize: 36 }}>🌍</div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
               <div className="text-xs text-center px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</div>
-              <div className="text-xs text-center" style={{ color: 'var(--text-subtle)' }}>UK · USA · UAE — vote for yours</div>
+              
             </div>  
         </div>
       )}
@@ -656,6 +656,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
 
