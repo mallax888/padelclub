@@ -453,3 +453,5 @@ export const VENUES: Venue[] = [
 export function getVenue(slug: string): Venue {
   return VENUES.find(v => v.slug === slug) ?? VENUES[0]
 }
+
+
