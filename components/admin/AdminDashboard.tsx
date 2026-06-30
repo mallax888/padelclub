@@ -131,6 +131,11 @@ export default function AdminDashboard({
         )}
       </div>
 
+{/* Board tab */}
+      {tab === 'board' && (
+        <BoardView bookings={bookings} courts={courts} selectedVenueSlug={selectedVenueSlug} setSelectedVenueSlug={setSelectedVenueSlug} viewMode={viewMode} setViewMode={setViewMode} boardDate={boardDate} setBoardDate={setBoardDate} />
+      )}
+
       {/* Bookings tab */}
       {tab === 'bookings' && (
         <div className="rounded-xl overflow-x-auto"
@@ -497,4 +502,6 @@ function BoardView({
     </div>
   )
 }
+
+
 
