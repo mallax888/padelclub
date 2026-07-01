@@ -411,63 +411,59 @@ function BoardView({
           No courts found for this venue.
         </div>
       ) : viewMode === 'month' ? (
-        // Month view — simple list grouped by day
-        <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-          {dateRange.map(d => {
-            const dayBookings = bookings.filter((b: any) => b.date === d && venueCourts.some((c: any) => c.id === b.court_id) && b.status !== 'cancelled')
-            if (dayBookings.length === 0) return null
-            return (
-              <div key={d} className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
-                <div className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>{dayLabel(d)}</div>
-                <div className="flex flex-wrap gap-2">
-                  {dayBookings.map((b: any) => (
-                    <span key={b.id} className="text-xs px-2 py-1 rounded-lg" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
-                      {b.start_time.slice(0,5)} · {b.courts?.name} · {b.profiles?.full_name ?? 'Unknown'}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      ) : (
-        // Day / Week grid view
-        <div className="rounded-xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr>
-                <th className="sticky left-0 px-3 py-2 text-left font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-subtle)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
-                {dateRange.map(d => (
-                  TIME_ROWS.map((t, i) => (
-                    viewMode === 'day' ? (
-                      <th key={d + t} className="px-2 py-2 font-medium whitespace-nowrap text-center" style={{ color: 'var(--text-subtle)', borderBottom: '1px solid var(--border)', minWidth: 60 }}>
-                        {t}
-                      </th>
-                    ) : i === 0 ? (
-                      <th key={d} colSpan={1} className="px-2 py-2 font-medium whitespace-nowrap text-center" style={{ color: 'var(--text-subtle)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
-                        {dayLabel(d)}
-                      </th>
-                    ) : null
-                  ))
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {venueCourts.map((court: any) => (
-                <tr key={court.id}>
-                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                    {court.name}
-                  </td>
-                  {viewMode === 'day' ? (
-                    TIME_ROWS.map(t => {
-                      const b = findBooking(court.id, boardDate, t)
-                      return (
-                        <td key={t} className="px-1 py-1 text-center" style={{ borderBottom: '1px solid var(--border)', minWidth: 60 }}>
-                          {b ? (
-                            <div className="rounded-md px-1 py-1 text-[10px] font-medium truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }} title={b.profiles?.full_name}>
-                              {b.profiles?.full_name?.split(' ')[0] ?? '—'}
-                            </div>
-                          ) : (
+        ) : viewMode === 'month' ? (
+          <div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
+                <div key={d} style={{ padding: '6px 4px', textAlign: 'center', fontSize: 11, color: 'var(--text-subtle)', fontWeight: 500, background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)' }}>{d}</div>
+              ))}
+              {(() => {
+                const base = new Date(boardDate + 'T00:00:00')
+                const year = base.getFullYear()
+                const month = base.getMonth()
+                const firstDay = new Date(year, month, 1).getDay()
+                const daysInMonth = new Date(year, month + 1, 0).getDate()
+                const today = new Date().toISOString().slice(0, 10)
+                const cells: { date: string; otherMonth: boolean }[] = []
+                for (let i = 0; i < firstDay; i++) {
+                  const d = new Date(year, month, -firstDay + i + 1)
+                  cells.push({ date: d.toISOString().slice(0, 10), otherMonth: true })
+                }
+                for (let i = 1; i <= daysInMonth; i++) {
+                  cells.push({ date: new Date(year, month, i).toISOString().slice(0, 10), otherMonth: false })
+                }
+                const remaining = 7 - (cells.length % 7)
+                if (remaining < 7) for (let i = 1; i <= remaining; i++) cells.push({ date: new Date(year, month + 1, i).toISOString().slice(0, 10), otherMonth: true })
+                const colors = ['var(--brand-primary)', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#10B981']
+                const colorMap: Record<string, string> = {}
+                venueCourts.forEach((court: any, i: number) => { colorMap[court.id] = colors[i % colors.length] })
+                return cells.map(({ date, otherMonth }, idx) => {
+                  const dayBookings = bookings.filter((b: any) => b.date === date && venueCourts.some((c: any) => c.id === b.court_id) && b.status !== 'cancelled')
+                  const isToday = date === today
+                  const dayNum = parseInt(date.slice(8, 10))
+                  const show = dayBookings.slice(0, 2)
+                  const extra = dayBookings.length - 2
+                  return (
+                    <div key={idx} style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.06)' : 'var(--bg-surface)', opacity: otherMonth ? 0.35 : 1 }}>
+                      <div style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isToday ? 'var(--brand-primary)' : 'var(--text-subtle)', marginBottom: 3 }}>{dayNum}</div>
+                      {show.map((b: any) => {
+                        const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
+                        return <div key={b.id} style={{ fontSize: 10, padding: '1px 4px', borderRadius: 3, marginBottom: 2, background: color + '22', color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
+                      })}
+                      {extra > 0 && <div style={{ fontSize: 10, color: 'var(--text-subtle)', padding: '0 4px' }}>+{extra} more</div>}
+                    </div>
+                  )
+                })
+              })()}
+            </div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+              {venueCourts.map((court: any, i: number) => {
+                const colors = ['var(--brand-primary)', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#10B981']
+                return <div key={court.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-subtle)' }}><div style={{ width: 10, height: 10, borderRadius: 2, background: colors[i % colors.length] }} />{court.name}</div>
+              })}
+            </div>
+          </div>
+        ) : (
                             <div className="h-5" />
                           )}
                         </td>
