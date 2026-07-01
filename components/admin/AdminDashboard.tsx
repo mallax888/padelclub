@@ -411,7 +411,6 @@ function BoardView({
           No courts found for this venue.
         </div>
       ) : viewMode === 'month' ? (
-        ) : viewMode === 'month' ? (
           <div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
               {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
