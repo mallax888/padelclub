@@ -418,7 +418,7 @@ function BoardView({
                     <div style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isToday ? 'var(--brand-primary)' : 'var(--text-subtle)', marginBottom: 3 }}>{dayNum}</div>
                     {show.map((b: any) => {
                       const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
-                      return <div key={b.id} style={{ fontSize: 10, padding: '1px 4px', borderRadius: 3, marginBottom: 2, background: color + '22', color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
+                      return <div key={b.id} style={{ fontSize: 10, padding: '1px 4px', borderRadius: 3, marginBottom: 2, background: date < today ? 'rgba(120,120,120,0.15)' : color + '22', color: date < today ? 'var(--text-subtle)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: date < today ? 'line-through' : 'none' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
                     })}
                     {extra > 0 && <div style={{ fontSize: 10, color: 'var(--text-subtle)', padding: '0 4px' }}>+{extra} more</div>}
                   </div>
@@ -513,3 +513,4 @@ function BoardView({
     </div>
   )
 }
+
