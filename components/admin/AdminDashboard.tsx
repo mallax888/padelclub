@@ -386,9 +386,9 @@ function BoardView({
         </div>
       ) : viewMode === 'month' ? (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, overflow: 'hidden' }}>
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-              <div key={d} style={{ padding: '6px 4px', textAlign: 'center', fontSize: 11, color: 'var(--text-subtle)', fontWeight: 500, background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)' }}>{d}</div>
+              <div key={d} style={{ padding: '6px 4px', textAlign: 'center', fontSize: 11, color: 'var(--text-primary)', fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', borderBottom: '1px solid rgba(255,255,255,0.16)' }}>{d}</div>
             ))}
             {(() => {
               const base = new Date(boardDate + 'T00:00:00')
@@ -414,13 +414,13 @@ function BoardView({
                 const show = dayBookings.slice(0, 2)
                 const extra = dayBookings.length - 2
                 return (
-                  <div key={idx} style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.06)' : 'var(--bg-surface)', opacity: otherMonth ? 0.35 : 1 }}>
-                    <div style={{ fontSize: 11, fontWeight: isToday ? 700 : 400, color: isToday ? 'var(--brand-primary)' : 'var(--text-subtle)', marginBottom: 3 }}>{dayNum}</div>
+                  <div key={idx} style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid rgba(255,255,255,0.16)', borderBottom: '1px solid rgba(255,255,255,0.16)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
                     {show.map((b: any) => {
                       const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
-                      return <div key={b.id} style={{ fontSize: 11, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: date < today ? 'rgba(150,150,150,0.25)' : color + '22', color: date < today ? 'var(--text-subtle)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: date < today ? 'line-through' : 'none' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
+                      return <div key={b.id} style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: date < today ? 'rgba(170,170,170,0.3)' : color + '38', color: date < today ? 'rgba(255,255,255,0.8)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: date < today ? 'line-through' : 'none' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
                     })}
-                    {extra > 0 && <div style={{ fontSize: 10, color: 'var(--text-subtle)', padding: '0 4px' }}>+{extra} more</div>}
+                    {extra > 0 && <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)', padding: '0 4px' }}>+{extra} more</div>}
                   </div>
                 )
               })
@@ -428,7 +428,7 @@ function BoardView({
           </div>
           <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
             {venueCourts.map((court: any, i: number) => (
-              <div key={court.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text-subtle)' }}>
+              <div key={court.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: courtColors[i % courtColors.length] }} />
                 {court.name}
               </div>
@@ -513,10 +513,3 @@ function BoardView({
     </div>
   )
 }
-
-
-
-
-
-
-
