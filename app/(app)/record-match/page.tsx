@@ -8,7 +8,7 @@ export default async function RecordMatchPage() {
   const { data: players } = await supabase
     .from('profiles')
     .select('id, full_name, nickname, ranking_points')
-    .not('role', 'in', '("staff","admin")')
+    .not('role', 'eq', 'staff')
     .order('full_name', { ascending: true })
 
   return (
