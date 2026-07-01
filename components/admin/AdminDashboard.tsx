@@ -37,6 +37,7 @@ export default function AdminDashboard({
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
   const [boardDate, setBoardDate] = useState(new Date().toISOString().slice(0, 10))
   const [showBlock, setShowBlock] = useState(false)
+  const [showPastBookings, setShowPastBookings] = useState(false)
   const [blockForm, setBlockForm] = useState({
     courtId: courts[0]?.id ?? '',
     date: getNextNDates(1)[0],
@@ -48,6 +49,16 @@ export default function AdminDashboard({
   const todayBookings = bookings.filter(b => b.date === today && b.status !== 'cancelled')
   const revenue = bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + b.price_nzd, 0)
   const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
+
+  const venuesWithCourts = VENUES.filter(v => courts.some((c: any) => c.venue_slug === v.slug))
+  const activeVenue = selectedVenueSlug || venuesWithCourts[0]?.slug || ''
+  const venueCourts = courts.filter((c: any) => c.venue_slug === activeVenue)
+  const venueCourtIds = new Set(venueCourts.map(c => c.id))
+
+  const bookingsForVenue = bookings.filter((b: any) => venueCourtIds.has(b.court_id))
+  const visibleBookings = bookingsForVenue
+    .filter(b => showPastBookings || b.date >= today)
+    .sort((a, b) => (a.date === b.date ? a.start_time.localeCompare(b.start_time) : a.date.localeCompare(b.date)))
 
   const cancelBooking = async (id: string) => {
     if (!confirm('Cancel this booking?')) return
@@ -131,6 +142,23 @@ export default function AdminDashboard({
         )}
       </div>
 
+      {/* Venue selector - shared across Board / Bookings / Courts */}
+      {(tab === 'board' || tab === 'bookings' || tab === 'courts') && venuesWithCourts.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <select className="input text-sm w-auto" value={activeVenue} onChange={e => setSelectedVenueSlug(e.target.value)}>
+            {venuesWithCourts.map(v => (
+              <option key={v.slug} value={v.slug}>{v.name} — {v.region}</option>
+            ))}
+          </select>
+          {tab === 'bookings' && (
+            <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>
+              <input type="checkbox" checked={showPastBookings} onChange={e => setShowPastBookings(e.target.checked)} />
+              Show past bookings
+            </label>
+          )}
+        </div>
+      )}
+
 {/* Board tab */}
       {tab === 'board' && (
         <BoardView bookings={bookings} courts={courts} selectedVenueSlug={selectedVenueSlug} setSelectedVenueSlug={setSelectedVenueSlug} viewMode={viewMode} setViewMode={setViewMode} boardDate={boardDate} setBoardDate={setBoardDate} />
@@ -150,7 +178,13 @@ export default function AdminDashboard({
               </tr>
             </thead>
             <tbody>
-              {bookings.map(b => (
+              {visibleBookings.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                    No {showPastBookings ? '' : 'upcoming '}bookings for this venue.
+                  </td>
+                </tr>
+              ) : visibleBookings.map(b => (
                 <tr key={b.id} className="last:border-0 transition-colors"
                   style={{ borderBottom: '1px solid var(--border)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
@@ -226,7 +260,11 @@ export default function AdminDashboard({
       {/* Courts tab */}
       {tab === 'courts' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {courts.map(c => (
+          {venueCourts.length === 0 ? (
+            <div className="rounded-xl text-center py-12 text-sm sm:col-span-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              No courts found for this venue.
+            </div>
+          ) : venueCourts.map(c => (
             <div key={c.id} className="rounded-xl p-5"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
               <div className="flex items-start justify-between">
