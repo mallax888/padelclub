@@ -238,18 +238,18 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
         <div className="flex flex-wrap gap-2 mb-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
           <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Split with:</span>
           {splits.map(s => {
-            const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
-            const paid = s.status === 'paid'
-            return (
-              <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-                background: paid ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
-                color: paid ? 'var(--brand-primary)' : '#DC3232',
-                border: paid ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
-              }}>
-                {name} {paid ? '✓' : '⏳'}
-              </span>
-            )
-          })}
+          const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
+          const paid = s.status === 'paid'
+          return (
+            <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
+              background: paid ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
+              color: paid ? 'var(--brand-primary)' : '#DC3232',
+              border: paid ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
+            }}>
+              {name} {paid ? '✓' : '⏳'}
+            </span>
+          )
+        })}
         </div>
       )}
       <div className="flex items-center justify-between pt-2" style={{ borderTop: splits.length > 0 ? 'none' : '1px solid var(--border)' }}>

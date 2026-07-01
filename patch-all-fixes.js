@@ -1,4 +1,7 @@
-import { NextResponse } from 'next/server'
+﻿const fs = require('fs');
+
+// Fix 1: Webhook - restore split payment handling
+fs.writeFileSync('app/api/stripe-webhook/route.ts', `import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@/lib/supabase-server'
 
@@ -9,7 +12,7 @@ export async function POST(request: Request) {
   try {
     event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch (err: any) {
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
+    return NextResponse.json({ error: \`Webhook Error: \${err.message}\` }, { status: 400 })
   }
 
   if (event.type === 'checkout.session.completed') {
@@ -45,3 +48,26 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ received: true })
 }
+`, 'utf8');
+
+// Fix 2: Split badges - remove the X icon, just show name
+let mybookings = fs.readFileSync('components/booking/MyBookingsList.tsx', 'utf8');
+mybookings = mybookings.replace(
+  /\{splits\.map\(s => \{[\s\S]*?const name = s\.profiles\?\.nickname \?\? s\.profiles\?\.full_name \?\? 'Player'[\s\S]*?const paid = s\.status === 'paid'[\s\S]*?return \([\s\S]*?<span key=\{s\.id\}[\s\S]*?<\/span>[\s\S]*?\)\s*\}\)\}/,
+  `{splits.map(s => {
+          const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
+          const paid = s.status === 'paid'
+          return (
+            <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
+              background: paid ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
+              color: paid ? 'var(--brand-primary)' : '#DC3232',
+              border: paid ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
+            }}>
+              {name} {paid ? '✓' : '⏳'}
+            </span>
+          )
+        })}`
+);
+fs.writeFileSync('components/booking/MyBookingsList.tsx', mybookings, 'utf8');
+
+console.log('Done');
