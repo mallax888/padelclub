@@ -1,4 +1,6 @@
-import { createServerClient } from '@/lib/supabase-server'
+﻿const fs = require('fs');
+
+fs.writeFileSync('app/(app)/players/[id]/page.tsx', `import { createServerClient } from '@/lib/supabase-server'
 import { getInitials, formatDate } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -18,14 +20,14 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
   // Fetch matches where this player participated
   const { data: matchesData } = await supabase
     .from('matches')
-    .select(`
+    .select(\`
       id, score, winner_team, played_at, notes,
       team1_player1:profiles!matches_team1_player1_id_fkey(id, full_name, nickname),
       team1_player2:profiles!matches_team1_player2_id_fkey(id, full_name, nickname),
       team2_player1:profiles!matches_team2_player1_id_fkey(id, full_name, nickname),
       team2_player2:profiles!matches_team2_player2_id_fkey(id, full_name, nickname)
-    `)
-    .or(`team1_player1_id.eq.${params.id},team1_player2_id.eq.${params.id},team2_player1_id.eq.${params.id},team2_player2_id.eq.${params.id}`)
+    \`)
+    .or(\`team1_player1_id.eq.\${params.id},team1_player2_id.eq.\${params.id},team2_player1_id.eq.\${params.id},team2_player2_id.eq.\${params.id}\`)
     .order('played_at', { ascending: false })
     .limit(20)
 
@@ -129,7 +131,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
               const total = opp.wins + opp.losses
               const pct = Math.round((opp.wins / total) * 100)
               return (
-                <Link key={opp.id} href={`/players/${opp.id}`}>
+                <Link key={opp.id} href={\`/players/\${opp.id}\`}>
                   <div className="flex items-center gap-3 py-2 rounded-lg px-2 transition-colors"
                     style={{ borderBottom: '1px solid var(--border)' }}
                     onMouseEnter={undefined}>
@@ -178,7 +180,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
                     </div>
                     <div className="text-[10px] truncate" style={{ color: 'var(--text-subtle)' }}>
                       vs {opponents.map((o: any) => o?.nickname ?? o?.full_name ?? '?').join(' & ')}
-                      {partners.length > 0 && ` · with ${partners.map((p: any) => p?.nickname ?? p?.full_name ?? '?').join(' & ')}`}
+                      {partners.length > 0 && \` · with \${partners.map((p: any) => p?.nickname ?? p?.full_name ?? '?').join(' & ')}\`}
                     </div>
                   </div>
                   <div className="text-[10px] shrink-0" style={{ color: 'var(--text-subtle)' }}>
@@ -195,7 +197,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
       <div className="rounded-xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Player details</div>
         {[
-          ['Member number', `#${player.member_number}`],
+          ['Member number', \`#\${player.member_number}\`],
           ['Skill level', player.skill_level ? player.skill_level.charAt(0).toUpperCase() + player.skill_level.slice(1) : 'Beginner'],
           ['Favourite court', player.favourite_court ?? '—'],
           ['Member since', player.created_at?.slice(0, 10) ?? '—'],
@@ -210,3 +212,6 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
     </div>
   )
 }
+`, 'utf8');
+
+console.log('Done');
