@@ -14,7 +14,7 @@ export default async function PlayersPage() {
       .order('member_number', { ascending: true })
 
     if (!error && data) {
-      players = (data as any[]).filter((p: any) => p.role !== 'staff' && p.role !== 'admin')
+      players = (data as any[]).filter((p: any) => p.role !== 'staff')
     }
   } catch (e) {
     console.error('Players page error:', e)
@@ -102,3 +102,4 @@ export default async function PlayersPage() {
     </div>
   )
 }
+
