@@ -29,37 +29,22 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: 'var(--bg-base)' }}>
+      style={{ background: 'radial-gradient(circle at 50% 0%, var(--brand-primary-muted), var(--bg-base) 60%)' }}>
       <div className="w-full max-w-sm">
 
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <svg width="44" height="44" viewBox="0 0 100 100">
-              <defs>
-                <radialGradient id="ball" cx="38%" cy="30%" r="65%">
-                  <stop offset="0%" stopColor="#FFFF80"/>
-                  <stop offset="40%" stopColor="#FFE000"/>
-                  <stop offset="100%" stopColor="#AAAA00"/>
-                </radialGradient>
-                <filter id="fuzz">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="n"/>
-                  <feDisplacementMap in="SourceGraphic" in2="n" scale="2" xChannelSelector="R" yChannelSelector="G"/>
-                </filter>
-              </defs>
-              <circle cx="50" cy="50" r="46" fill="url(#ball)" filter="url(#fuzz)"/>
-              <ellipse cx="38" cy="32" rx="14" ry="9" fill="white" opacity="0.25" transform="rotate(-25 38 32)"/>
-              <circle cx="50" cy="50" r="46" fill="none" stroke="#AA8800" strokeWidth="1"/>
-            </svg>
-            <div style={{ fontFamily: 'Georgia,serif', fontSize: 32, fontWeight: 700, color: 'var(--text-primary)', userSelect: 'none' }}>
-              Padel<span style={{ color: '#39FF6E' }}>Club</span>
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-2.5 mb-3">
+            <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
+            <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', userSelect: 'none' }}>
+              PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
             </div>
           </div>
-          <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-subtle)' }}>
-            Sign in to your account
+          <p className="text-sm font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>
+            Welcome back — sign in to book your next game
           </p>
         </div>
 
-        <div className="rounded-xl p-5 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl p-6 mb-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 8px 32px 0 rgba(0,0,0,0.18)' }}>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="label">Email address</label>
@@ -110,8 +95,8 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
-              style={{ background: '#39FF6E', color: '#001F0D', boxShadow: '0 0 16px 0 #39FF6E44' }}
+              className="w-full py-3 rounded-lg text-sm font-bold transition-all"
+              style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
               disabled={loading}
             >
               {loading ? 'Signing in…' : 'Sign in'}
@@ -121,13 +106,13 @@ export default function LoginPage() {
 
         <div className="text-center text-sm space-y-2">
           <p style={{ color: 'var(--text-muted)' }}>
-            <Link href="/auth/forgot-password" className="font-medium hover:underline" style={{ color: 'var(--brand-primary)' }}>
+            <Link href="/auth/forgot-password" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary)' }}>
               Forgot your password?
             </Link>
           </p>
           <p style={{ color: 'var(--text-muted)' }}>
             No account?{' '}
-            <Link href="/auth/signup" className="font-medium hover:underline" style={{ color: '#39FF6E' }}>
+            <Link href="/auth/signup" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary)' }}>
               Create one
             </Link>
           </p>
