@@ -225,7 +225,7 @@ export default function FindGameList({
             </div>
 
             {/* Skill range */}
-            <div className="text-xs mb-3" style={{ color: 'var(--text-subtle)' }}>
+            <div className="text-xs mb-3" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
               Skill level: {skillLabelForRange(match.skill_min, match.skill_max)}
             </div>
 
@@ -251,8 +251,9 @@ export default function FindGameList({
                       className="w-8 h-8 rounded-full flex items-center justify-center text-xs"
                       style={{
                         background: 'var(--bg-raised)',
-                        border: '2px dashed var(--border)',
-                        color: 'var(--text-subtle)',
+                        border: '2px dashed rgba(128,128,128,0.5)',
+                        color: 'rgba(128,128,128,0.9)',
+                        fontWeight: 700,
                       }}
                     >
                       +
@@ -341,7 +342,7 @@ export default function FindGameList({
             {/* Action button */}
             {isOrganizer ? (
               <div className="text-xs text-center py-2 rounded-lg"
-                style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>
+                style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', fontWeight: 600 }}>
                 You're organizing this match
               </div>
             ) : myEntry?.status === 'accepted' ? (
