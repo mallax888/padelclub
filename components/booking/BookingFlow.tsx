@@ -297,7 +297,7 @@ export default function BookingFlow({
       <div className="flex gap-1.5 mb-6">
         {STEPS.map((s, i) => (
           <div key={s} className="h-1 flex-1 rounded-full transition-all"
-            style={{ background: i <= STEPS.indexOf(step) ? 'var(--brand-primary)' : 'var(--bg-raised)' }} />
+            style={{ background: i <= STEPS.indexOf(step) ? 'var(--brand-primary)' : 'rgba(128,128,128,0.35)' }} />
         ))}
       </div>
 
@@ -656,6 +656,7 @@ export default function BookingFlow({
     </div>
   )
 }
+
 
 
 
