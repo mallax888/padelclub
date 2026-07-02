@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -33,8 +33,8 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const [team2p2, setTeam2p2] = useState('')
   const [sets, setSets] = useState<SetScore[]>([])
   const [editingSet, setEditingSet] = useState<number | null>(null)
-  const [editingTeam, setEditingTeam] = useState<1 | 2>(1)
-  const [pendingT1, setPendingT1] = useState<number | null>(null)
+  const [draftT1, setDraftT1] = useState(0)
+  const [draftT2, setDraftT2] = useState(0)
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -49,36 +49,22 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const openSet = (setIndex: number) => {
     if (editingSet === setIndex) {
       setEditingSet(null)
-      setEditingTeam(1)
-      setPendingT1(null)
     } else {
       setEditingSet(setIndex)
-      setEditingTeam(1)
-      setPendingT1(sets[setIndex]?.t1 ?? null)
+      setDraftT1(sets[setIndex]?.t1 ?? 0)
+      setDraftT2(sets[setIndex]?.t2 ?? 0)
     }
   }
 
-  const handleNumber = (n: number) => {
-    if (editingSet === null) return
-    if (editingTeam === 1) {
-      setPendingT1(n)
-      setEditingTeam(2)
-    } else {
-      const t1 = pendingT1 ?? 0
-      const t2 = n
-      if (!isValidSet(t1, t2)) {
-        toast.error(`${t1}–${t2} is not a valid padel score`)
-        setEditingTeam(1)
-        setPendingT1(null)
-        return
-      }
-      const newSets = [...sets]
-      newSets[editingSet] = { t1, t2 }
-      setSets(newSets.slice(0, editingSet + 1))
-      setEditingSet(null)
-      setEditingTeam(1)
-      setPendingT1(null)
+  const confirmSet = (setIndex: number) => {
+    if (!isValidSet(draftT1, draftT2)) {
+      toast.error(`${draftT1}–${draftT2} is not a valid padel score`)
+      return
     }
+    const newSets = [...sets]
+    newSets[setIndex] = { t1: draftT1, t2: draftT2 }
+    setSets(newSets.slice(0, setIndex + 1))
+    setEditingSet(null)
   }
 
   const handleSubmit = async () => {
@@ -132,28 +118,31 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     </select>
   )
 
+  const Stepper = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => (
+    <div className="flex flex-col items-center gap-2">
+      <button
+        onClick={() => onChange(Math.min(7, value + 1))}
+        className="flex items-center justify-center rounded-lg font-bold transition-all"
+        style={{ width: 44, height: 36, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 18 }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+      >+</button>
+      <div style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color, minWidth: 70, textAlign: 'center' }}>{value}</div>
+      <button
+        onClick={() => onChange(Math.max(0, value - 1))}
+        className="flex items-center justify-center rounded-lg font-bold transition-all"
+        style={{ width: 44, height: 36, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 18 }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+      >–</button>
+    </div>
+  )
+
   const SetRow = ({ setIndex }: { setIndex: number }) => {
     const score = sets[setIndex]
     const isOpen = editingSet === setIndex
     const winner = score !== undefined ? setWinner(score) : null
-
-    const displayT1 = isOpen ? (editingTeam === 1 ? '?' : pendingT1) : score !== undefined ? score.t1 : '?'
-    const displayT2 = isOpen ? (editingTeam === 2 ? '?' : '–') : score !== undefined ? score.t2 : '?'
-
-    const numBoxStyle = (active: boolean, isWinnerSide: boolean, hasScore: boolean): React.CSSProperties => ({
-      flex: 1,
-      height: 80,
-      borderRadius: 12,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 44,
-      fontWeight: 900,
-      cursor: 'pointer',
-      background: active ? 'var(--bg-raised)' : hasScore ? (isWinnerSide ? 'var(--brand-primary-muted)' : 'var(--bg-raised)') : 'var(--bg-raised)',
-      border: active ? '2px solid var(--text-primary)' : hasScore && isWinnerSide ? '2px solid var(--brand-primary)' : '1.5px solid var(--border)',
-      color: active ? 'var(--text-primary)' : hasScore ? (isWinnerSide ? 'var(--brand-primary)' : 'var(--text-primary)') : 'var(--text-subtle)',
-    })
+    const draftValid = isValidSet(draftT1, draftT2)
 
     return (
       <div>
@@ -169,40 +158,39 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
           </button>
         </div>
 
-        <div className="flex items-center gap-3 mb-3">
-          <div style={numBoxStyle(isOpen && editingTeam === 1, winner === 1, score !== undefined)}>{displayT1}</div>
-          <span style={{ color: 'var(--text-muted)', fontSize: 28, fontWeight: 200, flexShrink: 0 }}>–</span>
-          <div style={numBoxStyle(isOpen && editingTeam === 2, winner === 2, score !== undefined)}>{displayT2}</div>
-        </div>
-
-        {isOpen && (
-          <div className="rounded-xl p-3" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            <div className="text-center text-xs font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-              Enter Team {editingTeam}'s games won
+        {!isOpen ? (
+          <div
+            onClick={() => openSet(setIndex)}
+            className="w-full flex items-center justify-center gap-6 py-3 rounded-xl cursor-pointer"
+            style={{ background: 'var(--bg-raised)', border: `1.5px solid ${score !== undefined ? (winner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)') : 'var(--border)'}` }}
+          >
+            <span style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color: score !== undefined ? (winner === 1 ? 'var(--brand-primary)' : 'var(--text-primary)') : 'var(--text-subtle)' }}>{score?.t1 ?? '–'}</span>
+            <span style={{ fontSize: 24, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
+            <span style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color: score !== undefined ? (winner === 2 ? 'var(--brand-accent)' : 'var(--text-primary)') : 'var(--text-subtle)' }}>{score?.t2 ?? '–'}</span>
+          </div>
+        ) : (
+          <div className="rounded-xl p-4" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+            <div className="flex items-center justify-center gap-8 mb-3">
+              <Stepper value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" />
+              <span style={{ fontSize: 28, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
+              <Stepper value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              {[0, 1, 2, 3, 4, 5, 6, 7].map(n => (
-                <button
-                  key={n}
-                  onClick={() => handleNumber(n)}
-                  className="flex items-center justify-center rounded-xl font-bold transition-all"
-                  style={{ height: 56, fontSize: 24, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--brand-primary)'; e.currentTarget.style.color = 'var(--brand-primary)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-                >
-                  {n}
-                </button>
-              ))}
+            <div className="text-center text-xs font-medium mb-3" style={{ color: draftValid ? 'var(--brand-primary)' : 'var(--text-muted)' }}>
+              {draftT1 === draftT2 ? 'Scores can\u2019t be tied' : draftValid ? `Valid \u2014 Team ${draftT1 > draftT2 ? 1 : 2} wins this set` : 'Not a valid padel score yet'}
             </div>
-            {editingTeam === 2 && (
-              <button
-                onClick={() => { setEditingTeam(1); setPendingT1(null) }}
-                className="w-full mt-2 text-xs py-2 rounded-lg font-medium"
-                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
-              >
-                ← back to Team 1
-              </button>
-            )}
+            <button
+              onClick={() => confirmSet(setIndex)}
+              disabled={!draftValid}
+              className="w-full py-2.5 rounded-lg text-sm font-bold transition-all"
+              style={{
+                background: draftValid ? 'var(--brand-primary)' : 'var(--bg-surface)',
+                color: draftValid ? 'var(--brand-primary-on)' : 'var(--text-subtle)',
+                border: draftValid ? 'none' : '1px solid var(--border)',
+                cursor: draftValid ? 'pointer' : 'not-allowed',
+              }}
+            >
+              Confirm set {setIndex + 1}
+            </button>
           </div>
         )}
       </div>
