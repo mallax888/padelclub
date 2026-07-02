@@ -89,7 +89,10 @@ export default function MyBookingsList({
     const bookingDateTime = new Date(`${booking.date}T${booking.start_time}`)
     const now = new Date()
     const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
-    const policy = hoursUntil >= 24
+    const isPaid = !!(booking as any).stripe_payment_id
+    const policy = !isPaid
+      ? 'Cancel this booking?\n\nNo payment has been charged yet, so this will simply be cancelled with no charge or credit.'
+      : hoursUntil >= 24
       ? 'Cancel this booking?\n\nSince it is more than 24 hours away you will receive a FULL REFUND to your card within 5-10 business days.'
       : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatNzd(booking.price_nzd * 0.5) + ') as account credit.'
     if (!confirm(policy)) return
@@ -98,7 +101,9 @@ export default function MyBookingsList({
     if (error) {
       toast.error('Could not cancel — please try again.')
     } else {
-      if (hoursUntil < 24) {
+      if (!isPaid) {
+        toast.success('Booking cancelled.')
+      } else if (hoursUntil < 24) {
         const creditAmount = Math.round(booking.price_nzd * 0.5)
         await (supabase as any).from('profiles').update({ credits: (profile?.credits ?? 0) + creditAmount }).eq('id', profile?.id)
         toast.success('Booking cancelled. ' + formatNzd(creditAmount) + ' credit added to your account.')

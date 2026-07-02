@@ -18,7 +18,7 @@ export default async function BookPage() {
   const { data: allPlayers } = await supabase
     .from('profiles')
     .select('id, full_name, nickname')
-    .not('role', 'in', '("staff","admin")')
+    .not('role', 'eq', 'staff')
     .order('full_name')
 
   return (
