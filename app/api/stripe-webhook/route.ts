@@ -14,10 +14,19 @@ export async function POST(request: Request) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as any
-    const { bookingId, userId, splitId, type } = session.metadata
+    const { bookingId, userId, splitId, type, sessions } = session.metadata
     const supabase = createServerClient()
 
-    if (type === 'split_payment' && splitId) {
+    if (type === 'credit_pack' && userId) {
+      await (supabase as any).from('credit_transactions').insert({
+        user_id: userId,
+        amount: parseInt(sessions, 10),
+        type: 'purchase',
+        description: `Purchased ${sessions}-session pack`,
+      })
+      const { data: profile } = await (supabase as any).from('profiles').select('credits').eq('id', userId).single()
+      await (supabase as any).from('profiles').update({ credits: (profile?.credits ?? 0) + parseInt(sessions, 10) }).eq('id', userId)
+    } else if (type === 'split_payment' && splitId) {
       await (supabase as any).from('booking_splits').update({ status: 'paid', stripe_payment_id: session.payment_intent }).eq('id', splitId)
       const { data: split } = await (supabase as any)
         .from('booking_splits')
