@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -9,16 +9,7 @@ type Player = { id: string; full_name: string | null; nickname: string | null; r
 type SetScore = { t1: number; t2: number }
 
 const POINTS = { win: 10, loss: 2, win_bonus: 5 }
-
-function isValidSet(t1: number, t2: number): boolean {
-  if (t1 === t2) return false
-  const hi = Math.max(t1, t2)
-  const lo = Math.min(t1, t2)
-  if (hi === 7 && lo === 6) return true
-  if (hi === 7) return false
-  if (hi === 6 && lo <= 5) return true
-  return false
-}
+const CHIP_SCORES: [number, number][] = [[6,0],[6,1],[6,2],[6,3],[6,4],[7,5],[7,6]]
 
 function setWinner(s: SetScore): 1 | 2 { return s.t1 > s.t2 ? 1 : 2 }
 function setsWon(sets: SetScore[], team: 1 | 2) { return sets.filter(s => setWinner(s) === team).length }
@@ -32,12 +23,9 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const [team2p1, setTeam2p1] = useState('')
   const [team2p2, setTeam2p2] = useState('')
   const [sets, setSets] = useState<SetScore[]>([])
-  const [activeSet, setActiveSet] = useState<number | null>(null)
-  const [activeTeam, setActiveTeam] = useState<1 | 2>(1)
-  const [pendingT1, setPendingT1] = useState<number | null>(null)
+  const [editingSet, setEditingSet] = useState<number | null>(null)
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const popoverRef = useRef<HTMLDivElement>(null)
 
   const w1 = setsWon(sets, 1)
   const w2 = setsWon(sets, 2)
@@ -47,55 +35,13 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     ? sets.length
     : Math.min(sets.length + 1, needsSet3 || sets.length === 3 ? 3 : 2)
 
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        setActiveSet(null)
-        setActiveTeam(1)
-        setPendingT1(null)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
-
-  const openSet = (setIndex: number, team: 1 | 2 = 1) => {
-    if (activeSet === setIndex && activeTeam === team) {
-      setActiveSet(null)
-      setActiveTeam(1)
-      setPendingT1(null)
-    } else {
-      setActiveSet(setIndex)
-      setActiveTeam(team)
-      if (team === 2 && sets[setIndex] !== undefined) {
-        setPendingT1(sets[setIndex].t1)
-      } else {
-        setPendingT1(null)
-      }
-    }
-  }
-
-  const handleNumber = (n: number) => {
-    if (activeSet === null) return
-    if (activeTeam === 1) {
-      setPendingT1(n)
-      setActiveTeam(2)
-    } else {
-      const t1 = pendingT1 ?? 0
-      const t2 = n
-      if (!isValidSet(t1, t2)) {
-        toast.error(`${t1}–${t2} is not a valid padel score`)
-        setActiveTeam(1)
-        setPendingT1(null)
-        return
-      }
-      const newSets = [...sets]
-      newSets[activeSet] = { t1, t2 }
-      setSets(newSets.slice(0, activeSet + 1))
-      setActiveSet(null)
-      setActiveTeam(1)
-      setPendingT1(null)
-    }
+  const selectChip = (setIndex: number, winner: 1 | 2, hi: number, lo: number) => {
+    const t1 = winner === 1 ? hi : lo
+    const t2 = winner === 1 ? lo : hi
+    const newSets = [...sets]
+    newSets[setIndex] = { t1, t2 }
+    setSets(newSets.slice(0, setIndex + 1))
+    setEditingSet(null)
   }
 
   const handleSubmit = async () => {
@@ -149,94 +95,77 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     </select>
   )
 
+  const ChipGrid = ({ setIndex }: { setIndex: number }) => (
+    <div className="rounded-xl p-3" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-wide mb-2 text-center" style={{ color: 'var(--brand-primary)' }}>Team 1 wins</div>
+          <div className="space-y-1.5">
+            {CHIP_SCORES.map(([hi, lo]) => (
+              <button
+                key={`t1-${hi}-${lo}`}
+                onClick={() => selectChip(setIndex, 1, hi, lo)}
+                className="w-full py-2 rounded-lg font-bold text-sm transition-all"
+                style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-primary)'; e.currentTarget.style.color = 'var(--brand-primary-on)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--brand-primary-muted)'; e.currentTarget.style.color = 'var(--brand-primary)' }}
+              >
+                {hi}–{lo}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs font-bold uppercase tracking-wide mb-2 text-center" style={{ color: 'var(--brand-accent)' }}>Team 2 wins</div>
+          <div className="space-y-1.5">
+            {CHIP_SCORES.map(([hi, lo]) => (
+              <button
+                key={`t2-${hi}-${lo}`}
+                onClick={() => selectChip(setIndex, 2, hi, lo)}
+                className="w-full py-2 rounded-lg font-bold text-sm transition-all"
+                style={{ background: 'var(--brand-accent-muted)', border: '1px solid var(--brand-accent)', color: 'var(--brand-accent)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-accent)'; e.currentTarget.style.color = 'var(--brand-accent-on)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--brand-accent-muted)'; e.currentTarget.style.color = 'var(--brand-accent)' }}
+              >
+                {lo}–{hi}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   const SetRow = ({ setIndex }: { setIndex: number }) => {
     const score = sets[setIndex]
-    const isOpen = activeSet === setIndex
-    const winner = score !== undefined ? setWinner(score) : null
-
-    const bubbleBase: React.CSSProperties = {
-      flex: 1,
-      height: 120,
-      borderRadius: 14,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 96,
-      fontWeight: 900,
-      cursor: 'pointer',
-      transition: 'all 0.12s',
-      lineHeight: 1,
-      letterSpacing: '-4px',
-    }
-
-    const neutralBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid var(--border)', color: 'var(--text-subtle)' }
-    const activeBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid rgba(255,255,255,0.4)', color: 'var(--text-primary)', boxShadow: '0 0 0 2px rgba(255,255,255,0.15)' }
-    const winnerT1: React.CSSProperties = { ...bubbleBase, background: 'var(--brand-primary-muted)', border: '1.5px solid var(--brand-primary)', color: 'var(--brand-primary)' }
-    const winnerT2: React.CSSProperties = { ...bubbleBase, background: 'var(--brand-accent-muted)', border: '1.5px solid var(--brand-accent)', color: 'var(--brand-accent)' }
-    // Loser — same size, dark grey number, no colour
-    const loserBubble: React.CSSProperties = { ...bubbleBase, background: 'var(--bg-raised)', border: '1.5px solid var(--border)', color: 'rgba(255,255,255,0.2)' }
-
-    const t1Style = score !== undefined && !isOpen
-      ? (winner === 1 ? winnerT1 : loserBubble)
-      : isOpen && activeTeam === 1 ? activeBubble
-      : isOpen && activeTeam === 2 ? { ...winnerT1, opacity: 0.7 }
-      : neutralBubble
-
-    const t2Style = score !== undefined && !isOpen
-      ? (winner === 2 ? winnerT2 : loserBubble)
-      : isOpen && activeTeam === 2 ? activeBubble
-      : neutralBubble
+    const isComplete = score !== undefined
+    const isEditing = editingSet === setIndex
+    const winner = isComplete ? setWinner(score) : null
 
     return (
-      <div className="relative">
+      <div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>Set {setIndex + 1}</span>
-          {score !== undefined && !isOpen && (
+          <span className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>Set {setIndex + 1}</span>
+          {isComplete && (
             <span className="text-xs font-semibold px-2 py-0.5 rounded-lg" style={{ background: winner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: winner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)' }}>
               T{winner} ✓
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div style={t1Style} onClick={() => openSet(setIndex, 1)}>
-            {isOpen && activeTeam === 1 ? '?' : isOpen && activeTeam === 2 ? pendingT1 : score !== undefined ? score.t1 : '?'}
-          </div>
-          <span style={{ color: 'var(--text-subtle)', fontSize: 40, fontWeight: 200, flexShrink: 0 }}>–</span>
-          <div style={t2Style} onClick={() => openSet(setIndex, 2)}>
-            {isOpen ? '?' : score !== undefined ? score.t2 : '?'}
-          </div>
-        </div>
-
-        {isOpen && (
-          <div ref={popoverRef} className="absolute z-50 mt-2" style={{ left: 0, right: 0, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 14, padding: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.5)' }}>
-            <div className="text-center text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
-              Team {activeTeam} · Set {setIndex + 1}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-              {[0, 1, 2, 3, 4, 5, 6, 7].map(n => (
-                <button
-                  key={n}
-                  onClick={() => handleNumber(n)}
-                  className="flex items-center justify-center rounded-xl font-bold transition-all"
-                  style={{ height: 60, fontSize: 26, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-surface)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-raised)'; e.currentTarget.style.borderColor = 'var(--border)' }}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-            {activeTeam === 2 && (
-              <button
-                onClick={() => { setActiveTeam(1); setPendingT1(null) }}
-                className="w-full mt-3 text-xs py-2 rounded-lg"
-                style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-subtle)' }}
-              >
-                ← back
-              </button>
-            )}
-          </div>
+        {isComplete && !isEditing ? (
+          <button
+            onClick={() => setEditingSet(setIndex)}
+            className="w-full flex items-center justify-center gap-4 py-4 rounded-xl transition-all"
+            style={{ background: 'var(--bg-raised)', border: `1.5px solid ${winner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}` }}
+          >
+            <span className="text-4xl font-black" style={{ color: winner === 1 ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{score.t1}</span>
+            <span className="text-xl font-light" style={{ color: 'var(--text-muted)' }}>–</span>
+            <span className="text-4xl font-black" style={{ color: winner === 2 ? 'var(--brand-accent)' : 'var(--text-primary)' }}>{score.t2}</span>
+            <span className="text-xs ml-2" style={{ color: 'var(--text-muted)' }}>tap to edit</span>
+          </button>
+        ) : (
+          <ChipGrid setIndex={setIndex} />
         )}
       </div>
     )
@@ -263,8 +192,8 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
 
       <div className="rounded-xl p-4 space-y-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <div className="flex items-center justify-between">
-          <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Score</div>
-          <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>Tap to enter or edit</div>
+          <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>Score</div>
+          <div className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Tap a score to record the set</div>
         </div>
         {Array.from({ length: setsToShow }).map((_, i) => <SetRow key={i} setIndex={i} />)}
         {matchWinner && (
@@ -279,7 +208,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         <textarea className="input text-sm" rows={2} placeholder="Any notes about the match..." value={notes} onChange={e => setNotes(e.target.value)} maxLength={200} />
       </div>
 
-      <div className="rounded-xl p-3 text-xs" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>
+      <div className="rounded-xl p-3 text-xs font-semibold" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>
         Winners +{POINTS.win}{sets.length === 2 ? ` +${POINTS.win_bonus} bonus` : ''} pts · Losers +{POINTS.loss} pts
       </div>
 
