@@ -232,7 +232,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
             </div>
           </div>
         </div>
-        <span className={cn('badge', 'status-' + b.status)} style={{ flexShrink: 0 }}>{b.status}</span>
+        <span className={cn('badge', 'status-' + b.status)} style={{ flexShrink: 0, fontWeight: 700, padding: '4px 12px' }}>{b.status}</span>
       </div>
       {splits.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
@@ -269,7 +269,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
               <button className="btn btn-danger btn-sm" onClick={onCancel} disabled={cancelling}>
                 {cancelling ? '…' : 'Cancel'}
               </button>
-              <span className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>{isLateCancel ? '50% credit' : 'Full refund'}</span>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{isLateCancel ? '50% credit' : 'Full refund'}</span>
             </div>
           )}
         </div>

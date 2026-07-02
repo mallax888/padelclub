@@ -115,8 +115,10 @@
     background: var(--brand-primary-muted);
   }
   .btn-danger {
-    @apply text-red-500;
-    border-color: #FECACA;
+    color: var(--brand-crimson);
+    border-color: var(--brand-crimson);
+    background: var(--brand-crimson-muted);
+    font-weight: 600;
   }
   .btn-danger:hover:not(:disabled) {
     background: rgba(239,68,68,0.1);
@@ -260,6 +262,7 @@ h1, h2, h3, h4, h5, h6 {
   .whatsapp-btn { display: flex !important; }
   .tawkto-desktop { display: none !important; }
 }
+
 
 
 
