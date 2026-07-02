@@ -219,6 +219,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
   const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
   const canCancel = !past && b.status === 'confirmed' && bookingDateTime > now
   const isLateCancel = hoursUntil < 24
+  const isPaid = !!b.stripe_payment_id
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
 
   return (
@@ -274,7 +275,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
               <button className="btn btn-danger btn-sm" onClick={onCancel} disabled={cancelling}>
                 {cancelling ? '…' : 'Cancel'}
               </button>
-              <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{isLateCancel ? '50% credit' : 'Full refund'}</span>
+              <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{!isPaid ? 'No charge' : isLateCancel ? '50% credit' : 'Full refund'}</span>
             </div>
           )}
         </div>
