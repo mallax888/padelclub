@@ -52,26 +52,23 @@ export default function MembershipPanel({
     if (!selectedPack) return
     const pack = CREDIT_PACKS.find(p => p.id === selectedPack)!
     setPurchasing(true)
-    const { error: txErr } = await (supabase as any)
-      .from('credit_transactions')
-      .insert({
-        user_id: profile.id,
-        amount: pack.sessions,
-        type: 'purchase',
-        description: `Purchased ${pack.sessions}-session pack`,
+    try {
+      const res = await fetch('/api/checkout-credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packId: pack.id, sessions: pack.sessions, priceNzd: pack.priceNzd }),
       })
-    if (!txErr) {
-      await (supabase as any)
-        .from('profiles')
-        .update({ credits: (profile?.credits ?? 0) + pack.sessions })
-        .eq('id', profile.id)
-      toast.success(`${pack.sessions} credits added!`)
-      setSelectedPack(null)
-      router.refresh()
-    } else {
-      toast.error('Purchase failed — please try again.')
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url
+      } else {
+        toast.error(data.error || 'Could not start checkout — please try again.')
+        setPurchasing(false)
+      }
+    } catch (e) {
+      toast.error('Could not start checkout — please try again.')
+      setPurchasing(false)
     }
-    setPurchasing(false)
   }
 
   return (
