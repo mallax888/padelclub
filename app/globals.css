@@ -7,8 +7,8 @@
   --bg-surface:         #FFFFFF;
   --bg-raised:          #F5F5F5;
   --text-primary:       #111111;
-  --text-muted:         #555555;
-  --text-subtle:        #888888;
+  --text-muted:         #3F3F46;
+  --text-subtle:        #6B6B75;
   --border:             #D1D1D6;
   --brand-primary:      #00CC6A;
   --brand-primary-on:   #FFFFFF;
@@ -33,8 +33,8 @@
   --bg-surface:         #27272A;
   --bg-raised:          #3F3F46;
   --text-primary:       #F4F4F5;
-  --text-muted:         #A1A1AA;
-  --text-subtle:        #71717A;
+  --text-muted:         #B8B8C2;
+  --text-subtle:        #9A9AA5;
   --border:             #3F3F46;
   --brand-primary:      #00FF87;
   --brand-primary-on:   #003320;
@@ -260,6 +260,7 @@ h1, h2, h3, h4, h5, h6 {
   .whatsapp-btn { display: flex !important; }
   .tawkto-desktop { display: none !important; }
 }
+
 
 
 
