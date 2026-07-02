@@ -124,21 +124,24 @@ export default function MembershipPanel({
               <ul className="space-y-1.5 mt-3 flex-1">
                 {mem.features.map(f => (
                   <li key={f} className="text-sm flex items-start gap-2" style={{ color: 'var(--text-muted)' }}>
-                    <span className="mt-0.5 shrink-0" style={{ color: 'var(--brand-primary)' }}>✓</span>
+                    <span className="mt-0.5 shrink-0" style={{ color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.95rem' }}>✓</span>
                     {f}
                   </li>
                 ))}
               </ul>
               <button
-                className="btn btn-primary w-full justify-center mt-4"
+                className={isCurrent ? 'btn w-full justify-center mt-4' : 'btn btn-primary w-full justify-center mt-4'}
                 disabled={isCurrent || upgrading}
                 style={{
                   cursor: isCurrent ? 'default' : 'pointer',
-                  opacity: isCurrent ? 0.5 : 1,
+                  background: isCurrent ? 'var(--brand-primary-muted)' : undefined,
+                  color: isCurrent ? 'var(--brand-primary)' : undefined,
+                  border: isCurrent ? '1px solid var(--brand-primary)' : undefined,
+                  fontWeight: 600,
                 }}
                 onClick={() => handleUpgrade(mem.id as MembershipTier)}
               >
-                {isCurrent ? 'Current plan' : `Select ${mem.name}`}
+                {isCurrent ? '✓ Current plan' : `Select ${mem.name}`}
               </button>
             </div>
           )
@@ -217,7 +220,7 @@ export default function MembershipPanel({
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-subtle)' }}>
+                    <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
                       {tx.created_at.slice(0, 10)}
                     </td>
                     <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)', userSelect: 'text' }}>
