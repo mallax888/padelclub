@@ -22,7 +22,7 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
             </div>
             <div
               className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-              style={{ background: 'var(--bg-base)', color: 'var(--text-subtle)', border: '1px solid var(--border)' }}
+              style={{ background: 'var(--bg-base)', color: 'var(--text-primary)', border: '1px solid var(--brand-primary)', fontWeight: 800 }}
             >
               {player.member_number}
             </div>
@@ -52,19 +52,19 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
             <div className="text-lg font-semibold" style={{ color: 'var(--brand-primary)' }}>
               {player.ranking_points ?? 0}
             </div>
-            <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>Points</div>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Points</div>
           </div>
           <div className="rounded-lg p-2" style={{ background: 'var(--bg-raised)' }}>
             <div className="text-lg font-semibold" style={{ color: '#4DFFEE' }}>
               {player.wins ?? 0}
             </div>
-            <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>Wins</div>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Wins</div>
           </div>
           <div className="rounded-lg p-2" style={{ background: 'var(--bg-raised)' }}>
             <div className="text-lg font-semibold" style={{ color: '#FF2D78' }}>
               {player.losses ?? 0}
             </div>
-            <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>Losses</div>
+            <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Losses</div>
           </div>
         </div>
       </div>
