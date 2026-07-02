@@ -265,11 +265,11 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
             </a>
           )}
           {canCancel && (
-            <div className="flex flex-col items-end gap-0.5">
+            <div className="flex flex-col items-center gap-1">
               <button className="btn btn-danger btn-sm" onClick={onCancel} disabled={cancelling}>
                 {cancelling ? '…' : 'Cancel'}
               </button>
-              <span className="text-[10px]" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{isLateCancel ? '50% credit' : 'Full refund'}</span>
+              <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{isLateCancel ? '50% credit' : 'Full refund'}</span>
             </div>
           )}
         </div>
