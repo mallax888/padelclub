@@ -33,8 +33,23 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-2.5 mb-3">
-            <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <svg width="56" height="56" viewBox="0 0 100 100">
+              <defs>
+                <radialGradient id="ball" cx="38%" cy="30%" r="65%">
+                  <stop offset="0%" stopColor="#FFFF80"/>
+                  <stop offset="40%" stopColor="#FFE000"/>
+                  <stop offset="100%" stopColor="#AAAA00"/>
+                </radialGradient>
+                <filter id="fuzz">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="n"/>
+                  <feDisplacementMap in="SourceGraphic" in2="n" scale="2" xChannelSelector="R" yChannelSelector="G"/>
+                </filter>
+              </defs>
+              <circle cx="50" cy="50" r="46" fill="url(#ball)" filter="url(#fuzz)"/>
+              <ellipse cx="38" cy="32" rx="14" ry="9" fill="white" opacity="0.25" transform="rotate(-25 38 32)"/>
+              <circle cx="50" cy="50" r="46" fill="none" stroke="#AA8800" strokeWidth="1"/>
+            </svg>
             <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', userSelect: 'none' }}>
               PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
             </div>
