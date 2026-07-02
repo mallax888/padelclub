@@ -3,23 +3,29 @@ import BookingFlow from '@/components/booking/BookingFlow'
 
 export default async function BookPage() {
   const supabase = createServerClient()
-
   const [{ data: courts }, { data: { session } }] = await Promise.all([
     supabase.from('courts').select('*').eq('is_active', true),
     supabase.auth.getSession(),
   ])
-
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', session!.user.id)
     .single()
-
   const { data: allPlayers } = await supabase
     .from('profiles')
     .select('id, full_name, nickname')
     .not('role', 'eq', 'staff')
     .order('full_name')
+
+  const { data: lastBooking } = await (supabase as any)
+    .from('bookings')
+    .select('court_id, courts(venue_slug)')
+    .eq('user_id', session!.user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const lastVenueSlug: string | null = lastBooking?.courts?.venue_slug ?? null
 
   return (
     <div>
@@ -27,10 +33,7 @@ export default async function BookPage() {
         <h1 className="text-2xl font-semibold">Book a court</h1>
         <p className="text-sm text-gray-500 mt-1">Select a date, court and time to make your booking</p>
       </div>
-      <BookingFlow courts={courts ?? []} profile={profile!} userId={session!.user.id} allPlayers={allPlayers ?? []} />
+      <BookingFlow courts={courts ?? []} profile={profile!} userId={session!.user.id} allPlayers={allPlayers ?? []} lastVenueSlug={lastVenueSlug} />
     </div>
   )
 }
-
-
-
