@@ -222,6 +222,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
   const isLateCancel = hoursUntil < 24
   const isPaid = !!b.stripe_payment_id
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
+  const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
 
   return (
     <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
@@ -234,25 +235,26 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
             <div className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
               {b.courts?.name} — {b.courts?.type}
             </div>
+            {venue && (
+              <div className="text-xs font-semibold mt-0.5" style={{ color: 'var(--brand-primary)' }}>
+                📍 {venue.name}
+              </div>
+            )}
             <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
             </div>
-            {!past && (() => {
-              const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
-              if (!venue) return null
-              return (
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-medium mt-1"
-                  style={{ color: 'var(--brand-primary)' }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  📍 Directions
-                </a>
-              )
-            })()}
+            {!past && venue && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-medium mt-1"
+                style={{ color: 'var(--brand-primary)' }}
+                onClick={e => e.stopPropagation()}
+              >
+                Get directions ↗
+              </a>
+            )}
           </div>
         </div>
         <span className={cn('badge', 'status-' + b.status)} style={{ flexShrink: 0, fontWeight: 700, padding: '4px 12px' }}>{b.status}</span>
