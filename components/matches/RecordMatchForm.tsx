@@ -76,6 +76,9 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     const scoreText = sets.map(s => `${s.t1}-${s.t2}`).join(' ')
 
     const { error } = await sb.from('matches').insert({
+      player1_id: team1p1,
+      player2_id: team2p1,
+      winner_id: matchWinner === 1 ? team1p1 : team2p1,
       team1_player1_id: team1p1 || null,
       team1_player2_id: team1p2 || null,
       team2_player1_id: team2p1 || null,
