@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { playNumberSound } from '@/lib/sounds'
 
 type Player = { id: string; full_name: string | null; nickname: string | null; ranking_points: number | null }
 type SetScore = { t1: number; t2: number }
@@ -118,25 +119,16 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     </select>
   )
 
-  const Stepper = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => (
-    <div className="flex flex-col items-center gap-3">
-      <div style={{ fontSize: 88, fontWeight: 900, lineHeight: 1, color, minWidth: 100, textAlign: 'center' }}>{value}</div>
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => onChange(Math.max(0, value - 1))}
-          className="flex items-center justify-center rounded-lg font-bold transition-all"
-          style={{ width: 48, height: 44, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 22 }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-        >–</button>
-        <button
-          onClick={() => onChange(Math.min(7, value + 1))}
-          className="flex items-center justify-center rounded-lg font-bold transition-all"
-          style={{ width: 48, height: 44, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 22 }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-        >+</button>
+  const TapZone = ({ value, onChange, color, bg }: { value: number; onChange: (n: number) => void; color: string; bg: string }) => (
+    <div className="flex flex-col items-center gap-2" style={{ flex: 1 }}>
+      <div
+        onClick={() => { onChange(value >= 7 ? 0 : value + 1); playNumberSound() }}
+        className="w-full flex items-center justify-center rounded-xl cursor-pointer select-none transition-all active:scale-95"
+        style={{ height: 110, background: bg, border: `1.5px solid ${color}` }}
+      >
+        <span style={{ fontSize: 64, fontWeight: 900, lineHeight: 1, color }}>{value}</span>
       </div>
+      <button onClick={() => onChange(0)} className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>reset</button>
     </div>
   )
 
@@ -173,9 +165,9 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         ) : (
           <div className="rounded-xl p-4" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-center gap-8 mb-3">
-              <Stepper value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" />
+              <TapZone value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" bg="var(--brand-primary-muted)" />
               <span style={{ fontSize: 28, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
-              <Stepper value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" />
+              <TapZone value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" bg="var(--brand-accent-muted)" />
             </div>
             <div className="text-center text-xs font-medium mb-3" style={{ color: draftValid ? 'var(--brand-primary)' : 'var(--text-muted)' }}>
               {draftT1 === draftT2 ? 'Scores can\u2019t be tied' : draftValid ? `Valid \u2014 Team ${draftT1 > draftT2 ? 1 : 2} wins this set` : 'Not a valid padel score yet'}
