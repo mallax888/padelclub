@@ -245,7 +245,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
               {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
             </div>
             {!past && venue && (
-              
+              <a
                 href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
                 target="_blank"
                 rel="noopener noreferrer"
