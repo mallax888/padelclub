@@ -241,7 +241,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
               const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
               if (!venue) return null
               return (
-                
+                <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
