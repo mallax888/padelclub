@@ -57,13 +57,11 @@ export default function BookingFlow({
     profile,
     userId,
     allPlayers = [],
-    lastVenueSlug = null,
   }: {
     courts: Court[]
     profile: Profile
     userId: string
     allPlayers?: { id: string; full_name: string | null; nickname: string | null }[]
-    lastVenueSlug?: string | null
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -77,12 +75,10 @@ export default function BookingFlow({
     return d.toISOString().slice(0, 10)
   })
 
-  const initialVenue = lastVenueSlug ? VENUES.find(v => v.slug === lastVenueSlug) ?? null : null
-  const initialCountry = initialVenue ? COUNTRIES.find(c => c.regions.includes(initialVenue.region))?.name ?? null : null
-  const [step, setStep] = useState<Step>(initialVenue ? 'date' : 'country')
-  const [country, setCountry] = useState<string | null>(initialCountry)
-  const [region, setRegion] = useState<string | null>(initialVenue?.region ?? null)
-  const [venue, setVenue] = useState<Venue | null>(initialVenue)
+  const [step, setStep] = useState<Step>('country')
+  const [country, setCountry] = useState<string | null>(null)
+  const [region, setRegion] = useState<string | null>(null)
+  const [venue, setVenue] = useState<Venue | null>(null)
   const [date, setDate] = useState<string | null>(null)
   const [court, setCourt] = useState<Court | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
