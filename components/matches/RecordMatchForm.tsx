@@ -72,39 +72,18 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     if (!team1p1 || !team2p1) { toast.error('Please select at least one player per team'); return }
     if (!matchWinner) { toast.error('Match is not complete yet'); return }
     setSubmitting(true)
-    const sb = supabase as any
-    const scoreText = sets.map(s => `${s.t1}-${s.t2}`).join(' ')
 
-    const { error } = await sb.from('matches').insert({
-      player1_id: team1p1,
-      player2_id: team2p1,
-      winner_id: matchWinner === 1 ? team1p1 : team2p1,
-      team1_player1_id: team1p1 || null,
-      team1_player2_id: team1p2 || null,
-      team2_player1_id: team2p1 || null,
-      team2_player2_id: team2p2 || null,
-      team1_sets: w1,
-      team2_sets: w2,
-      winner_team: matchWinner,
-      score: scoreText,
-      notes: notes || null,
-      recorded_by: currentUserId,
-      played_at: new Date().toISOString(),
+    const res = await fetch('/api/record-match', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ team1p1, team1p2, team2p1, team2p2, sets, matchWinner, notes }),
     })
+    const data = await res.json()
 
-    if (error) { toast.error('Could not record match: ' + error.message); console.error('Record match error:', error); setSubmitting(false); return }
-
-    const winBonus = sets.length === 2 ? POINTS.win_bonus : 0
-    const winners = matchWinner === 1 ? [team1p1, team1p2].filter(Boolean) : [team2p1, team2p2].filter(Boolean)
-    const losers = matchWinner === 1 ? [team2p1, team2p2].filter(Boolean) : [team1p1, team1p2].filter(Boolean)
-
-    for (const id of winners) {
-      const { data: p } = await sb.from('profiles').select('wins, ranking_points').eq('id', id).single()
-      await sb.from('profiles').update({ wins: (p?.wins ?? 0) + 1, ranking_points: (p?.ranking_points ?? 0) + POINTS.win + winBonus }).eq('id', id)
-    }
-    for (const id of losers) {
-      const { data: p } = await sb.from('profiles').select('losses, ranking_points').eq('id', id).single()
-      await sb.from('profiles').update({ losses: (p?.losses ?? 0) + 1, ranking_points: (p?.ranking_points ?? 0) + POINTS.loss }).eq('id', id)
+    if (!res.ok) {
+      toast.error(data.error || 'Could not record match')
+      setSubmitting(false)
+      return
     }
 
     toast.success('Match recorded! Leaderboard updated.')
