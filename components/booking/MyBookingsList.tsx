@@ -8,6 +8,7 @@ import { cn, formatNzd, formatDate } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
+import { VENUES } from '@/lib/venues'
 
 interface BookingWithCourt {
   id: string
@@ -236,6 +237,22 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
             <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
             </div>
+            {!past && (() => {
+              const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
+              if (!venue) return null
+              return (
+                
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-medium mt-1"
+                  style={{ color: 'var(--brand-primary)' }}
+                  onClick={e => e.stopPropagation()}
+                >
+                  📍 Directions
+                </a>
+              )
+            })()}
           </div>
         </div>
         <span className={cn('badge', 'status-' + b.status)} style={{ flexShrink: 0, fontWeight: 700, padding: '4px 12px' }}>{b.status}</span>

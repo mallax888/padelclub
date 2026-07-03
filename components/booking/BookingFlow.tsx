@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -145,6 +145,29 @@ export default function BookingFlow({
     const idx = STEPS.indexOf(step)
     if (idx > 0) setStep(STEPS[idx - 1])
   }
+
+  // Android/PWA hardware back button support: register each forward step
+  // with browser history so the native back gesture steps back one at a
+  // time instead of exiting the wizard entirely.
+  const stepIndexRef = useRef(0)
+  useEffect(() => {
+    const idx = STEPS.indexOf(step)
+    if (idx > stepIndexRef.current) {
+      window.history.pushState({ padelStep: idx }, '')
+    }
+    stepIndexRef.current = idx
+  }, [step])
+
+  useEffect(() => {
+    const onPopState = () => {
+      setStep(prev => {
+        const idx = STEPS.indexOf(prev)
+        return idx > 0 ? STEPS[idx - 1] : prev
+      })
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
 
   const addHoursDecimal = (timeStr: string, hrs: number) => {
     const [h, m] = timeStr.split(':').map(Number)
