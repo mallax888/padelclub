@@ -119,22 +119,24 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   )
 
   const Stepper = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => (
-    <div className="flex flex-col items-center gap-2">
-      <button
-        onClick={() => onChange(Math.min(7, value + 1))}
-        className="flex items-center justify-center rounded-lg font-bold transition-all"
-        style={{ width: 44, height: 36, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 18 }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-      >+</button>
-      <div style={{ fontSize: 56, fontWeight: 900, lineHeight: 1, color, minWidth: 70, textAlign: 'center' }}>{value}</div>
-      <button
-        onClick={() => onChange(Math.max(0, value - 1))}
-        className="flex items-center justify-center rounded-lg font-bold transition-all"
-        style={{ width: 44, height: 36, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 18 }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
-      >–</button>
+    <div className="flex flex-col items-center gap-3">
+      <div style={{ fontSize: 88, fontWeight: 900, lineHeight: 1, color, minWidth: 100, textAlign: 'center' }}>{value}</div>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => onChange(Math.max(0, value - 1))}
+          className="flex items-center justify-center rounded-lg font-bold transition-all"
+          style={{ width: 48, height: 44, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 22 }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+        >–</button>
+        <button
+          onClick={() => onChange(Math.min(7, value + 1))}
+          className="flex items-center justify-center rounded-lg font-bold transition-all"
+          style={{ width: 48, height: 44, background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 22 }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.color = color }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+        >+</button>
+      </div>
     </div>
   )
 
