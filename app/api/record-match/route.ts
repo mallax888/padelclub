@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  const admin = createAdminClient()
+  const admin = createAdminClient() as any
   const w1 = sets.filter((s: any) => s.t1 > s.t2).length
   const w2 = sets.filter((s: any) => s.t2 > s.t1).length
   const scoreText = sets.map((s: any) => `${s.t1}-${s.t2}`).join(' ')
