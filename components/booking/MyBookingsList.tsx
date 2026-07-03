@@ -179,10 +179,18 @@ export default function MyBookingsList({
         <strong>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit.
       </div>
 
+      <Link href="/book" className="flex items-center justify-between rounded-xl p-5 mb-6 transition-all hover:scale-[1.01]"
+        style={{ background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }}>
+        <div>
+          <div className="text-lg font-bold" style={{ color: 'var(--brand-primary-on)' }}>+ New booking</div>
+          <div className="text-sm font-medium opacity-80" style={{ color: 'var(--brand-primary-on)' }}>Book a court in seconds</div>
+        </div>
+        <div style={{ fontSize: 28, color: 'var(--brand-primary-on)' }}>🎾</div>
+      </Link>
+
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
-          <Link href="/book" className="btn btn-primary btn-sm">+ New booking</Link>
         </div>
         {upcoming.length === 0 ? (
           <div className="rounded-xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
