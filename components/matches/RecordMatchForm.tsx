@@ -89,7 +89,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
       played_at: new Date().toISOString(),
     })
 
-    if (error) { toast.error('Could not record match'); setSubmitting(false); return }
+    if (error) { toast.error('Could not record match: ' + error.message); console.error('Record match error:', error); setSubmitting(false); return }
 
     const winBonus = sets.length === 2 ? POINTS.win_bonus : 0
     const winners = matchWinner === 1 ? [team1p1, team1p2].filter(Boolean) : [team2p1, team2p2].filter(Boolean)
