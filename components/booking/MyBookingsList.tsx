@@ -54,6 +54,7 @@ interface JoinedGame {
     end_time: string
     duration_minutes: number
     courts: { name: string; type: string; venue_slug: string } | null
+    booking_splits?: { user_id: string; status: string; profiles: { nickname: string | null; full_name: string | null } | null }[]
   } | null
   profiles: { nickname: string | null; full_name: string | null } | null
 }
@@ -81,12 +82,14 @@ export default function MyBookingsList({
   splitRequests = [],
   outgoingSplits = [],
   joinedGames = [],
+  currentUserId,
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
   splitRequests?: SplitRequest[]
   outgoingSplits?: OutgoingSplit[]
   joinedGames?: JoinedGame[]
+  currentUserId?: string
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -225,7 +228,7 @@ export default function MyBookingsList({
         <div className="mb-6">
           <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
           <div className="space-y-2">
-            {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} />)}
+            {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
         </div>
       )}
@@ -339,11 +342,12 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
 }
 
 
-function JoinedGameRow({ game: j }: { game: JoinedGame }) {
+function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUserId?: string }) {
   const b = j.bookings
   if (!b) return null
   const venue = VENUES.find(v => v.slug === b.courts?.venue_slug)
   const organizerName = j.profiles?.nickname ?? j.profiles?.full_name ?? 'Someone'
+  const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
 
   return (
     <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
@@ -359,6 +363,19 @@ function JoinedGameRow({ game: j }: { game: JoinedGame }) {
             <div className="text-xs font-medium mt-0.5" style={{ color: 'var(--brand-accent)' }}>
               Joining {organizerName}'s game
             </div>
+            {coPlayers.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {coPlayers.map(cp => (
+                  <span key={cp.user_id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
+                    background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
+                    color: cp.status === 'paid' ? 'var(--brand-primary)' : '#DC3232',
+                    border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
+                  }}>
+                    {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} {cp.status === 'paid' ? '✓' : '⏳'}
+                  </span>
+                ))}
+              </div>
+            )}
             {venue && (
               <div className="text-sm font-medium mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>

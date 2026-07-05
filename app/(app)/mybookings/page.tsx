@@ -22,7 +22,7 @@ export default async function MyBookingsPage() {
       .eq('invited_by', session!.user.id),
     supabase
       .from('booking_splits')
-      .select('*, bookings(*, courts(*)), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
+      .select('*, bookings(*, courts(*), booking_splits(user_id, status, profiles(nickname, full_name))), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
       .eq('user_id', session!.user.id)
       .eq('status', 'paid'),
   ])
@@ -32,7 +32,7 @@ export default async function MyBookingsPage() {
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} />
     </div>
   )
 }
