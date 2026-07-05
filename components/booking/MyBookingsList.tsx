@@ -45,6 +45,19 @@ interface SplitRequest {
   profiles: { nickname: string | null; full_name: string | null } | null
 }
 
+interface JoinedGame {
+  id: string
+  amount_nzd: number
+  bookings: {
+    date: string
+    start_time: string
+    end_time: string
+    duration_minutes: number
+    courts: { name: string; type: string; venue_slug: string } | null
+  } | null
+  profiles: { nickname: string | null; full_name: string | null } | null
+}
+
 function paymentLabel(method: string, stripeId: string | null) {
   if (method === 'card' && stripeId) return { label: 'Paid', color: '#22c55e' }
   if (method === 'card' && !stripeId) return { label: 'Payment pending', color: '#f59e0b' }
@@ -67,11 +80,13 @@ export default function MyBookingsList({
   profile,
   splitRequests = [],
   outgoingSplits = [],
+  joinedGames = [],
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
   splitRequests?: SplitRequest[]
   outgoingSplits?: OutgoingSplit[]
+  joinedGames?: JoinedGame[]
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -83,6 +98,7 @@ export default function MyBookingsList({
   const today = new Date().toISOString().slice(0, 10)
   const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled')
   const past = bookings.filter(b => b.date < today || b.status === 'cancelled')
+  const upcomingJoined = joinedGames.filter(j => (j.bookings?.date ?? '') >= today)
 
   const handleCancel = async (id: string) => {
     const booking = bookings.find(b => b.id === id)
@@ -205,6 +221,15 @@ export default function MyBookingsList({
         )}
       </div>
 
+      {upcomingJoined.length > 0 && (
+        <div className="mb-6">
+          <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
+          <div className="space-y-2">
+            {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} />)}
+          </div>
+        </div>
+      )}
+
       {past.length > 0 && (
         <div>
           <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
@@ -307,6 +332,59 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
               <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{!isPaid ? 'No charge' : isLateCancel ? '50% credit' : 'Full refund'}</span>
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function JoinedGameRow({ game: j }: { game: JoinedGame }) {
+  const b = j.bookings
+  if (!b) return null
+  const venue = VENUES.find(v => v.slug === b.courts?.venue_slug)
+  const organizerName = j.profiles?.nickname ?? j.profiles?.full_name ?? 'Someone'
+
+  return (
+    <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="flex items-start justify-between gap-4 mb-2">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-accent-muted)' }}>
+            🙋
+          </div>
+          <div className="min-w-0">
+            <div className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+              {b.courts?.name} — {b.courts?.type}
+            </div>
+            <div className="text-xs font-medium mt-0.5" style={{ color: 'var(--brand-accent)' }}>
+              Joining {organizerName}'s game
+            </div>
+            {venue && (
+              <div className="text-sm font-medium mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {venue.name}
+              </div>
+            )}
+            <div className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+            </div>
+            {venue && (
+              
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold mt-1.5"
+                style={{ color: 'var(--brand-primary)' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+                Take me to the court
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="text-right shrink-0">
+          <div className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>Paid ✓</div>
+          <div className="text-lg font-bold mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(j.amount_nzd)}</div>
         </div>
       </div>
     </div>
