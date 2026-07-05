@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -11,31 +11,29 @@ export async function POST(request: Request) {
   } catch (err: any) {
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
   }
-
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as any
     const { bookingId, userId, splitId, type, sessions } = session.metadata
-    const supabase = createServerClient()
-
+    const supabase = createAdminClient() as any
     if (type === 'credit_pack' && userId) {
-      await (supabase as any).from('credit_transactions').insert({
+      await supabase.from('credit_transactions').insert({
         user_id: userId,
         amount: parseInt(sessions, 10),
         type: 'purchase',
         description: `Purchased ${sessions}-session pack`,
       })
-      const { data: profile } = await (supabase as any).from('profiles').select('credits').eq('id', userId).single()
-      await (supabase as any).from('profiles').update({ credits: (profile?.credits ?? 0) + parseInt(sessions, 10) }).eq('id', userId)
+      const { data: profile } = await supabase.from('profiles').select('credits').eq('id', userId).single()
+      await supabase.from('profiles').update({ credits: (profile?.credits ?? 0) + parseInt(sessions, 10) }).eq('id', userId)
     } else if (type === 'split_payment' && splitId) {
-      await (supabase as any).from('booking_splits').update({ status: 'paid', stripe_payment_id: session.payment_intent }).eq('id', splitId)
-      const { data: split } = await (supabase as any)
+      await supabase.from('booking_splits').update({ status: 'paid', stripe_payment_id: session.payment_intent }).eq('id', splitId)
+      const { data: split } = await supabase
         .from('booking_splits')
         .select('invited_by, amount_nzd, profiles!booking_splits_user_id_fkey(full_name, nickname)')
         .eq('id', splitId)
         .single()
       if (split) {
         const payerName = split.profiles?.nickname ?? split.profiles?.full_name ?? 'Someone'
-        await (supabase as any).from('notifications').insert({
+        await supabase.from('notifications').insert({
           user_id: split.invited_by,
           type: 'split_paid',
           title: 'Split payment received',
@@ -44,13 +42,12 @@ export async function POST(request: Request) {
         })
       }
     } else if (bookingId) {
-      await (supabase as any).from('bookings').update({
+      await supabase.from('bookings').update({
         status: 'confirmed',
         payment_method: 'card',
         stripe_payment_id: session.payment_intent,
       }).eq('id', bookingId)
     }
   }
-
   return NextResponse.json({ received: true })
 }

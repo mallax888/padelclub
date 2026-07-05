@@ -39,7 +39,8 @@ export async function POST(request: Request) {
   })
 
   if (insertError) {
-    return NextResponse.json({ error: insertError.message }, { status: 500 })
+    console.error('Record match insert error:', insertError)
+    return NextResponse.json({ error: 'Could not record match. Please try again.' }, { status: 500 })
   }
 
   const winBonus = sets.length === 2 ? POINTS.win_bonus : 0

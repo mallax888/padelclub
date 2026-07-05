@@ -81,7 +81,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     const data = await res.json()
 
     if (!res.ok) {
-      toast.error(data.error || 'Could not record match')
+      toast.error('Could not record match. Please try again.')
       setSubmitting(false)
       return
     }
