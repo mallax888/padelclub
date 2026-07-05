@@ -22,7 +22,7 @@ export default async function MyBookingsPage() {
       .eq('invited_by', session!.user.id),
     supabase
       .from('booking_splits')
-      .select('*, bookings(*, courts(*), booking_splits(user_id, status, profiles(nickname, full_name))), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
+      .select('*, bookings(*, courts(*), booking_splits(user_id, status, profiles!booking_splits_user_id_fkey(nickname, full_name))), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
       .eq('user_id', session!.user.id)
       .eq('status', 'paid'),
   ])
