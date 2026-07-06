@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { playNumberSound } from '@/lib/sounds'
+import { playWheelClick } from '@/lib/sounds'
 
 type Player = { id: string; full_name: string | null; nickname: string | null; ranking_points: number | null }
 type SetScore = { t1: number; t2: number }
@@ -104,7 +104,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const TapZone = ({ value, onChange, color, bg }: { value: number; onChange: (n: number) => void; color: string; bg: string }) => (
     <div className="flex flex-col items-center gap-2" style={{ flex: 1 }}>
       <div
-        onClick={() => { onChange(value >= 7 ? 0 : value + 1); playNumberSound() }}
+        onClick={() => { onChange(value >= 7 ? 0 : value + 1); playWheelClick() }}
         className="w-full flex items-center justify-center rounded-xl cursor-pointer select-none transition-all active:scale-95"
         style={{ height: 110, background: bg, border: `1.5px solid ${color}` }}
       >
