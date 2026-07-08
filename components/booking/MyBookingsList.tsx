@@ -295,10 +295,12 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
             )}
           </div>
         </div>
-        <div className="flex items-center justify-between sm:block sm:text-right shrink-0 pl-15 sm:pl-0" style={{ paddingLeft: 60 }}>
+        <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
           <span className={cn('badge', 'status-' + b.status)} style={{ fontWeight: 700, padding: '4px 12px' }}>{b.status}</span>
-          <div className="text-2xl font-bold sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
-          <div className="text-xs font-medium sm:mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
+          <div className="flex items-baseline gap-2 sm:block">
+            <div className="text-2xl font-bold sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
+            <div className="text-xs font-medium whitespace-nowrap sm:mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
+          </div>
         </div>
       </div>
       {splits.length > 0 && (
