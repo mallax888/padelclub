@@ -262,7 +262,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
 
   return (
     <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-      <div className="flex items-start justify-between gap-4 mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-primary-muted)' }}>
             🎾
@@ -295,10 +295,10 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
             )}
           </div>
         </div>
-        <div className="text-right shrink-0">
+        <div className="flex items-center justify-between sm:block sm:text-right shrink-0 pl-15 sm:pl-0" style={{ paddingLeft: 60 }}>
           <span className={cn('badge', 'status-' + b.status)} style={{ fontWeight: 700, padding: '4px 12px' }}>{b.status}</span>
-          <div className="text-2xl font-bold mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
-          <div className="text-xs font-medium mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
+          <div className="text-2xl font-bold sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
+          <div className="text-xs font-medium sm:mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
         </div>
       </div>
       {splits.length > 0 && (
@@ -351,7 +351,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
 
   return (
     <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-      <div className="flex items-start justify-between gap-4 mb-2">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-2">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-accent-muted)' }}>
             🙋
@@ -399,9 +399,9 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
             )}
           </div>
         </div>
-        <div className="text-right shrink-0">
+        <div className="flex items-center justify-between sm:block sm:text-right shrink-0" style={{ paddingLeft: 60 }}>
           <div className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>Paid ✓</div>
-          <div className="text-lg font-bold mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(j.amount_nzd)}</div>
+          <div className="text-lg font-bold sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(j.amount_nzd)}</div>
         </div>
       </div>
     </div>
