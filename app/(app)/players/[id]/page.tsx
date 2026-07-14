@@ -54,6 +54,22 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
   }
   const h2hList = Object.values(h2h).sort((a, b) => (b.wins + b.losses) - (a.wins + a.losses)).slice(0, 5)
 
+  // Regulars — most frequent doubles partners (teammates, not opponents)
+  const partners: Record<string, { name: string; id: string; together: number; winsTogether: number }> = {}
+  for (const m of matches) {
+    const onTeam1 = [m.team1_player1?.id, m.team1_player2?.id].includes(params.id)
+    const won = (onTeam1 && m.winner_team === 1) || (!onTeam1 && m.winner_team === 2)
+    const myPartners = onTeam1
+      ? [m.team1_player1, m.team1_player2].filter((p: any) => p?.id && p.id !== params.id)
+      : [m.team2_player1, m.team2_player2].filter((p: any) => p?.id && p.id !== params.id)
+    for (const p of myPartners) {
+      if (!partners[p.id]) partners[p.id] = { name: p.nickname ?? p.full_name ?? 'Unknown', id: p.id, together: 0, winsTogether: 0 }
+      partners[p.id].together++
+      if (won) partners[p.id].winsTogether++
+    }
+  }
+  const regularsList = Object.values(partners).sort((a, b) => b.together - a.together).slice(0, 5)
+
   return (
     <div className="max-w-2xl mx-auto">
       <Link href="/players" className="inline-flex items-center gap-1.5 text-sm mb-6 transition-colors"
@@ -143,6 +159,30 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
                       </div>
                       <span className="text-xs w-8 text-right" style={{ color: 'var(--text-muted)' }}>{pct}%</span>
                     </div>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Regulars */}
+      {regularsList.length > 0 && (
+        <div className="rounded-xl p-5 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Your regulars</div>
+          <div className="space-y-2">
+            {regularsList.map(p => {
+              const winPct = Math.round((p.winsTogether / p.together) * 100)
+              return (
+                <Link key={p.id} href={`/players/${p.id}`}>
+                  <div className="flex items-center gap-3 py-2 rounded-lg px-2 transition-colors"
+                    style={{ borderBottom: '1px solid var(--border)' }}>
+                    <div className="flex-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{p.name}</div>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.together} matches together</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                      {winPct}% win rate
+                    </span>
                   </div>
                 </Link>
               )
