@@ -1,6 +1,7 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@/lib/supabase-server'
+import { currencyForRegion } from '@/lib/currency'
 
 export async function POST(request: Request) {
   try {
@@ -10,17 +11,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    const { splitId, amount, courtName, date, time, invitedByName } = await request.json()
+    const { splitId, amount, courtName, date, time, invitedByName, region } = await request.json()
+    const currency = currencyForRegion(region)
 
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
-            currency: 'nzd',
+            currency,
             product_data: {
-              name: `Court split — ${courtName}`,
-              description: `${date} · ${time} · Requested by ${invitedByName}`,
+              name: `Court split \u2014 ${courtName}`,
+              description: `${date} \u00b7 ${time} \u00b7 Requested by ${invitedByName}`,
             },
             unit_amount: Math.round(amount * 100),
           },

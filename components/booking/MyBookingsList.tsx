@@ -40,7 +40,7 @@ interface SplitRequest {
     date: string
     start_time: string
     end_time: string
-    courts: { name: string; type: string } | null
+    courts: { name: string; type: string; venue_slug?: string } | null
   } | null
   profiles: { nickname: string | null; full_name: string | null } | null
 }
@@ -176,10 +176,11 @@ export default function MyBookingsList({
                       const date = s.bookings?.date ?? ''
                       const time = s.bookings?.start_time?.slice(0,5) ?? ''
                       const invitedByName = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
+                      const region = VENUES.find(v => v.slug === s.bookings?.courts?.venue_slug)?.region
                       const res = await fetch('/api/pay-split', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ splitId: s.id, amount: s.amount_nzd, courtName: court, date, time, invitedByName }),
+                        body: JSON.stringify({ splitId: s.id, amount: s.amount_nzd, courtName: court, date, time, invitedByName, region }),
                       })
                       const { url, error } = await res.json()
                       if (error) { toast.error(error); setPayingSplit(null); return }

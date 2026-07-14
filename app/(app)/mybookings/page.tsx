@@ -13,7 +13,7 @@ export default async function MyBookingsPage() {
     supabase.from('profiles').select('*').eq('id', session!.user.id).single(),
     supabase
       .from('booking_splits')
-      .select('*, bookings(date, start_time, end_time, courts(name, type)), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
+      .select('*, bookings(date, start_time, end_time, courts(name, type, venue_slug)), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
       .eq('user_id', session!.user.id)
       .eq('status', 'pending'),
     supabase

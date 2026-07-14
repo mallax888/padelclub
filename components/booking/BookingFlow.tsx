@@ -263,6 +263,7 @@ export default function BookingFlow({
         time: time + ' — ' + endTime,
         amount: courtPrice,
         splitCount: makePublic ? 4 : 1,
+        region: venue?.region,
       }),
     })
     const { url, error: stripeError } = await res.json()
