@@ -76,6 +76,20 @@ function durationLabel(mins: number) {
   return mins + ' min'
 }
 
+const DirectionsButton = ({ address }: { address: string }) => (
+  <a
+    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="w-full flex items-center justify-center gap-2 text-sm font-extrabold mt-3 py-3 rounded-2xl transition-all"
+    style={{ background: 'linear-gradient(135deg, #2D9CFF, #1B6FE0)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(45,156,255,0.3)' }}
+    onClick={e => e.stopPropagation()}
+  >
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    Take me to the court
+  </a>
+)
+
 export default function MyBookingsList({
   bookings,
   profile,
@@ -138,8 +152,8 @@ export default function MyBookingsList({
   return (
     <div>
       {splitRequests.length > 0 && (
-        <div className="rounded-xl p-4 mb-6" style={{ background: 'rgba(220,50,50,0.06)', border: '1px solid #DC3232' }}>
-          <div className="text-sm font-semibold mb-3" style={{ color: '#DC3232' }}>Outstanding split requests</div>
+        <div className="rounded-2xl p-4 mb-6" style={{ background: 'rgba(220,50,50,0.06)', border: '1px solid #DC3232' }}>
+          <div className="text-sm font-extrabold mb-3 uppercase tracking-wide" style={{ color: '#DC3232' }}>Outstanding split requests</div>
           <div className="space-y-3">
             {splitRequests.map(s => {
               const who = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
@@ -184,12 +198,12 @@ export default function MyBookingsList({
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
           { label: 'Upcoming', value: upcoming.length, color: 'var(--brand-primary)' },
-          { label: 'Credits', value: '$' + (profile?.credits ?? 0), color: 'var(--brand-accent)' },
+          { label: 'Credits', value: '$' + (profile?.credits ?? 0), color: '#FF3B3B' },
           { label: 'Membership', value: mem.name, color: 'var(--text-primary)' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-            <div className="text-lg font-semibold truncate" style={{ color }}>{value}</div>
+          <div key={label} className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="text-xs font-bold mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
+            <div className="text-2xl font-extrabold truncate" style={{ color }}>{value}</div>
           </div>
         ))}
       </div>
@@ -198,21 +212,21 @@ export default function MyBookingsList({
         <strong>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit.
       </div>
 
-      <Link href="/book" className="flex items-center justify-between rounded-xl p-5 mb-6 transition-all hover:scale-[1.01]"
-        style={{ background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }}>
+      <Link href="/book" className="flex items-center justify-between rounded-3xl p-8 mb-6 transition-all hover:scale-[1.01]"
+        style={{ background: 'linear-gradient(135deg, var(--brand-primary), #00CC6A)', boxShadow: '0 0 40px rgba(0,255,135,0.3)' }}>
         <div>
-          <div className="text-lg font-bold" style={{ color: 'var(--brand-primary-on)' }}>+ New booking</div>
-          <div className="text-sm font-medium opacity-80" style={{ color: 'var(--brand-primary-on)' }}>Book a court in seconds</div>
+          <div className="text-2xl font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary-on)', lineHeight: 1.1 }}>+ New booking</div>
+          <div className="text-sm font-bold mt-1" style={{ color: 'var(--brand-primary-on)', opacity: 0.85 }}>Book a court in seconds</div>
         </div>
-        <div style={{ fontSize: 28, color: 'var(--brand-primary-on)' }}>🎾</div>
+        <div style={{ fontSize: 40 }}>🎾</div>
       </Link>
 
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-medium" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
+          <h2 className="text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
         </div>
         {upcoming.length === 0 ? (
-          <div className="rounded-xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+          <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary)' }}>book a court</Link>
           </div>
         ) : (
@@ -226,7 +240,7 @@ export default function MyBookingsList({
 
       {upcomingJoined.length > 0 && (
         <div className="mb-6">
-          <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
+          <h2 className="text-lg font-extrabold mb-3" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
           <div className="space-y-2">
             {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
@@ -235,7 +249,7 @@ export default function MyBookingsList({
 
       {past.length > 0 && (
         <div>
-          <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
+          <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-sm font-bold mb-3" style={{ color: 'var(--text-muted)' }}>
             <span>{showHistory ? '▼' : '▶'}</span>
             <span>{showHistory ? 'Hide' : 'Show'} history ({past.length})</span>
           </button>
@@ -261,18 +275,18 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
 
   return (
-    <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <div className="rounded-3xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-primary-muted)' }}>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-primary-muted)' }}>
             🎾
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+            <div className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
               {b.courts?.name} — {b.courts?.type}
             </div>
             {venue && (
-              <div className="text-sm font-medium mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-sm font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 {venue.name}
               </div>
@@ -280,32 +294,20 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
             <div className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
             </div>
-            {!past && venue && (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold mt-1.5"
-                style={{ color: 'var(--brand-primary)' }}
-                onClick={e => e.stopPropagation()}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
-                Take me to the court
-              </a>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
-          <span className={cn('badge', 'status-' + b.status)} style={{ fontWeight: 700, padding: '4px 12px' }}>{b.status}</span>
+          <span className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--bg-raised)', color: b.status === 'confirmed' ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>{b.status}</span>
           <div className="flex items-baseline gap-2 sm:block">
-            <div className="text-2xl font-bold sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
+            <div className="text-2xl font-black sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
             <div className="text-xs font-medium whitespace-nowrap sm:mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
           </div>
         </div>
       </div>
+      {!past && venue && <DirectionsButton address={venue.address} />}
       {splits.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-          <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Split with:</span>
+        <div className="flex flex-wrap gap-2 mb-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
+          <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Split with:</span>
           {splits.map(s => {
           const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
           const paid = s.status === 'paid'
@@ -321,7 +323,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
         })}
         </div>
       )}
-      <div className="flex items-center justify-end pt-2" style={{ borderTop: splits.length > 0 ? 'none' : '1px solid var(--border)' }}>
+      <div className="flex items-center justify-end pt-2" style={{ borderTop: splits.length > 0 ? 'none' : (past ? 'none' : '1px solid var(--border)') }}>
         <div className="flex items-center gap-2">
           {b.stripe_payment_id && (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
@@ -352,17 +354,17 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
 
   return (
-    <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <div className="rounded-3xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-2">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-accent-muted)' }}>
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-accent-muted)' }}>
             🙋
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+            <div className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
               {b.courts?.name} — {b.courts?.type}
             </div>
-            <div className="text-xs font-medium mt-0.5" style={{ color: 'var(--brand-accent)' }}>
+            <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--brand-accent)' }}>
               Joining {organizerName}'s game
             </div>
             {coPlayers.length > 0 && (
@@ -379,7 +381,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
               </div>
             )}
             {venue && (
-              <div className="text-sm font-medium mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-sm font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 {venue.name}
               </div>
@@ -387,25 +389,14 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
             <div className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
             </div>
-            {venue && (
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(venue.address)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold mt-1.5"
-                style={{ color: 'var(--brand-primary)' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
-                Take me to the court
-              </a>
-            )}
           </div>
         </div>
-        <div className="flex items-center justify-between sm:block sm:text-right shrink-0" style={{ paddingLeft: 60 }}>
-          <div className="text-xs font-semibold px-2 py-1 rounded-lg" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>Paid ✓</div>
-          <div className="text-lg font-bold sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(j.amount_nzd)}</div>
+        <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
+          <div className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Paid ✓</div>
+          <div className="text-lg font-black sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(j.amount_nzd)}</div>
         </div>
       </div>
+      {venue && <DirectionsButton address={venue.address} />}
     </div>
   )
 }

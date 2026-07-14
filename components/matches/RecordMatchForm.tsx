@@ -177,14 +177,14 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     <div className="max-w-lg mx-auto space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: 'var(--glow-primary)' }}>
-          <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary)' }}>Team 1</div>
+          <div className="text-sm font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary)' }}>Team 1</div>
           <div className="space-y-2">
             <div><label className="label">Player 1 *</label><PlayerSelect value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
             <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
           </div>
         </div>
         <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-accent)', boxShadow: 'var(--glow-accent)' }}>
-          <div className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-accent)' }}>Team 2</div>
+          <div className="text-sm font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-accent)' }}>Team 2</div>
           <div className="space-y-2">
             <div><label className="label">Player 1 *</label><PlayerSelect value={team2p1} onChange={setTeam2p1} exclude={[team1p1, team1p2, team2p2]} /></div>
             <div><label className="label">Player 2</label><PlayerSelect value={team2p2} onChange={setTeam2p2} exclude={[team1p1, team1p2, team2p1]} /></div>
@@ -193,7 +193,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
       </div>
 
       <div className="rounded-xl p-4 space-y-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-        <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>Score</div>
+        <div className="text-sm font-extrabold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>Score</div>
         {Array.from({ length: setsToShow }).map((_, i) => <SetRow key={i} setIndex={i} />)}
         {matchWinner && (
           <div className="text-center text-sm font-semibold py-3 rounded-xl" style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}` }}>

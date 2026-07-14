@@ -150,8 +150,8 @@
     box-shadow: 0 0 0 2px var(--brand-primary-muted);
   }
   .label {
-    @apply block text-xs font-medium uppercase tracking-wide mb-1.5 select-none;
-    color: var(--text-muted);
+    @apply block text-xs font-bold uppercase tracking-wide mb-1.5 select-none;
+    color: var(--text-primary);
   }
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none;
