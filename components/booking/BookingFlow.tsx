@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
+import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, type Venue } from '@/lib/venues'
@@ -79,6 +80,7 @@ export default function BookingFlow({
   const [country, setCountry] = useState<string | null>(null)
   const [region, setRegion] = useState<string | null>(null)
   const [venue, setVenue] = useState<Venue | null>(null)
+  const currency = currencyForRegion(venue?.region)
   const [date, setDate] = useState<string | null>(null)
   const [court, setCourt] = useState<Court | null>(null)
   const [duration, setDuration] = useState<number | null>(null)
@@ -247,7 +249,7 @@ export default function BookingFlow({
           user_id: pid,
           type: 'split_request',
           title: 'Court cost split',
-          message: (profile?.full_name ?? 'Someone') + ' is requesting ' + formatNzd(splitAmount) + ' for a court booking.',
+          message: (profile?.full_name ?? 'Someone') + ' is requesting ' + formatPrice(splitAmount, currency) + ' for a court booking.',
           data: JSON.stringify({ booking_id: bookingData.id, amount: splitAmount }),
         })
       }
@@ -476,7 +478,7 @@ export default function BookingFlow({
               </div>
               <div className="text-right">
                 <div className="text-sm font-bold" style={{ color: 'var(--brand-primary)' }}>
-                  {formatNzd(c.price_per_hour * (1 - discount))}/hr
+                  {formatPrice(c.price_per_hour * (1 - discount), currency)}/hr
                 </div>
                 {discount > 0 && (
                   <div className="text-xs" style={{ color: 'var(--brand-accent)' }}>
@@ -503,7 +505,7 @@ export default function BookingFlow({
               <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{d.label}</div>
               {court && (
                 <div className="text-xs" style={{ color: 'var(--brand-primary)' }}>
-                  from {formatNzd(court.price_per_hour * (1 - discount) * d.value)}
+                  from {formatPrice(court.price_per_hour * (1 - discount) * d.value, currency)}
                 </div>
               )}
             </button>
@@ -578,7 +580,7 @@ export default function BookingFlow({
             ))}
             <div className="flex justify-between pt-3">
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl font-bold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice)}</span>
+              <span className="text-xl font-bold" style={{ color: 'var(--brand-primary)' }}>{formatPrice(courtPrice, currency)}</span>
             </div>
           </div>
 
@@ -657,13 +659,13 @@ export default function BookingFlow({
                       className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all"
                       style={{ background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)' }}>
                       <span className="text-sm" style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
-                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatNzd(courtPrice / (splitPlayers.length + 1))} each</span>}
+                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatPrice(courtPrice / (splitPlayers.length + 1), currency)} each</span>}
                     </button>
                   )
                 })}
                 {splitPlayers.length > 0 && (
                   <div className="text-xs pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
-                    You pay {formatNzd(courtPrice / (splitPlayers.length + 1))} - others notified to pay their share
+                    You pay {formatPrice(courtPrice / (splitPlayers.length + 1), currency)} - others notified to pay their share
                   </div>
                 )}
               </div>
@@ -672,7 +674,7 @@ export default function BookingFlow({
           <button className="w-full py-4 rounded-xl text-base font-semibold transition-all"
             style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
             disabled={submitting} onClick={handleConfirm}>
-            {submitting ? 'Confirming…' : `Pay ${formatNzd(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice)} →`}
+            {submitting ? 'Confirming…' : `Pay ${formatPrice(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice, currency)} →`}
           </button>
         </div>
       )}
