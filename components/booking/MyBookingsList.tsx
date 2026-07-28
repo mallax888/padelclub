@@ -194,7 +194,7 @@ function BookingRow({
       </div>
 
       {!past && (
-        
+        <a
           href={mapsUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -219,3 +219,5 @@ function BookingRow({
     </div>
   )
 }
+
+
