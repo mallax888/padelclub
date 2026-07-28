@@ -82,10 +82,10 @@ const DirectionsButton = ({ address }: { address: string }) => (
     target="_blank"
     rel="noopener noreferrer"
     className="w-full flex items-center justify-center gap-2 text-sm font-bold mt-3 py-3 rounded-xl transition-all"
-    style={{ background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.35)' }}
+    style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
     onClick={e => e.stopPropagation()}
   >
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
     Take me to the court
   </a>
 )
@@ -152,8 +152,8 @@ export default function MyBookingsList({
   return (
     <div>
       {splitRequests.length > 0 && (
-        <div className="rounded-2xl p-4 mb-6" style={{ background: 'rgba(220,50,50,0.06)', border: '1px solid #DC3232' }}>
-          <div className="text-sm font-extrabold mb-3 uppercase tracking-wide" style={{ color: '#DC3232' }}>Outstanding split requests</div>
+        <div className="rounded-2xl p-4 mb-6" style={{ background: 'var(--brand-crimson-muted)', border: '1px solid var(--brand-crimson)' }}>
+          <div className="text-sm font-extrabold mb-3 uppercase tracking-wide" style={{ color: 'var(--brand-crimson)' }}>Outstanding split requests</div>
           <div className="space-y-3">
             {splitRequests.map(s => {
               const who = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
@@ -163,12 +163,12 @@ export default function MyBookingsList({
               return (
                 <div key={s.id} className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium" style={{ color: '#DC3232' }}>You owe {who} {formatNzd(s.amount_nzd)}</div>
+                    <div className="text-sm font-medium" style={{ color: 'var(--brand-crimson)' }}>You owe {who} {formatNzd(s.amount_nzd)}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{court} · {date} · {time}</div>
                   </div>
                   <button
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0"
-                    style={{ background: '#DC3232', color: '#fff' }}
+                    style={{ background: 'var(--brand-crimson)', color: '#fff' }}
                     disabled={payingSplit === s.id}
                     onClick={async () => {
                       setPayingSplit(s.id)
@@ -210,16 +210,16 @@ export default function MyBookingsList({
         ))}
       </div>
 
-      <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: 'rgba(255,180,0,0.08)', border: '1px solid rgba(255,180,0,0.2)', color: '#F0A500' }}>
-        <strong>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit.
+      <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+        <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit.
       </div>
 
       {/* New booking — Direction B: muted emerald, bordered, normal height */}
       <Link href="/book" className="flex items-center justify-between rounded-2xl p-5 mb-6 transition-all hover:scale-[1.01]"
-        style={{ background: '#0e5c45', border: '1px solid rgba(52,211,153,0.3)' }}>
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted) inset' }}>
         <div>
-          <div className="text-xl font-black uppercase tracking-wide" style={{ color: '#d1fae5', lineHeight: 1.1 }}>+ New booking</div>
-          <div className="text-sm font-bold mt-1" style={{ color: '#6ee7b7' }}>Book a court in seconds</div>
+          <div className="text-xl font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary)', lineHeight: 1.1 }}>+ New booking</div>
+          <div className="text-sm font-bold mt-1" style={{ color: 'var(--text-muted)' }}>Book a court in seconds</div>
         </div>
         <div style={{ fontSize: 34 }}>🎾</div>
       </Link>
@@ -316,9 +316,9 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
           const paid = s.status === 'paid'
           return (
             <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-              background: paid ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
-              color: paid ? 'var(--brand-primary)' : '#DC3232',
-              border: paid ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
+              background: paid ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
+              color: paid ? 'var(--brand-primary)' : 'var(--brand-crimson)',
+              border: paid ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
             }}>
               {name} {paid ? '✓' : '⏳'}
             </span>
@@ -374,9 +374,9 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {coPlayers.map(cp => (
                   <span key={cp.user_id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-                    background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
-                    color: cp.status === 'paid' ? 'var(--brand-primary)' : '#DC3232',
-                    border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
+                    background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
+                    color: cp.status === 'paid' ? 'var(--brand-primary)' : 'var(--brand-crimson)',
+                    border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
                   }}>
                     {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} {cp.status === 'paid' ? '✓' : '⏳'}
                   </span>

@@ -10,48 +10,48 @@
   --text-muted:         #3F3F46;
   --text-subtle:        #6B6B75;
   --border:             #D1D1D6;
-  --brand-primary:      #00CC6A;
+  --brand-primary:      #059669;
   --brand-primary-on:   #FFFFFF;
   --brand-accent:       #C4005A;
   --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#00CC6A1A;
+  --brand-primary-muted:#0596691A;
   --brand-accent-muted: #C4005A1A;
-  --glow-primary:       0 0 16px 0 #00CC6A33;
+  --glow-primary:       0 0 16px 0 #0596692E;
   --glow-accent:        0 0 16px 0 #C4005A33;
   --brand-blue:         #0066FF;
   --brand-blue-muted:   #0066FF1A;
   --glow-blue:          0 0 16px 0 #0066FF33;
   --brand-yellow:       #FFE500;
   --brand-yellow-muted: #FFE5001A;
-  --brand-crimson:      #DC3232;
-  --brand-crimson-muted:#DC32321A;
-  --glow-crimson:       0 0 16px 0 #DC323233;
+  --brand-crimson:      #DC2626;
+  --brand-crimson-muted:#DC26261A;
+  --glow-crimson:       0 0 16px 0 #DC26262E;
 }
 
 .dark {
-  --bg-base:            #18181B;
-  --bg-surface:         #27272A;
-  --bg-raised:          #3F3F46;
-  --text-primary:       #F4F4F5;
-  --text-muted:         #B8B8C2;
-  --text-subtle:        #9A9AA5;
-  --border:             #3F3F46;
-  --brand-primary:      #00FF87;
-  --brand-primary-on:   #003320;
+  --bg-base:            #0F1115;
+  --bg-surface:         #171A20;
+  --bg-raised:          #20242C;
+  --text-primary:       #F1F3F5;
+  --text-muted:         #9CA3AF;
+  --text-subtle:        #6B7280;
+  --border:             #2A2F38;
+  --brand-primary:      #10B981;
+  --brand-primary-on:   #06281F;
   --brand-accent:       #FF2D78;
   --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#00FF871A;
+  --brand-primary-muted:#10B9811A;
   --brand-accent-muted: #FF2D781A;
-  --glow-primary:       0 0 16px 0 #00FF8733;
+  --glow-primary:       0 0 12px 0 #10B9812E;
   --glow-accent:        0 0 16px 0 #FF2D7833;
   --brand-blue:         #0066FF;
   --brand-blue-muted:   #0066FF1A;
   --glow-blue:          0 0 16px 0 #0066FF33;
   --brand-yellow:       #FFE500;
   --brand-yellow-muted: #FFE5001A;
-  --brand-crimson:      #DC3232;
-  --brand-crimson-muted:#DC32321A;
-  --glow-crimson:       0 0 16px 0 #DC323233;
+  --brand-crimson:      #EF4444;
+  --brand-crimson-muted:#EF44441A;
+  --glow-crimson:       0 0 16px 0 #EF44442E;
 }
 
 @layer base {
