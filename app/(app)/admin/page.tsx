@@ -1,21 +1,17 @@
-import { createServerClient } from '@/lib/supabase-server'
+﻿import { createServerClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import AdminDashboard from '@/components/admin/AdminDashboard'
-
 export default async function AdminPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
-
   const { data: profile } = await supabase
     .from('profiles')
-    .select('*')
+    .select('role')
     .eq('id', session!.user.id)
-    .single()
-
+    .single<{ role: string }>()
   if (!profile || !['staff','admin'].includes(profile.role)) {
     redirect('/book')
   }
-
   const [{ data: bookings }, { data: members }, { data: courts }] = await Promise.all([
     supabase
       .from('bookings')
@@ -33,7 +29,6 @@ export default async function AdminPage() {
       .select('*')
       .order('name'),
   ])
-
   return (
     <div>
       <div className="mb-6">
