@@ -24,7 +24,7 @@ export default function NicknameEditor({
       return
     }
     setSaving(true)
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('profiles')
       .update({ nickname: nickname.trim() || null })
       .eq('id', userId)

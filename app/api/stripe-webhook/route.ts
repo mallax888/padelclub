@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as any
     const { bookingId, userId, splitId, type, sessions } = session.metadata
-    const supabase = createAdminClient() as any
+    const supabase = createAdminClient()
     if (type === 'credit_pack' && userId) {
       await supabase.from('credit_transactions').insert({
         user_id: userId,
@@ -36,9 +36,7 @@ export async function POST(request: Request) {
         await supabase.from('notifications').insert({
           user_id: split.invited_by,
           type: 'split_paid',
-          title: 'Split payment received',
           message: payerName + ' paid their share of $' + split.amount_nzd,
-          data: JSON.stringify({ splitId, amount: split.amount_nzd }),
         })
       }
     } else if (bookingId) {
