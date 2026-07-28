@@ -50,7 +50,7 @@ export default function FindGameList({
   matches: OpenMatch[]
   currentUserId: string
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
 
@@ -373,6 +373,7 @@ export default function FindGameList({
     </div>
   )
 }
+
 
 
 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -21,7 +21,7 @@ export default function MembershipPanel({
   profile: Profile
   transactions: CreditTransaction[]
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [selectedPack, setSelectedPack] = useState<string | null>(null)
   const [upgrading, setUpgrading] = useState(false)
@@ -32,7 +32,7 @@ export default function MembershipPanel({
   const handleUpgrade = async (tier: MembershipTier) => {
     if (tier === profile.membership_tier) return
     setUpgrading(true)
-    // In production this triggers Stripe checkout — for now update directly
+    // In production this triggers Stripe checkout â€” for now update directly
     const { error } = await supabase
       .from('profiles')
       .update({ membership_tier: tier })
@@ -52,7 +52,7 @@ export default function MembershipPanel({
     const pack = CREDIT_PACKS.find(p => p.id === selectedPack)!
     setPurchasing(true)
 
-    // In production this goes through Stripe — for now credit directly
+    // In production this goes through Stripe â€” for now credit directly
     const { error: txErr } = await supabase.from('credit_transactions').insert({
       user_id: profile.id,
       amount: pack.sessions,
@@ -69,7 +69,7 @@ export default function MembershipPanel({
       setSelectedPack(null)
       router.refresh()
     } else {
-      toast.error('Purchase failed — please try again.')
+      toast.error('Purchase failed â€” please try again.')
     }
     setPurchasing(false)
   }
@@ -78,11 +78,11 @@ export default function MembershipPanel({
     <div>
       {/* Current plan summary */}
       <div className="card mb-6 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center text-2xl shrink-0">🏅</div>
+        <div className="w-12 h-12 rounded-xl bg-brand-50 flex items-center justify-center text-2xl shrink-0">ðŸ…</div>
         <div className="flex-1">
           <div className="text-xs text-gray-400 mb-0.5">Current plan</div>
           <div className="font-semibold">{currentMem.name} member</div>
-          <div className="text-sm text-gray-500">{currentMem.discount > 0 ? `${(currentMem.discount*100).toFixed(0)}% discount · ` : ''}{profile.credits} credits remaining</div>
+          <div className="text-sm text-gray-500">{currentMem.discount > 0 ? `${(currentMem.discount*100).toFixed(0)}% discount Â· ` : ''}{profile.credits} credits remaining</div>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ export default function MembershipPanel({
             <ul className="space-y-1.5 mb-4 mt-3">
               {mem.features.map(f => (
                 <li key={f} className="text-sm text-gray-600 flex items-start gap-2">
-                  <span className="text-brand-400 mt-0.5 shrink-0">✓</span>
+                  <span className="text-brand-400 mt-0.5 shrink-0">âœ“</span>
                   {f}
                 </li>
               ))}
@@ -129,7 +129,7 @@ export default function MembershipPanel({
 
       {/* Credit packs */}
       <h2 className="text-base font-medium mb-1">Session credit packs</h2>
-      <p className="text-sm text-gray-400 mb-3">Pre-buy sessions at a discount — use any time, on any court</p>
+      <p className="text-sm text-gray-400 mb-3">Pre-buy sessions at a discount â€” use any time, on any court</p>
       <div className="grid grid-cols-3 gap-3 mb-4">
         {CREDIT_PACKS.map(pack => (
           <div
@@ -159,7 +159,7 @@ export default function MembershipPanel({
             disabled={purchasing}
             onClick={handlePurchase}
           >
-            {purchasing ? 'Processing…' : 'Purchase credits'}
+            {purchasing ? 'Processingâ€¦' : 'Purchase credits'}
           </button>
         </div>
       )}
@@ -195,3 +195,4 @@ export default function MembershipPanel({
     </div>
   )
 }
+

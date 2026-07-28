@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -28,7 +28,7 @@ export default function AuthProvider({
   children: React.ReactNode
   session: Session | null
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const [session, setSession] = useState<Session | null>(initialSession)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -75,3 +75,4 @@ export default function AuthProvider({
     </AuthContext.Provider>
   )
 }
+

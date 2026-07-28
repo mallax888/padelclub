@@ -25,7 +25,7 @@ function setWinner(s: SetScore): 1 | 2 { return s.t1 > s.t2 ? 1 : 2 }
 function setsWon(sets: SetScore[], team: 1 | 2) { return sets.filter(s => setWinner(s) === team).length }
 
 export default function RecordMatchForm({ players, currentUserId }: { players: Player[]; currentUserId: string }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
 
   const [team1p1, setTeam1p1] = useState('')
@@ -222,3 +222,4 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     </div>
   )
 }
+

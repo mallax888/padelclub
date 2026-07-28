@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 export default function ResetPasswordPage() {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -104,3 +104,4 @@ export default function ResetPasswordPage() {
     </div>
   )
 }
+

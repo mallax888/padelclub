@@ -13,7 +13,7 @@ type Notification = {
 }
 
 export default function NotificationBell({ userId }: { userId: string }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
@@ -168,4 +168,5 @@ export default function NotificationBell({ userId }: { userId: string }) {
     </div>
   )
 }
+
 

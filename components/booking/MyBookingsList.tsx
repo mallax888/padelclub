@@ -39,7 +39,7 @@ export default function MyBookingsList({
   bookings: BookingWithCourt[]
   profile: Profile
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [cancelling, setCancelling] = useState<string | null>(null)
 
@@ -219,5 +219,6 @@ function BookingRow({
     </div>
   )
 }
+
 
 

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -24,7 +24,7 @@ export default function BookingFlow({
   courts: Court[]
   profile: Profile
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
 
   const memConfig = MEMBERSHIP_CONFIG[profile.membership_tier]
@@ -75,7 +75,7 @@ export default function BookingFlow({
 
     if (error) {
       toast.error(error.code === '23505'
-        ? 'That slot was just taken — please choose another time.'
+        ? 'That slot was just taken â€” please choose another time.'
         : error.message
       )
     } else {
@@ -109,7 +109,7 @@ export default function BookingFlow({
                   done && 'bg-brand-50 border-brand-400 text-brand-600',
                   !active && !done && 'border-gray-300 text-gray-400'
                 )}>
-                  {done ? '✓' : n}
+                  {done ? 'âœ“' : n}
                 </div>
                 {label}
               </div>
@@ -118,7 +118,7 @@ export default function BookingFlow({
         })}
       </div>
 
-      {/* ── STEP 1: Date + Court ── */}
+      {/* â”€â”€ STEP 1: Date + Court â”€â”€ */}
       {step === 1 && (
         <div>
           {/* Date strip */}
@@ -159,7 +159,7 @@ export default function BookingFlow({
               >
                 <div className="font-medium text-sm mb-0.5">{court.name}</div>
                 <div className="text-xs text-gray-400 mb-3">
-                  {court.is_indoor ? '🏢' : '☀️'} {court.type}
+                  {court.is_indoor ? 'ðŸ¢' : 'â˜€ï¸'} {court.type}
                 </div>
                 <div className="text-sm font-medium text-brand-600">
                   {formatNzd(court.price_per_hour * (1 - discount))}/hr
@@ -177,21 +177,21 @@ export default function BookingFlow({
               disabled={!selectedCourt}
               onClick={() => setStep(2)}
             >
-              Next: pick a time →
+              Next: pick a time â†’
             </button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 2: Time slot ── */}
+      {/* â”€â”€ STEP 2: Time slot â”€â”€ */}
       {step === 2 && selectedCourt && (
         <div>
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="font-medium">{selectedCourt.name} — {selectedCourt.type}</div>
-              <div className="text-sm text-gray-500">{formatDate(selectedDate)} · {formatNzd(courtPrice)}/hr</div>
+              <div className="font-medium">{selectedCourt.name} â€” {selectedCourt.type}</div>
+              <div className="text-sm text-gray-500">{formatDate(selectedDate)} Â· {formatNzd(courtPrice)}/hr</div>
             </div>
-            <button className="btn btn-sm" onClick={() => setStep(1)}>← Back</button>
+            <button className="btn btn-sm" onClick={() => setStep(1)}>â† Back</button>
           </div>
 
           <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 mb-6">
@@ -222,21 +222,21 @@ export default function BookingFlow({
               disabled={!selectedTime}
               onClick={() => setStep(3)}
             >
-              Next: confirm →
+              Next: confirm â†’
             </button>
           </div>
         </div>
       )}
 
-      {/* ── STEP 3: Confirm ── */}
+      {/* â”€â”€ STEP 3: Confirm â”€â”€ */}
       {step === 3 && selectedCourt && selectedTime && (
         <div className="max-w-md">
           <div className="card mb-4">
             <div className="font-medium mb-4">Booking summary</div>
             {[
-              ['Court', `${selectedCourt.name} — ${selectedCourt.type}`],
+              ['Court', `${selectedCourt.name} â€” ${selectedCourt.type}`],
               ['Date', formatDate(selectedDate)],
-              ['Time', `${selectedTime} – ${addHours(selectedTime, 1)}`],
+              ['Time', `${selectedTime} â€“ ${addHours(selectedTime, 1)}`],
               ['Duration', '1 hour'],
               ['Member', profile.full_name ?? 'You'],
               ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% (${memConfig.name} member)`]] : []),
@@ -270,13 +270,13 @@ export default function BookingFlow({
           </div>
 
           <div className="flex gap-3">
-            <button className="btn" onClick={() => setStep(2)}>← Back</button>
+            <button className="btn" onClick={() => setStep(2)}>â† Back</button>
             <button
               className="btn btn-primary flex-1 justify-center"
               disabled={submitting}
               onClick={handleConfirm}
             >
-              {submitting ? 'Confirming…' : '✓ Confirm booking'}
+              {submitting ? 'Confirmingâ€¦' : 'âœ“ Confirm booking'}
             </button>
           </div>
         </div>
@@ -284,3 +284,4 @@ export default function BookingFlow({
     </div>
   )
 }
+

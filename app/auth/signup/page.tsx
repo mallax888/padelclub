@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -7,7 +7,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function SignupPage() {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
@@ -78,7 +78,7 @@ export default function SignupPage() {
               <input
                 type="password"
                 className="input"
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -91,7 +91,7 @@ export default function SignupPage() {
               className="btn btn-primary w-full justify-center"
               disabled={loading}
             >
-              {loading ? 'Creating account…' : 'Create account'}
+              {loading ? 'Creating accountâ€¦' : 'Create account'}
             </button>
           </form>
         </div>
@@ -110,3 +110,4 @@ export default function SignupPage() {
     </div>
   )
 }
+

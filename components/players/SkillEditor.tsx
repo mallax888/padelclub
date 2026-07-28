@@ -20,7 +20,7 @@ export default function SkillEditor({
   userId: string
   currentSkillLevel: string | null
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [selected, setSelected] = useState(currentSkillLevel ?? 'beginner')
@@ -107,3 +107,4 @@ export default function SkillEditor({
     </div>
   )
 }
+

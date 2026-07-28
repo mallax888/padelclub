@@ -12,7 +12,7 @@ export default function NicknameEditor({
   userId: string
   currentNickname: string | null
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [nickname, setNickname] = useState(currentNickname ?? '')
@@ -83,3 +83,4 @@ export default function NicknameEditor({
     </div>
   )
 }
+

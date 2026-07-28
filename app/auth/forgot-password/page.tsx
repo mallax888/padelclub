@@ -5,7 +5,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -81,3 +81,4 @@ export default function ForgotPasswordPage() {
     </div>
   )
 }
+

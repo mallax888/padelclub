@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -7,7 +7,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -60,7 +60,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 className="input"
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
@@ -72,7 +72,7 @@ export default function LoginPage() {
               className="btn btn-primary w-full justify-center"
               disabled={loading}
             >
-              {loading ? 'Signing in…' : 'Sign in'}
+              {loading ? 'Signing inâ€¦' : 'Sign in'}
             </button>
           </form>
         </div>
@@ -87,3 +87,4 @@ export default function LoginPage() {
     </div>
   )
 }
+
