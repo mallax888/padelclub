@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -81,11 +81,11 @@ const DirectionsButton = ({ address }: { address: string }) => (
     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
     target="_blank"
     rel="noopener noreferrer"
-    className="w-full flex items-center justify-center gap-2 text-sm font-extrabold mt-3 py-3 rounded-2xl transition-all"
-    style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.3)' }}
+    className="w-full flex items-center justify-center gap-2 text-sm font-bold mt-3 py-3 rounded-xl transition-all"
+    style={{ background: 'transparent', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.35)' }}
     onClick={e => e.stopPropagation()}
   >
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
     Take me to the court
   </a>
 )
@@ -196,14 +196,15 @@ export default function MyBookingsList({
         </div>
       )}
 
+      {/* Stat cards — Direction B: gradient surface, bigger numbers, uppercase micro-labels */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: 'Upcoming', value: upcoming.length, color: 'var(--brand-primary)' },
-          { label: 'Credits', value: '$' + (profile?.credits ?? 0), color: '#FF3B3B' },
+          { label: 'Upcoming', value: upcoming.length, color: 'var(--text-primary)' },
+          { label: 'Credits', value: '$' + (profile?.credits ?? 0), color: 'var(--brand-primary)' },
           { label: 'Membership', value: mem.name, color: 'var(--text-primary)' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="text-xs font-bold mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
+          <div key={label} className="rounded-2xl p-4" style={{ background: 'linear-gradient(180deg, var(--bg-surface), var(--bg-raised))', border: '1px solid var(--border)' }}>
+            <div className="text-[11px] font-bold mb-1 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</div>
             <div className="text-2xl font-extrabold truncate" style={{ color }}>{value}</div>
           </div>
         ))}
@@ -213,13 +214,14 @@ export default function MyBookingsList({
         <strong>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit.
       </div>
 
-      <Link href="/book" className="flex items-center justify-between rounded-3xl p-8 mb-6 transition-all hover:scale-[1.01]"
-        style={{ background: 'var(--brand-primary)', boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset' }}>
+      {/* New booking — Direction B: muted emerald, bordered, normal height */}
+      <Link href="/book" className="flex items-center justify-between rounded-2xl p-5 mb-6 transition-all hover:scale-[1.01]"
+        style={{ background: '#0e5c45', border: '1px solid rgba(52,211,153,0.3)' }}>
         <div>
-          <div className="text-2xl font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary-on)', lineHeight: 1.1 }}>+ New booking</div>
-          <div className="text-sm font-bold mt-1" style={{ color: 'var(--brand-primary-on)', opacity: 0.85 }}>Book a court in seconds</div>
+          <div className="text-xl font-black uppercase tracking-wide" style={{ color: '#d1fae5', lineHeight: 1.1 }}>+ New booking</div>
+          <div className="text-sm font-bold mt-1" style={{ color: '#6ee7b7' }}>Book a court in seconds</div>
         </div>
-        <div style={{ fontSize: 40 }}>🎾</div>
+        <div style={{ fontSize: 34 }}>🎾</div>
       </Link>
 
       <div className="mb-6">
@@ -231,7 +233,7 @@ export default function MyBookingsList({
             No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary)' }}>book a court</Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {upcoming.map(b => (
               <BookingRow key={b.id} booking={b} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} />
             ))}
@@ -242,7 +244,7 @@ export default function MyBookingsList({
       {upcomingJoined.length > 0 && (
         <div className="mb-6">
           <h2 className="text-lg font-extrabold mb-3" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
         </div>
@@ -255,7 +257,7 @@ export default function MyBookingsList({
             <span>{showHistory ? 'Hide' : 'Show'} history ({past.length})</span>
           </button>
           {showHistory && (
-            <div className="space-y-2 opacity-60">
+            <div className="space-y-3 opacity-60">
               {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} />)}
             </div>
           )}
@@ -276,7 +278,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
 
   return (
-    <div className="rounded-3xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-primary)' }}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-primary-muted)' }}>
@@ -298,9 +300,9 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
           </div>
         </div>
         <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
-          <span className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--bg-raised)', color: b.status === 'confirmed' ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>{b.status}</span>
+          <span className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: b.status === 'confirmed' ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</span>
           <div className="flex items-baseline gap-2 sm:block">
-            <div className="text-2xl font-black sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
+            <div className="text-2xl font-black sm:mt-2" style={{ color: 'var(--text-primary)' }}>{formatNzd(b.price_nzd)}</div>
             <div className="text-xs font-medium whitespace-nowrap sm:mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
           </div>
         </div>
@@ -355,7 +357,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
 
   return (
-    <div className="rounded-3xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-accent)' }}>
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-2">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-accent-muted)' }}>
@@ -393,13 +395,11 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
           </div>
         </div>
         <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
-          <div className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Paid ✓</div>
-          <div className="text-lg font-black sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(j.amount_nzd)}</div>
+          <div className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>Paid ✓</div>
+          <div className="text-lg font-black sm:mt-2" style={{ color: 'var(--text-primary)' }}>{formatNzd(j.amount_nzd)}</div>
         </div>
       </div>
       {venue && <DirectionsButton address={venue.address} />}
     </div>
   )
 }
-
-
