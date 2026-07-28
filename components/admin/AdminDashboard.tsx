@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
@@ -31,7 +31,7 @@ export default function AdminDashboard({
   members: Profile[]
   courts: Court[]
 }) {
-  const supabase = createClient()
+  const supabase: any = createClient()
   const router = useRouter()
   const [tab, setTab] = useState<'bookings' | 'members' | 'courts'>('bookings')
   const [showBlock, setShowBlock] = useState(false)
@@ -111,7 +111,7 @@ export default function AdminDashboard({
         <div className="flex-1" />
         {tab === 'bookings' && (
           <button className="btn btn-sm btn-primary mb-1" onClick={() => setShowBlock(true)}>
-            🔒 Block a court
+            ðŸ”’ Block a court
           </button>
         )}
       </div>
@@ -130,11 +130,11 @@ export default function AdminDashboard({
             <tbody>
               {bookings.map(b => (
                 <tr key={b.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{b.profiles?.full_name ?? '—'}</td>
+                  <td className="px-4 py-3 font-medium">{b.profiles?.full_name ?? 'â€”'}</td>
                   <td className="px-4 py-3 text-gray-600">{b.courts?.name}</td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{formatDate(b.date)}</td>
                   <td className="px-4 py-3 text-gray-500">{b.start_time.slice(0,5)}</td>
-                  <td className="px-4 py-3 font-medium">{b.price_nzd > 0 ? formatNzd(b.price_nzd) : '—'}</td>
+                  <td className="px-4 py-3 font-medium">{b.price_nzd > 0 ? formatNzd(b.price_nzd) : 'â€”'}</td>
                   <td className="px-4 py-3"><span className={cn('badge', `status-${b.status}`)}>{b.status}</span></td>
                   <td className="px-4 py-3">
                     {b.status !== 'cancelled' && b.status !== 'blocked' && (
@@ -162,7 +162,7 @@ export default function AdminDashboard({
             <tbody>
               {members.map(m => (
                 <tr key={m.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{m.full_name ?? '—'}</td>
+                  <td className="px-4 py-3 font-medium">{m.full_name ?? 'â€”'}</td>
                   <td className="px-4 py-3"><span className="badge badge-member capitalize">{m.membership_tier}</span></td>
                   <td className="px-4 py-3">{m.credits}</td>
                   <td className="px-4 py-3 text-gray-500 capitalize">{m.role}</td>
@@ -182,14 +182,14 @@ export default function AdminDashboard({
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-medium">{c.name}</div>
-                  <div className="text-sm text-gray-500">{c.is_indoor ? '🏢' : '☀️'} {c.type} · {c.sport}</div>
+                  <div className="text-sm text-gray-500">{c.is_indoor ? 'ðŸ¢' : 'â˜€ï¸'} {c.type} Â· {c.sport}</div>
                 </div>
                 <span className={cn('badge', c.is_active ? 'badge-member' : 'status-cancelled')}>
                   {c.is_active ? 'Active' : 'Inactive'}
                 </span>
               </div>
               <div className="mt-3 text-sm text-gray-500">
-                {formatNzd(c.price_per_hour)}/hr · {c.surface}
+                {formatNzd(c.price_per_hour)}/hr Â· {c.surface}
               </div>
               {c.description && <div className="text-xs text-gray-400 mt-1">{c.description}</div>}
             </div>
@@ -226,7 +226,7 @@ export default function AdminDashboard({
               </div>
               <div>
                 <label className="label">Reason (optional)</label>
-                <input type="text" className="input" placeholder="Maintenance, private event…" value={blockForm.notes} onChange={e=>setBlockForm(f=>({...f,notes:e.target.value}))} />
+                <input type="text" className="input" placeholder="Maintenance, private eventâ€¦" value={blockForm.notes} onChange={e=>setBlockForm(f=>({...f,notes:e.target.value}))} />
               </div>
             </div>
             <div className="flex gap-3 mt-5">
@@ -239,3 +239,4 @@ export default function AdminDashboard({
     </div>
   )
 }
+
