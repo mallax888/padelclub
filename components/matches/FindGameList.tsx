@@ -57,7 +57,7 @@ export default function FindGameList({
   const handleRequest = async (match: OpenMatch) => {
     setLoading(match.id + '-request')
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('open_match_players')
       .insert({ match_id: match.id, player_id: currentUserId, status: 'pending' })
 
@@ -70,7 +70,7 @@ export default function FindGameList({
     toast.success('Request sent! Waiting for the organizer to accept.')
 
     // Get current user profile
-    const { data: myProfile } = await (supabase as any)
+    const { data: myProfile } = await supabase
       .from('profiles')
       .select('full_name, nickname, email')
       .eq('id', currentUserId)
@@ -110,7 +110,7 @@ export default function FindGameList({
   const handleResponse = async (match: OpenMatch, playerId: string, accept: boolean) => {
     setLoading(match.id + '-' + playerId)
 
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('open_match_players')
       .update({ status: accept ? 'accepted' : 'declined' })
       .eq('match_id', match.id)
@@ -151,7 +151,7 @@ export default function FindGameList({
       ).length
 
       if (acceptedCount >= match.spots_total) {
-        await (supabase as any)
+        await supabase
           .from('open_matches')
           .update({ status: 'full' })
           .eq('id', match.id)
@@ -164,7 +164,7 @@ export default function FindGameList({
 
   const handleLeave = async (matchId: string) => {
     setLoading(matchId + '-leave')
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('open_match_players')
       .delete()
       .eq('match_id', matchId)

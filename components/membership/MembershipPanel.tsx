@@ -34,7 +34,7 @@ export default function MembershipPanel({
   const handleUpgrade = async (tier: MembershipTier) => {
     if (tier === currentTier) return
     setUpgrading(true)
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('profiles')
       .update({ membership_tier: tier })
       .eq('id', profile.id)

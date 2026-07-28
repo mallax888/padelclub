@@ -63,7 +63,7 @@ export default function AdminDashboard({
   const cancelBooking = async (id: string) => {
     if (!confirm('Cancel this booking?')) return
     const { createClient } = await import('@/lib/supabase-browser')
-    const supabase = createClient() as any
+    const supabase = createClient()
     await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
     toast.success('Booking cancelled')
     router.refresh()
@@ -73,7 +73,7 @@ export default function AdminDashboard({
     const court = courts.find(c => c.id === blockForm.courtId)
     if (!court) return
     const { createClient } = await import('@/lib/supabase-browser')
-    const supabase = createClient() as any
+    const supabase = createClient()
     const user = await supabase.auth.getUser()
     const endHour = String(parseInt(blockForm.time.split(':')[0]) + 1).padStart(2, '0')
     const { error } = await supabase.from('bookings').insert({

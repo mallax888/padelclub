@@ -96,7 +96,7 @@ export default function BookingFlow({
 
   useEffect(() => {
     if (!court || !date) return
-    const sb = supabase as any
+    const sb = supabase
     sb.from('bookings')
       .select('start_time, duration_minutes')
       .eq('court_id', court.id)
@@ -180,7 +180,7 @@ export default function BookingFlow({
   const handleConfirm = async () => {
     if (!court || !time || !date || !userId || !duration) return
     setSubmitting(true)
-    const sb = supabase as any
+    const sb = supabase
     const endTime = addHoursDecimal(time, duration)
 
     const { data: bookingData, error } = await sb.from('bookings').insert({
@@ -248,9 +248,7 @@ export default function BookingFlow({
         await sb.from('notifications').insert({
           user_id: pid,
           type: 'split_request',
-          title: 'Court cost split',
           message: (profile?.full_name ?? 'Someone') + ' is requesting ' + formatPrice(splitAmount, currency) + ' for a court booking.',
-          data: JSON.stringify({ booking_id: bookingData.id, amount: splitAmount }),
         })
       }
     }

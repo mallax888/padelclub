@@ -29,7 +29,7 @@ export default function SkillEditor({
   const handleSave = async () => {
     setSaving(true)
     const level = SKILL_LEVELS.find(l => l.value === selected)
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('profiles')
       .update({
         skill_level: selected,

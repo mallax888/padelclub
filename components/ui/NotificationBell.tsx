@@ -22,7 +22,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   const unread = notifications.filter(n => !n.read).length
 
   const fetchNotifications = async () => {
-    const { data } = await (supabase as any)
+    const { data } = await supabase
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
@@ -35,7 +35,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
     fetchNotifications()
 
     // Real-time subscription
-    const channel = (supabase as any)
+    const channel = supabase
       .channel('notifications')
       .on('postgres_changes', {
         event: 'INSERT',
@@ -59,7 +59,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   }, [])
 
   const markAllRead = async () => {
-    await (supabase as any)
+    await supabase
       .from('notifications')
       .update({ read: true })
       .eq('user_id', userId)
@@ -68,7 +68,7 @@ export default function NotificationBell({ userId }: { userId: string }) {
   }
 
   const markRead = async (id: string) => {
-    await (supabase as any)
+    await supabase
       .from('notifications')
       .update({ read: true })
       .eq('id', id)

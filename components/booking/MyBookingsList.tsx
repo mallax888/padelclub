@@ -131,7 +131,7 @@ export default function MyBookingsList({
       : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatNzd(booking.price_nzd * 0.5) + ') as account credit.'
     if (!confirm(policy)) return
     setCancelling(id)
-    const { error } = await (supabase as any).from('bookings').update({ status: 'cancelled' }).eq('id', id)
+    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
     if (error) {
       toast.error('Could not cancel — please try again.')
     } else {
@@ -139,7 +139,7 @@ export default function MyBookingsList({
         toast.success('Booking cancelled.')
       } else if (hoursUntil < 24) {
         const creditAmount = Math.round(booking.price_nzd * 0.5)
-        await (supabase as any).from('profiles').update({ credits: (profile?.credits ?? 0) + creditAmount }).eq('id', profile?.id)
+        await supabase.from('profiles').update({ credits: (profile?.credits ?? 0) + creditAmount }).eq('id', profile?.id)
         toast.success('Booking cancelled. ' + formatNzd(creditAmount) + ' credit added to your account.')
       } else {
         toast.success('Booking cancelled. Full refund will appear on your card in 5-10 business days.')
