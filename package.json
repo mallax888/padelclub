@@ -11,7 +11,10 @@
     "db:types": "supabase gen types typescript --local > types/database.ts"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.8.0",
+    "@stripe/stripe-js": "^9.12.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.45.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
