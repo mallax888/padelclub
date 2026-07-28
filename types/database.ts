@@ -193,7 +193,7 @@ export const MEMBERSHIP_CONFIG: Record<MembershipTier, MembershipConfig> = {
     priceNzd: 0,
     period: 'free',
     discount: 0,
-    bookingWindowDays: 14,
+    bookingWindowDays: 3,
     monthlyFreeSessionsNzd: 0,
     features: [
       'Book courts at full rate',
@@ -207,7 +207,7 @@ export const MEMBERSHIP_CONFIG: Record<MembershipTier, MembershipConfig> = {
     priceNzd: 49,
     period: '/month',
     discount: 0.15,
-    bookingWindowDays: 21,
+    bookingWindowDays: 5,
     monthlyFreeSessionsNzd: 50,
     features: [
       '15% discount on all bookings',
@@ -223,7 +223,7 @@ export const MEMBERSHIP_CONFIG: Record<MembershipTier, MembershipConfig> = {
     priceNzd: 99,
     period: '/month',
     discount: 0.25,
-    bookingWindowDays: 28,
+    bookingWindowDays: 7,
     monthlyFreeSessionsNzd: 120,
     features: [
       '25% discount on all bookings',

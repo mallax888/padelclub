@@ -1,269 +1,90 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-base:            #E8E8E8;
-  --bg-surface:         #FFFFFF;
-  --bg-raised:          #F5F5F5;
-  --text-primary:       #111111;
-  --text-muted:         #3F3F46;
-  --text-subtle:        #6B6B75;
-  --border:             #D1D1D6;
-  --brand-primary:      #00CC6A;
-  --brand-primary-on:   #FFFFFF;
-  --brand-accent:       #C4005A;
-  --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#00CC6A1A;
-  --brand-accent-muted: #C4005A1A;
-  --glow-primary:       0 0 16px 0 #00CC6A33;
-  --glow-accent:        0 0 16px 0 #C4005A33;
-  --brand-blue:         #0066FF;
-  --brand-blue-muted:   #0066FF1A;
-  --glow-blue:          0 0 16px 0 #0066FF33;
-  --brand-yellow:       #FFE500;
-  --brand-yellow-muted: #FFE5001A;
-  --brand-crimson:      #DC3232;
-  --brand-crimson-muted:#DC32321A;
-  --glow-crimson:       0 0 16px 0 #DC323233;
-}
-
-.dark {
-  --bg-base:            #18181B;
-  --bg-surface:         #27272A;
-  --bg-raised:          #3F3F46;
-  --text-primary:       #F4F4F5;
-  --text-muted:         #B8B8C2;
-  --text-subtle:        #9A9AA5;
-  --border:             #3F3F46;
-  --brand-primary:      #00FF87;
-  --brand-primary-on:   #003320;
-  --brand-accent:       #FF2D78;
-  --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#00FF871A;
-  --brand-accent-muted: #FF2D781A;
-  --glow-primary:       0 0 16px 0 #00FF8733;
-  --glow-accent:        0 0 16px 0 #FF2D7833;
-  --brand-blue:         #0066FF;
-  --brand-blue-muted:   #0066FF1A;
-  --glow-blue:          0 0 16px 0 #0066FF33;
-  --brand-yellow:       #FFE500;
-  --brand-yellow-muted: #FFE5001A;
-  --brand-crimson:      #DC3232;
-  --brand-crimson-muted:#DC32321A;
-  --glow-crimson:       0 0 16px 0 #DC323233;
-}
-
 @layer base {
-  html {
-    @apply antialiased;
-    background-color: var(--bg-base);
-    color: var(--text-primary);
+  :root {
+    --brand: #1D9E75;
+    --brand-dark: #0F6E56;
+    --brand-light: #E1F5EE;
   }
+
   body {
-    background-color: var(--bg-base);
-    color: var(--text-primary);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    @apply bg-gray-50 text-gray-900 antialiased;
   }
+
   * {
     @apply box-border;
-    border-color: var(--border);
-  }
-  h1, h2, h3, h4, h5, h6 {
-    color: var(--text-primary);
-    @apply font-semibold tracking-tight select-none;
-  }
-  h1 {
-    border-left: 3px solid var(--brand-primary);
-    padding-left: 12px;
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed;
-    border: 1px solid var(--border);
-    background: var(--bg-raised);
-    color: var(--text-primary);
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200
+           text-sm font-medium transition-all duration-150 cursor-pointer
+           hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed;
   }
-  .btn:hover:not(:disabled) {
-    border-color: var(--brand-primary);
-    color: var(--brand-primary);
-  }
+
   .btn-primary {
-    background: var(--brand-primary);
-    color: var(--brand-primary-on);
-    border-color: var(--brand-primary);
-    box-shadow: var(--glow-primary);
+    @apply bg-brand-400 text-white border-brand-400
+           hover:bg-brand-600 hover:border-brand-600;
   }
-  .btn-primary:hover:not(:disabled) {
-    filter: brightness(1.1);
-    color: var(--brand-primary-on);
-  }
-  .btn-accent {
-    background: var(--brand-accent);
-    color: var(--brand-accent-on);
-    border-color: var(--brand-accent);
-    box-shadow: var(--glow-accent);
-  }
-  .btn-outline-primary {
-    background: transparent;
-    color: var(--brand-primary);
-    border-color: var(--brand-primary);
-  }
-  .btn-outline-primary:hover:not(:disabled) {
-    background: var(--brand-primary-muted);
-  }
+
   .btn-danger {
-    color: var(--brand-crimson);
-    border-color: var(--brand-crimson);
-    background: var(--brand-crimson-muted);
-    font-weight: 600;
+    @apply text-red-600 border-red-300 hover:bg-red-50;
   }
-  .btn-danger:hover:not(:disabled) {
-    background: rgba(239,68,68,0.1);
-    color: #DC2626;
-  }
+
   .btn-sm {
     @apply px-3 py-1.5 text-xs;
   }
-  .btn-lg {
-    @apply px-6 py-3 text-base;
-  }
+
   .card {
-    @apply rounded-xl p-5;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
+    @apply bg-white border border-gray-200 rounded-xl p-5;
   }
+
   .input {
-    @apply w-full px-3 py-2 rounded-lg text-sm transition-all duration-150;
-    background: var(--bg-raised);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg text-sm
+           focus:outline-none focus:ring-2 focus:ring-brand-400 focus:border-transparent
+           placeholder:text-gray-400;
   }
-  .input::placeholder {
-    color: var(--text-subtle);
-  }
-  .input:focus {
-    outline: none;
-    border-color: var(--brand-primary);
-    box-shadow: 0 0 0 2px var(--brand-primary-muted);
-  }
+
   .label {
-    @apply block text-xs font-bold uppercase tracking-wide mb-1.5 select-none;
-    color: var(--text-primary);
+    @apply block text-xs text-gray-500 mb-1.5 font-medium;
   }
+
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
-  .badge-member {
-    background: var(--brand-primary-muted);
-    color: var(--brand-primary);
-  }
-  .status-confirmed  { background: var(--brand-primary-muted); color: var(--brand-primary); @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; }
-  .status-pending    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none bg-amber-100 text-amber-700; }
-  .status-cancelled  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none bg-red-100 text-red-600; }
-  .status-completed  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
-  .status-blocked    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
+
+  .badge-member { @apply bg-brand-50 text-brand-600; }
+  .badge-staff  { @apply bg-purple-100 text-purple-700; }
+  .badge-admin  { @apply bg-purple-100 text-purple-700; }
+
+  .status-confirmed  { @apply bg-brand-50 text-brand-600; }
+  .status-pending    { @apply bg-amber-100 text-amber-700; }
+  .status-cancelled  { @apply bg-red-100 text-red-700; }
+  .status-completed  { @apply bg-gray-100 text-gray-600; }
+  .status-blocked    { @apply bg-gray-200 text-gray-600; }
+
   .nav-tab {
-    @apply px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer select-none;
-    color: var(--text-muted);
+    @apply px-3 py-1.5 rounded-lg text-sm text-gray-500 hover:bg-gray-100
+           transition-colors cursor-pointer;
   }
-  .nav-tab:hover {
-    background: var(--bg-raised);
-    color: var(--text-primary);
-  }
+
   .nav-tab-active {
-    background: var(--bg-raised);
-    color: var(--brand-primary);
-    @apply font-medium;
+    @apply bg-gray-100 text-gray-900 font-medium;
   }
+
   .slot {
-    @apply p-2 rounded-lg text-center text-sm cursor-pointer select-none transition-all;
-    background: var(--bg-surface);
-    border: 1px solid var(--border);
-    color: var(--text-primary);
+    @apply p-2 rounded-lg border border-gray-200 text-center text-sm cursor-pointer
+           transition-all hover:border-brand-400;
   }
-  .slot:hover {
-    border-color: var(--brand-primary);
-    color: var(--brand-primary);
-  }
+
   .slot-selected {
-    background: var(--brand-primary);
-    color: var(--brand-primary-on);
-    border-color: var(--brand-primary);
-    @apply font-medium;
-    box-shadow: var(--glow-primary);
+    @apply bg-brand-400 text-white border-brand-400;
   }
+
   .slot-taken {
-    @apply cursor-not-allowed;
-    background: var(--bg-raised);
-    color: var(--text-subtle);
-    border-color: transparent;
-  }
-  .glow-primary { box-shadow: var(--glow-primary); }
-  .glow-accent  { box-shadow: var(--glow-accent); }
-}
-
-* {
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
-input, textarea, select, [contenteditable] {
-  user-select: text !important;
-  -webkit-user-select: text !important;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.cursor-pointer {
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-@media (max-width: 640px) {
-  html, body {
-    overflow-x: hidden;
-    max-width: 100vw;
+    @apply bg-gray-100 text-gray-400 cursor-not-allowed border-gray-100;
   }
 }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fadeIn 0.3s ease forwards;
-}
-
-/* Support buttons — device specific */
-.whatsapp-btn { display: none; }
-.tawkto-hide { display: block; }
-
-@media (max-width: 768px) {
-  .whatsapp-btn { display: flex !important; }
-  .tawkto-hide { display: none !important; }
-}
-
-@media (min-width: 769px) {
-  .whatsapp-btn { display: none !important; }
-  .tawkto-hide { display: block !important; }
-}
-
-.whatsapp-btn { display: none; }
-.tawkto-desktop { display: block; }
-
-@media (max-width: 768px) {
-  .whatsapp-btn { display: flex !important; }
-  .tawkto-desktop { display: none !important; }
-}
-
-
-
-
-

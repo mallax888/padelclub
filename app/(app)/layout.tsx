@@ -1,4 +1,4 @@
-﻿import { redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import Navbar from '@/components/ui/Navbar'
 
@@ -15,9 +15,9 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-6 overflow-x-hidden">
+      <main className="max-w-6xl mx-auto px-4 py-6">
         {children}
       </main>
     </div>

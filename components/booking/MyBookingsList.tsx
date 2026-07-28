@@ -8,7 +8,7 @@ import { cn, formatNzd, formatDate } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
-import { VENUES } from '@/lib/venues'
+import { Plus, Navigation, Info } from 'lucide-react'
 
 interface BookingWithCourt {
   id: string
@@ -17,133 +17,49 @@ interface BookingWithCourt {
   end_time: string
   status: string
   price_nzd: number
-  duration_minutes: number
   payment_method: string
-  stripe_payment_id: string | null
   courts: { name: string; type: string; is_indoor: boolean } | null
 }
 
-interface OutgoingSplit {
-  id: string
-  booking_id: string
-  amount_nzd: number
-  status: string
-  profiles: { nickname: string | null; full_name: string | null } | null
+function minutesBetween(start: string, end: string) {
+  const [sh, sm] = start.split(':').map(Number)
+  const [eh, em] = end.split(':').map(Number)
+  return (eh * 60 + em) - (sh * 60 + sm)
 }
 
-interface SplitRequest {
-  id: string
-  booking_id: string
-  amount_nzd: number
-  status: string
-  bookings: {
-    date: string
-    start_time: string
-    end_time: string
-    courts: { name: string; type: string; venue_slug?: string } | null
-  } | null
-  profiles: { nickname: string | null; full_name: string | null } | null
+function hoursUntil(date: string, start: string) {
+  const dt = new Date(`${date}T${start}`)
+  return (dt.getTime() - Date.now()) / 36e5
 }
-
-interface JoinedGame {
-  id: string
-  amount_nzd: number
-  bookings: {
-    date: string
-    start_time: string
-    end_time: string
-    duration_minutes: number
-    courts: { name: string; type: string; venue_slug: string } | null
-    booking_splits?: { user_id: string; status: string; profiles: { nickname: string | null; full_name: string | null } | null }[]
-  } | null
-  profiles: { nickname: string | null; full_name: string | null } | null
-}
-
-function paymentLabel(method: string, stripeId: string | null) {
-  if (method === 'card' && stripeId) return { label: 'Paid', color: '#22c55e' }
-  if (method === 'card' && !stripeId) return { label: 'Payment pending', color: '#f59e0b' }
-  if (method === 'credits') return { label: 'Paid with credits', color: '#22c55e' }
-  if (method === 'membership_allowance') return { label: 'Membership', color: '#22c55e' }
-  if (method === 'staff_block') return { label: 'Staff block', color: '#71717A' }
-  return { label: method, color: '#71717A' }
-}
-
-function durationLabel(mins: number) {
-  if (mins === 30) return '30 min'
-  if (mins === 60) return '60 min'
-  if (mins === 90) return '90 min'
-  if (mins === 120) return '120 min'
-  return mins + ' min'
-}
-
-const DirectionsButton = ({ address }: { address: string }) => (
-  <a
-    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="w-full flex items-center justify-center gap-2 text-sm font-extrabold mt-3 py-3 rounded-2xl transition-all"
-    style={{ background: 'linear-gradient(135deg, #2D9CFF, #1B6FE0)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(45,156,255,0.3)' }}
-    onClick={e => e.stopPropagation()}
-  >
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-    Take me to the court
-  </a>
-)
 
 export default function MyBookingsList({
   bookings,
   profile,
-  splitRequests = [],
-  outgoingSplits = [],
-  joinedGames = [],
-  currentUserId,
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
-  splitRequests?: SplitRequest[]
-  outgoingSplits?: OutgoingSplit[]
-  joinedGames?: JoinedGame[]
-  currentUserId?: string
 }) {
   const supabase = createClient()
   const router = useRouter()
   const [cancelling, setCancelling] = useState<string | null>(null)
-  const [payingSplit, setPayingSplit] = useState<string | null>(null)
-  const [showHistory, setShowHistory] = useState(false)
 
-  const mem = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
+  const mem = MEMBERSHIP_CONFIG[profile.membership_tier]
   const today = new Date().toISOString().slice(0, 10)
   const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled')
   const past = bookings.filter(b => b.date < today || b.status === 'cancelled')
-  const upcomingJoined = joinedGames.filter(j => (j.bookings?.date ?? '') >= today)
 
   const handleCancel = async (id: string) => {
-    const booking = bookings.find(b => b.id === id)
-    if (!booking) return
-    const bookingDateTime = new Date(`${booking.date}T${booking.start_time}`)
-    const now = new Date()
-    const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
-    const isPaid = !!(booking as any).stripe_payment_id
-    const policy = !isPaid
-      ? 'Cancel this booking?\n\nNo payment has been charged yet, so this will simply be cancelled with no charge or credit.'
-      : hoursUntil >= 24
-      ? 'Cancel this booking?\n\nSince it is more than 24 hours away you will receive a FULL REFUND to your card within 5-10 business days.'
-      : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatNzd(booking.price_nzd * 0.5) + ') as account credit.'
-    if (!confirm(policy)) return
+    if (!confirm('Cancel this booking?')) return
     setCancelling(id)
-    const { error } = await (supabase as any).from('bookings').update({ status: 'cancelled' }).eq('id', id)
+    const { error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', id)
+
     if (error) {
       toast.error('Could not cancel — please try again.')
     } else {
-      if (!isPaid) {
-        toast.success('Booking cancelled.')
-      } else if (hoursUntil < 24) {
-        const creditAmount = Math.round(booking.price_nzd * 0.5)
-        await (supabase as any).from('profiles').update({ credits: (profile?.credits ?? 0) + creditAmount }).eq('id', profile?.id)
-        toast.success('Booking cancelled. ' + formatNzd(creditAmount) + ' credit added to your account.')
-      } else {
-        toast.success('Booking cancelled. Full refund will appear on your card in 5-10 business days.')
-      }
+      toast.success('Booking cancelled.')
       router.refresh()
     }
     setCancelling(null)
@@ -151,253 +67,155 @@ export default function MyBookingsList({
 
   return (
     <div>
-      {splitRequests.length > 0 && (
-        <div className="rounded-2xl p-4 mb-6" style={{ background: 'rgba(220,50,50,0.06)', border: '1px solid #DC3232' }}>
-          <div className="text-sm font-extrabold mb-3 uppercase tracking-wide" style={{ color: '#DC3232' }}>Outstanding split requests</div>
-          <div className="space-y-3">
-            {splitRequests.map(s => {
-              const who = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
-              const court = s.bookings?.courts?.name ?? 'a court'
-              const date = s.bookings?.date ? formatDate(s.bookings.date) : ''
-              const time = s.bookings?.start_time?.slice(0,5) ?? ''
-              return (
-                <div key={s.id} className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-medium" style={{ color: '#DC3232' }}>You owe {who} {formatNzd(s.amount_nzd)}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{court} · {date} · {time}</div>
-                  </div>
-                  <button
-                    className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0"
-                    style={{ background: '#DC3232', color: '#fff' }}
-                    disabled={payingSplit === s.id}
-                    onClick={async () => {
-                      setPayingSplit(s.id)
-                      const court = s.bookings?.courts?.name ?? 'Court'
-                      const date = s.bookings?.date ?? ''
-                      const time = s.bookings?.start_time?.slice(0,5) ?? ''
-                      const invitedByName = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
-                      const region = VENUES.find(v => v.slug === s.bookings?.courts?.venue_slug)?.region
-                      const res = await fetch('/api/pay-split', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ splitId: s.id, amount: s.amount_nzd, courtName: court, date, time, invitedByName, region }),
-                      })
-                      const { url, error } = await res.json()
-                      if (error) { toast.error(error); setPayingSplit(null); return }
-                      window.location.href = url
-                    }}
-                  >
-                    {payingSplit === s.id ? 'Loading...' : `Pay ${formatNzd(s.amount_nzd)}`}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        {[
-          { label: 'Upcoming', value: upcoming.length, color: 'var(--brand-primary)' },
-          { label: 'Credits', value: '$' + (profile?.credits ?? 0), color: '#FF3B3B' },
-          { label: 'Membership', value: mem.name, color: 'var(--text-primary)' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="text-xs font-bold mb-1" style={{ color: 'var(--text-muted)' }}>{label}</div>
-            <div className="text-2xl font-extrabold truncate" style={{ color }}>{value}</div>
-          </div>
-        ))}
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-2.5 mb-4">
+        <StatCard label="Upcoming" value={String(upcoming.length)} />
+        <StatCard label="Credits" value={`$${profile.credits}`} accent />
+        <StatCard label="Membership" value={mem.name} small />
       </div>
 
-      <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: 'rgba(255,180,0,0.08)', border: '1px solid rgba(255,180,0,0.2)', color: '#F0A500' }}>
-        <strong>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit.
+      {/* Cancellation policy */}
+      <div className="flex items-center gap-2 rounded-[10px] border border-amber-400/20 bg-amber-400/[0.07] px-3.5 py-2.5 mb-5">
+        <Info className="h-4 w-4 shrink-0 text-amber-400" />
+        <p className="text-xs text-slate-300">
+          <span className="font-medium text-amber-400">Cancellation policy</span> — cancel 24hrs+ before for a full refund. Under 24hrs = 50% back as account credit.
+        </p>
       </div>
 
-      <Link href="/book" className="flex items-center justify-between rounded-3xl p-8 mb-6 transition-all hover:scale-[1.01]"
-        style={{ background: 'linear-gradient(135deg, var(--brand-primary), #00CC6A)', boxShadow: '0 0 40px rgba(0,255,135,0.3)' }}>
-        <div>
-          <div className="text-2xl font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary-on)', lineHeight: 1.1 }}>+ New booking</div>
-          <div className="text-sm font-bold mt-1" style={{ color: 'var(--brand-primary-on)', opacity: 0.85 }}>Book a court in seconds</div>
-        </div>
-        <div style={{ fontSize: 40 }}>🎾</div>
+      {/* New booking — primary CTA */}
+      <Link
+        href="/book"
+        className="mb-6 flex w-full items-center justify-center gap-2.5 rounded-xl bg-emerald-500 px-4 py-[18px] text-[17px] font-medium tracking-[0.2px] text-emerald-950 shadow-[0_1px_0_rgba(255,255,255,0.12)_inset] transition-colors hover:bg-emerald-400"
+      >
+        <Plus className="h-5 w-5" strokeWidth={2.5} /> New booking
       </Link>
 
+      {/* Upcoming */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
-        </div>
+        <p className="mb-3 text-[13px] font-medium uppercase tracking-wide text-slate-400">Upcoming</p>
         {upcoming.length === 0 ? (
-          <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary)' }}>book a court</Link>
+          <div className="rounded-[14px] border border-white/[0.07] bg-[#14181c] text-center py-8 text-slate-500 text-sm">
+            No upcoming bookings — <Link href="/book" className="text-emerald-400 hover:underline">book a court</Link>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {upcoming.map(b => (
-              <BookingRow key={b.id} booking={b} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} />
+              <BookingRow
+                key={b.id}
+                booking={b}
+                onCancel={() => handleCancel(b.id)}
+                cancelling={cancelling === b.id}
+              />
             ))}
           </div>
         )}
       </div>
 
-      {upcomingJoined.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-extrabold mb-3" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
-          <div className="space-y-2">
-            {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
-          </div>
-        </div>
-      )}
-
+      {/* Past */}
       {past.length > 0 && (
         <div>
-          <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-sm font-bold mb-3" style={{ color: 'var(--text-muted)' }}>
-            <span>{showHistory ? '▼' : '▶'}</span>
-            <span>{showHistory ? 'Hide' : 'Show'} history ({past.length})</span>
-          </button>
-          {showHistory && (
-            <div className="space-y-2 opacity-60">
-              {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} />)}
-            </div>
-          )}
+          <p className="mb-3 text-[13px] font-medium uppercase tracking-wide text-slate-500">Past &amp; cancelled</p>
+          <div className="space-y-3 opacity-60">
+            {past.map(b => (
+              <BookingRow key={b.id} booking={b} past />
+            ))}
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; splits?: OutgoingSplit[] }) {
-  const bookingDateTime = new Date(b.date + 'T' + b.start_time)
-  const now = new Date()
-  const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
-  const canCancel = !past && b.status === 'confirmed' && bookingDateTime > now
-  const isLateCancel = hoursUntil < 24
-  const isPaid = !!b.stripe_payment_id
-  const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
-  const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
+function StatCard({
+  label,
+  value,
+  accent,
+  small,
+}: {
+  label: string
+  value: string
+  accent?: boolean
+  small?: boolean
+}) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-[#14181c] px-4 py-3.5">
+      <div className="mb-1.5 text-xs text-slate-400">{label}</div>
+      <div className={cn('font-medium', small ? 'mt-1 text-lg' : 'text-2xl', accent ? 'text-emerald-400' : 'text-slate-100')}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function BookingRow({
+  booking: b,
+  onCancel,
+  cancelling,
+  past,
+}: {
+  booking: BookingWithCourt
+  onCancel?: () => void
+  cancelling?: boolean
+  past?: boolean
+}) {
+  const duration = minutesBetween(b.start_time, b.end_time)
+  const paymentPending = b.payment_method === 'pay_at_venue'
+  const freeCancel = hoursUntil(b.date, b.start_time) >= 24
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${b.courts?.name ?? ''} padel court`)}`
+
+  const badge =
+    b.status === 'confirmed'
+      ? 'text-emerald-400 bg-emerald-500/[0.12]'
+      : b.status === 'pending'
+      ? 'text-amber-400 bg-amber-400/[0.12]'
+      : 'text-slate-400 bg-white/[0.06]'
 
   return (
-    <div className="rounded-3xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-primary-muted)' }}>
+    <div className="rounded-[14px] border border-white/[0.07] bg-[#14181c] px-5 py-[18px]">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex gap-3">
+          <div className="w-[42px] h-[42px] shrink-0 rounded-[10px] bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-lg">
             🎾
           </div>
-          <div className="min-w-0">
-            <div className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
-              {b.courts?.name} — {b.courts?.type}
-            </div>
-            {venue && (
-              <div className="text-sm font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                {venue.name}
-              </div>
-            )}
-            <div className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+          <div>
+            <div className="text-[15px] font-medium text-slate-100">{b.courts?.name} — {b.courts?.type}</div>
+            <div className="text-[13px] text-slate-400 mt-1">
+              {formatDate(b.date)} · {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)} · {duration} min
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
-          <span className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--bg-raised)', color: b.status === 'confirmed' ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>{b.status}</span>
-          <div className="flex items-baseline gap-2 sm:block">
-            <div className="text-2xl font-black sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(b.price_nzd)}</div>
-            <div className="text-xs font-medium whitespace-nowrap sm:mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
-          </div>
+        <div className="text-right">
+          <span className={cn('inline-block rounded-full px-2.5 py-[3px] text-[11px] font-medium capitalize', badge)}>
+            {b.status}
+          </span>
+          <div className="text-xl font-medium text-slate-100 mt-2">{formatNzd(b.price_nzd)}</div>
+          {paymentPending && <div className="text-[11px] text-amber-400 mt-px">Payment pending</div>}
         </div>
       </div>
-      {!past && venue && <DirectionsButton address={venue.address} />}
-      {splits.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
-          <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Split with:</span>
-          {splits.map(s => {
-          const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
-          const paid = s.status === 'paid'
-          return (
-            <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-              background: paid ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
-              color: paid ? 'var(--brand-primary)' : '#DC3232',
-              border: paid ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
-            }}>
-              {name} {paid ? '✓' : '⏳'}
-            </span>
-          )
-        })}
+
+      {!past && (
+        
+          href={mapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-[10px] border border-blue-400/25 bg-blue-400/[0.08] px-4 py-[11px] text-sm font-medium text-blue-400 transition-colors hover:bg-blue-400/[0.14]"
+        >
+          <Navigation className="h-4 w-4" /> Take me to the court
+        </a>
+      )}
+
+      {!past && b.status === 'confirmed' && (
+        <div className="flex items-center justify-between border-t border-white/[0.06] pt-3.5">
+          <span className="text-xs text-slate-500 capitalize">{b.payment_method?.replace('_', ' ')}</span>
+          <button
+            onClick={onCancel}
+            disabled={cancelling}
+            className="px-2 py-1 text-xs text-slate-400 hover:text-slate-200 transition-colors disabled:opacity-50"
+          >
+            {cancelling ? 'Cancelling…' : `Cancel · ${freeCancel ? 'no charge' : '50% credit'}`}
+          </button>
         </div>
       )}
-      <div className="flex items-center justify-end pt-2" style={{ borderTop: splits.length > 0 ? 'none' : (past ? 'none' : '1px solid var(--border)') }}>
-        <div className="flex items-center gap-2">
-          {b.stripe_payment_id && (
-            <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
-              className="text-xs px-2 py-1 rounded-lg" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-              Receipt ↗
-            </a>
-          )}
-          {canCancel && (
-            <div className="flex flex-col items-center gap-1">
-              <button className="btn btn-danger btn-sm" onClick={onCancel} disabled={cancelling}>
-                {cancelling ? '…' : 'Cancel'}
-              </button>
-              <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{!isPaid ? 'No charge' : isLateCancel ? '50% credit' : 'Full refund'}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-
-function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUserId?: string }) {
-  const b = j.bookings
-  if (!b) return null
-  const venue = VENUES.find(v => v.slug === b.courts?.venue_slug)
-  const organizerName = j.profiles?.nickname ?? j.profiles?.full_name ?? 'Someone'
-  const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
-
-  return (
-    <div className="rounded-3xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-2">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-accent-muted)' }}>
-            🙋
-          </div>
-          <div className="min-w-0">
-            <div className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
-              {b.courts?.name} — {b.courts?.type}
-            </div>
-            <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--brand-accent)' }}>
-              Joining {organizerName}'s game
-            </div>
-            {coPlayers.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {coPlayers.map(cp => (
-                  <span key={cp.user_id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-                    background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'rgba(220,50,50,0.1)',
-                    color: cp.status === 'paid' ? 'var(--brand-primary)' : '#DC3232',
-                    border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid #DC3232',
-                  }}>
-                    {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} {cp.status === 'paid' ? '✓' : '⏳'}
-                  </span>
-                ))}
-              </div>
-            )}
-            {venue && (
-              <div className="text-sm font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                {venue.name}
-              </div>
-            )}
-            <div className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
-          <div className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Paid ✓</div>
-          <div className="text-lg font-black sm:mt-2" style={{ color: 'var(--brand-primary)' }}>{formatNzd(j.amount_nzd)}</div>
-        </div>
-      </div>
-      {venue && <DirectionsButton address={venue.address} />}
     </div>
   )
 }

@@ -1,52 +1,16 @@
-﻿'use client'
+'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
-import { currencyForRegion, formatPrice } from '@/lib/currency'
+import { cn, formatNzd, formatDate, getNextNDates, generateTimeSlots, addHours } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
-import type { Court, Profile } from '@/types/database'
-import { VENUES, type Venue } from '@/lib/venues'
-import { playSelectionSound, playBackSound } from '@/lib/sounds'
+import type { Court, Profile, Booking } from '@/types/database'
 
-const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-const COUNTRIES = [
-  { name: 'New Zealand', flag: 'https://flagcdn.com/w80/nz.png', regions: ['Auckland', 'Wellington', 'Christchurch'] },
-  { name: 'South Africa', flag: 'https://flagcdn.com/w80/za.png', regions: ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'] },
-  { name: 'Australia', flag: 'https://flagcdn.com/w80/au.png', regions: ['Sydney', 'Melbourne', 'Brisbane', 'Perth'] },
-]
-const REGIONS = VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
-
-const DURATIONS = [
-  { value: 0.5, label: '30 min'  },
-  { value: 1,   label: '60 min'  },
-  { value: 1.5, label: '90 min'  },
-  { value: 2,   label: '120 min' },
-]
-
-function isPeakTime(dateStr: string | null, timeStr: string | null): boolean {
-  if (!dateStr || !timeStr) return false
-  const d = new Date(dateStr + 'T00:00:00')
-  const day = d.getDay()
-  const hour = parseInt(timeStr.slice(0, 2))
-  const isWeekend = day === 0 || day === 6
-  const isEvening = hour >= 17 && hour < 21
-  return isWeekend || isEvening
-}
-
-function durationLabel(d: number) {
-  if (d === 0.5) return '30 min'
-  if (d === 1)   return '60 min'
-  if (d === 1.5) return '90 min'
-  return '120 min'
-}
-
-type Step = 'country' | 'region' | 'venue' | 'date' | 'court' | 'duration' | 'time' | 'confirm'
-const STEPS: Step[] = ['country', 'region', 'venue', 'date', 'court', 'duration', 'time', 'confirm']
+const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 
 function dateLabel(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -54,678 +18,269 @@ function dateLabel(dateStr: string) {
 }
 
 export default function BookingFlow({
-    courts,
-    profile,
-    userId,
-    allPlayers = [],
-  }: {
-    courts: Court[]
-    profile: Profile
-    userId: string
-    allPlayers?: { id: string; full_name: string | null; nickname: string | null }[]
-  }) {
+  courts,
+  profile,
+}: {
+  courts: Court[]
+  profile: Profile
+}) {
   const supabase = createClient()
   const router = useRouter()
 
-  const tier = profile?.membership_tier ?? 'casual'
-  const memConfig = MEMBERSHIP_CONFIG[tier] ?? MEMBERSHIP_CONFIG['casual']
-  const discount = memConfig.discount
-  const dates = Array.from({ length: memConfig.bookingWindowDays }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() + i)
-    return d.toISOString().slice(0, 10)
-  })
+  const memConfig = MEMBERSHIP_CONFIG[profile.membership_tier]
+  const windowDays = memConfig.bookingWindowDays
+  const dates = getNextNDates(windowDays)
 
-  const [step, setStep] = useState<Step>('country')
-  const [country, setCountry] = useState<string | null>(null)
-  const [region, setRegion] = useState<string | null>(null)
-  const [venue, setVenue] = useState<Venue | null>(null)
-  const currency = currencyForRegion(venue?.region)
-  const [date, setDate] = useState<string | null>(null)
-  const [court, setCourt] = useState<Court | null>(null)
-  const [duration, setDuration] = useState<number | null>(null)
-  const [time, setTime] = useState<string | null>(null)
+  const [step, setStep] = useState(1)
+  const [selectedDate, setSelectedDate] = useState(dates[0])
+  const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
+  const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [takenSlots, setTakenSlots] = useState<string[]>([])
-  const [makePublic, setMakePublic] = useState(false)
-  const [matchType, setMatchType] = useState<'casual' | 'competitive'>('casual')
-  const [matchNotes, setMatchNotes] = useState('')
-  const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
-  const [splitEnabled, setSplitEnabled] = useState(false)
-  const [splitPlayers, setSplitPlayers] = useState<string[]>([])
+  const [payMethod, setPayMethod] = useState<string>('card')
   const [submitting, setSubmitting] = useState(false)
 
+  // Fetch taken slots whenever court or date changes
   useEffect(() => {
-    if (!court || !date) return
-    const sb = supabase as any
-    sb.from('bookings')
-      .select('start_time, duration_minutes')
-      .eq('court_id', court.id)
-      .eq('date', date)
+    if (!selectedCourt || !selectedDate) return
+    supabase
+      .from('bookings')
+      .select('start_time')
+      .eq('court_id', selectedCourt.id)
+      .eq('date', selectedDate)
       .in('status', ['confirmed', 'blocked'])
-      .then(({ data }: any) => {
-        const taken: string[] = []
-        ;(data ?? []).forEach((b: any) => {
-          const startHour = parseInt(b.start_time.slice(0, 2))
-          const startMin = parseInt(b.start_time.slice(3, 5))
-          const totalMins = (b.duration_minutes ?? 60)
-          const startTotal = startHour * 60 + startMin
-          for (let m = 0; m < totalMins; m += 30) {
-            const t = startTotal + m
-            const h = String(Math.floor(t / 60)).padStart(2, '0')
-            const min = String(t % 60).padStart(2, '0')
-            taken.push(`${h}:${min}`)
-          }
-        })
-        setTakenSlots(taken)
+      .then(({ data }) => {
+        setTakenSlots((data ?? []).map(b => b.start_time.slice(0, 5)))
       })
-  }, [court?.id, date])
+  }, [selectedCourt?.id, selectedDate])
 
-  const isSlotAvailable = (t: string) => {
-    if (!duration) return false
-    const [h, m] = t.split(':').map(Number)
-    const startTotal = h * 60 + m
-    const totalMins = duration * 60
-    for (let offset = 0; offset < totalMins; offset += 30) {
-      const cur = startTotal + offset
-      const curH = String(Math.floor(cur / 60)).padStart(2, '0')
-      const curM = String(cur % 60).padStart(2, '0')
-      if (takenSlots.includes(`${curH}:${curM}`)) return false
-      if (Math.floor(cur / 60) >= 22) return false
-    }
-    return true
-  }
-
-  const isPeak = isPeakTime(date, time)
-  const basePrice = court
-    ? (isPeak && (court as any).price_per_hour_peak
-        ? (court as any).price_per_hour_peak
-        : court.price_per_hour)
-    : 0
-  const courtPrice = court && duration ? Math.round(basePrice * (1 - discount) * duration) : 0
-
-  const goBack = () => {
-    const idx = STEPS.indexOf(step)
-    if (idx > 0) setStep(STEPS[idx - 1])
-  }
-
-  // Android/PWA hardware back button support: register each forward step
-  // with browser history so the native back gesture steps back one at a
-  // time instead of exiting the wizard entirely.
-  const stepIndexRef = useRef(0)
-  useEffect(() => {
-    const idx = STEPS.indexOf(step)
-    if (idx > stepIndexRef.current) {
-      window.history.pushState({ padelStep: idx }, '')
-    }
-    stepIndexRef.current = idx
-  }, [step])
-
-  useEffect(() => {
-    const onPopState = () => {
-      setStep(prev => {
-        const idx = STEPS.indexOf(prev)
-        return idx > 0 ? STEPS[idx - 1] : prev
-      })
-    }
-    window.addEventListener('popstate', onPopState)
-    return () => window.removeEventListener('popstate', onPopState)
-  }, [])
-
-  const addHoursDecimal = (timeStr: string, hrs: number) => {
-    const [h, m] = timeStr.split(':').map(Number)
-    const totalMins = h * 60 + m + hrs * 60
-    return `${String(Math.floor(totalMins / 60)).padStart(2, '0')}:${String(totalMins % 60).padStart(2, '0')}`
-  }
+  const discount = memConfig.discount
+  const courtPrice = selectedCourt ? selectedCourt.price_per_hour * (1 - discount) : 0
 
   const handleConfirm = async () => {
-    if (!court || !time || !date || !userId || !duration) return
+    if (!selectedCourt || !selectedTime) return
     setSubmitting(true)
-    const sb = supabase as any
-    const endTime = addHoursDecimal(time, duration)
 
-    const { data: bookingData, error } = await sb.from('bookings').insert({
-      user_id: userId,
-      court_id: court.id,
-      date,
-      start_time: time + ':00',
-      end_time: endTime + ':00',
-      duration_minutes: duration * 60,
+    const { error } = await supabase.from('bookings').insert({
+      user_id: profile.id,
+      court_id: selectedCourt.id,
+      date: selectedDate,
+      start_time: selectedTime + ':00',
+      end_time: addHours(selectedTime, 1) + ':00',
+      duration_minutes: 60,
       status: 'confirmed',
       price_nzd: parseFloat(courtPrice.toFixed(2)),
       discount_applied: discount,
-      payment_method: 'card',
-    }).select().single()
+      payment_method: payMethod as 'card' | 'credits' | 'membership_allowance',
+    })
 
     if (error) {
-      toast.error(error.code === '23505' ? 'That slot was just taken!' : error.message)
-      setSubmitting(false)
-      return
-    }
-
-    if (makePublic && bookingData) {
-      const skillRanges = {
-        all: { min: 0, max: 7 },
-        beginner: { min: 0, max: 2.5 },
-        intermediate: { min: 2.5, max: 4 },
-        advanced: { min: 4, max: 7 },
-      }
-      const { min, max } = skillRanges[skillFilter]
-      const { data: newMatch } = await sb.from('open_matches').insert({
-        booking_id: bookingData.id,
-        organizer_id: userId,
-        venue_slug: venue?.slug ?? 'auckland-albany',
-        court_id: court.id,
-        date,
-        start_time: time + ':00',
-        end_time: endTime + ':00',
-        visibility: 'public',
-        match_type: matchType,
-        skill_min: min,
-        skill_max: max,
-        spots_total: 4,
-        notes: matchNotes || null,
-      }).select().single()
-
-      if (newMatch) {
-        await sb.from('open_match_players').insert({
-          match_id: newMatch.id,
-          player_id: userId,
-          status: 'accepted',
-        })
-      }
-    }
-
-    if (splitEnabled && splitPlayers.length > 0 && bookingData) {
-      const splitAmount = parseFloat((courtPrice / (splitPlayers.length + 1)).toFixed(2))
-      for (const pid of splitPlayers) {
-        await sb.from('booking_splits').insert({
-          booking_id: bookingData.id,
-          invited_by: userId,
-          user_id: pid,
-          amount_nzd: splitAmount,
-          status: 'pending',
-        })
-        await sb.from('notifications').insert({
-          user_id: pid,
-          type: 'split_request',
-          title: 'Court cost split',
-          message: (profile?.full_name ?? 'Someone') + ' is requesting ' + formatPrice(splitAmount, currency) + ' for a court booking.',
-          data: JSON.stringify({ booking_id: bookingData.id, amount: splitAmount }),
-        })
-      }
-    }
-
-    const res = await fetch('/api/create-checkout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        bookingId: bookingData.id,
-        courtName: court.name + ' — ' + court.type,
-        date: formatDate(date),
-        time: time + ' — ' + endTime,
-        amount: courtPrice,
-        splitCount: makePublic ? 4 : 1,
-        region: venue?.region,
-      }),
-    })
-    const { url, error: stripeError } = await res.json()
-    if (stripeError) {
-      toast.error(stripeError)
+      toast.error(error.code === '23505'
+        ? 'That slot was just taken — please choose another time.'
+        : error.message
+      )
     } else {
-      window.location.href = url
+      toast.success('Court booked!')
+      router.push('/mybookings')
+      router.refresh()
     }
     setSubmitting(false)
   }
 
-  const regionVenues = region ? VENUES.filter(v => v.region === region) : []
-  const countryFilteredRegions = country ? REGIONS.filter(r => COUNTRIES.find(c => c.name === country)?.regions.includes(r)) : REGIONS
-
-
-
-  const stepMeta: Record<Step, { title: string; subtitle?: string }> = {
-    country:  { title: 'Where are you based?' },
-    region:   { title: 'Choose a city', subtitle: country ?? '' },
-    venue:    { title: 'Choose a venue', subtitle: region ?? '' },
-    date:     { title: 'When?', subtitle: venue?.name ?? '' },
-    court:    { title: 'Which court?', subtitle: date ? formatDate(date) : '' },
-    duration: { title: 'How long?', subtitle: court?.name ?? '' },
-    time:     { title: 'What time?', subtitle: duration ? durationLabel(duration) : '' },
-    confirm:  { title: 'Confirm booking' },
-  }
-
   return (
-    <div className="max-w-lg mx-auto">
-
-      {/* Back arrow + step title */}
-      <div className="flex items-center gap-3 mb-6">
-        {step !== 'country' && (
-          <button onClick={() => { goBack(); playBackSound() }}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
-          </button>
-        )}
-        <div>
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {stepMeta[step].title}
-          </h2>
-          {stepMeta[step].subtitle && (
-            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {stepMeta[step].subtitle}
+    <div>
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mb-8">
+        {['Select court','Pick time','Confirm'].map((label, i) => {
+          const n = i + 1
+          const done = step > n
+          const active = step === n
+          return (
+            <div key={n} className="flex items-center gap-2">
+              {i > 0 && <div className="w-8 h-px bg-gray-200" />}
+              <div className={cn(
+                'flex items-center gap-2 text-sm',
+                active && 'text-gray-900 font-medium',
+                done && 'text-brand-600',
+                !active && !done && 'text-gray-400'
+              )}>
+                <div className={cn(
+                  'w-6 h-6 rounded-full border flex items-center justify-center text-xs',
+                  active && 'bg-brand-400 border-brand-400 text-white',
+                  done && 'bg-brand-50 border-brand-400 text-brand-600',
+                  !active && !done && 'border-gray-300 text-gray-400'
+                )}>
+                  {done ? '✓' : n}
+                </div>
+                {label}
+              </div>
             </div>
-          )}
-        </div>
+          )
+        })}
       </div>
 
-      {/* Progress bar */}
-      <div className="flex gap-1.5 mb-6">
-        {STEPS.map((s, i) => (
-          <div key={s} className="h-1 flex-1 rounded-full transition-all"
-            style={{ background: i <= STEPS.indexOf(step) ? 'var(--brand-primary)' : 'rgba(128,128,128,0.35)' }} />
-        ))}
-      </div>
-
-      {/* STEP: Country */}
-      {step === 'country' && (
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          {COUNTRIES.map(c => (
-            <button key={c.name}
-              onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
-              className="rounded-xl p-5 transition-all flex flex-col items-center gap-3"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, height: 180, position: 'relative' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                <img src={c.flag} alt={c.name} style={{ width: 80, height: 53, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
-              </div>
-              <div className="text-lg font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
-              <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                {c.regions.length} cities · {VENUES.filter(v => c.regions.includes(v.region)).length} venues · {VENUES.filter(v => c.regions.includes(v.region)).reduce((s, v) => s + v.courts.length, 0)} courts
-              </div>
-            </button>
-          ))}
-            <div className="rounded-xl p-5 flex flex-col items-center gap-3 opacity-80"
-              style={{ background: 'var(--bg-surface)', border: '1px dashed var(--brand-accent)', minHeight: 180, height: 180, position: 'relative', cursor: 'default' }}>
-              <div style={{ fontSize: 36 }}>🌍</div>
-              <div className="text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
-              <div className="text-xs text-center px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</div>
-              
-            </div>  
-        </div>
-      )}
-      {step === 'region' && (
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          {countryFilteredRegions.map(r => {
-            const venues = VENUES.filter(v => v.region === r)
-            const totalCourts = venues.reduce((s, v) => s + v.courts.length, 0)
-            const hasLive = venues.some(v => v.isLive)
-            return (
-              <button key={r}
-                onClick={() => { setRegion(r); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('venue'); playSelectionSound() }}
-                className="rounded-xl p-5 text-left transition-all flex flex-col justify-between"
-                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 160 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-              >
-                <div>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary)', marginBottom: 12 }}>
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                  </svg>
-                  <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{r}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{totalCourts}</span> courts
-                  </div>
-                </div>
-                <div className="flex gap-1 mt-3 flex-wrap">
-                  {venues.slice(0,2).map(v => (
-                    <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid #4DFFEE30' }}>
-                      {v.name.split(' ').slice(-2).join(' ')}
-                    </span>
-                  ))}
-                  {venues.length > 2 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary-muted)' }}>
-                      +{venues.length - 2} more
-                    </span>
-                  )}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      )}
-
-      {/* STEP: Venue */}
-      {step === 'venue' && (
-        <div className="space-y-2 animate-fade-in">
-          {regionVenues.map(v => (
-            <button key={v.slug}
-              onClick={() => { setVenue(v); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('date'); playSelectionSound() }}
-              className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <div>
-                <div className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>{v.name}</div>
-                <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-                  {v.address.split(',').slice(0,2).join(',')}
-                </div>
-                <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  {v.courts.length} courts
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                {!v.isLive && (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
-                    Soon
-                  </span>
-                )}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-subtle)' }}>
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* STEP: Date */}
-      {step === 'date' && (
-        <div className="animate-fade-in">
-          <div className="grid grid-cols-4 gap-2">
+      {/* ── STEP 1: Date + Court ── */}
+      {step === 1 && (
+        <div>
+          {/* Date strip */}
+          <h2 className="text-sm font-medium text-gray-700 mb-3">Choose a date</h2>
+          <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
               return (
-                <button key={d}
-                  onClick={() => { setDate(d); setCourt(null); setDuration(null); setTime(null); setStep('court'); playSelectionSound() }}
-                  className="rounded-xl p-3 text-center transition-all"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-                >
-                  <div className="text-[10px] opacity-60">{day}</div>
-                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{num}</div>
-                  <div className="text-[10px] opacity-60">{month}</div>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* STEP: Court */}
-      {step === 'court' && (
-        <div className="space-y-2 animate-fade-in">
-          {courts.filter(c => (c as any).venue_slug === venue?.slug).sort((a, b) => parseInt(a.name.replace(/\D/g, '')) - parseInt(b.name.replace(/\D/g, ''))).map(c => (
-            <button key={c.id}
-              onClick={() => { setCourt(c); setDuration(null); setTime(null); setStep('duration'); playSelectionSound() }}
-              className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <div>
-                <div className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
-                <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-                  {c.is_indoor ? '🏢' : '☀️'} {c.type}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm font-bold" style={{ color: 'var(--brand-primary)' }}>
-                  {formatPrice(Math.round(c.price_per_hour * (1 - discount)), currency)}/hr
-                </div>
-                {discount > 0 && (
-                  <div className="text-xs" style={{ color: 'var(--brand-accent)' }}>
-                    {(discount * 100).toFixed(0)}% off
-                  </div>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* STEP: Duration */}
-      {step === 'duration' && (
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          {DURATIONS.map(d => (
-            <button key={d.value}
-              onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
-              className="rounded-xl p-5 text-center transition-all"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{d.label}</div>
-              {court && (
-                <div className="text-xs" style={{ color: 'var(--brand-primary)' }}>
-                  from {formatPrice(Math.round(court.price_per_hour * (1 - discount) * d.value), currency)}
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* STEP: Time */}
-      {step === 'time' && (
-        <div className="animate-fade-in">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-accent)' }} />
-              <span style={{ color: 'var(--text-subtle)' }}>Peak (eve + weekends)</span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-primary)' }} />
-              <span style={{ color: 'var(--text-subtle)' }}>Off-peak</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            {TIME_SLOTS.map(t => {
-              const available = isSlotAvailable(t)
-              const peak = isPeakTime(date, t)
-              return (
-                <button key={t} disabled={!available}
-                  onClick={() => { setTime(t); setStep('confirm'); playSelectionSound() }}
-                  className="rounded-xl p-3 text-center transition-all"
-                  style={{
-                    background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
-                    border: available ? '1px solid var(--border)' : '1px solid transparent',
-                    color: !available ? 'var(--text-subtle)' : 'var(--text-primary)',
-                    cursor: !available ? 'not-allowed' : 'pointer',
-                    opacity: !available ? 0.4 : 1,
-                  }}
-                  onMouseEnter={e => { if (available) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
-                  onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
-                >
-                  <div className="text-sm font-semibold">{t}</div>
-                  {available && (
-                    <div className="text-[10px] mt-0.5 font-medium"
-                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary)' }}>
-                      {peak ? '⚡ Peak' : '✓ Off-peak'}
-                    </div>
+                <button
+                  key={d}
+                  onClick={() => setSelectedDate(d)}
+                  className={cn(
+                    'min-w-[56px] p-2 rounded-lg border text-center transition-all',
+                    selectedDate === d
+                      ? 'bg-brand-400 border-brand-400 text-white'
+                      : 'bg-white border-gray-200 hover:border-brand-400'
                   )}
-                  {!available && <div className="text-[10px] mt-0.5">Taken</div>}
+                >
+                  <div className="text-[10px] opacity-75">{day}</div>
+                  <div className="text-base font-medium leading-tight">{num}</div>
+                  <div className="text-[10px] opacity-75">{month}</div>
                 </button>
               )
             })}
           </div>
+
+          {/* Courts */}
+          <h2 className="text-sm font-medium text-gray-700 mb-3">Choose a court</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+            {courts.map(court => (
+              <div
+                key={court.id}
+                onClick={() => setSelectedCourt(court)}
+                className={cn(
+                  'card cursor-pointer transition-all hover:border-brand-400',
+                  selectedCourt?.id === court.id && 'border-brand-400 ring-2 ring-brand-50'
+                )}
+              >
+                <div className="font-medium text-sm mb-0.5">{court.name}</div>
+                <div className="text-xs text-gray-400 mb-3">
+                  {court.is_indoor ? '🏢' : '☀️'} {court.type}
+                </div>
+                <div className="text-sm font-medium text-brand-600">
+                  {formatNzd(court.price_per_hour * (1 - discount))}/hr
+                  {discount > 0 && (
+                    <span className="text-xs text-brand-400 ml-1">({(discount*100).toFixed(0)}% off)</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              className="btn btn-primary"
+              disabled={!selectedCourt}
+              onClick={() => setStep(2)}
+            >
+              Next: pick a time →
+            </button>
+          </div>
         </div>
       )}
 
-      {/* STEP: Confirm */}
-      {step === 'confirm' && (
-        <div className="animate-fade-in">
-          <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      {/* ── STEP 2: Time slot ── */}
+      {step === 2 && selectedCourt && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="font-medium">{selectedCourt.name} — {selectedCourt.type}</div>
+              <div className="text-sm text-gray-500">{formatDate(selectedDate)} · {formatNzd(courtPrice)}/hr</div>
+            </div>
+            <button className="btn btn-sm" onClick={() => setStep(1)}>← Back</button>
+          </div>
+
+          <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 mb-6">
+            {TIME_SLOTS.map(time => {
+              const taken = takenSlots.includes(time)
+              const selected = selectedTime === time
+              return (
+                <button
+                  key={time}
+                  disabled={taken}
+                  onClick={() => setSelectedTime(time)}
+                  className={cn(
+                    'slot',
+                    taken && 'slot-taken',
+                    selected && 'slot-selected'
+                  )}
+                >
+                  {time}
+                  <div className="text-[10px] opacity-70 mt-0.5">{taken ? 'Taken' : '1 hr'}</div>
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              className="btn btn-primary"
+              disabled={!selectedTime}
+              onClick={() => setStep(3)}
+            >
+              Next: confirm →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 3: Confirm ── */}
+      {step === 3 && selectedCourt && selectedTime && (
+        <div className="max-w-md">
+          <div className="card mb-4">
+            <div className="font-medium mb-4">Booking summary</div>
             {[
-              ['Venue', venue?.name],
-              ['Court', court?.name + ' — ' + court?.type],
-              ['Date', date ? formatDate(date) : ''],
-              ['Time', time && duration ? time + ' — ' + addHoursDecimal(time, duration) : ''],
-              ['Duration', duration ? durationLabel(duration) : ''],
-              ['Pricing', isPeak ? '⚡ Peak rate' : '✓ Off-peak rate'],
-              ...(discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
+              ['Court', `${selectedCourt.name} — ${selectedCourt.type}`],
+              ['Date', formatDate(selectedDate)],
+              ['Time', `${selectedTime} – ${addHours(selectedTime, 1)}`],
+              ['Duration', '1 hour'],
+              ['Member', profile.full_name ?? 'You'],
+              ...(discount > 0 ? [['Discount', `${(discount*100).toFixed(0)}% (${memConfig.name} member)`]] : []),
             ].map(([label, value]) => (
-              <div key={label} className="flex justify-between py-2 text-sm"
-                style={{ borderBottom: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                <span className="font-medium text-right ml-4" style={{ color: 'var(--text-primary)' }}>{value}</span>
+              <div key={label} className="flex justify-between py-2 border-b border-gray-100 text-sm last:border-0">
+                <span className="text-gray-500">{label}</span>
+                <span className={cn('font-medium', label === 'Discount' && 'text-brand-600')}>{value}</span>
               </div>
             ))}
             <div className="flex justify-between pt-3">
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl font-bold" style={{ color: 'var(--brand-primary)' }}>{formatPrice(courtPrice, currency)}</span>
+              <span className="font-medium">Total</span>
+              <span className="text-lg font-semibold text-brand-600">{formatNzd(courtPrice)}</span>
             </div>
           </div>
 
-          {/* Open match toggle */}
-          <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>🎾 Open to other players?</div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>Let others find and join your game</div>
-              </div>
-              <button onClick={() => setMakePublic(!makePublic)}
-                style={{
-                  width: 44, height: 24, borderRadius: 12, flexShrink: 0,
-                  background: makePublic ? 'var(--brand-primary)' : 'var(--bg-raised)',
-                  border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s',
-                }}>
-                <div style={{
-                  position: 'absolute', top: 2, left: makePublic ? 22 : 2,
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: makePublic ? 'var(--brand-primary-on)' : 'var(--text-subtle)',
-                  transition: 'left 0.15s',
-                }} />
-              </button>
-            </div>
-            {makePublic && (
-              <div className="mt-3 space-y-3">
-                <div className="flex gap-2">
-                  {(['casual', 'competitive'] as const).map(t => (
-                    <button key={t} onClick={() => setMatchType(t)}
-                      className="flex-1 py-2 rounded-lg text-xs font-medium capitalize"
-                      style={{
-                        background: matchType === t ? 'var(--brand-primary)' : 'var(--bg-raised)',
-                        color: matchType === t ? 'var(--brand-primary-on)' : 'var(--text-muted)',
-                        border: '1px solid var(--border)',
-                      }}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {(['all', 'beginner', 'intermediate', 'advanced'] as const).map(s => (
-                    <button key={s} onClick={() => setSkillFilter(s)}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-medium capitalize"
-                      style={{
-                        background: skillFilter === s ? 'var(--brand-primary)' : 'var(--bg-raised)',
-                        color: skillFilter === s ? 'var(--brand-primary-on)' : 'var(--text-muted)',
-                        border: '1px solid var(--border)',
-                      }}>
-                      {s === 'all' ? 'All levels' : s}
-                    </button>
-                  ))}
-                </div>
-                <input type="text" className="input text-sm" placeholder="Add a note (optional)"
-                  value={matchNotes} onChange={e => setMatchNotes(e.target.value)} maxLength={100} />
-              </div>
-            )}
+          <div className="mb-4">
+            <label className="label">Pay with</label>
+            <select
+              className="input"
+              value={payMethod}
+              onChange={e => setPayMethod(e.target.value)}
+            >
+              <option value="card">Credit / debit card</option>
+              {profile.credits > 0 && (
+                <option value="credits">Session credits ({profile.credits} remaining)</option>
+              )}
+              {profile.membership_tier !== 'casual' && (
+                <option value="membership_allowance">Monthly allowance</option>
+              )}
+            </select>
           </div>
 
-          <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Split the cost?</div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>Invite players to share the court fee</div>
-              </div>
-              <button onClick={() => setSplitEnabled(!splitEnabled)} style={{ width: 44, height: 24, borderRadius: 12, flexShrink: 0, background: splitEnabled ? 'var(--brand-primary)' : 'var(--bg-raised)', border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s' }}>
-                <div style={{ position: 'absolute', top: 2, left: splitEnabled ? 22 : 2, width: 18, height: 18, borderRadius: '50%', background: splitEnabled ? 'var(--brand-primary-on)' : 'var(--text-subtle)', transition: 'left 0.15s' }} />
-              </button>
-            </div>
-            {splitEnabled && (
-              <div className="mt-3 space-y-2">
-                <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Select up to 3 players to split with</div>
-                {allPlayers.filter(p => p.id !== userId).map(p => {
-                  const selected = splitPlayers.includes(p.id)
-                  return (
-                    <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all"
-                      style={{ background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)' }}>
-                      <span className="text-sm" style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
-                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} each</span>}
-                    </button>
-                  )
-                })}
-                {splitPlayers.length > 0 && (
-                  <div className="text-xs pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
-                    You pay {formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} - others notified to pay their share
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="flex gap-3">
+            <button className="btn" onClick={() => setStep(2)}>← Back</button>
+            <button
+              className="btn btn-primary flex-1 justify-center"
+              disabled={submitting}
+              onClick={handleConfirm}
+            >
+              {submitting ? 'Confirming…' : '✓ Confirm booking'}
+            </button>
           </div>
-          <button className="w-full py-4 rounded-xl text-base font-semibold transition-all"
-            style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
-            disabled={submitting} onClick={handleConfirm}>
-            {submitting ? 'Confirming…' : `Pay ${formatPrice(Math.round(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice), currency)} →`}
-          </button>
         </div>
       )}
-
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
