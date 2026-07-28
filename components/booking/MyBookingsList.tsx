@@ -82,7 +82,7 @@ const DirectionsButton = ({ address }: { address: string }) => (
     target="_blank"
     rel="noopener noreferrer"
     className="w-full flex items-center justify-center gap-2 text-sm font-extrabold mt-3 py-3 rounded-2xl transition-all"
-    style={{ background: 'linear-gradient(135deg, #2D9CFF, #1B6FE0)', color: '#FFFFFF', boxShadow: '0 4px 16px rgba(45,156,255,0.3)' }}
+    style={{ background: 'rgba(96,165,250,0.1)', color: '#60A5FA', border: '1px solid rgba(96,165,250,0.3)' }}
     onClick={e => e.stopPropagation()}
   >
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
@@ -214,7 +214,7 @@ export default function MyBookingsList({
       </div>
 
       <Link href="/book" className="flex items-center justify-between rounded-3xl p-8 mb-6 transition-all hover:scale-[1.01]"
-        style={{ background: 'linear-gradient(135deg, var(--brand-primary), #00CC6A)', boxShadow: '0 0 40px rgba(0,255,135,0.3)' }}>
+        style={{ background: 'var(--brand-primary)', boxShadow: '0 1px 0 rgba(255,255,255,0.12) inset' }}>
         <div>
           <div className="text-2xl font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary-on)', lineHeight: 1.1 }}>+ New booking</div>
           <div className="text-sm font-bold mt-1" style={{ color: 'var(--brand-primary-on)', opacity: 0.85 }}>Book a court in seconds</div>
@@ -401,3 +401,5 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
     </div>
   )
 }
+
+
