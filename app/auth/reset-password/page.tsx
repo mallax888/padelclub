@@ -14,7 +14,7 @@ export default function ResetPasswordPage() {
 
   useEffect(() => {
     // Exchange the hash tokens from the reset email for a valid session
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: string, session: any) => {
       if (event === 'PASSWORD_RECOVERY') {
         setReady(true)
       }
@@ -104,4 +104,5 @@ export default function ResetPasswordPage() {
     </div>
   )
 }
+
 
