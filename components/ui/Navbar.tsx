@@ -151,7 +151,7 @@ export default function Navbar() {
                     <div key={s.id} className="px-3 py-2 rounded-lg" style={{ background: 'var(--bg-raised)' }}>
                       <div className="text-sm font-medium" style={{ color: 'var(--brand-primary)' }}>{s.title}</div>
                       <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        {DAY_NAMES[s.dayOfWeek]}s at {s.partnerName}
+                        {s.dayOfWeek !== undefined ? `${DAY_NAMES[s.dayOfWeek]}s` : 'Every day'} at {s.partnerName}
                       </div>
                     </div>
                   ))}

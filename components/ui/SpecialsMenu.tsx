@@ -42,11 +42,16 @@ export default function SpecialsMenu() {
                   {s.title}
                 </div>
                 <div className="text-xs mt-1" style={{ color: 'var(--text-primary)' }}>
-                  {DAY_NAMES[s.dayOfWeek]}s at {s.partnerName}
+                  {s.dayOfWeek !== undefined ? `${DAY_NAMES[s.dayOfWeek]}s` : 'Every day'} at {s.partnerName}
                 </div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   {s.blurb}
                 </div>
+                {s.howToRedeem && (
+                  <div className="text-[11px] mt-1.5 font-medium" style={{ color: 'var(--brand-primary)' }}>
+                    {s.howToRedeem}
+                  </div>
+                )}
                 {(s.address || venue) && (
                   <div className="text-[11px] mt-2" style={{ color: 'var(--text-subtle)' }}>
                     {s.address}{venue ? ` · near ${venue.name}` : ''}

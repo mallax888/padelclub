@@ -6,7 +6,8 @@ export type Special = {
   website?: string
   title: string
   blurb: string
-  dayOfWeek: number // 0 = Sunday ... 6 = Saturday
+  howToRedeem?: string
+  dayOfWeek?: number // 0 = Sunday ... 6 = Saturday. Omit for a deal that runs every day.
 }
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -19,8 +20,8 @@ export const SPECIALS: Special[] = [
     address: '4/486 Lake Road, Takapuna',
     website: 'https://www.cousinscotts.co.nz',
     title: '10% off wings',
-    blurb: "Wednesday nights at Cousin Scott's, just up the road",
-    dayOfWeek: 3,
+    blurb: "Any day you've played — just up the road from the courts",
+    howToRedeem: "Mention you've played at Pacific Padel Takapuna",
   },
 ]
 
@@ -29,6 +30,7 @@ export function getSpecialsForVenue(venueSlug: string): Special[] {
 }
 
 export function isSpecialActiveOnDate(special: Special, dateStr: string): boolean {
+  if (special.dayOfWeek === undefined) return true
   const d = new Date(dateStr + 'T00:00:00')
   return d.getDay() === special.dayOfWeek
 }
