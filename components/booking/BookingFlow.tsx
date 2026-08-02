@@ -10,6 +10,7 @@ import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
+import { getSpecialsForVenue, getActiveSpecialsForVenueDate, DAY_NAMES } from '@/lib/specials'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -400,7 +401,9 @@ export default function BookingFlow({
       {/* STEP: Venue */}
       {step === 'venue' && (
         <div className="space-y-2 animate-fade-in">
-          {regionVenues.map(v => (
+          {regionVenues.map(v => {
+            const venueSpecials = getSpecialsForVenue(v.slug)
+            return (
             <button key={v.slug}
               onClick={() => { setVenue(v); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('date'); playSelectionSound() }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
@@ -416,6 +419,11 @@ export default function BookingFlow({
                 <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
                   {v.courts.length} courts
                 </div>
+                {venueSpecials.map(s => (
+                  <div key={s.id} className="text-xs mt-1.5 font-medium" style={{ color: 'var(--brand-primary)' }}>
+                    🍗 {s.title} — {DAY_NAMES[s.dayOfWeek]}s at {s.partnerName}
+                  </div>
+                ))}
               </div>
               <div className="flex flex-col items-end gap-2">
                 {!v.isLive && (
@@ -429,7 +437,8 @@ export default function BookingFlow({
                 </svg>
               </div>
             </button>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -439,14 +448,16 @@ export default function BookingFlow({
           <div className="grid grid-cols-4 gap-2">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
+              const hasSpecial = venue ? getActiveSpecialsForVenueDate(venue.slug, d).length > 0 : false
               return (
                 <button key={d}
                   onClick={() => { setDate(d); setCourt(null); setDuration(null); setTime(null); setStep('court'); playSelectionSound() }}
-                  className="rounded-xl p-3 text-center transition-all"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+                  className="rounded-xl p-3 text-center transition-all relative"
+                  style={{ background: 'var(--bg-surface)', border: hasSpecial ? '1px solid var(--brand-primary)' : '1px solid var(--border)' }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = hasSpecial ? 'var(--brand-primary)' : 'var(--border)')}
                 >
+                  {hasSpecial && <div style={{ position: 'absolute', top: 4, right: 6, fontSize: 12 }}>🍗</div>}
                   <div className="text-[10px] opacity-60">{day}</div>
                   <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{num}</div>
                   <div className="text-[10px] opacity-60">{month}</div>
@@ -454,6 +465,11 @@ export default function BookingFlow({
               )
             })}
           </div>
+          {venue && getSpecialsForVenue(venue.slug).length > 0 && (
+            <div className="text-xs mt-3 text-center" style={{ color: 'var(--text-muted)' }}>
+              🍗 marks {DAY_NAMES[getSpecialsForVenue(venue.slug)[0].dayOfWeek]}s — {getSpecialsForVenue(venue.slug)[0].title} at {getSpecialsForVenue(venue.slug)[0].partnerName}
+            </div>
+          )}
         </div>
       )}
 
@@ -560,6 +576,11 @@ export default function BookingFlow({
       {/* STEP: Confirm */}
       {step === 'confirm' && (
         <div className="animate-fade-in">
+          {venue && date && getActiveSpecialsForVenueDate(venue.slug, date).map(s => (
+            <div key={s.id} className="rounded-xl p-3 mb-4 text-sm" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary)' }}>
+              🍗 Nice pick — <strong>{s.title}</strong> at {s.partnerName} that night{s.address ? ` (${s.address})` : ''}
+            </div>
+          ))}
           <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             {[
               ['Venue', venue?.name],
