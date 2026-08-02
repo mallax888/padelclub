@@ -46,7 +46,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: 'var(--bg-base)' }}>
+      style={{ background: 'radial-gradient(circle at 50% 0%, var(--brand-primary-muted), var(--bg-base) 60%)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div style={{ fontFamily: 'Georgia,serif', fontSize: 32, fontWeight: 700, color: 'var(--text-primary)' }}>

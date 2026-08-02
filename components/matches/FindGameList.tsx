@@ -124,6 +124,11 @@ export default function FindGameList({
 
     toast.success(accept ? 'Player accepted!' : 'Request declined.')
 
+    const matchUrl = `${window.location.origin}/find-a-game`
+    const courtName = match.courts?.name ?? 'Court'
+    const matchDate = formatDate(match.date)
+    const matchTime = `${match.start_time.slice(0,5)}–${match.end_time.slice(0,5)}`
+
     // Notify player of response
     const player = match.open_match_players.find(p => p.player_id === playerId)
     if (player?.profiles?.email) {
@@ -135,26 +140,68 @@ export default function FindGameList({
             playerEmail: player.profiles.email,
             playerName: player.profiles.nickname ?? player.profiles.full_name ?? 'Player',
             accepted: accept,
-            court: match.courts?.name ?? 'Court',
-            date: formatDate(match.date),
-            time: `${match.start_time.slice(0,5)}–${match.end_time.slice(0,5)}`,
-            matchUrl: `${window.location.origin}/find-a-game`,
+            court: courtName,
+            date: matchDate,
+            time: matchTime,
+            matchUrl,
           }),
         })
       } catch {}
     }
 
+    // If accepted, let the organizer know this player has joined
+    if (accept) {
+      const organizer = match.open_match_players.find(p => p.player_id === match.organizer_id)
+      if (organizer?.profiles?.email) {
+        try {
+          await fetch('/api/notify-player-joined', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              organizerEmail: organizer.profiles.email,
+              organizerName: organizer.profiles.nickname ?? organizer.profiles.full_name ?? 'Organizer',
+              playerName: player?.profiles?.nickname ?? player?.profiles?.full_name ?? 'A player',
+              court: courtName,
+              date: matchDate,
+              time: matchTime,
+              matchUrl,
+            }),
+          })
+        } catch {}
+      }
+    }
+
     // If accepted and match is now full, notify all accepted players
     if (accept) {
-      const acceptedCount = match.open_match_players.filter(p =>
+      const acceptedPlayers = match.open_match_players.filter(p =>
         p.status === 'accepted' || p.player_id === playerId
-      ).length
+      )
 
-      if (acceptedCount >= match.spots_total) {
+      if (acceptedPlayers.length >= match.spots_total) {
         await supabase
           .from('open_matches')
           .update({ status: 'full' })
           .eq('id', match.id)
+
+        const recipients = acceptedPlayers
+          .filter(p => p.profiles?.email)
+          .map(p => ({ email: p.profiles!.email as string, name: p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player' }))
+
+        if (recipients.length > 0) {
+          try {
+            await fetch('/api/notify-match-full', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                players: recipients,
+                court: courtName,
+                date: matchDate,
+                time: matchTime,
+                matchUrl,
+              }),
+            })
+          } catch {}
+        }
       }
     }
 
