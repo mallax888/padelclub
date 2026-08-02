@@ -6,6 +6,7 @@ import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
 import SpecialsMenu from '@/components/ui/SpecialsMenu'
+import NavMoreMenu from '@/components/ui/NavMoreMenu'
 import { SPECIALS, cadencePill } from '@/lib/specials'
 import { useState } from 'react'
 
@@ -17,6 +18,11 @@ const NAV_ITEMS = [
   { href: '/players',      label: 'Players' },
   { href: '/record-match', label: 'Record match' },
 ]
+
+// The desktop nav only shows these directly — everything else (plus Admin,
+// for staff) lives behind the "More" dropdown so the bar never overflows.
+const PRIMARY_NAV_ITEMS = NAV_ITEMS.filter(i => ['/book', '/find-a-game', '/mybookings'].includes(i.href))
+const MORE_NAV_ITEMS = NAV_ITEMS.filter(i => !['/book', '/find-a-game', '/mybookings'].includes(i.href))
 export default function Navbar() {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
@@ -48,18 +54,13 @@ export default function Navbar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1 min-w-0 overflow-x-auto">
-            {NAV_ITEMS.map(item => (
+            {PRIMARY_NAV_ITEMS.map(item => (
               <Link key={item.href} href={item.href}
                 className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}>
                 {item.label}
               </Link>
             ))}
-            {isStaff && (
-              <Link href="/admin"
-                className={cn('nav-tab', pathname.startsWith('/admin') && 'nav-tab-active')}>
-                Admin
-              </Link>
-            )}
+            <NavMoreMenu items={isStaff ? [...MORE_NAV_ITEMS, { href: '/admin', label: 'Admin' }] : MORE_NAV_ITEMS} />
             <SpecialsMenu />
           </div>
 
