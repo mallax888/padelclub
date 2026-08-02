@@ -5,6 +5,8 @@ import { useAuth } from './AuthProvider'
 import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
+import SpecialsMenu from '@/components/ui/SpecialsMenu'
+import { SPECIALS, DAY_NAMES } from '@/lib/specials'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
@@ -58,6 +60,7 @@ export default function Navbar() {
                 Admin
               </Link>
             )}
+            <SpecialsMenu />
           </div>
 
           {/* Right side */}
@@ -138,6 +141,21 @@ export default function Navbar() {
                   style={{ color: 'var(--text-primary)' }}>
                   Admin
                 </Link>
+              )}
+              {SPECIALS.length > 0 && (
+                <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                  <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>
+                    🍗 Specials
+                  </div>
+                  {SPECIALS.map(s => (
+                    <div key={s.id} className="px-3 py-2 rounded-lg" style={{ background: 'var(--bg-raised)' }}>
+                      <div className="text-sm font-medium" style={{ color: 'var(--brand-primary)' }}>{s.title}</div>
+                      <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        {DAY_NAMES[s.dayOfWeek]}s at {s.partnerName}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
               <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
                 {profile && (
