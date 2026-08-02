@@ -53,15 +53,20 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1 min-w-0 overflow-x-auto">
-            {PRIMARY_NAV_ITEMS.map(item => (
-              <Link key={item.href} href={item.href}
-                className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}>
-                {item.label}
-              </Link>
-            ))}
-            <NavMoreMenu items={isStaff ? [...MORE_NAV_ITEMS, { href: '/admin', label: 'Admin' }] : MORE_NAV_ITEMS} />
-            <SpecialsMenu />
+          <div className="hidden md:flex items-center min-w-0 flex-1">
+            <div className="flex items-center gap-1 min-w-0 overflow-x-auto">
+              {PRIMARY_NAV_ITEMS.map(item => (
+                <Link key={item.href} href={item.href}
+                  className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}>
+                  {item.label}
+                </Link>
+              ))}
+              <NavMoreMenu items={isStaff ? [...MORE_NAV_ITEMS, { href: '/admin', label: 'Admin' }] : MORE_NAV_ITEMS} />
+            </div>
+            {/* Standalone, visually distinct — a promo, not just another tab */}
+            <div className="pl-3 ml-2 shrink-0" style={{ borderLeft: '1px solid var(--border)' }}>
+              <SpecialsMenu />
+            </div>
           </div>
 
           {/* Right side */}
@@ -145,7 +150,7 @@ export default function Navbar() {
               )}
               {SPECIALS.length > 0 && (
                 <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                  <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>
+                  <div className="px-3 pb-2 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--brand-accent)' }}>
                     Specials
                   </div>
                   {SPECIALS.map(s => {
