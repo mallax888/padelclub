@@ -24,7 +24,7 @@ export default function SpecialsMenu() {
         onClick={() => setOpen(o => !o)}
         className={`nav-tab flex items-center gap-1 ${open ? 'nav-tab-active' : ''}`}
       >
-        🍗 Specials
+        Specials
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
           <polyline points="6 9 12 15 18 9"/>
