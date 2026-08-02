@@ -6,7 +6,7 @@ import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
 import SpecialsMenu from '@/components/ui/SpecialsMenu'
-import { SPECIALS, DAY_NAMES } from '@/lib/specials'
+import { SPECIALS, cadencePill } from '@/lib/specials'
 import { useState } from 'react'
 
 const NAV_ITEMS = [
@@ -147,14 +147,36 @@ export default function Navbar() {
                   <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>
                     🍗 Specials
                   </div>
-                  {SPECIALS.map(s => (
-                    <div key={s.id} className="px-3 py-2 rounded-lg" style={{ background: 'var(--bg-raised)' }}>
-                      <div className="text-sm font-medium" style={{ color: 'var(--brand-primary)' }}>{s.title}</div>
-                      <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                        {s.dayOfWeek !== undefined ? `${DAY_NAMES[s.dayOfWeek]}s` : 'Every day'} at {s.partnerName}
+                  {SPECIALS.map(s => {
+                    const pill = cadencePill(s)
+                    return (
+                      <div key={s.id} className="px-3 py-2 rounded-lg flex gap-3" style={{ background: 'var(--bg-raised)' }}>
+                        {s.stat && (
+                          <div className="shrink-0 w-12 h-12 rounded-[10px] flex flex-col items-center justify-center leading-none"
+                            style={{
+                              background: 'linear-gradient(155deg, var(--brand-primary-muted), transparent 70%)',
+                              border: '1px solid var(--brand-primary)',
+                            }}>
+                            <div className="text-sm font-extrabold" style={{ color: 'var(--brand-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                              {s.stat.value}
+                            </div>
+                            <div className="text-[7px] font-bold mt-0.5" style={{ color: 'var(--brand-primary)', letterSpacing: '0.03em' }}>
+                              {s.stat.unit}
+                            </div>
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{s.title}</div>
+                          <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>at {s.partnerName}</div>
+                          <div className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                            style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)', letterSpacing: '0.02em' }}>
+                            {pill.live && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--brand-accent)' }} />}
+                            {pill.text.toUpperCase()}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
               <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>

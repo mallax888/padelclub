@@ -8,6 +8,7 @@ export type Special = {
   blurb: string
   howToRedeem?: string
   dayOfWeek?: number // 0 = Sunday ... 6 = Saturday. Omit for a deal that runs every day.
+  stat?: { value: string; unit: string } // headline figure for the deal-spotlight tile, e.g. { value: '10%', unit: 'OFF' }
 }
 
 export const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -22,6 +23,7 @@ export const SPECIALS: Special[] = [
     title: '10% off wings',
     blurb: "Any day you've played — just up the road from the courts",
     howToRedeem: "Mention you've played at Pacific Padel Takapuna",
+    stat: { value: '10%', unit: 'OFF' },
   },
 ]
 
@@ -37,4 +39,12 @@ export function isSpecialActiveOnDate(special: Special, dateStr: string): boolea
 
 export function getActiveSpecialsForVenueDate(venueSlug: string, dateStr: string): Special[] {
   return getSpecialsForVenue(venueSlug).filter(s => isSpecialActiveOnDate(s, dateStr))
+}
+
+// Cadence badge for a special: "Always on" for every-day deals, or the
+// matching weekday — flagged live when today actually is that day.
+export function cadencePill(s: Special): { text: string; live: boolean } {
+  if (s.dayOfWeek === undefined) return { text: 'Always on', live: true }
+  const isToday = new Date().getDay() === s.dayOfWeek
+  return { text: isToday ? `${DAY_NAMES[s.dayOfWeek]} · today` : `${DAY_NAMES[s.dayOfWeek]}s only`, live: isToday }
 }
