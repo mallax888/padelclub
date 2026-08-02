@@ -47,7 +47,7 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1 min-w-0 overflow-x-auto">
             {NAV_ITEMS.map(item => (
               <Link key={item.href} href={item.href}
                 className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}>
