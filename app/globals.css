@@ -166,7 +166,7 @@
   .status-completed  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
   .status-blocked    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
   .nav-tab {
-    @apply px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer select-none;
+    @apply px-3 py-1.5 rounded-lg text-sm transition-colors cursor-pointer select-none whitespace-nowrap;
     color: var(--text-muted);
   }
   .nav-tab:hover {
