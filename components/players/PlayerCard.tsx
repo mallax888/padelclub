@@ -55,13 +55,13 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
             <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Points</div>
           </div>
           <div className="rounded-lg p-2" style={{ background: 'var(--bg-raised)' }}>
-            <div className="text-lg font-semibold" style={{ color: '#4DFFEE' }}>
+            <div className="text-lg font-semibold" style={{ color: 'var(--brand-primary)' }}>
               {player.wins ?? 0}
             </div>
             <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Wins</div>
           </div>
           <div className="rounded-lg p-2" style={{ background: 'var(--bg-raised)' }}>
-            <div className="text-lg font-semibold" style={{ color: '#FF2D78' }}>
+            <div className="text-lg font-semibold" style={{ color: 'var(--brand-accent)' }}>
               {player.losses ?? 0}
             </div>
             <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Losses</div>

@@ -1,6 +1,8 @@
 ﻿import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { sendBookingConfirmationEmail } from '@/lib/emails'
+import { formatDate, formatNzd } from '@/lib/utils'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -40,11 +42,39 @@ export async function POST(request: Request) {
         })
       }
     } else if (bookingId) {
-      await supabase.from('bookings').update({
+      const { data: booking } = await supabase.from('bookings').update({
         status: 'confirmed',
         payment_method: 'card',
         stripe_payment_id: session.payment_intent,
       }).eq('id', bookingId)
+        .select('date, start_time, end_time, duration_minutes, price_nzd, user_id, courts(name, type)')
+        .single()
+
+      if (booking?.user_id) {
+        const { data: recipient } = await supabase
+          .from('profiles')
+          .select('email, full_name, nickname')
+          .eq('id', booking.user_id)
+          .single()
+
+        if (recipient?.email) {
+          try {
+            await sendBookingConfirmationEmail({
+              to: recipient.email,
+              name: recipient.nickname ?? recipient.full_name ?? 'there',
+              court: `${(booking.courts as any)?.name ?? 'Court'} — ${(booking.courts as any)?.type ?? ''}`,
+              date: formatDate(booking.date),
+              time: `${booking.start_time.slice(0, 5)} — ${booking.end_time.slice(0, 5)}`,
+              duration: `${booking.duration_minutes} min`,
+              total: formatNzd(booking.price_nzd),
+            })
+          } catch (emailError) {
+            // Booking is already confirmed — don't fail the webhook (and
+            // trigger a Stripe retry) just because the email failed to send.
+            console.error('Failed to send booking confirmation email:', emailError)
+          }
+        }
+      }
     }
   }
   return NextResponse.json({ received: true })

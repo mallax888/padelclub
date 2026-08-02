@@ -380,7 +380,7 @@ export default function BookingFlow({
                 <div className="flex gap-1 mt-3 flex-wrap">
                   {venues.slice(0,2).map(v => (
                     <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid #4DFFEE30' }}>
+                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary-muted)' }}>
                       {v.name.split(' ').slice(-2).join(' ')}
                     </span>
                   ))}

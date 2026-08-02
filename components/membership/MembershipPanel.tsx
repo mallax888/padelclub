@@ -226,7 +226,7 @@ export default function MembershipPanel({
                       {tx.description}
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium"
-                      style={{ color: tx.amount > 0 ? 'var(--brand-primary)' : '#FF2D78' }}>
+                      style={{ color: tx.amount > 0 ? 'var(--brand-primary)' : 'var(--brand-accent)' }}>
                       {tx.amount > 0 ? '+' : ''}{tx.amount}
                     </td>
                   </tr>

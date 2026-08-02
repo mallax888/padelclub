@@ -60,12 +60,12 @@ interface JoinedGame {
 }
 
 function paymentLabel(method: string, stripeId: string | null) {
-  if (method === 'card' && stripeId) return { label: 'Paid', color: '#22c55e' }
-  if (method === 'card' && !stripeId) return { label: 'Payment pending', color: '#f59e0b' }
-  if (method === 'credits') return { label: 'Paid with credits', color: '#22c55e' }
-  if (method === 'membership_allowance') return { label: 'Membership', color: '#22c55e' }
-  if (method === 'staff_block') return { label: 'Staff block', color: '#71717A' }
-  return { label: method, color: '#71717A' }
+  if (method === 'card' && stripeId) return { label: 'Paid', color: 'var(--brand-primary)' }
+  if (method === 'card' && !stripeId) return { label: 'Payment pending', color: 'var(--text-muted)' }
+  if (method === 'credits') return { label: 'Paid with credits', color: 'var(--brand-primary)' }
+  if (method === 'membership_allowance') return { label: 'Membership', color: 'var(--brand-primary)' }
+  if (method === 'staff_block') return { label: 'Staff block', color: 'var(--text-muted)' }
+  return { label: method, color: 'var(--text-muted)' }
 }
 
 function durationLabel(mins: number) {
