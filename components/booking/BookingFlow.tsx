@@ -238,18 +238,25 @@ export default function BookingFlow({
     if (splitEnabled && splitPlayers.length > 0 && bookingData) {
       const splitAmount = parseFloat((courtPrice / (splitPlayers.length + 1)).toFixed(2))
       for (const pid of splitPlayers) {
-        await sb.from('booking_splits').insert({
+        const { error: splitError } = await sb.from('booking_splits').insert({
           booking_id: bookingData.id,
           invited_by: userId,
           user_id: pid,
           amount_nzd: splitAmount,
           status: 'pending',
         })
-        await sb.from('notifications').insert({
+        if (splitError) {
+          console.error('Failed to create booking split for', pid, splitError)
+          continue
+        }
+        const { error: notifyError } = await sb.from('notifications').insert({
           user_id: pid,
           type: 'split_request',
           message: (profile?.full_name ?? 'Someone') + ' is requesting ' + formatPrice(splitAmount, currency) + ' for a court booking.',
         })
+        if (notifyError) {
+          console.error('Failed to notify', pid, 'of split request', notifyError)
+        }
       }
     }
 

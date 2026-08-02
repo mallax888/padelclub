@@ -35,11 +35,14 @@ export async function POST(request: Request) {
         .single()
       if (split) {
         const payerName = split.profiles?.nickname ?? split.profiles?.full_name ?? 'Someone'
-        await supabase.from('notifications').insert({
+        const { error: notifyError } = await supabase.from('notifications').insert({
           user_id: split.invited_by,
           type: 'split_paid',
           message: payerName + ' paid their share of $' + split.amount_nzd,
         })
+        if (notifyError) {
+          console.error('Failed to notify', split.invited_by, 'of split payment:', notifyError)
+        }
       }
     } else if (bookingId) {
       const { data: booking } = await supabase.from('bookings').update({
