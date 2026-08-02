@@ -61,8 +61,19 @@ export default function Navbar() {
                   {item.label}
                 </Link>
               ))}
-              <NavMoreMenu items={isStaff ? [...MORE_NAV_ITEMS, { href: '/admin', label: 'Admin' }] : MORE_NAV_ITEMS} />
+              <NavMoreMenu items={MORE_NAV_ITEMS} />
             </div>
+            {isStaff && (
+              // Admin is staff tooling, not a member self-service link — kept
+              // out of the member-facing "More" list and always visible on
+              // login instead, so staff never have to go digging for it.
+              <div className="pl-3 ml-2 shrink-0" style={{ borderLeft: '1px solid var(--border)' }}>
+                <Link href="/admin"
+                  className={cn('nav-tab', pathname.startsWith('/admin') && 'nav-tab-active')}>
+                  Admin
+                </Link>
+              </div>
+            )}
             {/* Standalone, visually distinct — a promo, not just another tab */}
             <div className="pl-3 ml-2 shrink-0" style={{ borderLeft: '1px solid var(--border)' }}>
               <SpecialsMenu />
