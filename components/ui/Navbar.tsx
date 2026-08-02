@@ -145,7 +145,7 @@ export default function Navbar() {
               {SPECIALS.length > 0 && (
                 <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
                   <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>
-                    🍗 Specials
+                    Specials
                   </div>
                   {SPECIALS.map(s => {
                     const pill = cadencePill(s)
