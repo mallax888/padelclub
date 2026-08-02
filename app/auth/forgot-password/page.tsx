@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div style={{ fontFamily: 'Georgia,serif', fontSize: 32, fontWeight: 700, color: 'var(--text-primary)' }}>
-              Padel<span style={{ color: '#39FF6E' }}>Club</span>
+              Padel<span style={{ color: 'var(--brand-primary)' }}>Club</span>
             </div>
           </div>
           <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-subtle)' }}>
