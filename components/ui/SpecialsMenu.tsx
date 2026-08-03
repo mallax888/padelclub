@@ -22,7 +22,10 @@ export default function SpecialsMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className={`nav-tab flex items-center gap-1 ${open ? 'nav-tab-active' : ''}`}
+        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors cursor-pointer select-none"
+        style={{ color: 'var(--brand-accent)', background: open ? 'var(--brand-accent-muted)' : 'transparent' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-accent-muted)')}
+        onMouseLeave={e => (e.currentTarget.style.background = open ? 'var(--brand-accent-muted)' : 'transparent')}
       >
         Specials
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"

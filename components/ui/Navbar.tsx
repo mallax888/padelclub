@@ -6,6 +6,7 @@ import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
 import SpecialsMenu from '@/components/ui/SpecialsMenu'
+import NavMoreMenu from '@/components/ui/NavMoreMenu'
 import { SPECIALS, cadencePill } from '@/lib/specials'
 import { useState } from 'react'
 
@@ -17,6 +18,11 @@ const NAV_ITEMS = [
   { href: '/players',      label: 'Players' },
   { href: '/record-match', label: 'Record match' },
 ]
+
+// The desktop nav only shows these directly — everything else (plus Admin,
+// for staff) lives behind the "More" dropdown so the bar never overflows.
+const PRIMARY_NAV_ITEMS = NAV_ITEMS.filter(i => ['/book', '/find-a-game', '/mybookings'].includes(i.href))
+const MORE_NAV_ITEMS = NAV_ITEMS.filter(i => !['/book', '/find-a-game', '/mybookings'].includes(i.href))
 export default function Navbar() {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
@@ -47,20 +53,31 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1 min-w-0 overflow-x-auto">
-            {NAV_ITEMS.map(item => (
-              <Link key={item.href} href={item.href}
-                className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}>
-                {item.label}
-              </Link>
-            ))}
+          <div className="hidden md:flex items-center min-w-0 flex-1">
+            <div className="flex items-center gap-1">
+              {PRIMARY_NAV_ITEMS.map(item => (
+                <Link key={item.href} href={item.href}
+                  className={cn('nav-tab', pathname.startsWith(item.href) && 'nav-tab-active')}>
+                  {item.label}
+                </Link>
+              ))}
+              <NavMoreMenu items={MORE_NAV_ITEMS} />
+            </div>
             {isStaff && (
-              <Link href="/admin"
-                className={cn('nav-tab', pathname.startsWith('/admin') && 'nav-tab-active')}>
-                Admin
-              </Link>
+              // Admin is staff tooling, not a member self-service link — kept
+              // out of the member-facing "More" list and always visible on
+              // login instead, so staff never have to go digging for it.
+              <div className="pl-3 ml-2 shrink-0" style={{ borderLeft: '1px solid var(--border)' }}>
+                <Link href="/admin"
+                  className={cn('nav-tab', pathname.startsWith('/admin') && 'nav-tab-active')}>
+                  Admin
+                </Link>
+              </div>
             )}
-            <SpecialsMenu />
+            {/* Standalone, visually distinct — a promo, not just another tab */}
+            <div className="pl-3 ml-2 shrink-0" style={{ borderLeft: '1px solid var(--border)' }}>
+              <SpecialsMenu />
+            </div>
           </div>
 
           {/* Right side */}
@@ -144,7 +161,7 @@ export default function Navbar() {
               )}
               {SPECIALS.length > 0 && (
                 <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                  <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>
+                  <div className="px-3 pb-2 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--brand-accent)' }}>
                     Specials
                   </div>
                   {SPECIALS.map(s => {
