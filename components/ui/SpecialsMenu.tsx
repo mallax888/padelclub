@@ -1,20 +1,44 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { SPECIALS, cadencePill } from '@/lib/specials'
 import { VENUES } from '@/lib/venues'
 
 export default function SpecialsMenu() {
   const [open, setOpen] = useState(false)
+  const [coords, setCoords] = useState<{ left: number; top: number } | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (ref.current?.contains(target)) return
+      if (panelRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  // The sidebar is a vertical-scroll container, which per the CSS spec forces
+  // it to clip horizontally too — an inline flyout panel would get cut off and
+  // scrollable instead of floating over the page. Portal it to <body> and
+  // position it with fixed coordinates (anchored past the sidebar's right
+  // edge) so it escapes that clipping entirely.
+  useLayoutEffect(() => {
+    if (!open || !ref.current) {
+      setCoords(null)
+      return
+    }
+    const buttonRect = ref.current.getBoundingClientRect()
+    const asideRect = ref.current.closest('aside')?.getBoundingClientRect()
+    setCoords({
+      left: (asideRect?.right ?? buttonRect.right) + 8,
+      top: buttonRect.top,
+    })
+  }, [open])
 
   if (SPECIALS.length === 0) return null
 
@@ -33,9 +57,9 @@ export default function SpecialsMenu() {
         Specials
       </button>
 
-      {open && (
-        <div className="absolute left-full top-0 ml-2 w-80 rounded-xl p-2 z-50 space-y-2"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+      {open && coords && createPortal(
+        <div ref={panelRef} className="fixed w-80 rounded-xl p-2 z-50 space-y-2"
+          style={{ left: coords.left, top: coords.top, background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
           {SPECIALS.map(s => {
             const venue = VENUES.find(v => v.slug === s.venueSlug)
             const pill = cadencePill(s)
@@ -89,7 +113,8 @@ export default function SpecialsMenu() {
               </div>
             )
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

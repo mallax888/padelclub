@@ -1,9 +1,9 @@
-﻿'use client'
+'use client'
 
-import { useState, useEffect, useRef, useId } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useId } from 'react'
+import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
 
 type Notification = {
   id: string
@@ -13,13 +13,15 @@ type Notification = {
   created_at: string
 }
 
-export default function NotificationBell({ userId, panelPosition = 'top-right' }: { userId: string; panelPosition?: 'top-right' | 'bottom-left' }) {
+export default function NotificationBell({ userId, panelPosition = 'top-right' }: { userId: string; panelPosition?: 'top-right' | 'flyout' }) {
   const supabase = createClient()
   const router = useRouter()
   const channelId = useId()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
+  const [flyoutCoords, setFlyoutCoords] = useState<{ left: number; bottom: number } | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   const unread = notifications.filter(n => !n.read).length
 
@@ -56,13 +58,32 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      const target = e.target as Node
+      if (ref.current?.contains(target)) return
+      if (panelRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  // The sidebar is a vertical-scroll container, which per the CSS spec forces
+  // it to clip horizontally too — an inline flyout panel would get cut off and
+  // scrollable instead of floating over the page. Portal it to <body> and
+  // position it with fixed coordinates (anchored past the sidebar's right
+  // edge) so it escapes that clipping entirely.
+  useLayoutEffect(() => {
+    if (!open || panelPosition !== 'flyout' || !ref.current) {
+      setFlyoutCoords(null)
+      return
+    }
+    const buttonRect = ref.current.getBoundingClientRect()
+    const asideRect = ref.current.closest('aside')?.getBoundingClientRect()
+    setFlyoutCoords({
+      left: (asideRect?.right ?? buttonRect.right) + 8,
+      bottom: window.innerHeight - buttonRect.bottom,
+    })
+  }, [open, panelPosition])
 
   const markAllRead = async () => {
     await supabase
@@ -100,6 +121,55 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     return '🔔'
   }
 
+  const panelContent = (
+    <>
+      <div className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
+        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          Notifications
+        </span>
+        {unread > 0 && (
+          <button onClick={markAllRead} className="text-xs" style={{ color: 'var(--brand-primary)' }}>
+            Mark all read
+          </button>
+        )}
+      </div>
+
+      {notifications.length === 0 ? (
+        <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-subtle)' }}>
+          No notifications yet
+        </div>
+      ) : (
+        <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+          {notifications.map(n => (
+            <div key={n.id}
+              onClick={() => { markRead(n.id); router.push('/find-a-game') }}
+              className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
+              style={{
+                borderBottom: '1px solid var(--border)',
+                background: n.read ? 'transparent' : 'var(--brand-primary-muted)',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+              onMouseLeave={e => (e.currentTarget.style.background = n.read ? 'transparent' : 'var(--brand-primary-muted)')}
+            >
+              <span className="text-lg shrink-0">{iconForType(n.type)}</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-xs" style={{ color: 'var(--text-primary)' }}>{n.message}</div>
+                <div className="text-[10px] mt-1" style={{ color: 'var(--text-subtle)' }}>
+                  {timeAgo(n.created_at)}
+                </div>
+              </div>
+              {!n.read && (
+                <div className="w-2 h-2 rounded-full shrink-0 mt-1"
+                  style={{ background: 'var(--brand-primary)' }} />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -122,59 +192,20 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
         )}
       </button>
 
-      {open && (
-        <div className={cn(
-          'absolute z-50 w-80 rounded-xl shadow-xl overflow-hidden',
-          panelPosition === 'top-right' ? 'right-0 top-11' : 'left-0 bottom-11',
-        )}
+      {open && panelPosition === 'top-right' && (
+        <div ref={panelRef} className="absolute z-50 w-80 rounded-xl shadow-xl overflow-hidden right-0 top-11"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-          <div className="flex items-center justify-between px-4 py-3"
-            style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-              Notifications
-            </span>
-            {unread > 0 && (
-              <button onClick={markAllRead} className="text-xs" style={{ color: 'var(--brand-primary)' }}>
-                Mark all read
-              </button>
-            )}
-          </div>
-
-          {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-subtle)' }}>
-              No notifications yet
-            </div>
-          ) : (
-            <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-              {notifications.map(n => (
-                <div key={n.id}
-                  onClick={() => { markRead(n.id); router.push('/find-a-game') }}
-                  className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
-                  style={{
-                    borderBottom: '1px solid var(--border)',
-                    background: n.read ? 'transparent' : 'var(--brand-primary-muted)',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = n.read ? 'transparent' : 'var(--brand-primary-muted)')}
-                >
-                  <span className="text-lg shrink-0">{iconForType(n.type)}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs" style={{ color: 'var(--text-primary)' }}>{n.message}</div>
-                    <div className="text-[10px] mt-1" style={{ color: 'var(--text-subtle)' }}>
-                      {timeAgo(n.created_at)}
-                    </div>
-                  </div>
-                  {!n.read && (
-                    <div className="w-2 h-2 rounded-full shrink-0 mt-1"
-                      style={{ background: 'var(--brand-primary)' }} />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          {panelContent}
         </div>
+      )}
+
+      {open && panelPosition === 'flyout' && flyoutCoords && createPortal(
+        <div ref={panelRef} className="fixed z-50 w-80 rounded-xl shadow-xl overflow-hidden"
+          style={{ left: flyoutCoords.left, bottom: flyoutCoords.bottom, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          {panelContent}
+        </div>,
+        document.body,
       )}
     </div>
   )
 }
-
