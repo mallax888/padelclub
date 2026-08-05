@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/release-unpaid-bookings",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 3 * * *"
     }
   ]
 }
