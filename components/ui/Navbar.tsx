@@ -203,7 +203,7 @@ export default function Navbar() {
               </div>
               <div className="flex items-center gap-1 px-1.5">
                 <ThemeToggle />
-                <NotificationBell userId={profile.id} panelPosition="bottom-left" />
+                <NotificationBell userId={profile.id} panelPosition="flyout" />
                 <button onClick={handleSignOut} className="btn btn-sm ml-auto">
                   Sign out
                 </button>
