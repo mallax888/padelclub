@@ -4,6 +4,7 @@ import { useState, useEffect, useLayoutEffect, useRef, useId } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 type Notification = {
   id: string
@@ -24,6 +25,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   const panelRef = useRef<HTMLDivElement>(null)
 
   const unread = notifications.filter(n => !n.read).length
+  const hasRead = notifications.some(n => n.read)
 
   const fetchNotifications = async () => {
     const { data } = await supabase
@@ -102,6 +104,28 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
   }
 
+  const deleteNotification = async (id: string) => {
+    const { error } = await supabase.from('notifications').delete().eq('id', id)
+    if (error) {
+      toast.error('Could not delete notification')
+      return
+    }
+    setNotifications(prev => prev.filter(n => n.id !== id))
+  }
+
+  const clearRead = async () => {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('user_id', userId)
+      .eq('read', true)
+    if (error) {
+      toast.error('Could not clear notifications')
+      return
+    }
+    setNotifications(prev => prev.filter(n => !n.read))
+  }
+
   const timeAgo = (dateStr: string) => {
     const diff = Date.now() - new Date(dateStr).getTime()
     const mins = Math.floor(diff / 60000)
@@ -128,11 +152,18 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
         <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
           Notifications
         </span>
-        {unread > 0 && (
-          <button onClick={markAllRead} className="text-xs" style={{ color: 'var(--brand-primary)' }}>
-            Mark all read
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {unread > 0 && (
+            <button onClick={markAllRead} className="text-xs" style={{ color: 'var(--brand-primary)' }}>
+              Mark all read
+            </button>
+          )}
+          {hasRead && (
+            <button onClick={clearRead} className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+              Clear read
+            </button>
+          )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (
@@ -160,9 +191,22 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
                 </div>
               </div>
               {!n.read && (
-                <div className="w-2 h-2 rounded-full shrink-0 mt-1"
+                <div className="w-2 h-2 rounded-full shrink-0 mt-1.5"
                   style={{ background: 'var(--brand-primary)' }} />
               )}
+              <button
+                onClick={e => { e.stopPropagation(); deleteNotification(n.id) }}
+                aria-label="Delete notification"
+                className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors"
+                style={{ color: 'var(--text-subtle)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-base)'; e.currentTarget.style.color = 'var(--brand-crimson)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-subtle)' }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
             </div>
           ))}
         </div>
