@@ -17,8 +17,12 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Navbar />
-      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-6 overflow-x-hidden">
-        {children}
+      {/* md:ml offsets the fixed desktop sidebar; the inner wrapper keeps the
+          existing centered content width within whatever space remains. */}
+      <main className="md:ml-[220px] px-3 sm:px-4 py-6 overflow-x-hidden">
+        <div className="max-w-6xl mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   )
