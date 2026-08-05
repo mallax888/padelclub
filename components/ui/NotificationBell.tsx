@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -16,6 +16,7 @@ type Notification = {
 export default function NotificationBell({ userId, panelPosition = 'top-right' }: { userId: string; panelPosition?: 'top-right' | 'bottom-left' }) {
   const supabase = createClient()
   const router = useRouter()
+  const channelId = useId()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -35,9 +36,13 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   useEffect(() => {
     fetchNotifications()
 
-    // Real-time subscription
+    // Real-time subscription — channel name must be unique per mounted instance:
+    // the sidebar layout can render this component twice at once (mobile bar +
+    // desktop sidebar, swapped via CSS not unmounting), and Supabase's browser
+    // client is a singleton that reuses any existing channel with the same name,
+    // so a shared name throws when the second instance tries to attach its listener.
     const channel = supabase
-      .channel('notifications')
+      .channel(`notifications:${channelId}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
