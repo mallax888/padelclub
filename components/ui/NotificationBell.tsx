@@ -105,8 +105,12 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   }
 
   const deleteNotification = async (id: string) => {
-    const { error } = await supabase.from('notifications').delete().eq('id', id)
-    if (error) {
+    // With RLS enabled but no DELETE policy, Postgres silently deletes zero
+    // rows instead of erroring -- .select() lets us tell "deleted" apart from
+    // "blocked" so the UI doesn't optimistically clear a row that's still
+    // sitting in the database (it would just reappear on next fetch).
+    const { data, error } = await supabase.from('notifications').delete().eq('id', id).select('id')
+    if (error || !data || data.length === 0) {
       toast.error('Could not delete notification')
       return
     }
@@ -114,16 +118,18 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   }
 
   const clearRead = async () => {
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('notifications')
       .delete()
       .eq('user_id', userId)
       .eq('read', true)
+      .select('id')
     if (error) {
       toast.error('Could not clear notifications')
       return
     }
-    setNotifications(prev => prev.filter(n => !n.read))
+    const deletedIds = new Set((data ?? []).map(n => n.id))
+    setNotifications(prev => prev.filter(n => !deletedIds.has(n.id)))
   }
 
   const timeAgo = (dateStr: string) => {
