@@ -58,13 +58,19 @@ export async function POST(request: Request) {
         }
       }
     } else if (bookingId) {
+      // Bookings are inserted already 'confirmed' at checkout time (before
+      // payment), so status can't be used as the retry guard here the way it
+      // is for split_payment — stripe_payment_id starting out null is what
+      // marks this as the first successful payment for this booking. A
+      // retried event finds it already set and skips re-sending the email.
       const { data: booking } = await supabase.from('bookings').update({
         status: 'confirmed',
         payment_method: 'card',
         stripe_payment_id: session.payment_intent,
       }).eq('id', bookingId)
+        .is('stripe_payment_id', null)
         .select('date, start_time, end_time, duration_minutes, price_nzd, user_id, courts(name, type)')
-        .single()
+        .maybeSingle()
 
       if (booking?.user_id) {
         const { data: recipient } = await supabase
