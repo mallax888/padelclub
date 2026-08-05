@@ -159,7 +159,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
             </button>
           )}
           {hasRead && (
-            <button onClick={clearRead} className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+            <button onClick={clearRead} className="text-xs font-medium" style={{ color: 'var(--brand-crimson)' }}>
               Clear read
             </button>
           )}
@@ -197,12 +197,12 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
               <button
                 onClick={e => { e.stopPropagation(); deleteNotification(n.id) }}
                 aria-label="Delete notification"
-                className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors"
-                style={{ color: 'var(--text-subtle)' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-base)'; e.currentTarget.style.color = 'var(--brand-crimson)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-subtle)' }}
+                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+                style={{ color: 'var(--text-muted)', background: 'var(--bg-base)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--brand-crimson-muted)'; e.currentTarget.style.color = 'var(--brand-crimson)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-base)'; e.currentTarget.style.color = 'var(--text-muted)' }}
               >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="18" y1="6" x2="6" y2="18"/>
                   <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
