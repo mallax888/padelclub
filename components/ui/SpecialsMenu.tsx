@@ -22,20 +22,19 @@ export default function SpecialsMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors cursor-pointer select-none"
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] font-semibold whitespace-nowrap transition-colors cursor-pointer select-none"
         style={{ color: 'var(--brand-accent)', background: open ? 'var(--brand-accent-muted)' : 'transparent' }}
         onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-accent-muted)')}
         onMouseLeave={e => (e.currentTarget.style.background = open ? 'var(--brand-accent-muted)' : 'transparent')}
       >
-        Specials
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-          style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
-          <polyline points="6 9 12 15 18 9"/>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7c-2-4-8-4-8 0s6 0 8 0zM12 7c2-4 8-4 8 0s-6 0-8 0z"/>
         </svg>
+        Specials
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 mt-2 w-80 rounded-xl p-2 z-50 space-y-2"
+        <div className="absolute left-full top-0 ml-2 w-80 rounded-xl p-2 z-50 space-y-2"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
           {SPECIALS.map(s => {
             const venue = VENUES.find(v => v.slug === s.venueSlug)

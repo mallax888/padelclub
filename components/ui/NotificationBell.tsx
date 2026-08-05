@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 type Notification = {
   id: string
@@ -12,7 +13,7 @@ type Notification = {
   created_at: string
 }
 
-export default function NotificationBell({ userId }: { userId: string }) {
+export default function NotificationBell({ userId, panelPosition = 'top-right' }: { userId: string; panelPosition?: 'top-right' | 'bottom-left' }) {
   const supabase = createClient()
   const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -117,7 +118,10 @@ export default function NotificationBell({ userId }: { userId: string }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-80 rounded-xl shadow-xl overflow-hidden"
+        <div className={cn(
+          'absolute z-50 w-80 rounded-xl shadow-xl overflow-hidden',
+          panelPosition === 'top-right' ? 'right-0 top-11' : 'left-0 bottom-11',
+        )}
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <div className="flex items-center justify-between px-4 py-3"
             style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
