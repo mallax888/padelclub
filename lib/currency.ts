@@ -20,9 +20,14 @@ export function currencySymbol(currency: CurrencyCode): string {
 const LOCALE_MAP: Record<CurrencyCode, string> = { nzd: 'en-NZ', aud: 'en-AU', zar: 'en-ZA' }
 
 export function formatPrice(amount: number, currency: CurrencyCode = 'nzd'): string {
-  return new Intl.NumberFormat(LOCALE_MAP[currency], {
+  const formatted = new Intl.NumberFormat(LOCALE_MAP[currency], {
     style: 'currency',
     currency: currency.toUpperCase(),
     minimumFractionDigits: 2,
   }).format(amount)
+  // en-ZA renders ZAR with a comma as the decimal separator ("R 37,00")
+  // instead of a period — every other currency here already uses a period,
+  // so normalize just that one. NZD/AUD's thousands-separator comma (e.g.
+  // "$1,234.50") is untouched.
+  return currency === 'zar' ? formatted.replace(',', '.') : formatted
 }
