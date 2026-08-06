@@ -85,6 +85,44 @@ export default function BookingFlow({
   const [splitEnabled, setSplitEnabled] = useState(false)
   const [splitPlayers, setSplitPlayers] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
+  const [dateBusyness, setDateBusyness] = useState<Record<string, number>>({})
+
+  // "Busy at a glance" on the date picker: how much of the venue's total
+  // court-time is already booked on each visible day, so people can see a
+  // quiet day without clicking into each one individually.
+  useEffect(() => {
+    if (!venue) { setDateBusyness({}); return }
+    const venueCourts = courts.filter(c => (c as any).venue_slug === venue.slug)
+    if (venueCourts.length === 0) { setDateBusyness({}); return }
+    const courtIds = venueCourts.map(c => c.id)
+    const OPEN_MINUTES_PER_DAY = (22 - 7) * 60
+
+    supabase
+      .from('bookings')
+      .select('date, duration_minutes')
+      .in('court_id', courtIds)
+      .in('date', dates)
+      .in('status', ['confirmed', 'blocked'])
+      .then(({ data }: any) => {
+        const bookedMinutes: Record<string, number> = {}
+        ;(data ?? []).forEach((b: any) => {
+          bookedMinutes[b.date] = (bookedMinutes[b.date] ?? 0) + (b.duration_minutes ?? 60)
+        })
+        const capacity = venueCourts.length * OPEN_MINUTES_PER_DAY
+        const busyness: Record<string, number> = {}
+        dates.forEach(d => { busyness[d] = Math.min((bookedMinutes[d] ?? 0) / capacity, 1) })
+        setDateBusyness(busyness)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [venue?.slug])
+
+  const busynessLabel = (ratio: number | undefined) => {
+    if (ratio === undefined) return null
+    if (ratio < 0.2) return { text: 'Quiet', color: 'var(--brand-primary)' }
+    if (ratio < 0.5) return { text: 'Moderate', color: 'var(--brand-yellow)' }
+    return { text: 'Busy', color: 'var(--brand-crimson)' }
+  }
+
   const [isRebooking, setIsRebooking] = useState(false)
 
   // "Book again" from My Bookings links here with the same court + duration
@@ -458,6 +496,7 @@ export default function BookingFlow({
           <div className="grid grid-cols-4 gap-2">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
+              const busy = busynessLabel(dateBusyness[d])
               return (
                 <button key={d}
                   onClick={() => {
@@ -480,6 +519,12 @@ export default function BookingFlow({
                   <div className="text-[10px] opacity-60">{day}</div>
                   <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{num}</div>
                   <div className="text-[10px] opacity-60">{month}</div>
+                  {busy && (
+                    <div className="flex items-center justify-center gap-1 mt-1.5">
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: busy.color }} />
+                      <span className="text-[9px] font-semibold" style={{ color: busy.color }}>{busy.text}</span>
+                    </div>
+                  )}
                 </button>
               )
             })}
