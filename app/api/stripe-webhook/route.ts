@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { sendBookingConfirmationEmail } from '@/lib/emails'
 import { formatDate, formatNzd } from '@/lib/utils'
 import { getAppUrl } from '@/lib/env'
+import { getActiveSpecialsForVenueDate } from '@/lib/specials'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
         stripe_payment_id: session.payment_intent,
       }).eq('id', bookingId)
         .is('stripe_payment_id', null)
-        .select('date, start_time, end_time, duration_minutes, price_nzd, user_id, courts(name, type)')
+        .select('date, start_time, end_time, duration_minutes, price_nzd, user_id, courts(name, type, venue_slug)')
         .maybeSingle()
 
       if (booking?.user_id) {
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
 
         if (recipient?.email) {
           try {
+            const venueSlug = (booking.courts as any)?.venue_slug
             await sendBookingConfirmationEmail({
               to: recipient.email,
               name: recipient.nickname ?? recipient.full_name ?? 'there',
@@ -97,6 +99,7 @@ export async function POST(request: Request) {
               duration: `${booking.duration_minutes} min`,
               total: formatNzd(booking.price_nzd),
               appUrl: getAppUrl(request),
+              specials: venueSlug ? getActiveSpecialsForVenueDate(venueSlug, booking.date) : [],
             })
           } catch (emailError) {
             // Booking is already confirmed — don't fail the webhook (and

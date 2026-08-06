@@ -1,4 +1,5 @@
 import { resend } from '@/lib/resend'
+import type { Special } from '@/lib/specials'
 
 export async function sendBookingConfirmationEmail({
   to,
@@ -9,6 +10,7 @@ export async function sendBookingConfirmationEmail({
   duration,
   total,
   appUrl,
+  specials = [],
 }: {
   to: string
   name: string
@@ -18,7 +20,16 @@ export async function sendBookingConfirmationEmail({
   duration: string
   total: string
   appUrl: string
+  specials?: Special[]
 }) {
+  const specialsHtml = specials.length === 0 ? '' : `
+          <div style="margin-top:16px;padding:14px 16px;background:#fdf2f8;border:1px solid #f9a8d4;border-radius:8px">
+            <div style="font-size:11px;font-weight:700;color:#C4005A;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:8px">While you're there</div>
+            ${specials.map(s => `
+            <div style="font-size:14px;color:#333;font-weight:600">${s.title} at ${s.partnerName}</div>
+            <div style="font-size:12px;color:#888;margin-top:2px">${s.blurb}${s.howToRedeem ? ' — ' + s.howToRedeem : ''}</div>
+            `).join('')}
+          </div>`
   await resend.emails.send({
     from: 'PadelClub <onboarding@resend.dev>',
     to,
@@ -37,6 +48,7 @@ export async function sendBookingConfirmationEmail({
             <tr><td style="padding:8px 0;color:#888;font-size:14px;border-bottom:1px solid #eee">Duration</td><td style="padding:8px 0;font-weight:500;font-size:14px;border-bottom:1px solid #eee;text-align:right">${duration}</td></tr>
             <tr><td style="padding:8px 0;color:#888;font-size:14px">Total</td><td style="padding:8px 0;font-weight:500;font-size:14px;text-align:right">${total}</td></tr>
           </table>
+          ${specialsHtml}
           <p style="color:#888;font-size:13px;margin:16px 0 0">Need to cancel? Log in at least 24 hours before your booking.</p>
           <div style="margin-top:20px;text-align:center">
             <a href="${appUrl}/mybookings" style="background:#1D9E75;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px">View my bookings</a>
