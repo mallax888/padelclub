@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatNzd, formatDate, generateTimeSlots, addHours, localDateStr } from '@/lib/utils'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
@@ -57,6 +57,7 @@ export default function BookingFlow({
   }) {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const tier = profile?.membership_tier ?? 'casual'
   const memConfig = MEMBERSHIP_CONFIG[tier] ?? MEMBERSHIP_CONFIG['casual']
@@ -121,6 +122,30 @@ export default function BookingFlow({
     if (ratio < 0.5) return { text: 'Moderate', color: 'var(--brand-yellow)' }
     return { text: 'Busy', color: 'var(--brand-crimson)' }
   }
+
+  const [isRebooking, setIsRebooking] = useState(false)
+
+  // "Book again" from My Bookings links here with the same court + duration
+  // as a past booking, skipping straight to picking a new date instead of
+  // re-walking country -> region -> venue -> court -> duration.
+  useEffect(() => {
+    const courtId = searchParams.get('courtId')
+    if (!courtId) return
+    const rebookCourt = courts.find(c => c.id === courtId)
+    const rebookVenue = rebookCourt ? VENUES.find(v => v.slug === (rebookCourt as any).venue_slug) : undefined
+    if (!rebookCourt || !rebookVenue) return
+    const rebookCountry = COUNTRIES.find(c => c.regions.includes(rebookVenue.region))?.name ?? null
+
+    setCountry(rebookCountry)
+    setRegion(rebookVenue.region)
+    setVenue(rebookVenue)
+    setCourt(rebookCourt)
+    const durationParam = Number(searchParams.get('duration'))
+    if (durationParam > 0) setDuration(durationParam / 60)
+    setIsRebooking(true)
+    setStep('date')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!court || !date) return
@@ -474,7 +499,18 @@ export default function BookingFlow({
               const busy = busynessLabel(dateBusyness[d])
               return (
                 <button key={d}
-                  onClick={() => { setDate(d); setCourt(null); setDuration(null); setTime(null); setStep('court'); playSelectionSound() }}
+                  onClick={() => {
+                    setDate(d)
+                    setTime(null)
+                    if (isRebooking && court && duration) {
+                      setStep('time')
+                    } else {
+                      setCourt(null)
+                      setDuration(null)
+                      setStep('court')
+                    }
+                    playSelectionSound()
+                  }}
                   className="rounded-xl p-3 text-center transition-all"
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
                   onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
