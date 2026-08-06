@@ -83,7 +83,7 @@ const DirectionsButton = ({ address }: { address: string }) => (
     target="_blank"
     rel="noopener noreferrer"
     className="flex-1 flex items-center justify-center gap-2 text-sm font-bold py-3 rounded-xl transition-all"
-    style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+    style={{ background: 'var(--brand-blue)', color: '#fff', border: '1px solid var(--brand-blue)' }}
     onClick={e => e.stopPropagation()}
   >
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
@@ -108,7 +108,7 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
     })}
     download={`padelclub-${booking.date}.ics`}
     className="flex-1 flex items-center justify-center gap-2 text-sm font-bold py-3 rounded-xl transition-all"
-    style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+    style={{ background: 'var(--brand-yellow)', color: '#16181D', border: '1px solid var(--brand-yellow)' }}
     onClick={e => e.stopPropagation()}
   >
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
