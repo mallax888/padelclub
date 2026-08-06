@@ -15,9 +15,13 @@ export async function POST(request: Request) {
   }
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as any
-    const { bookingId, userId, splitId, type, sessions } = session.metadata
+    const { bookingId, userId, splitId, type, sessions, tier } = session.metadata
     const supabase = createAdminClient()
-    if (type === 'credit_pack' && userId) {
+    if (type === 'membership' && userId && tier) {
+      // Re-setting the same tier on a retried delivery is harmless (unlike
+      // credits, there's nothing to double-apply), so no dedup guard needed.
+      await supabase.from('profiles').update({ membership_tier: tier }).eq('id', userId)
+    } else if (type === 'credit_pack' && userId) {
       // Stripe can redeliver this event (timeout, 5xx, etc). stripe_session_id
       // is unique, so a retry's insert is ignored instead of applying the
       // credits twice — only add the balance when a row was actually inserted.

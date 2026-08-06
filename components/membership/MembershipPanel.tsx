@@ -1,18 +1,12 @@
 ﻿'use client'
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase-browser'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatNzd } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile, CreditTransaction, MembershipTier } from '@/types/database'
-
-const CREDIT_PACKS = [
-  { id: 'pack5',  sessions: 5,  priceNzd: 150, save: null },
-  { id: 'pack10', sessions: 10, priceNzd: 270, save: 'Save $30' },
-  { id: 'pack20', sessions: 20, priceNzd: 500, save: 'Save $100' },
-]
+import { CREDIT_PACKS } from '@/lib/creditPacks'
 
 export default function MembershipPanel({
   profile,
@@ -21,8 +15,8 @@ export default function MembershipPanel({
   profile: Profile
   transactions: CreditTransaction[]
 }) {
-  const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [selectedPack, setSelectedPack] = useState<string | null>(null)
   const [upgrading, setUpgrading] = useState(false)
   const [purchasing, setPurchasing] = useState(false)
@@ -31,32 +25,55 @@ export default function MembershipPanel({
   const currentTier = profile?.membership_tier ?? 'casual'
   const currentMem = MEMBERSHIP_CONFIG[currentTier]
 
+  // Paid upgrades finish with a redirect back from Stripe rather than
+  // resolving synchronously, so the "welcome" prompt fires off the
+  // ?payment=success param (and the freshly-reloaded profile) instead of
+  // straight out of handleUpgrade.
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success' && currentTier !== 'casual') {
+      setShowBookingPrompt(MEMBERSHIP_CONFIG[currentTier].name)
+      router.replace('/membership')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleUpgrade = async (tier: MembershipTier) => {
     if (tier === currentTier) return
     setUpgrading(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ membership_tier: tier })
-      .eq('id', profile.id)
-    if (error) {
-      toast.error('Could not update membership.')
-    } else {
-      toast.success(`Upgraded to ${MEMBERSHIP_CONFIG[tier].name}!`)
-      setShowBookingPrompt(MEMBERSHIP_CONFIG[tier].name)
-      router.refresh()
+    if (tier === 'casual') {
+      const res = await fetch('/api/membership/downgrade', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data.error ?? 'Could not update membership.')
+      } else {
+        toast.success('Switched to Casual.')
+        router.refresh()
+      }
+      setUpgrading(false)
+      return
     }
-    setUpgrading(false)
+    const res = await fetch('/api/checkout-membership', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tier }),
+    })
+    const data = await res.json()
+    if (!res.ok || !data.url) {
+      toast.error(data.error ?? 'Could not start checkout — please try again.')
+      setUpgrading(false)
+      return
+    }
+    window.location.href = data.url
   }
 
   const handlePurchase = async () => {
     if (!selectedPack) return
-    const pack = CREDIT_PACKS.find(p => p.id === selectedPack)!
     setPurchasing(true)
     try {
       const res = await fetch('/api/checkout-credits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packId: pack.id, sessions: pack.sessions, priceNzd: pack.priceNzd }),
+        body: JSON.stringify({ packId: selectedPack }),
       })
       const data = await res.json()
       if (data.url) {
