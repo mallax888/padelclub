@@ -1,5 +1,5 @@
 ﻿import { createServerClient } from '@/lib/supabase-server'
-import PlayerCard from '@/components/players/PlayerCard'
+import PlayersDirectory from '@/components/players/PlayersDirectory'
 import Link from 'next/link'
 import { getInitials } from '@/lib/utils'
 
@@ -32,17 +32,7 @@ export default async function PlayersPage() {
       <div className="flex flex-col lg:flex-row gap-6 items-start">
 
         {/* Player cards */}
-        <div className="w-full lg:flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {players.map((player, index) => (
-            <PlayerCard key={player.id} player={player} index={index} />
-          ))}
-          {players.length === 0 && (
-            <div className="col-span-2 rounded-xl text-center py-12"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-subtle)' }}>
-              No players found
-            </div>
-          )}
-        </div>
+        <PlayersDirectory players={players} />
 
         {/* Leaderboard — full width on mobile, sidebar on desktop */}
         <div className="w-full lg:w-64 lg:shrink-0 rounded-xl overflow-hidden"
