@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd, formatDate } from '@/lib/utils'
+import { cn, formatNzd, formatDate, localDateStr } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
@@ -110,7 +110,7 @@ export default function MyBookingsList({
   const [showHistory, setShowHistory] = useState(false)
 
   const mem = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDateStr()
   const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled')
   const past = bookings.filter(b => b.date < today || b.status === 'cancelled')
   const upcomingJoined = joinedGames.filter(j => (j.bookings?.date ?? '') >= today)

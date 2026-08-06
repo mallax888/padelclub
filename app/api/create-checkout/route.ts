@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { verifyAndCorrectBookingPrice } from '@/lib/booking-price'
 import { currencyForRegion } from '@/lib/currency'
 import { getVenue } from '@/lib/venues'
+import { getAppUrl } from '@/lib/env'
 
 export async function POST(request: Request) {
   try {
@@ -49,8 +50,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/mybookings?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/book?payment=cancelled`,
+      success_url: `${getAppUrl(request)}/mybookings?payment=success`,
+      cancel_url: `${getAppUrl(request)}/book?payment=cancelled`,
       metadata: {
         bookingId,
         userId: session.user.id,

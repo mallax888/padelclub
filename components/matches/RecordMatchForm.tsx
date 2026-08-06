@@ -38,6 +38,10 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const [draftT2, setDraftT2] = useState(0)
   const [notes, setNotes] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  // One key per mounted form instance -- a double-submit (double click, a
+  // retried request) reuses the same key so the server can tell it's the
+  // same submission instead of a second match.
+  const [idempotencyKey] = useState(() => crypto.randomUUID())
 
   const w1 = setsWon(sets, 1)
   const w2 = setsWon(sets, 2)
@@ -76,7 +80,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     const res = await fetch('/api/record-match', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ team1p1, team1p2, team2p1, team2p2, sets, matchWinner, notes }),
+      body: JSON.stringify({ team1p1, team1p2, team2p1, team2p2, sets, matchWinner, notes, idempotencyKey }),
     })
     const data = await res.json()
 

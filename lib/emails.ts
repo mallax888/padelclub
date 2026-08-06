@@ -8,6 +8,7 @@ export async function sendBookingConfirmationEmail({
   time,
   duration,
   total,
+  appUrl,
 }: {
   to: string
   name: string
@@ -16,6 +17,7 @@ export async function sendBookingConfirmationEmail({
   time: string
   duration: string
   total: string
+  appUrl: string
 }) {
   await resend.emails.send({
     from: 'PadelClub <onboarding@resend.dev>',
@@ -37,7 +39,7 @@ export async function sendBookingConfirmationEmail({
           </table>
           <p style="color:#888;font-size:13px;margin:16px 0 0">Need to cancel? Log in at least 24 hours before your booking.</p>
           <div style="margin-top:20px;text-align:center">
-            <a href="${process.env.NEXT_PUBLIC_APP_URL}/mybookings" style="background:#1D9E75;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px">View my bookings</a>
+            <a href="${appUrl}/mybookings" style="background:#1D9E75;color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px">View my bookings</a>
           </div>
         </div>
         <p style="color:#bbb;font-size:12px;text-align:center;margin-top:16px">PadelClub · Auckland, New Zealand</p>

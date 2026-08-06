@@ -1,4 +1,4 @@
-﻿import { NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
 
-  const { team1p1, team1p2, team2p1, team2p2, sets, matchWinner, notes } = await request.json()
+  const { team1p1, team1p2, team2p1, team2p2, sets, matchWinner, notes, idempotencyKey } = await request.json()
   if (!team1p1 || !team2p1 || !matchWinner) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
@@ -29,45 +29,52 @@ export async function POST(request: Request) {
   const w2 = sets.filter((s: any) => s.t2 > s.t1).length
   const scoreText = sets.map((s: any) => `${s.t1}-${s.t2}`).join(' ')
 
-  const { error: insertError } = await admin.from('matches').insert({
-    player1_id: team1p1,
-    player2_id: team2p1,
-    winner_id: matchWinner === 1 ? team1p1 : team2p1,
-    team1_player1_id: team1p1 || null,
-    team1_player2_id: team1p2 || null,
-    team2_player1_id: team2p1 || null,
-    team2_player2_id: team2p2 || null,
-    team1_sets: w1,
-    team2_sets: w2,
-    winner_team: matchWinner,
-    score: scoreText,
-    notes: notes || null,
-    recorded_by: session.user.id,
-    played_at: new Date().toISOString(),
-  })
+  // idempotency_key is unique, so a double-submit (double click bypassing the
+  // disabled state, or a retried request) is ignored by the DB instead of
+  // inserting the match -- and awarding points -- twice.
+  const { data: insertedRows, error: insertError } = await admin
+    .from('matches')
+    .upsert({
+      player1_id: team1p1,
+      player2_id: team2p1,
+      winner_id: matchWinner === 1 ? team1p1 : team2p1,
+      team1_player1_id: team1p1 || null,
+      team1_player2_id: team1p2 || null,
+      team2_player1_id: team2p1 || null,
+      team2_player2_id: team2p2 || null,
+      team1_sets: w1,
+      team2_sets: w2,
+      winner_team: matchWinner,
+      score: scoreText,
+      notes: notes || null,
+      recorded_by: session.user.id,
+      played_at: new Date().toISOString(),
+      idempotency_key: idempotencyKey ?? null,
+    }, { onConflict: 'idempotency_key', ignoreDuplicates: true })
+    .select('id')
 
   if (insertError) {
     console.error('Record match insert error:', insertError)
     return NextResponse.json({ error: 'Could not record match. Please try again.' }, { status: 500 })
+  }
+  if (idempotencyKey && (!insertedRows || insertedRows.length === 0)) {
+    // Already recorded by an earlier delivery of this exact submission --
+    // treat as success without re-applying points.
+    return NextResponse.json({ success: true })
   }
 
   const winBonus = sets.length === 2 ? POINTS.win_bonus : 0
   const winners = (matchWinner === 1 ? [team1p1, team1p2] : [team2p1, team2p2]).filter(Boolean)
   const losers = (matchWinner === 1 ? [team2p1, team2p2] : [team1p1, team1p2]).filter(Boolean)
 
+  // Atomic DB-side increments, not select-then-update -- two matches
+  // recorded close together for the same player would otherwise race and
+  // one increment could get silently lost.
   for (const id of winners) {
-    const { data: p } = await admin.from('profiles').select('wins, ranking_points').eq('id', id).single()
-    await admin.from('profiles').update({
-      wins: (p?.wins ?? 0) + 1,
-      ranking_points: (p?.ranking_points ?? 0) + POINTS.win + winBonus,
-    }).eq('id', id)
+    await admin.rpc('record_match_result', { p_user_id: id, p_win: true, p_points: POINTS.win + winBonus })
   }
   for (const id of losers) {
-    const { data: p } = await admin.from('profiles').select('losses, ranking_points').eq('id', id).single()
-    await admin.from('profiles').update({
-      losses: (p?.losses ?? 0) + 1,
-      ranking_points: (p?.ranking_points ?? 0) + POINTS.loss,
-    }).eq('id', id)
+    await admin.rpc('record_match_result', { p_user_id: id, p_win: false, p_points: POINTS.loss })
   }
 
   return NextResponse.json({ success: true })

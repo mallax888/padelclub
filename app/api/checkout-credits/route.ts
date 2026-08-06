@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@/lib/supabase-server'
 import { CREDIT_PACKS } from '@/lib/creditPacks'
+import { getAppUrl } from '@/lib/env'
 
 export async function POST(request: Request) {
   try {
@@ -33,8 +34,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/membership?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/membership?payment=cancelled`,
+      success_url: `${getAppUrl(request)}/membership?payment=success`,
+      cancel_url: `${getAppUrl(request)}/membership?payment=cancelled`,
       metadata: {
         type: 'credit_pack',
         packId: pack.id,

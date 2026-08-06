@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendBookingConfirmationEmail } from '@/lib/emails'
 import { formatDate, formatNzd } from '@/lib/utils'
+import { getAppUrl } from '@/lib/env'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -36,8 +37,10 @@ export async function POST(request: Request) {
         }, { onConflict: 'stripe_session_id', ignoreDuplicates: true })
         .select()
       if (inserted && inserted.length > 0) {
-        const { data: profile } = await supabase.from('profiles').select('credits').eq('id', userId).single()
-        await supabase.from('profiles').update({ credits: (profile?.credits ?? 0) + parseInt(sessions, 10) }).eq('id', userId)
+        // An atomic DB-side increment, not select-then-update -- two credit
+        // purchases landing close together for the same user would otherwise
+        // race and one increment could get silently lost.
+        await supabase.rpc('increment_credits', { p_user_id: userId, p_amount: parseInt(sessions, 10) })
       }
     } else if (type === 'split_payment' && splitId) {
       // Only the first delivery of a retried event actually matches
@@ -93,6 +96,7 @@ export async function POST(request: Request) {
               time: `${booking.start_time.slice(0, 5)} — ${booking.end_time.slice(0, 5)}`,
               duration: `${booking.duration_minutes} min`,
               total: formatNzd(booking.price_nzd),
+              appUrl: getAppUrl(request),
             })
           } catch (emailError) {
             // Booking is already confirmed — don't fail the webhook (and
