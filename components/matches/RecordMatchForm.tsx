@@ -101,17 +101,19 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     </select>
   )
 
-  const TapZone = ({ value, onChange, color, bg }: { value: number; onChange: (n: number) => void; color: string; bg: string }) => (
-    <div className="flex flex-col items-center gap-2" style={{ flex: 1 }}>
-      <div
-        onClick={() => { onChange(value >= 7 ? 0 : value + 1); playWheelClick() }}
-        className="w-full flex items-center justify-center rounded-xl cursor-pointer select-none transition-all active:scale-95"
-        style={{ height: 110, background: bg, border: `1.5px solid ${color}` }}
-      >
-        <span style={{ fontSize: 64, fontWeight: 900, lineHeight: 1, color }}>{value}</span>
-      </div>
-      <button onClick={() => onChange(0)} className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>reset</button>
-    </div>
+  const ScoreSelect = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => (
+    <select
+      value={value}
+      onChange={e => { onChange(Number(e.target.value)); playWheelClick() }}
+      className="text-center rounded-xl cursor-pointer"
+      style={{
+        flex: 1, height: 84, fontSize: 40, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
+        background: 'var(--bg-surface)', border: `1.5px solid ${color}`, color,
+        appearance: 'none', WebkitAppearance: 'none',
+      }}
+    >
+      {Array.from({ length: 8 }).map((_, n) => <option key={n} value={n}>{n}</option>)}
+    </select>
   )
 
   const SetRow = ({ setIndex }: { setIndex: number }) => {
@@ -147,9 +149,9 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         ) : (
           <div className="rounded-xl p-4" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-center gap-8 mb-3">
-              <TapZone value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" bg="var(--brand-primary-muted)" />
+              <ScoreSelect value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" />
               <span style={{ fontSize: 28, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
-              <TapZone value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" bg="var(--brand-accent-muted)" />
+              <ScoreSelect value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" />
             </div>
             <div className="text-center text-xs font-medium mb-3" style={{ color: draftValid ? 'var(--brand-primary)' : 'var(--text-muted)' }}>
               {draftT1 === draftT2 ? 'Scores can\u2019t be tied' : draftValid ? `Valid \u2014 Team ${draftT1 > draftT2 ? 1 : 2} wins this set` : 'Not a valid padel score yet'}
