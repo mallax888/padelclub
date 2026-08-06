@@ -77,16 +77,36 @@ function durationLabel(mins: number) {
   return mins + ' min'
 }
 
+function dateParts(dateStr: string) {
+  const date = new Date(dateStr + 'T00:00:00')
+  return {
+    month: new Intl.DateTimeFormat('en-NZ', { month: 'short' }).format(date),
+    day: date.getDate(),
+    weekday: new Intl.DateTimeFormat('en-NZ', { weekday: 'short' }).format(date),
+  }
+}
+
+const DateBlock = ({ dateStr }: { dateStr: string }) => {
+  const { month, day, weekday } = dateParts(dateStr)
+  return (
+    <div className="w-12 rounded-xl overflow-hidden text-center shrink-0" style={{ border: '1px solid var(--border)' }}>
+      <div className="text-[9px] font-extrabold uppercase tracking-wide py-0.5" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{month}</div>
+      <div className="text-lg font-extrabold leading-tight pt-0.5" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>{day}</div>
+      <div className="text-[9px] font-bold pb-1" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{weekday}</div>
+    </div>
+  )
+}
+
 const DirectionsButton = ({ address }: { address: string }) => (
   <a
     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
     target="_blank"
     rel="noopener noreferrer"
-    className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2 rounded-lg transition-all"
-    style={{ background: 'transparent', color: 'var(--brand-blue)', border: '1px solid var(--brand-blue)' }}
+    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+    style={{ background: 'var(--brand-blue-muted)', color: 'var(--brand-blue)', border: '1px solid var(--brand-blue)' }}
     onClick={e => e.stopPropagation()}
   >
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
     Directions
   </a>
 )
@@ -107,11 +127,11 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
       endTime: booking.end_time,
     })}
     download={`padelclub-${booking.date}.ics`}
-    className="flex-1 flex items-center justify-center gap-1.5 text-sm font-semibold py-2 rounded-lg transition-all"
-    style={{ background: 'transparent', color: 'var(--brand-yellow)', border: '1px solid var(--brand-yellow)' }}
+    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all"
+    style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)', border: '1px solid var(--brand-yellow)' }}
     onClick={e => e.stopPropagation()}
   >
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
     Add to calendar
   </a>
 )
@@ -315,41 +335,39 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
 
   return (
-    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-primary)' }}>
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-primary-muted)' }}>
-            🎾
-          </div>
-          <div className="min-w-0">
-            <div className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
-              {b.courts?.name} — {b.courts?.type}
-            </div>
-            {venue && (
-              <div className="text-sm font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                {venue.name}
+    <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="flex items-start gap-3">
+        <DateBlock dateStr={b.date} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
+                {b.courts?.name} — {b.courts?.type}
               </div>
-            )}
-            <div className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+              {venue && (
+                <div className="text-xs font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {venue.name}
+                </div>
+              )}
+              <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-lg font-black" style={{ color: 'var(--text-primary)' }}>{formatNzd(b.price_nzd)}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
+              <div className="text-[10px] font-medium whitespace-nowrap" style={{ color: payment.color }}>{payment.label}</div>
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
-          <span className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: b.status === 'confirmed' ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</span>
-          <div className="flex items-baseline gap-2 sm:block">
-            <div className="text-2xl font-black sm:mt-2" style={{ color: 'var(--text-primary)' }}>{formatNzd(b.price_nzd)}</div>
-            <div className="text-xs font-medium whitespace-nowrap sm:mt-0.5" style={{ color: payment.color }}>{payment.label}</div>
-          </div>
+          {!past && venue && (
+            <div className="flex gap-2 mt-2.5">
+              <DirectionsButton address={venue.address} />
+              <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
+            </div>
+          )}
         </div>
       </div>
-      {!past && venue && (
-        <div className="flex gap-2 mt-3">
-          <DirectionsButton address={venue.address} />
-          <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
-        </div>
-      )}
       {splits.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
           <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Split with:</span>
