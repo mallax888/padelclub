@@ -15,8 +15,16 @@ export async function POST(request: Request) {
   if (!team1p1 || !team2p1 || !matchWinner) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
-
   const admin = createAdminClient() as any
+
+  const players = [team1p1, team1p2, team2p1, team2p2].filter(Boolean)
+  if (!players.includes(session.user.id)) {
+    const { data: recorder } = await admin.from('profiles').select('role').eq('id', session.user.id).single()
+    if (!recorder || !['staff', 'admin'].includes(recorder.role)) {
+      return NextResponse.json({ error: 'You can only record matches you played in' }, { status: 403 })
+    }
+  }
+
   const w1 = sets.filter((s: any) => s.t1 > s.t2).length
   const w2 = sets.filter((s: any) => s.t2 > s.t1).length
   const scoreText = sets.map((s: any) => `${s.t1}-${s.t2}`).join(' ')

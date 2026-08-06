@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatNzd, formatDate } from '@/lib/utils'
@@ -105,7 +104,6 @@ export default function MyBookingsList({
   joinedGames?: JoinedGame[]
   currentUserId?: string
 }) {
-  const supabase = createClient()
   const router = useRouter()
   const [cancelling, setCancelling] = useState<string | null>(null)
   const [payingSplit, setPayingSplit] = useState<string | null>(null)
@@ -131,16 +129,19 @@ export default function MyBookingsList({
       : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatNzd(booking.price_nzd * 0.5) + ') as account credit.'
     if (!confirm(policy)) return
     setCancelling(id)
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
-    if (error) {
-      toast.error('Could not cancel — please try again.')
+    const res = await fetch('/api/cancel-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: id }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.error ?? 'Could not cancel — please try again.')
     } else {
-      if (!isPaid) {
+      if (!data.isPaid) {
         toast.success('Booking cancelled.')
-      } else if (hoursUntil < 24) {
-        const creditAmount = Math.round(booking.price_nzd * 0.5)
-        await supabase.from('profiles').update({ credits: (profile?.credits ?? 0) + creditAmount }).eq('id', profile?.id)
-        toast.success('Booking cancelled. ' + formatNzd(creditAmount) + ' credit added to your account.')
+      } else if (data.hoursUntil < 24) {
+        toast.success('Booking cancelled. ' + formatNzd(data.creditAmount) + ' credit added to your account.')
       } else {
         toast.success('Booking cancelled. Full refund will appear on your card in 5-10 business days.')
       }
@@ -176,11 +177,10 @@ export default function MyBookingsList({
                       const date = s.bookings?.date ?? ''
                       const time = s.bookings?.start_time?.slice(0,5) ?? ''
                       const invitedByName = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
-                      const region = VENUES.find(v => v.slug === s.bookings?.courts?.venue_slug)?.region
                       const res = await fetch('/api/pay-split', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ splitId: s.id, amount: s.amount_nzd, courtName: court, date, time, invitedByName, region }),
+                        body: JSON.stringify({ splitId: s.id, courtName: court, date, time, invitedByName }),
                       })
                       const { url, error } = await res.json()
                       if (error) { toast.error(error); setPayingSplit(null); return }

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
+import { isPeakTime, computeCourtPrice } from '@/lib/pricing'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, type Venue } from '@/lib/venues'
@@ -27,16 +28,6 @@ const DURATIONS = [
   { value: 1.5, label: '90 min'  },
   { value: 2,   label: '120 min' },
 ]
-
-function isPeakTime(dateStr: string | null, timeStr: string | null): boolean {
-  if (!dateStr || !timeStr) return false
-  const d = new Date(dateStr + 'T00:00:00')
-  const day = d.getDay()
-  const hour = parseInt(timeStr.slice(0, 2))
-  const isWeekend = day === 0 || day === 6
-  const isEvening = hour >= 17 && hour < 21
-  return isWeekend || isEvening
-}
 
 function durationLabel(d: number) {
   if (d === 0.5) return '30 min'
@@ -136,12 +127,7 @@ export default function BookingFlow({
   }
 
   const isPeak = isPeakTime(date, time)
-  const basePrice = court
-    ? (isPeak && (court as any).price_per_hour_peak
-        ? (court as any).price_per_hour_peak
-        : court.price_per_hour)
-    : 0
-  const courtPrice = court && duration ? Math.round(basePrice * (1 - discount) * duration) : 0
+  const courtPrice = court && date && time && duration ? computeCourtPrice(court, date, time, duration, discount) : 0
 
   const goBack = () => {
     const idx = STEPS.indexOf(step)
@@ -268,9 +254,7 @@ export default function BookingFlow({
         courtName: court.name + ' — ' + court.type,
         date: formatDate(date),
         time: time + ' — ' + endTime,
-        amount: courtPrice,
         splitCount: makePublic ? 4 : 1,
-        region: venue?.region,
       }),
     })
     const { url, error: stripeError } = await res.json()

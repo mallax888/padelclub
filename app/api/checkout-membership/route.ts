@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@/lib/supabase-server'
-import { CREDIT_PACKS } from '@/lib/creditPacks'
+import { MEMBERSHIP_CONFIG, type MembershipTier } from '@/types/database'
 
 export async function POST(request: Request) {
   try {
@@ -10,12 +10,11 @@ export async function POST(request: Request) {
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
-    const { packId } = await request.json()
-    const pack = CREDIT_PACKS.find(p => p.id === packId)
-    if (!pack) {
-      return NextResponse.json({ error: 'Unknown credit pack' }, { status: 400 })
+    const { tier } = await request.json()
+    const config = MEMBERSHIP_CONFIG[tier as MembershipTier]
+    if (!config || config.priceNzd <= 0) {
+      return NextResponse.json({ error: 'Invalid membership tier' }, { status: 400 })
     }
-    const unitAmount = Math.round(pack.priceNzd * 100) // convert to cents
 
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -24,10 +23,10 @@ export async function POST(request: Request) {
           price_data: {
             currency: 'nzd',
             product_data: {
-              name: `${pack.sessions}-session credit pack`,
-              description: 'PadelClub session credits — use any time, on any court',
+              name: `${config.name} membership`,
+              description: `1 month · ${Math.round(config.discount * 100)}% off bookings, $${config.monthlyFreeSessionsNzd} monthly credit allowance`,
             },
-            unit_amount: unitAmount,
+            unit_amount: Math.round(config.priceNzd * 100),
           },
           quantity: 1,
         },
@@ -36,9 +35,8 @@ export async function POST(request: Request) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/membership?payment=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/membership?payment=cancelled`,
       metadata: {
-        type: 'credit_pack',
-        packId: pack.id,
-        sessions: String(pack.sessions),
+        type: 'membership',
+        tier: config.id,
         userId: session.user.id,
       },
     })
