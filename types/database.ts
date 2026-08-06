@@ -236,6 +236,7 @@ export interface Database {
           type: 'purchase' | 'used' | 'refund' | 'membership_grant'
           booking_id: string | null
           description: string | null
+          stripe_session_id: string | null
         }
         Insert: {
           id?: string
@@ -245,6 +246,7 @@ export interface Database {
           type: 'purchase' | 'used' | 'refund' | 'membership_grant'
           booking_id?: string | null
           description?: string | null
+          stripe_session_id?: string | null
         }
         Update: {
           id?: string
@@ -254,6 +256,7 @@ export interface Database {
           type?: 'purchase' | 'used' | 'refund' | 'membership_grant'
           booking_id?: string | null
           description?: string | null
+          stripe_session_id?: string | null
         }
         Relationships: [
           {

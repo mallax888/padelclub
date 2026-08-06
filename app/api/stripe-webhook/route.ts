@@ -18,21 +18,34 @@ export async function POST(request: Request) {
     const { bookingId, userId, splitId, type, sessions } = session.metadata
     const supabase = createAdminClient()
     if (type === 'credit_pack' && userId) {
-      await supabase.from('credit_transactions').insert({
-        user_id: userId,
-        amount: parseInt(sessions, 10),
-        type: 'purchase',
-        description: `Purchased ${sessions}-session pack`,
-      })
-      const { data: profile } = await supabase.from('profiles').select('credits').eq('id', userId).single()
-      await supabase.from('profiles').update({ credits: (profile?.credits ?? 0) + parseInt(sessions, 10) }).eq('id', userId)
+      // Stripe can redeliver this event (timeout, 5xx, etc). stripe_session_id
+      // is unique, so a retry's insert is ignored instead of applying the
+      // credits twice — only add the balance when a row was actually inserted.
+      const { data: inserted } = await supabase
+        .from('credit_transactions')
+        .upsert({
+          user_id: userId,
+          amount: parseInt(sessions, 10),
+          type: 'purchase',
+          description: `Purchased ${sessions}-session pack`,
+          stripe_session_id: session.id,
+        }, { onConflict: 'stripe_session_id', ignoreDuplicates: true })
+        .select()
+      if (inserted && inserted.length > 0) {
+        const { data: profile } = await supabase.from('profiles').select('credits').eq('id', userId).single()
+        await supabase.from('profiles').update({ credits: (profile?.credits ?? 0) + parseInt(sessions, 10) }).eq('id', userId)
+      }
     } else if (type === 'split_payment' && splitId) {
-      await supabase.from('booking_splits').update({ status: 'paid', stripe_payment_id: session.payment_intent }).eq('id', splitId)
+      // Only the first delivery of a retried event actually matches
+      // status='pending' and flips it — a retry is a no-op, no duplicate
+      // "paid their share" notification.
       const { data: split } = await supabase
         .from('booking_splits')
-        .select('invited_by, amount_nzd, profiles!booking_splits_user_id_fkey(full_name, nickname)')
+        .update({ status: 'paid', stripe_payment_id: session.payment_intent })
         .eq('id', splitId)
-        .single()
+        .eq('status', 'pending')
+        .select('invited_by, amount_nzd, profiles!booking_splits_user_id_fkey(full_name, nickname)')
+        .maybeSingle()
       if (split) {
         const payerName = split.profiles?.nickname ?? split.profiles?.full_name ?? 'Someone'
         const { error: notifyError } = await supabase.from('notifications').insert({
@@ -45,13 +58,19 @@ export async function POST(request: Request) {
         }
       }
     } else if (bookingId) {
+      // Bookings are inserted already 'confirmed' at checkout time (before
+      // payment), so status can't be used as the retry guard here the way it
+      // is for split_payment — stripe_payment_id starting out null is what
+      // marks this as the first successful payment for this booking. A
+      // retried event finds it already set and skips re-sending the email.
       const { data: booking } = await supabase.from('bookings').update({
         status: 'confirmed',
         payment_method: 'card',
         stripe_payment_id: session.payment_intent,
       }).eq('id', bookingId)
+        .is('stripe_payment_id', null)
         .select('date, start_time, end_time, duration_minutes, price_nzd, user_id, courts(name, type)')
-        .single()
+        .maybeSingle()
 
       if (booking?.user_id) {
         const { data: recipient } = await supabase
