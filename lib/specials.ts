@@ -21,8 +21,7 @@ export const SPECIALS: Special[] = [
     address: '4/486 Lake Road, Takapuna',
     website: 'https://www.cousinscotts.co.nz',
     title: '10% off wings',
-    blurb: "Any day you've played — just up the road from the courts",
-    howToRedeem: "Mention you've played at Pacific Padel Takapuna",
+    blurb: 'Just up the road from the courts.',
     stat: { value: '10%', unit: 'OFF' },
   },
 ]
