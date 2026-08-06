@@ -8,6 +8,7 @@ import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
 import { VENUES } from '@/lib/venues'
+import { buildBookingIcsDataUri } from '@/lib/ics'
 
 interface BookingWithCourt {
   id: string
@@ -80,12 +81,37 @@ const DirectionsButton = ({ address }: { address: string }) => (
     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
     target="_blank"
     rel="noopener noreferrer"
-    className="w-full flex items-center justify-center gap-2 text-sm font-bold mt-3 py-3 rounded-xl transition-all"
+    className="flex-1 flex items-center justify-center gap-2 text-sm font-bold py-3 rounded-xl transition-all"
     style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
     onClick={e => e.stopPropagation()}
   >
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-    Take me to the court
+    Directions
+  </a>
+)
+
+const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
+  booking: { id: string; date: string; start_time: string; end_time: string }
+  courtLabel: string
+  venueAddress: string
+}) => (
+  <a
+    href={buildBookingIcsDataUri({
+      uid: booking.id,
+      title: `${courtLabel} — PadelClub`,
+      description: 'Padel court booking',
+      location: venueAddress,
+      date: booking.date,
+      startTime: booking.start_time,
+      endTime: booking.end_time,
+    })}
+    download={`padelclub-${booking.date}.ics`}
+    className="flex-1 flex items-center justify-center gap-2 text-sm font-bold py-3 rounded-xl transition-all"
+    style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+    onClick={e => e.stopPropagation()}
+  >
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+    Add to calendar
   </a>
 )
 
@@ -307,7 +333,12 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
           </div>
         </div>
       </div>
-      {!past && venue && <DirectionsButton address={venue.address} />}
+      {!past && venue && (
+        <div className="flex gap-2 mt-3">
+          <DirectionsButton address={venue.address} />
+          <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
+        </div>
+      )}
       {splits.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
           <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Split with:</span>
@@ -399,7 +430,16 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
           <div className="text-lg font-black sm:mt-2" style={{ color: 'var(--text-primary)' }}>{formatNzd(j.amount_nzd)}</div>
         </div>
       </div>
-      {venue && <DirectionsButton address={venue.address} />}
+      {venue && (
+        <div className="flex gap-2 mt-3">
+          <DirectionsButton address={venue.address} />
+          <AddToCalendarButton
+            booking={{ id: j.id, date: b.date, start_time: b.start_time, end_time: b.end_time }}
+            courtLabel={`${b.courts?.name} — ${b.courts?.type}`}
+            venueAddress={venue.address}
+          />
+        </div>
+      )}
     </div>
   )
 }
