@@ -503,6 +503,7 @@ export interface Database {
           venue_slug: string | null
           played_at: string | null
           recorded_by: string | null
+          idempotency_key: string | null
         }
         Insert: {
           id?: string
@@ -523,6 +524,7 @@ export interface Database {
           venue_slug?: string | null
           played_at?: string | null
           recorded_by?: string | null
+          idempotency_key?: string | null
         }
         Update: {
           id?: string
@@ -543,6 +545,7 @@ export interface Database {
           venue_slug?: string | null
           played_at?: string | null
           recorded_by?: string | null
+          idempotency_key?: string | null
         }
         Relationships: [
           {
@@ -615,7 +618,18 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_credits: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: undefined
+      }
+      record_match_result: {
+        Args: { p_user_id: string; p_win: boolean; p_points: number }
+        Returns: undefined
+      }
+      accept_match_player: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

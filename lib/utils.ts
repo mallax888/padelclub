@@ -21,14 +21,26 @@ export function formatDate(dateStr: string): string {
   }).format(date)
 }
 
+// new Date().toISOString().slice(0, 10) is a common but wrong way to get
+// "today" -- toISOString() converts to UTC first, so for any timezone ahead
+// of UTC (all of NZ/AU/SA) it returns yesterday's date for a chunk of every
+// day. This builds the date string from the Date object's own local
+// getFullYear/getMonth/getDate instead, which always matches the calendar
+// date the browser's clock is actually showing.
+export function localDateStr(d: Date = new Date()): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export function getNextNDates(n: number): string[] {
   const dates: string[] = []
   const now = new Date()
-  now.setHours(12, 0, 0, 0)
   for (let i = 0; i < n; i++) {
     const d = new Date(now)
     d.setDate(now.getDate() + i)
-    dates.push(d.toISOString().slice(0, 10))
+    dates.push(localDateStr(d))
   }
   return dates
 }

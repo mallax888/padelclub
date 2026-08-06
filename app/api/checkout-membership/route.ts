@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@/lib/supabase-server'
 import { MEMBERSHIP_CONFIG, type MembershipTier } from '@/types/database'
+import { getAppUrl } from '@/lib/env'
 
 export async function POST(request: Request) {
   try {
@@ -32,8 +33,8 @@ export async function POST(request: Request) {
         },
       ],
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/membership?payment=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/membership?payment=cancelled`,
+      success_url: `${getAppUrl(request)}/membership?payment=success`,
+      cancel_url: `${getAppUrl(request)}/membership?payment=cancelled`,
       metadata: {
         type: 'membership',
         tier: config.id,

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd, formatDate, generateTimeSlots, getNextNDates } from '@/lib/utils'
+import { cn, formatNzd, formatDate, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
 import type { Court, Profile } from '@/types/database'
 import { VENUES } from '@/lib/venues'
 
@@ -35,7 +35,7 @@ export default function AdminDashboard({
   const [tab, setTab] = useState<'board' | 'bookings' | 'members' | 'courts'>('board')
   const [selectedVenueSlug, setSelectedVenueSlug] = useState<string>('')
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
-  const [boardDate, setBoardDate] = useState(new Date().toISOString().slice(0, 10))
+  const [boardDate, setBoardDate] = useState(localDateStr())
   const [showBlock, setShowBlock] = useState(false)
   const [showPastBookings, setShowPastBookings] = useState(false)
   const [blockForm, setBlockForm] = useState({
@@ -45,7 +45,7 @@ export default function AdminDashboard({
     notes: '',
   })
 
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDateStr()
   const todayBookings = bookings.filter(b => b.date === today && b.status !== 'cancelled')
   const revenue = bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + b.price_nzd, 0)
   const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
@@ -64,7 +64,11 @@ export default function AdminDashboard({
     if (!confirm('Cancel this booking?')) return
     const { createClient } = await import('@/lib/supabase-browser')
     const supabase = createClient()
-    await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
+    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
+    if (error) {
+      toast.error('Could not cancel booking')
+      return
+    }
     toast.success('Booking cancelled')
     router.refresh()
   }
@@ -359,7 +363,7 @@ function BoardView({
     const base = new Date(boardDate + 'T00:00:00')
     const days = viewMode === 'day' ? 1 : viewMode === 'week' ? 7 : 30
     base.setDate(base.getDate() + dir * days)
-    setBoardDate(base.toISOString().slice(0, 10))
+    setBoardDate(localDateStr(base))
   }
 
   const getWeekDates = () => {
@@ -370,13 +374,13 @@ function BoardView({
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(monday)
       d.setDate(monday.getDate() + i)
-      return d.toISOString().slice(0, 10)
+      return localDateStr(d)
     })
   }
 
   const TIME_ROWS = Array.from({ length: 16 }, (_, i) => String(7 + i).padStart(2, '0') + ':00')
   const weekDates = getWeekDates()
-  const today = new Date().toISOString().slice(0, 10)
+  const today = localDateStr()
   const courtColors = ['var(--brand-primary)', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#10B981']
   const colorMap: Record<string, string> = {}
   venueCourts.forEach((court: any, i: number) => { colorMap[court.id] = courtColors[i % courtColors.length] })
@@ -427,13 +431,13 @@ function BoardView({
               const cells: { date: string; otherMonth: boolean }[] = []
               for (let i = 0; i < firstDay; i++) {
                 const d = new Date(year, month, -firstDay + i + 1)
-                cells.push({ date: d.toISOString().slice(0, 10), otherMonth: true })
+                cells.push({ date: localDateStr(d), otherMonth: true })
               }
               for (let i = 1; i <= daysInMonth; i++) {
-                cells.push({ date: new Date(year, month, i).toISOString().slice(0, 10), otherMonth: false })
+                cells.push({ date: localDateStr(new Date(year, month, i)), otherMonth: false })
               }
               const remaining = 7 - (cells.length % 7)
-              if (remaining < 7) for (let i = 1; i <= remaining; i++) cells.push({ date: new Date(year, month + 1, i).toISOString().slice(0, 10), otherMonth: true })
+              if (remaining < 7) for (let i = 1; i <= remaining; i++) cells.push({ date: localDateStr(new Date(year, month + 1, i)), otherMonth: true })
               return cells.map(({ date, otherMonth }, idx) => {
                 const dayBookings = bookings.filter((b: any) => b.date === date && venueCourts.some((c: any) => c.id === b.court_id) && b.status !== 'cancelled')
                 const isToday = date === today

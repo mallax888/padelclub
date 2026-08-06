@@ -4,6 +4,13 @@ import { createAdminClient } from '@/lib/supabase-admin'
 const HOLD_MINUTES = 20
 
 export async function GET(request: Request) {
+  if (!process.env.CRON_SECRET) {
+    // Distinct from a bad caller: this deployment was never given the
+    // secret, so every cron trigger would otherwise silently 401 forever
+    // with nothing in the logs pointing at why.
+    console.error('CRON_SECRET is not set on this deployment — the cleanup cron cannot run')
+    return NextResponse.json({ error: 'Server misconfigured: CRON_SECRET is not set' }, { status: 500 })
+  }
   const auth = request.headers.get('authorization')
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -34,12 +41,27 @@ export async function GET(request: Request) {
 
   const bookingIds = staleBookings.map(b => b.id)
 
-  await supabase.from('bookings').update({ status: 'cancelled' }).in('id', bookingIds)
+  const { data: cancelled, error: cancelError } = await supabase
+    .from('bookings')
+    .update({ status: 'cancelled' })
+    .in('id', bookingIds)
+    .select('id')
+  if (cancelError) {
+    console.error('Failed to release stale bookings:', cancelError)
+    return NextResponse.json({ error: cancelError.message }, { status: 500 })
+  }
+
   // Delete rather than set a status here — booking_splits' valid status
   // values aren't enforced in the TS types, so a status we can't confirm the
   // DB accepts risks erroring; deleting the now-moot pending request doesn't.
-  await supabase.from('booking_splits').delete().in('booking_id', bookingIds).eq('status', 'pending')
-  await supabase.from('open_matches').update({ status: 'cancelled' }).in('booking_id', bookingIds).eq('status', 'open')
+  const { error: splitsError } = await supabase.from('booking_splits').delete().in('booking_id', bookingIds).eq('status', 'pending')
+  if (splitsError) {
+    console.error('Failed to clean up booking_splits for released bookings:', splitsError)
+  }
+  const { error: matchError } = await supabase.from('open_matches').update({ status: 'cancelled' }).in('booking_id', bookingIds).eq('status', 'open')
+  if (matchError) {
+    console.error('Failed to cancel open_matches for released bookings:', matchError)
+  }
 
-  return NextResponse.json({ released: bookingIds.length, bookingIds })
+  return NextResponse.json({ released: cancelled?.length ?? 0, bookingIds: (cancelled ?? []).map(b => b.id) })
 }

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { formatNzd, formatDate, generateTimeSlots, addHours } from '@/lib/utils'
+import { formatNzd, formatDate, generateTimeSlots, addHours, localDateStr } from '@/lib/utils'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice } from '@/lib/pricing'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
@@ -64,7 +64,7 @@ export default function BookingFlow({
   const dates = Array.from({ length: memConfig.bookingWindowDays }, (_, i) => {
     const d = new Date()
     d.setDate(d.getDate() + i)
-    return d.toISOString().slice(0, 10)
+    return localDateStr(d)
   })
 
   const [step, setStep] = useState<Step>('country')
@@ -183,7 +183,11 @@ export default function BookingFlow({
     }).select().single()
 
     if (error) {
-      toast.error(error.code === '23505' ? 'That slot was just taken!' : error.message)
+      toast.error(
+        error.code === '23505' ? 'That slot was just taken!'
+        : error.code === '23P01' ? 'That overlaps another booking on this court — pick a different time.'
+        : error.message
+      )
       setSubmitting(false)
       return
     }

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { formatDate, getInitials } from '@/lib/utils'
 
 type MatchPlayer = {
+  id: string
   player_id: string
   status: string
   profiles: { id: string; full_name: string | null; nickname: string | null; skill_rating: number; skill_level?: string | null; email?: string | null } | null
@@ -110,16 +111,40 @@ export default function FindGameList({
   const handleResponse = async (match: OpenMatch, playerId: string, accept: boolean) => {
     setLoading(match.id + '-' + playerId)
 
-    const { error } = await supabase
-      .from('open_match_players')
-      .update({ status: accept ? 'accepted' : 'declined' })
-      .eq('match_id', match.id)
-      .eq('player_id', playerId)
-
-    if (error) {
-      toast.error('Could not update request')
+    const request = match.open_match_players.find(p => p.player_id === playerId)
+    if (!request) {
+      toast.error('Request not found')
       setLoading(null)
       return
+    }
+
+    if (accept) {
+      // accept_match_player re-checks capacity and locks the match row
+      // server-side, so two requests accepted at nearly the same moment
+      // can't both slip through and overfill the match.
+      const { data: accepted, error } = await supabase.rpc('accept_match_player', { p_request_id: request.id })
+      if (error) {
+        toast.error('Could not accept — please try again.')
+        setLoading(null)
+        return
+      }
+      if (!accepted) {
+        toast.error('This match just filled up.')
+        setLoading(null)
+        router.refresh()
+        return
+      }
+    } else {
+      const { error } = await supabase
+        .from('open_match_players')
+        .update({ status: 'declined' })
+        .eq('match_id', match.id)
+        .eq('player_id', playerId)
+      if (error) {
+        toast.error('Could not update request')
+        setLoading(null)
+        return
+      }
     }
 
     toast.success(accept ? 'Player accepted!' : 'Request declined.')
@@ -178,11 +203,8 @@ export default function FindGameList({
       )
 
       if (acceptedPlayers.length >= match.spots_total) {
-        await supabase
-          .from('open_matches')
-          .update({ status: 'full' })
-          .eq('id', match.id)
-
+        // accept_match_player already flipped open_matches to 'full' -- this
+        // branch only decides whether to send the "match is full" emails.
         const recipients = acceptedPlayers
           .filter(p => p.profiles?.email)
           .map(p => ({ email: p.profiles!.email as string, name: p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player' }))
