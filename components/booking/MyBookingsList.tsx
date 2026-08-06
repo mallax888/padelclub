@@ -12,6 +12,7 @@ import { buildBookingIcsDataUri } from '@/lib/ics'
 
 interface BookingWithCourt {
   id: string
+  court_id: string
   date: string
   start_time: string
   end_time: string
@@ -113,6 +114,16 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
     Add to calendar
   </a>
+)
+
+const BookAgainButton = ({ courtId, durationMinutes }: { courtId: string; durationMinutes: number }) => (
+  <Link
+    href={`/book?courtId=${courtId}&duration=${durationMinutes}`}
+    className="text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+    style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)' }}
+  >
+    Book again
+  </Link>
 )
 
 export default function MyBookingsList({
@@ -359,6 +370,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
       )}
       <div className="flex items-center justify-end pt-2" style={{ borderTop: splits.length > 0 ? 'none' : (past ? 'none' : '1px solid var(--border)') }}>
         <div className="flex items-center gap-2">
+          {past && b.status !== 'cancelled' && <BookAgainButton courtId={b.court_id} durationMinutes={b.duration_minutes} />}
           {b.stripe_payment_id && (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
               className="text-xs px-2 py-1 rounded-lg" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
