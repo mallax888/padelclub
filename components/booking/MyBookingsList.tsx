@@ -9,6 +9,7 @@ import type { Profile } from '@/types/database'
 import Link from 'next/link'
 import { VENUES } from '@/lib/venues'
 import { buildBookingIcsDataUri } from '@/lib/ics'
+import RescheduleModal from '@/components/booking/RescheduleModal'
 
 interface BookingWithCourt {
   id: string
@@ -268,7 +269,7 @@ export default function MyBookingsList({
       </div>
 
       <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-        <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit.
+        <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit. Reschedule to a new date/time any time before the 24hr mark, no charge.
       </div>
 
       {/* New booking — Direction B: muted emerald, bordered, normal height */}
@@ -292,7 +293,7 @@ export default function MyBookingsList({
         ) : (
           <div className="space-y-3">
             {upcoming.map(b => (
-              <BookingRow key={b.id} booking={b} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} />
+              <BookingRow key={b.id} booking={b} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} />
             ))}
           </div>
         )}
@@ -324,15 +325,18 @@ export default function MyBookingsList({
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; splits?: OutgoingSplit[] }) {
+function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], bookingWindowDays = 14 }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number }) {
+  const router = useRouter()
   const bookingDateTime = new Date(b.date + 'T' + b.start_time)
   const now = new Date()
   const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
   const canCancel = !past && b.status === 'confirmed' && bookingDateTime > now
+  const canReschedule = canCancel && hoursUntil >= 24
   const isLateCancel = hoursUntil < 24
   const isPaid = !!b.stripe_payment_id
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
+  const [showReschedule, setShowReschedule] = useState(false)
 
   return (
     <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
@@ -393,6 +397,16 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
               Receipt ↗
             </a>
           )}
+          {canReschedule && (
+            <button
+              type="button"
+              onClick={() => setShowReschedule(true)}
+              className="text-xs px-2 py-1 rounded-lg font-semibold"
+              style={{ background: 'var(--brand-blue-muted)', color: 'var(--brand-blue)', border: '1px solid var(--brand-blue)' }}
+            >
+              Reschedule
+            </button>
+          )}
           {canCancel && (
             <div className="flex flex-col items-center gap-1">
               <button className="btn btn-danger btn-sm" onClick={onCancel} disabled={cancelling}>
@@ -403,6 +417,18 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
           )}
         </div>
       </div>
+      {showReschedule && venue && (
+        <RescheduleModal
+          bookingId={b.id}
+          courtId={b.court_id}
+          courtLabel={`${b.courts?.name} — ${b.courts?.type}`}
+          venueName={venue.name}
+          durationMinutes={b.duration_minutes}
+          bookingWindowDays={bookingWindowDays}
+          onClose={() => setShowReschedule(false)}
+          onRescheduled={() => { setShowReschedule(false); router.refresh() }}
+        />
+      )}
     </div>
   )
 }
