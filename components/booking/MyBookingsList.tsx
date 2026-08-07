@@ -350,23 +350,25 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
 
   return (
     <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-      <div className="flex items-start gap-3">
-        <DateBlock dateStr={b.date} />
-        <div className="min-w-0">
-          <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
-            {b.courts?.name} — {b.courts?.type}
-          </div>
-          {venue && (
-            <div className="text-xs font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              {venue.name}
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+        <div className="flex items-start gap-3 min-w-0 sm:flex-1">
+          <DateBlock dateStr={b.date} />
+          <div className="min-w-0">
+            <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
+              {b.courts?.name} — {b.courts?.type}
             </div>
-          )}
-          <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-            {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+            {venue && (
+              <div className="text-xs font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {venue.name}
+              </div>
+            )}
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+            </div>
           </div>
         </div>
-        <div className="ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
+        <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
           <div className="text-xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{formatNzd(b.price_nzd)}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
