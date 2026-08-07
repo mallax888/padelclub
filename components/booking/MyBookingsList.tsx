@@ -102,8 +102,8 @@ const DirectionsButton = ({ address }: { address: string }) => (
     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
     target="_blank"
     rel="noopener noreferrer"
-    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all"
-    style={{ background: 'var(--brand-blue-muted)', color: 'var(--brand-blue)', border: '1px solid var(--brand-blue)' }}
+    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all whitespace-nowrap"
+    style={{ background: 'var(--brand-blue)', color: '#fff', border: '1px solid var(--brand-blue)' }}
     onClick={e => e.stopPropagation()}
   >
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
@@ -127,53 +127,12 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
       endTime: booking.end_time,
     })}
     download={`padelclub-${booking.date}.ics`}
-    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all"
-    style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)', border: '1px solid var(--brand-yellow)' }}
+    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all whitespace-nowrap"
+    style={{ background: 'var(--brand-yellow)', color: '#16181D', border: '1px solid var(--brand-yellow)' }}
     onClick={e => e.stopPropagation()}
   >
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
     Add to calendar
-  </a>
-)
-
-const DirectionsIconButton = ({ address }: { address: string }) => (
-  <a
-    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    title="Directions"
-    aria-label="Directions"
-    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-    style={{ background: 'var(--brand-blue-muted)', color: 'var(--brand-blue)', border: '1px solid var(--brand-blue)' }}
-    onClick={e => e.stopPropagation()}
-  >
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-  </a>
-)
-
-const AddToCalendarIconButton = ({ booking, courtLabel, venueAddress }: {
-  booking: { id: string; date: string; start_time: string; end_time: string }
-  courtLabel: string
-  venueAddress: string
-}) => (
-  <a
-    href={buildBookingIcsDataUri({
-      uid: booking.id,
-      title: `${courtLabel} — PadelClub`,
-      description: 'Padel court booking',
-      location: venueAddress,
-      date: booking.date,
-      startTime: booking.start_time,
-      endTime: booking.end_time,
-    })}
-    download={`padelclub-${booking.date}.ics`}
-    title="Add to calendar"
-    aria-label="Add to calendar"
-    className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-    style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)', border: '1px solid var(--brand-yellow)' }}
-    onClick={e => e.stopPropagation()}
-  >
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
   </a>
 )
 
@@ -398,9 +357,9 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
           <div className="text-[10px] font-medium -mt-1" style={{ color: payment.color }}>{payment.label}</div>
           {!past && venue && (
-            <div className="flex gap-1.5 mt-0.5">
-              <DirectionsIconButton address={venue.address} />
-              <AddToCalendarIconButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
+            <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">
+              <DirectionsButton address={venue.address} />
+              <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
             </div>
           )}
         </div>
