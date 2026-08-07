@@ -399,7 +399,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
             </>
           )}
         </div>
-        <div className="flex items-start gap-2 ml-auto">
+        <div className="flex items-end gap-2 ml-auto">
           {past && b.status !== 'cancelled' && <BookAgainButton courtId={b.court_id} durationMinutes={b.duration_minutes} />}
           {past && b.stripe_payment_id && (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
@@ -412,7 +412,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
               type="button"
               onClick={() => setShowReschedule(true)}
               className="btn btn-sm"
-              style={{ background: 'var(--brand-blue-muted)', color: 'var(--brand-blue)', border: '1px solid var(--brand-blue)', fontWeight: 600 }}
+              style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)', fontWeight: 600 }}
             >
               Reschedule
             </button>
