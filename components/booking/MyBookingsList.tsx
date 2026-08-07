@@ -196,13 +196,23 @@ export default function MyBookingsList({
     if (!res.ok) {
       toast.error(data.error ?? 'Could not cancel — please try again.')
     } else {
-      if (!data.isPaid) {
-        toast.success('Booking cancelled.')
-      } else if (data.hoursUntil < 24) {
-        toast.success('Booking cancelled. ' + formatNzd(data.creditAmount) + ' credit added to your account.')
-      } else {
-        toast.success('Booking cancelled. Full refund will appear on your card in 5-10 business days.')
-      }
+      const receiptUrl = isPaid ? 'https://dashboard.stripe.com/test/payments/' + (booking as any).stripe_payment_id : null
+      const message = !data.isPaid
+        ? 'Booking cancelled.'
+        : data.hoursUntil < 24
+        ? 'Booking cancelled. ' + formatNzd(data.creditAmount) + ' credit added to your account.'
+        : 'Booking cancelled. Full refund will appear on your card in 5-10 business days.'
+      toast.success(
+        receiptUrl ? (
+          <span>
+            {message}{' '}
+            <a href={receiptUrl} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', fontWeight: 600 }}>
+              View receipt ↗
+            </a>
+          </span>
+        ) : message,
+        { duration: receiptUrl ? 8000 : 4000 }
+      )
       router.refresh()
     }
     setCancelling(null)
