@@ -369,7 +369,14 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
         <div className="ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
           <div className="text-xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{formatNzd(b.price_nzd)}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
-          <div className="text-[10px] font-medium -mt-1" style={{ color: payment.color }}>{payment.label}</div>
+          {b.stripe_payment_id ? (
+            <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
+              className="text-[10px] font-medium -mt-1" style={{ color: payment.color, textDecoration: 'underline' }}>
+              {payment.label} · Receipt ↗
+            </a>
+          ) : (
+            <div className="text-[10px] font-medium -mt-1" style={{ color: payment.color }}>{payment.label}</div>
+          )}
           {!past && venue && (
             <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">
               <DirectionsButton address={venue.address} />
@@ -399,7 +406,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
             </>
           )}
         </div>
-        <div className="flex items-end gap-2 ml-auto">
+        <div className="flex items-start gap-2 ml-auto">
           {past && b.status !== 'cancelled' && <BookAgainButton courtId={b.court_id} durationMinutes={b.duration_minutes} />}
           {past && b.stripe_payment_id && (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
@@ -408,14 +415,17 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
             </a>
           )}
           {canReschedule && (
-            <button
-              type="button"
-              onClick={() => setShowReschedule(true)}
-              className="btn btn-sm"
-              style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)', fontWeight: 600 }}
-            >
-              Reschedule
-            </button>
+            <div className="flex flex-col items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setShowReschedule(true)}
+                className="btn btn-sm"
+                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)', fontWeight: 600 }}
+              >
+                Reschedule
+              </button>
+              <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>No charge</span>
+            </div>
           )}
           {canCancel && (
             <div className="flex flex-col items-center gap-1">
