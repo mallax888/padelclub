@@ -2,15 +2,9 @@
 
 import { useMemo, useState } from 'react'
 import PlayerCard from '@/components/players/PlayerCard'
+import { SKILL_LEVELS } from '@/lib/skill-levels'
 
-const SKILL_FILTERS = [
-  { value: 'all', label: 'All' },
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'improver', label: 'Improver' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-  { value: 'elite', label: 'Elite' },
-]
+const SKILL_FILTERS = [{ value: 'all', label: 'All' }, ...SKILL_LEVELS.map(l => ({ value: l.value, label: l.label }))]
 
 export default function PlayersDirectory({ players }: { players: any[] }) {
   const [query, setQuery] = useState('')
