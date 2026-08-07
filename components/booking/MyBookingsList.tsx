@@ -364,26 +364,28 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [] }: { b
           )}
         </div>
       </div>
-      {splits.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
-          <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Split with:</span>
-          {splits.map(s => {
-          const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
-          const paid = s.status === 'paid'
-          return (
-            <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-              background: paid ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
-              color: paid ? 'var(--brand-primary)' : 'var(--brand-crimson)',
-              border: paid ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
-            }}>
-              {name} {paid ? '✓' : '⏳'}
-            </span>
-          )
-        })}
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="flex flex-wrap items-center gap-2">
+          {splits.length > 0 && (
+            <>
+              <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Split with:</span>
+              {splits.map(s => {
+              const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
+              const paid = s.status === 'paid'
+              return (
+                <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
+                  background: paid ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
+                  color: paid ? 'var(--brand-primary)' : 'var(--brand-crimson)',
+                  border: paid ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
+                }}>
+                  {name} {paid ? '✓' : '⏳'}
+                </span>
+              )
+            })}
+            </>
+          )}
         </div>
-      )}
-      <div className="flex items-center justify-end pt-2" style={{ borderTop: splits.length > 0 ? 'none' : (past ? 'none' : '1px solid var(--border)') }}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
           {past && b.status !== 'cancelled' && <BookAgainButton courtId={b.court_id} durationMinutes={b.duration_minutes} />}
           {b.stripe_payment_id && (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
