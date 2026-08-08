@@ -142,32 +142,3 @@ export function playWheelClick() {
     o.start(); o.stop(now + 0.015)
   } catch (e) {}
 }
-
-export function playStepperRumble(direction: 1 | -1) {
-  try {
-    const c = getCtx()
-    const now = c.currentTime
-    const startFreq = direction > 0 ? 85 : 70
-    const endFreq = direction > 0 ? 65 : 50
-    const o = c.createOscillator()
-    const g = c.createGain()
-    o.type = 'square'
-    o.frequency.setValueAtTime(startFreq, now)
-    o.frequency.exponentialRampToValueAtTime(endFreq, now + 0.4)
-    const trem = c.createOscillator()
-    const tremGain = c.createGain()
-    trem.type = 'sine'
-    trem.frequency.value = 16
-    tremGain.gain.value = 0.12
-    trem.connect(tremGain); tremGain.connect(g.gain)
-    const lp = c.createBiquadFilter()
-    lp.type = 'lowpass'
-    lp.frequency.value = 500
-    g.gain.setValueAtTime(0.001, now)
-    g.gain.linearRampToValueAtTime(0.28, now + 0.03)
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.42)
-    o.connect(lp); lp.connect(g); g.connect(c.destination)
-    o.start(now); trem.start(now)
-    o.stop(now + 0.42); trem.stop(now + 0.42)
-  } catch (e) {}
-}
