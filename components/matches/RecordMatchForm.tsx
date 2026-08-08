@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { playWheelClick } from '@/lib/sounds'
+import { playStepperPop } from '@/lib/sounds'
 
 type Player = { id: string; full_name: string | null; nickname: string | null; ranking_points: number | null }
 type SetScore = { t1: number; t2: number }
@@ -106,8 +106,8 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   )
 
   const ScoreStepper = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => {
-    const dec = () => { if (value > 0) { onChange(value - 1); playWheelClick() } }
-    const inc = () => { if (value < 7) { onChange(value + 1); playWheelClick() } }
+    const dec = () => { if (value > 0) { onChange(value - 1); playStepperPop(-1) } }
+    const inc = () => { if (value < 7) { onChange(value + 1); playStepperPop(1) } }
     return (
       <div className="flex items-center justify-center gap-2" style={{ flex: 1, height: 84, borderRadius: 12, background: 'var(--bg-surface)', border: `1.5px solid ${color}` }}>
         <button
