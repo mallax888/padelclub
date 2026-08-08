@@ -142,3 +142,21 @@ export function playWheelClick() {
     o.start(); o.stop(now + 0.015)
   } catch (e) {}
 }
+
+export function playStepperPop(direction: 1 | -1) {
+  try {
+    const c = getCtx()
+    const now = c.currentTime
+    const base = direction > 0 ? 660 : 520
+    const o = c.createOscillator()
+    const g = c.createGain()
+    o.type = 'sine'
+    o.frequency.setValueAtTime(base, now)
+    o.frequency.exponentialRampToValueAtTime(base * 0.98, now + 0.12)
+    g.gain.setValueAtTime(0.001, now)
+    g.gain.linearRampToValueAtTime(0.22, now + 0.006)
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.16)
+    o.connect(g); g.connect(c.destination)
+    o.start(); o.stop(now + 0.16)
+  } catch (e) {}
+}
