@@ -29,6 +29,8 @@ export interface Database {
           nickname: string | null
           skill_rating: number | null
           email: string | null
+          onboarding_completed: boolean
+          home_venue_slug: string | null
         }
         Insert: {
           id: string
@@ -49,6 +51,8 @@ export interface Database {
           nickname?: string | null
           skill_rating?: number | null
           email?: string | null
+          onboarding_completed?: boolean
+          home_venue_slug?: string | null
         }
         Update: {
           id?: string
@@ -69,6 +73,8 @@ export interface Database {
           nickname?: string | null
           skill_rating?: number | null
           email?: string | null
+          onboarding_completed?: boolean
+          home_venue_slug?: string | null
         }
         Relationships: []
       }

@@ -14,6 +14,16 @@ export default async function AppLayout({
     redirect('/auth/login')
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('onboarding_completed')
+    .eq('id', session!.user.id)
+    .single()
+
+  if (profile && !profile.onboarding_completed) {
+    redirect('/onboarding')
+  }
+
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
       <Navbar />
