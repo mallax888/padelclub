@@ -464,56 +464,55 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
 
   return (
-    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderLeft: '3px solid var(--brand-accent)' }}>
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-2">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0" style={{ background: 'var(--brand-accent-muted)' }}>
-            🙋
-          </div>
+    <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+        <div className="flex items-start gap-3 min-w-0 sm:flex-1">
+          <DateBlock dateStr={b.date} />
           <div className="min-w-0">
-            <div className="font-extrabold text-base" style={{ color: 'var(--text-primary)' }}>
+            <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
               {b.courts?.name} — {b.courts?.type}
             </div>
             <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--brand-accent)' }}>
               Joining {organizerName}'s game
             </div>
-            {coPlayers.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {coPlayers.map(cp => (
-                  <span key={cp.user_id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-                    background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
-                    color: cp.status === 'paid' ? 'var(--brand-primary)' : 'var(--brand-crimson)',
-                    border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
-                  }}>
-                    {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} {cp.status === 'paid' ? '✓' : '⏳'}
-                  </span>
-                ))}
-              </div>
-            )}
             {venue && (
-              <div className="text-sm font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <div className="text-xs font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 {venue.name}
               </div>
             )}
-            <div className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {formatDate(b.date)} · {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3 sm:block sm:text-right shrink-0">
-          <div className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>Paid ✓</div>
-          <div className="text-lg font-black sm:mt-2" style={{ color: 'var(--text-primary)' }}>{formatNzd(j.amount_nzd)}</div>
+        <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
+          <div className="text-xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{formatNzd(j.amount_nzd)}</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-primary)' }}>Paid ✓</div>
+          {venue && (
+            <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">
+              <DirectionsButton address={venue.address} />
+              <AddToCalendarButton
+                booking={{ id: j.id, date: b.date, start_time: b.start_time, end_time: b.end_time }}
+                courtLabel={`${b.courts?.name} — ${b.courts?.type}`}
+                venueAddress={venue.address}
+              />
+            </div>
+          )}
         </div>
       </div>
-      {venue && (
-        <div className="flex gap-2 mt-3">
-          <DirectionsButton address={venue.address} />
-          <AddToCalendarButton
-            booking={{ id: j.id, date: b.date, start_time: b.start_time, end_time: b.end_time }}
-            courtLabel={`${b.courts?.name} — ${b.courts?.type}`}
-            venueAddress={venue.address}
-          />
+      {coPlayers.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
+          <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>With:</span>
+          {coPlayers.map(cp => (
+            <span key={cp.user_id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
+              background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
+              color: cp.status === 'paid' ? 'var(--brand-primary)' : 'var(--brand-crimson)',
+              border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
+            }}>
+              {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} {cp.status === 'paid' ? '✓' : '⏳'}
+            </span>
+          ))}
         </div>
       )}
     </div>
