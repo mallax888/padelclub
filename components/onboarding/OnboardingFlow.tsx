@@ -36,7 +36,7 @@ export default function OnboardingFlow({
 
   const stepIndex = STEPS.indexOf(step)
 
-  const finish = async () => {
+  const finish = async (venueOverride: string | null = homeVenueSlug) => {
     setSaving(true)
     const level = skillLevel ? SKILL_LEVELS.find(l => l.value === skillLevel) : null
     const { error } = await supabase
@@ -45,7 +45,7 @@ export default function OnboardingFlow({
         nickname: nickname.trim() || null,
         skill_level: skillLevel,
         skill_rating: level?.rating ?? null,
-        home_venue_slug: homeVenueSlug,
+        home_venue_slug: venueOverride,
         onboarding_completed: true,
       })
       .eq('id', userId)
@@ -147,14 +147,7 @@ export default function OnboardingFlow({
                           }}
                         >
                           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{v.name}</span>
-                          <span className="flex items-center gap-2">
-                            {!v.isLive && (
-                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
-                                Soon
-                              </span>
-                            )}
-                            {homeVenueSlug === v.slug && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
-                          </span>
+                          {homeVenueSlug === v.slug && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
                         </button>
                       ))}
                     </div>
@@ -172,6 +165,17 @@ export default function OnboardingFlow({
               {saving ? 'Saving…' : stepIndex === STEPS.length - 1 ? "Let's play" : 'Continue'}
             </button>
           </div>
+          {step === 'venue' && (
+            <button
+              type="button"
+              onClick={() => finish(null)}
+              disabled={saving}
+              className="w-full text-center text-xs font-semibold mt-3"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              Skip — I play at different courts
+            </button>
+          )}
         </div>
       </div>
     </div>
