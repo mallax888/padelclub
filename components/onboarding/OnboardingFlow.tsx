@@ -27,7 +27,7 @@ export default function OnboardingFlow({
 
   const venuesByRegion = useMemo(() => {
     const byRegion: Record<string, typeof VENUES> = {}
-    VENUES.filter(v => v.isLive).forEach(v => {
+    VENUES.forEach(v => {
       byRegion[v.region] = byRegion[v.region] ?? []
       byRegion[v.region].push(v)
     })
@@ -147,7 +147,14 @@ export default function OnboardingFlow({
                           }}
                         >
                           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{v.name}</span>
-                          {homeVenueSlug === v.slug && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
+                          <span className="flex items-center gap-2">
+                            {!v.isLive && (
+                              <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
+                                Soon
+                              </span>
+                            )}
+                            {homeVenueSlug === v.slug && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
+                          </span>
                         </button>
                       ))}
                     </div>
