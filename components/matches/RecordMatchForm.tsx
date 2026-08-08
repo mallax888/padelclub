@@ -105,20 +105,29 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     </select>
   )
 
-  const ScoreSelect = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => (
-    <select
-      value={value}
-      onChange={e => { onChange(Number(e.target.value)); playWheelClick() }}
-      className="text-center rounded-xl cursor-pointer"
-      style={{
-        flex: 1, height: 84, fontSize: 40, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
-        background: 'var(--bg-surface)', border: `1.5px solid ${color}`, color,
-        appearance: 'none', WebkitAppearance: 'none',
-      }}
-    >
-      {Array.from({ length: 8 }).map((_, n) => <option key={n} value={n}>{n}</option>)}
-    </select>
-  )
+  const ScoreStepper = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => {
+    const dec = () => { if (value > 0) { onChange(value - 1); playWheelClick() } }
+    const inc = () => { if (value < 7) { onChange(value + 1); playWheelClick() } }
+    return (
+      <div className="flex items-center justify-center gap-2" style={{ flex: 1, height: 84, borderRadius: 12, background: 'var(--bg-surface)', border: `1.5px solid ${color}` }}>
+        <button
+          type="button" onClick={dec} disabled={value <= 0}
+          className="flex items-center justify-center rounded-lg"
+          style={{ width: 36, height: 36, fontSize: 20, fontWeight: 700, color, border: `1px solid ${color}`, background: 'var(--bg-raised)', opacity: value <= 0 ? 0.35 : 1, cursor: value <= 0 ? 'not-allowed' : 'pointer' }}
+        >
+          −
+        </button>
+        <div style={{ width: 52, textAlign: 'center', fontSize: 40, fontWeight: 900, fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
+        <button
+          type="button" onClick={inc} disabled={value >= 7}
+          className="flex items-center justify-center rounded-lg"
+          style={{ width: 36, height: 36, fontSize: 20, fontWeight: 700, color, border: `1px solid ${color}`, background: 'var(--bg-raised)', opacity: value >= 7 ? 0.35 : 1, cursor: value >= 7 ? 'not-allowed' : 'pointer' }}
+        >
+          +
+        </button>
+      </div>
+    )
+  }
 
   const SetRow = ({ setIndex }: { setIndex: number }) => {
     const score = sets[setIndex]
@@ -153,9 +162,9 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         ) : (
           <div className="rounded-xl p-4" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
             <div className="flex items-center justify-center gap-8 mb-3">
-              <ScoreSelect value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" />
+              <ScoreStepper value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" />
               <span style={{ fontSize: 28, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
-              <ScoreSelect value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" />
+              <ScoreStepper value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" />
             </div>
             <div className="text-center text-xs font-medium mb-3" style={{ color: draftValid ? 'var(--brand-primary)' : 'var(--text-muted)' }}>
               {draftT1 === draftT2 ? 'Scores can\u2019t be tied' : draftValid ? `Valid \u2014 Team ${draftT1 > draftT2 ? 1 : 2} wins this set` : 'Not a valid padel score yet'}
