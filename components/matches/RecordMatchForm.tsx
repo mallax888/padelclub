@@ -54,6 +54,18 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     ? editingSet
     : Array.from({ length: setsToShow }, (_, i) => i).find(i => sets[i] === undefined) ?? null
 
+  // Confirming a set doesn't explicitly reset the draft score (openSet does
+  // that for a manual re-edit), so without this, auto-advancing to the next
+  // set after a confirm would leave the previous set's numbers sitting in
+  // the stepper.
+  useEffect(() => {
+    if (activeSetIndex !== null) {
+      setDraftT1(sets[activeSetIndex]?.t1 ?? 0)
+      setDraftT2(sets[activeSetIndex]?.t2 ?? 0)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSetIndex])
+
   const playerLabel = (id: string) => {
     const p = players.find(pl => pl.id === id)
     return p ? (p.nickname ?? p.full_name ?? 'Player') : null
