@@ -379,14 +379,14 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
           ) : (
             <div className="text-[10px] font-medium -mt-1" style={{ color: payment.color }}>{payment.label}</div>
           )}
-          {!past && venue && (
-            <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">
-              <DirectionsButton address={venue.address} />
-              <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
-            </div>
-          )}
         </div>
       </div>
+      {!past && venue && (
+        <div className="flex flex-wrap gap-1.5 mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+          <DirectionsButton address={venue.address} />
+          <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
+        </div>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex flex-wrap items-center gap-2">
           {splits.length > 0 && (
