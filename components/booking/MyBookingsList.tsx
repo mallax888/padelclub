@@ -396,12 +396,13 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               const paid = s.status === 'paid'
               return (
-                <span key={s.id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-                  background: paid ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
-                  color: paid ? 'var(--brand-primary)' : 'var(--brand-crimson)',
-                  border: paid ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
+                <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full" style={{
+                  background: paid ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
+                  color: paid ? 'var(--brand-primary)' : 'var(--text-primary)',
+                  border: paid ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
                 }}>
-                  {name} {paid ? '✓' : '⏳'}
+                  {!paid && <span style={{ width: 6, height: 6, borderRadius: 999, background: '#F59E0B', flexShrink: 0 }} />}
+                  {name}{paid ? ' ✓' : ''}
                 </span>
               )
             })}
@@ -505,12 +506,13 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
         <div className="flex flex-wrap items-center gap-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
           <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>With:</span>
           {coPlayers.map(cp => (
-            <span key={cp.user_id} className="text-xs font-medium px-2 py-0.5 rounded-full" style={{
-              background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'var(--brand-crimson-muted)',
-              color: cp.status === 'paid' ? 'var(--brand-primary)' : 'var(--brand-crimson)',
-              border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid var(--brand-crimson)',
+            <span key={cp.user_id} className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full" style={{
+              background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
+              color: cp.status === 'paid' ? 'var(--brand-primary)' : 'var(--text-primary)',
+              border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
             }}>
-              {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} {cp.status === 'paid' ? '✓' : '⏳'}
+              {cp.status !== 'paid' && <span style={{ width: 6, height: 6, borderRadius: 999, background: '#F59E0B', flexShrink: 0 }} />}
+              {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'}{cp.status === 'paid' ? ' ✓' : ''}
             </span>
           ))}
         </div>
