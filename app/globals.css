@@ -26,6 +26,10 @@
   --brand-crimson:      #DC2626;
   --brand-crimson-muted:#DC26261A;
   --glow-crimson:       0 0 16px 0 #DC26262E;
+  --brand-violet:       #6D5FE0;
+  --brand-violet-on:    #FFFFFF;
+  --brand-violet-muted: #6D5FE01A;
+  --glow-violet:        0 0 16px 0 #6D5FE033;
 }
 
 .dark {
@@ -52,6 +56,10 @@
   --brand-crimson:      #FF6B6B;
   --brand-crimson-muted:#FF6B6B1A;
   --glow-crimson:       0 0 16px 0 #FF6B6B2E;
+  --brand-violet:       #9E8CFF;
+  --brand-violet-on:    #1A1233;
+  --brand-violet-muted: #9E8CFF1A;
+  --glow-violet:        0 0 16px 0 #9E8CFF33;
 }
 
 @layer base {

@@ -152,7 +152,7 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
     })}
     download={`padelclub-${booking.date}.ics`}
     className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all whitespace-nowrap"
-    style={{ background: 'var(--brand-yellow)', color: '#16181D', border: '1px solid var(--brand-yellow)' }}
+    style={{ background: 'var(--brand-violet)', color: 'var(--brand-violet-on)', border: '1px solid var(--brand-violet)' }}
     onClick={e => e.stopPropagation()}
   >
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>

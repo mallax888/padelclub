@@ -744,7 +744,7 @@ export default function BookingFlow({
               </div>
             )}
           </div>
-          <button className="w-full py-4 rounded-xl text-base font-semibold transition-all"
+          <button className="w-full py-4 rounded-xl text-lg font-extrabold transition-all"
             style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
             disabled={submitting} onClick={handleConfirm}>
             {submitting ? 'Confirming…' : `Pay ${formatPrice(Math.round(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice), currency)} →`}
