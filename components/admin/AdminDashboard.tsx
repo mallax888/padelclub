@@ -418,9 +418,9 @@ function BoardView({
         </div>
       ) : viewMode === 'month' ? (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', border: '1px solid rgba(255,255,255,0.16)', borderRadius: 12, overflow: 'hidden' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-              <div key={d} style={{ padding: '6px 4px', textAlign: 'center', fontSize: 11, color: 'var(--text-primary)', fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', borderBottom: '1px solid rgba(255,255,255,0.16)' }}>{d}</div>
+              <div key={d} style={{ padding: '6px 4px', textAlign: 'center', fontSize: 11, color: 'var(--text-primary)', fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)' }}>{d}</div>
             ))}
             {(() => {
               const base = new Date(boardDate + 'T00:00:00')
@@ -445,7 +445,7 @@ function BoardView({
                 const show = dayBookings.slice(0, 2)
                 const extra = dayBookings.length - 2
                 return (
-                  <div key={idx} style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid rgba(255,255,255,0.16)', borderBottom: '1px solid rgba(255,255,255,0.16)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1 }}>
+                  <div key={idx} style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1 }}>
                     <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
                     {show.map((b: any) => {
                       const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
@@ -467,13 +467,13 @@ function BoardView({
           </div>
         </div>
       ) : viewMode === 'week' ? (
-        <div className="rounded-xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid rgba(255,255,255,0.16)' }}>
+        <div className="rounded-xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 px-3 py-2 text-left font-semibold whitespace-nowrap" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.16)', borderRight: '1px solid rgba(255,255,255,0.16)' }}>Court</th>
+                <th className="sticky left-0 px-3 py-2 text-left font-semibold whitespace-nowrap" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {weekDates.map(d => (
-                  <th key={d} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid rgba(255,255,255,0.16)', borderLeft: '1px solid rgba(255,255,255,0.16)', minWidth: 90 }}>
+                  <th key={d} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', minWidth: 90 }}>
                     {dayLabel(d)}
                   </th>
                 ))}
@@ -482,13 +482,13 @@ function BoardView({
             <tbody>
               {venueCourts.map((court: any) => (
                 <tr key={court.id}>
-                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.16)', borderRight: '1px solid rgba(255,255,255,0.16)' }}>
+                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                     {court.name}
                   </td>
                   {weekDates.map(d => {
                     const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
                     return (
-                      <td key={d} className="px-1 py-1 text-center align-top" style={{ borderBottom: '1px solid rgba(255,255,255,0.16)', borderLeft: '1px solid rgba(255,255,255,0.16)', minWidth: 90 }}>
+                      <td key={d} className="px-1 py-1 text-center align-top" style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', minWidth: 90 }}>
                         {dayBookings.length === 0 ? <div className="h-5" /> : (
                           <div className="space-y-1">
                             {dayBookings.map((b: any) => (
@@ -507,26 +507,26 @@ function BoardView({
           </table>
         </div>
       ) : (
-        <div className="rounded-xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid rgba(255,255,255,0.16)' }}>
+        <div className="rounded-xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 px-3 py-2 text-left font-semibold" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.16)', borderRight: '1px solid rgba(255,255,255,0.16)' }}>Court</th>
+                <th className="sticky left-0 px-3 py-2 text-left font-semibold" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {TIME_ROWS.map(t => (
-                  <th key={t} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid rgba(255,255,255,0.16)', minWidth: 60 }}>{t}</th>
+                  <th key={t} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', minWidth: 60 }}>{t}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {venueCourts.map((court: any) => (
                 <tr key={court.id}>
-                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid rgba(255,255,255,0.16)', borderRight: '1px solid rgba(255,255,255,0.16)' }}>
+                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                     {court.name}
                   </td>
                   {TIME_ROWS.map(t => {
                     const b = bookings.find((b: any) => b.court_id === court.id && b.date === boardDate && b.status !== 'cancelled' && b.start_time.slice(0,5) <= t && b.end_time.slice(0,5) > t)
                     return (
-                      <td key={t} className="px-1 py-1 text-center" style={{ borderBottom: '1px solid rgba(255,255,255,0.16)', minWidth: 60 }}>
+                      <td key={t} className="px-1 py-1 text-center" style={{ borderBottom: '1px solid var(--border)', minWidth: 60 }}>
                         {b ? (
                           <div className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
                             {b.profiles?.full_name?.split(' ')[0] ?? '—'}
