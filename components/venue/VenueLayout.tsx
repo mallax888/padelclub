@@ -45,7 +45,7 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
               {court.name}
             </span>
             <div className="w-full rounded-lg overflow-hidden"
-              style={{ border: '1px solid var(--border)', background: '#e8e8e8' }}>
+              style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
               <img
                 src="/courts/court-plan.png" onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                 alt={`${court.name} — ${court.type}`}
