@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { VENUES } from '@/lib/venues'
 import { formatDate } from '@/lib/utils'
-import { pairAmericanoRound } from '@/lib/tournament'
+import { pairAmericanoRound, pairMexicanoRound } from '@/lib/tournament'
 import type { Tournament, TournamentMatch } from '@/types/database'
 
 type Player = { id: string; full_name: string | null; nickname: string | null }
@@ -75,8 +75,9 @@ export default function TournamentHub({
   const handleGenerateRound = async () => {
     setGenerating(true)
     const nextRound = tournament.current_round + 1
-    const playerRowIds = tournamentPlayers.map(p => p.id)
-    const { pairings, sittingOut } = pairAmericanoRound(playerRowIds, tournament.court_ids)
+    const { pairings, sittingOut } = tournament.format === 'mexicano'
+      ? pairMexicanoRound(tournamentPlayers.map(p => ({ id: p.id, totalPoints: p.total_points })), tournament.court_ids)
+      : pairAmericanoRound(tournamentPlayers.map(p => p.id), tournament.court_ids)
 
     if (pairings.length === 0) {
       toast.error('Not enough players or courts to generate a round')
@@ -194,7 +195,7 @@ export default function TournamentHub({
       <div>
         <h1 className="text-2xl font-semibold">{tournament.name}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          {venue?.name ?? tournament.venue_slug} · {formatDate(tournament.date)}
+          {tournament.format === 'mexicano' ? 'Mexicano' : 'Americano'} · {venue?.name ?? tournament.venue_slug} · {formatDate(tournament.date)}
           {tournament.current_round > 0 && ` · Round ${tournament.current_round} of ${tournament.total_rounds}`}
         </p>
       </div>

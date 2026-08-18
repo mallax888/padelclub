@@ -626,7 +626,7 @@ export interface Database {
           name: string
           venue_slug: string
           date: string
-          format: 'americano'
+          format: 'americano' | 'mexicano'
           status: 'draft' | 'in_progress' | 'completed'
           court_ids: string[]
           points_to_win: number
@@ -641,7 +641,7 @@ export interface Database {
           name: string
           venue_slug: string
           date: string
-          format?: 'americano'
+          format?: 'americano' | 'mexicano'
           status?: 'draft' | 'in_progress' | 'completed'
           court_ids?: string[]
           points_to_win?: number
@@ -656,7 +656,7 @@ export interface Database {
           name?: string
           venue_slug?: string
           date?: string
-          format?: 'americano'
+          format?: 'americano' | 'mexicano'
           status?: 'draft' | 'in_progress' | 'completed'
           court_ids?: string[]
           points_to_win?: number

@@ -25,7 +25,7 @@ export default async function TournamentsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Tournaments</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Americano-format tournament days at your club</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Americano & Mexicano tournament days at your club</p>
         </div>
         {isStaff && (
           <Link href="/tournaments/new" className="btn btn-primary">+ New tournament</Link>
@@ -48,7 +48,7 @@ export default async function TournamentsPage() {
                 <div className="min-w-0">
                   <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{t.name}</div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    {venue?.name ?? t.venue_slug} · {formatDate(t.date)}
+                    {t.format === 'mexicano' ? 'Mexicano' : 'Americano'} · {venue?.name ?? t.venue_slug} · {formatDate(t.date)}
                   </div>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0" style={{ background: s.background, color: s.color }}>{s.label}</span>
