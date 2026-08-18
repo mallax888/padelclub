@@ -61,6 +61,29 @@ interface JoinedGame {
   profiles: { nickname: string | null; full_name: string | null } | null
 }
 
+const AVATAR_COLORS = ['var(--brand-blue)', 'var(--brand-accent)', 'var(--brand-primary)', 'var(--brand-yellow)']
+
+function avatarColor(name: string) {
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
+}
+
+function getInitial(name: string) {
+  return name.trim().charAt(0).toUpperCase() || '?'
+}
+
+const PlayerChip = ({ name, paid }: { name: string; paid: boolean }) => (
+  <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-xs font-semibold"
+    style={{ background: 'var(--bg-raised)', border: `1px solid ${paid ? 'var(--brand-primary)' : 'var(--border)'}`, color: paid ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
+    <span className="inline-flex items-center justify-center rounded-full text-[9px] font-black shrink-0" style={{ width: 18, height: 18, background: avatarColor(name), color: '#fff' }}>
+      {getInitial(name)}
+    </span>
+    {name}{paid ? ' ✓' : ''}
+    {!paid && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--brand-yellow)', flexShrink: 0 }} />}
+  </span>
+)
+
 function paymentLabel(method: string, stripeId: string | null) {
   if (method === 'card' && stripeId) return { label: 'Paid', color: 'var(--brand-primary)' }
   if (method === 'card' && !stripeId) return { label: 'Payment pending', color: 'var(--text-muted)' }
@@ -264,16 +287,25 @@ export default function MyBookingsList({
         </div>
       )}
 
-      {/* Stat cards — Direction B: gradient surface, bigger numbers, uppercase micro-labels */}
+      {/* Stat tiles — icon badge + label + value */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: 'Upcoming', value: upcoming.length, color: 'var(--text-primary)' },
-          { label: 'Credits', value: '$' + (profile?.credits ?? 0), color: 'var(--brand-primary)' },
-          { label: 'Membership', value: mem.name, color: 'var(--text-primary)' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-2xl p-4" style={{ background: 'linear-gradient(180deg, var(--bg-surface), var(--bg-raised))', border: '1px solid var(--border)' }}>
-            <div className="text-[11px] font-bold mb-1 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>{label}</div>
-            <div className="text-2xl font-extrabold truncate" style={{ color }}>{value}</div>
+          { label: 'Upcoming', value: upcoming.length, bg: 'var(--brand-blue)', icon: (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+          ) },
+          { label: 'Credits', value: '$' + (profile?.credits ?? 0), bg: 'var(--brand-primary)', icon: (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5a2.5 2.5 0 0 1 2.5-2h1a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 0 2.5-2"/></svg>
+          ) },
+          { label: 'Membership', value: mem.name, bg: 'var(--brand-accent)', icon: (
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+          ) },
+        ].map(({ label, value, bg, icon }) => (
+          <div key={label} className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="inline-flex items-center justify-center rounded-xl mb-2.5" style={{ width: 30, height: 30, background: bg, color: 'var(--bg-surface)' }}>
+              {icon}
+            </div>
+            <div className="text-[10.5px] font-bold mb-0.5 uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>{label}</div>
+            <div className="text-lg font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
           </div>
         ))}
       </div>
@@ -302,8 +334,8 @@ export default function MyBookingsList({
           </div>
         ) : (
           <div className="space-y-3">
-            {upcoming.map(b => (
-              <BookingRow key={b.id} booking={b} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} />
+            {upcoming.map((b, i) => (
+              <BookingRow key={b.id} booking={b} isNext={i === 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} />
             ))}
           </div>
         )}
@@ -320,10 +352,16 @@ export default function MyBookingsList({
 
       {past.length > 0 && (
         <div>
-          <button onClick={() => setShowHistory(!showHistory)} className="flex items-center gap-2 text-sm font-bold mb-3" style={{ color: 'var(--text-muted)' }}>
-            <span>{showHistory ? '▼' : '▶'}</span>
-            <span>{showHistory ? 'Hide' : 'Show'} history ({past.length})</span>
-          </button>
+          <div className="inline-flex gap-1 p-1 rounded-full mb-3" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+            <button onClick={() => setShowHistory(false)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
+              style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+              Upcoming
+            </button>
+            <button onClick={() => setShowHistory(true)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
+              style={showHistory ? { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' } : { color: 'var(--text-subtle)' }}>
+              Past ({past.length})
+            </button>
+          </div>
           {showHistory && (
             <div className="space-y-3 opacity-60">
               {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} />)}
@@ -335,7 +373,7 @@ export default function MyBookingsList({
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], bookingWindowDays = 14 }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number }) {
+function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [], bookingWindowDays = 14 }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number }) {
   const router = useRouter()
   const bookingDateTime = new Date(b.date + 'T' + b.start_time)
   const now = new Date()
@@ -349,7 +387,17 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
   const [showReschedule, setShowReschedule] = useState(false)
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <div className="rounded-2xl p-4" style={{
+      background: 'var(--bg-surface)',
+      border: `1px solid ${isNext ? 'var(--brand-primary)' : 'var(--border)'}`,
+      boxShadow: isNext ? 'var(--glow-primary)' : 'none',
+    }}>
+      {isNext && (
+        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary)' }}>
+          <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--brand-primary)' }} />
+          Up next
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-start gap-3">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
           <DateBlock dateStr={b.date} />
@@ -395,16 +443,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, splits = [], booki
               {splits.map(s => {
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               const paid = s.status === 'paid'
-              return (
-                <span key={s.id} className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full" style={{
-                  background: paid ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
-                  color: paid ? 'var(--brand-primary)' : 'var(--text-primary)',
-                  border: paid ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
-                }}>
-                  {!paid && <span style={{ width: 6, height: 6, borderRadius: 999, background: '#F59E0B', flexShrink: 0 }} />}
-                  {name}{paid ? ' ✓' : ''}
-                </span>
-              )
+              return <PlayerChip key={s.id} name={name} paid={paid} />
             })}
             </>
           )}
@@ -506,14 +545,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
         <div className="flex flex-wrap items-center gap-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
           <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>With:</span>
           {coPlayers.map(cp => (
-            <span key={cp.user_id} className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full" style={{
-              background: cp.status === 'paid' ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
-              color: cp.status === 'paid' ? 'var(--brand-primary)' : 'var(--text-primary)',
-              border: cp.status === 'paid' ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
-            }}>
-              {cp.status !== 'paid' && <span style={{ width: 6, height: 6, borderRadius: 999, background: '#F59E0B', flexShrink: 0 }} />}
-              {cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'}{cp.status === 'paid' ? ' ✓' : ''}
-            </span>
+            <PlayerChip key={cp.user_id} name={cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} paid={cp.status === 'paid'} />
           ))}
         </div>
       )}
