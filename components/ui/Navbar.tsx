@@ -46,6 +46,16 @@ const NAV_ITEMS = [
   { href: '/tournaments',  label: 'Tournaments' },
 ]
 
+// The 4 most-used destinations get a permanent slot in the mobile bottom
+// tab bar; everything else (Membership, Players, Record match, Admin,
+// sign out) lives behind "More", which opens the existing full menu panel.
+const TAB_BAR_ITEMS = [
+  { href: '/book',        label: 'Book' },
+  { href: '/find-a-game', label: 'Find' },
+  { href: '/mybookings',  label: 'Bookings' },
+  { href: '/tournaments', label: 'Tournaments' },
+]
+
 // Primary items get their own row at the top of the sidebar; the rest sit
 // under a "Club" group label. A sidebar has room to show everything at
 // once, unlike the old horizontal bar, so there's no overflow menu to manage.
@@ -69,6 +79,22 @@ function SidebarLink({ href, label, active }: { href: string; label: string; act
       )}
       <span style={{ width: 17, height: 17, flexShrink: 0 }}>{ICONS[href]}</span>
       {label}
+    </Link>
+  )
+}
+
+function TabBarLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+  return (
+    <Link href={href} className="flex flex-col items-center justify-center gap-1 flex-1 py-1.5">
+      <span className="flex items-center justify-center rounded-full transition-all" style={{
+        width: 34, height: 34,
+        background: active ? 'var(--brand-primary)' : 'transparent',
+        color: active ? 'var(--brand-primary-on)' : 'var(--text-subtle)',
+        boxShadow: active ? 'var(--glow-primary)' : 'none',
+      }}>
+        <span style={{ width: 17, height: 17 }}>{ICONS[href]}</span>
+      </span>
+      <span className="text-[9.5px] font-bold" style={{ color: active ? 'var(--brand-primary)' : 'var(--text-subtle)' }}>{label}</span>
     </Link>
   )
 }
@@ -126,27 +152,27 @@ export default function Navbar() {
                 {getInitials(profile.full_name)}
               </div>
             )}
-            <button
-              className="flex items-center justify-center w-9 h-9 rounded-lg"
-              style={{ color: 'var(--text-muted)', background: menuOpen ? 'var(--bg-raised)' : 'transparent' }}
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
-            >
-              {menuOpen ? (
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="2" y1="2" x2="16" y2="16"/>
-                  <line x1="16" y1="2" x2="2" y2="16"/>
-                </svg>
-              ) : (
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="2" y1="4" x2="16" y2="4"/>
-                  <line x1="2" y1="9" x2="16" y2="9"/>
-                  <line x1="2" y1="14" x2="16" y2="14"/>
-                </svg>
-              )}
-            </button>
           </div>
         </div>
+      </nav>
+
+      {/* Mobile bottom tab bar */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 md:hidden flex items-stretch"
+        style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        {TAB_BAR_ITEMS.map(item => (
+          <TabBarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
+        ))}
+        <button onClick={() => setMenuOpen(!menuOpen)} className="flex flex-col items-center justify-center gap-1 flex-1 py-1.5">
+          <span className="flex items-center justify-center rounded-full transition-all" style={{
+            width: 34, height: 34,
+            background: menuOpen ? 'var(--brand-primary)' : 'transparent',
+            color: menuOpen ? 'var(--brand-primary-on)' : 'var(--text-subtle)',
+            boxShadow: menuOpen ? 'var(--glow-primary)' : 'none',
+          }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+          </span>
+          <span className="text-[9.5px] font-bold" style={{ color: menuOpen ? 'var(--brand-primary)' : 'var(--text-subtle)' }}>More</span>
+        </button>
       </nav>
 
       {/* Desktop sidebar */}
