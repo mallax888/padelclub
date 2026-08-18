@@ -31,6 +31,9 @@ const ICONS: Record<string, JSX.Element> = {
   '/admin': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-4z"/></svg>
   ),
+  '/tournaments': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/><circle cx="12" cy="9" r="2.2"/></svg>
+  ),
 }
 
 const NAV_ITEMS = [
@@ -40,6 +43,7 @@ const NAV_ITEMS = [
   { href: '/membership',  label: 'Membership' },
   { href: '/players',      label: 'Players' },
   { href: '/record-match', label: 'Record match' },
+  { href: '/tournaments',  label: 'Tournaments' },
 ]
 
 // Primary items get their own row at the top of the sidebar; the rest sit

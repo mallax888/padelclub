@@ -619,6 +619,194 @@ export interface Database {
           },
         ]
       }
+      tournaments: {
+        Row: {
+          id: string
+          created_at: string
+          name: string
+          venue_slug: string
+          date: string
+          format: 'americano'
+          status: 'draft' | 'in_progress' | 'completed'
+          court_ids: string[]
+          points_to_win: number
+          total_rounds: number
+          current_round: number
+          organizer_id: string | null
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          name: string
+          venue_slug: string
+          date: string
+          format?: 'americano'
+          status?: 'draft' | 'in_progress' | 'completed'
+          court_ids?: string[]
+          points_to_win?: number
+          total_rounds?: number
+          current_round?: number
+          organizer_id?: string | null
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          name?: string
+          venue_slug?: string
+          date?: string
+          format?: 'americano'
+          status?: 'draft' | 'in_progress' | 'completed'
+          court_ids?: string[]
+          points_to_win?: number
+          total_rounds?: number
+          current_round?: number
+          organizer_id?: string | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournaments_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_players: {
+        Row: {
+          id: string
+          created_at: string
+          tournament_id: string
+          player_id: string | null
+          guest_name: string | null
+          total_points: number
+          games_played: number
+          games_won: number
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          tournament_id: string
+          player_id?: string | null
+          guest_name?: string | null
+          total_points?: number
+          games_played?: number
+          games_won?: number
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          tournament_id?: string
+          player_id?: string | null
+          guest_name?: string | null
+          total_points?: number
+          games_played?: number
+          games_won?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_players_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournament_matches: {
+        Row: {
+          id: string
+          created_at: string
+          tournament_id: string
+          round_number: number
+          court_id: string
+          team1_player1_id: string
+          team1_player2_id: string
+          team2_player1_id: string
+          team2_player2_id: string
+          team1_score: number | null
+          team2_score: number | null
+          status: 'pending' | 'completed'
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          tournament_id: string
+          round_number: number
+          court_id: string
+          team1_player1_id: string
+          team1_player2_id: string
+          team2_player1_id: string
+          team2_player2_id: string
+          team1_score?: number | null
+          team2_score?: number | null
+          status?: 'pending' | 'completed'
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          tournament_id?: string
+          round_number?: number
+          court_id?: string
+          team1_player1_id?: string
+          team1_player2_id?: string
+          team2_player1_id?: string
+          team2_player2_id?: string
+          team1_score?: number | null
+          team2_score?: number | null
+          status?: 'pending' | 'completed'
+          completed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_matches_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team1_player1_id_fkey"
+            columns: ["team1_player1_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team1_player2_id_fkey"
+            columns: ["team1_player2_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team2_player1_id_fkey"
+            columns: ["team2_player1_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tournament_matches_team2_player2_id_fkey"
+            columns: ["team2_player2_id"]
+            isOneToOne: false
+            referencedRelation: "tournament_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -635,6 +823,10 @@ export interface Database {
       accept_match_player: {
         Args: { p_request_id: string }
         Returns: boolean
+      }
+      increment_tournament_player_stats: {
+        Args: { p_tournament_player_id: string; p_points: number; p_won: boolean }
+        Returns: undefined
       }
     }
     Enums: {
@@ -653,6 +845,9 @@ export type BookingSplit = Database['public']['Tables']['booking_splits']['Row']
 export type OpenMatch = Database['public']['Tables']['open_matches']['Row']
 export type OpenMatchPlayer = Database['public']['Tables']['open_match_players']['Row']
 export type Match = Database['public']['Tables']['matches']['Row']
+export type Tournament = Database['public']['Tables']['tournaments']['Row']
+export type TournamentPlayer = Database['public']['Tables']['tournament_players']['Row']
+export type TournamentMatch = Database['public']['Tables']['tournament_matches']['Row']
 
 export type MembershipTier = 'casual' | 'club' | 'pro'
 
