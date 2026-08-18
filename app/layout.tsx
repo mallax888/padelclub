@@ -6,6 +6,7 @@ import AuthProvider from '@/components/ui/AuthProvider'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { createServerClient } from '@/lib/supabase-server'
 import Script from 'next/script'
+import SupportChatButton from '@/components/ui/SupportChatButton'
 
 const inter = Inter({ subsets: ['latin'] })
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display' })
@@ -45,9 +46,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             {children}
             <Toaster position="bottom-right" containerStyle={{ right: 130, bottom: 30 }}
               toastOptions={{ style: { borderRadius: '8px', background: 'var(--bg-surface)', borderWidth: '1px', borderColor: 'var(--brand-primary)', color: 'var(--text-primary)', fontSize: '14px' } }} />
-            <div className="tawkto-desktop">
-              <Script id="tawkto" strategy="lazyOnload" dangerouslySetInnerHTML={{ __html: `var Tawk_API=Tawk_API||{}; Tawk_API.onLoad=function(){ if(window.innerWidth<=768){ Tawk_API.hideWidget(); } };(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src="https://embed.tawk.to/6a3ef2c035bb181d4aa8b900/1js2u8gj8";s1.charset="UTF-8";s1.setAttribute("crossorigin","*");s0.parentNode.insertBefore(s1,s0);})();` }} />
-            </div>
+            <Script id="tawkto" strategy="lazyOnload" dangerouslySetInnerHTML={{ __html: `var Tawk_API=Tawk_API||{}; Tawk_API.onLoad=function(){ Tawk_API.hideWidget(); };(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src="https://embed.tawk.to/6a3ef2c035bb181d4aa8b900/1js2u8gj8";s1.charset="UTF-8";s1.setAttribute("crossorigin","*");s0.parentNode.insertBefore(s1,s0);})();` }} />
+            <SupportChatButton />
           </AuthProvider>
         </ThemeProvider>
       </body>
