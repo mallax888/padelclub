@@ -1,5 +1,5 @@
 ﻿import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import AuthProvider from '@/components/ui/AuthProvider'
@@ -8,6 +8,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
+const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display' })
 
 export const metadata: Metadata = {
   title: 'PadelClub - Book a court',
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
     'apple-mobile-web-app-title': 'PadelClub',
-    'theme-color': '#10B981',
+    'theme-color': '#0A1B27',
   },
 }
 
@@ -36,9 +37,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" href="/icons/icon-192.png" type="image/png" />
-        <meta name="theme-color" content="#10B981" />
+        <meta name="theme-color" content="#0A1B27" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${manrope.variable}`}>
         <ThemeProvider defaultTheme="dark">
           <AuthProvider session={session}>
             {children}
