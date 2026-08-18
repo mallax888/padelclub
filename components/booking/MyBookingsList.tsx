@@ -290,18 +290,18 @@ export default function MyBookingsList({
       {/* Stat tiles — icon badge + label + value */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {[
-          { label: 'Upcoming', value: upcoming.length, bg: 'var(--brand-blue)', icon: (
+          { label: 'Upcoming', value: upcoming.length, bg: 'var(--brand-blue)', glow: 'var(--glow-blue)', icon: (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
           ) },
-          { label: 'Credits', value: '$' + (profile?.credits ?? 0), bg: 'var(--brand-primary)', icon: (
+          { label: 'Credits', value: '$' + (profile?.credits ?? 0), bg: 'var(--brand-primary)', glow: 'var(--glow-primary)', icon: (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5a2.5 2.5 0 0 1 2.5-2h1a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 0 2.5-2"/></svg>
           ) },
-          { label: 'Membership', value: mem.name, bg: 'var(--brand-accent)', icon: (
+          { label: 'Membership', value: mem.name, bg: 'var(--brand-accent)', glow: 'var(--glow-accent)', icon: (
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
           ) },
-        ].map(({ label, value, bg, icon }) => (
+        ].map(({ label, value, bg, glow, icon }) => (
           <div key={label} className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="inline-flex items-center justify-center rounded-xl mb-2.5" style={{ width: 30, height: 30, background: bg, color: 'var(--bg-surface)' }}>
+            <div className="inline-flex items-center justify-center rounded-full mb-2.5" style={{ width: 32, height: 32, background: bg, color: 'var(--bg-surface)', boxShadow: glow }}>
               {icon}
             </div>
             <div className="text-[10.5px] font-bold mb-0.5 uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>{label}</div>

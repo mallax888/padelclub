@@ -31,20 +31,20 @@
 }
 
 .dark {
-  --bg-base:            #0A1B27;
-  --bg-surface:         #0F2836;
-  --bg-raised:          #16323F;
-  --text-primary:       #F2F7F5;
-  --text-muted:         #9FB4C2;
-  --text-subtle:        #6C8494;
-  --border:             #234456;
-  --brand-primary:      #D7FA3D;
-  --brand-primary-on:   #172400;
+  --bg-base:            #050C11;
+  --bg-surface:         #0A1620;
+  --bg-raised:          #102131;
+  --text-primary:       #F5FAF8;
+  --text-muted:         #9BB0BC;
+  --text-subtle:        #63798A;
+  --border:             #1C3040;
+  --brand-primary:      #D4FF3D;
+  --brand-primary-on:   #10230A;
   --brand-accent:       #FF8B6B;
   --brand-accent-on:    #2B1200;
-  --brand-primary-muted:#D7FA3D1A;
+  --brand-primary-muted:#D4FF3D1F;
   --brand-accent-muted: #FF8B6B1A;
-  --glow-primary:       0 0 14px 0 #D7FA3D33;
+  --glow-primary:       0 0 20px 0 #D4FF3D40;
   --glow-accent:        0 0 16px 0 #FF8B6B33;
   --brand-blue:         #5FA0FF;
   --brand-blue-muted:   #5FA0FF1A;
@@ -71,8 +71,8 @@
   }
   .dark body {
     background-image:
-      radial-gradient(760px 420px at 8% -8%, rgba(215, 250, 61, 0.07), transparent 60%),
-      radial-gradient(820px 560px at 96% 6%, rgba(95, 160, 255, 0.07), transparent 55%);
+      radial-gradient(820px 460px at 8% -10%, rgba(212, 255, 61, 0.13), transparent 60%),
+      radial-gradient(860px 600px at 98% 4%, rgba(95, 160, 255, 0.10), transparent 55%);
     background-repeat: no-repeat;
     background-attachment: fixed;
   }
