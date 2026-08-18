@@ -14,6 +14,7 @@ export default function NewTournamentForm({ players, organizerId }: { players: P
   const router = useRouter()
 
   const [name, setName] = useState('')
+  const [format, setFormat] = useState<'americano' | 'mexicano'>('americano')
   const [venueSlug, setVenueSlug] = useState('')
   const [date, setDate] = useState(localDateStr(new Date(Date.now() + 24 * 60 * 60 * 1000)))
   const [selectedCourts, setSelectedCourts] = useState<string[]>([])
@@ -51,6 +52,7 @@ export default function NewTournamentForm({ players, organizerId }: { players: P
       .from('tournaments')
       .insert({
         name: name.trim(),
+        format,
         venue_slug: venueSlug,
         date,
         court_ids: selectedCourts,
@@ -84,6 +86,24 @@ export default function NewTournamentForm({ players, organizerId }: { players: P
       <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <label className="label">Tournament name</label>
         <input type="text" className="input text-sm" placeholder="Saturday Americano" value={name} onChange={e => setName(e.target.value)} />
+
+        <label className="label mt-3">Format</label>
+        <div className="grid grid-cols-2 gap-1.5">
+          {([
+            { value: 'americano' as const, label: 'Americano', desc: 'Random partners each round' },
+            { value: 'mexicano' as const, label: 'Mexicano', desc: 'Paired by current standings' },
+          ]).map(f => (
+            <button key={f.value} type="button" onClick={() => setFormat(f.value)}
+              className="text-left px-3 py-2 rounded-lg transition-colors"
+              style={{
+                background: format === f.value ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
+                border: `1px solid ${format === f.value ? 'var(--brand-primary)' : 'var(--border)'}`,
+              }}>
+              <div className="text-sm font-semibold" style={{ color: format === f.value ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{f.label}</div>
+              <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{f.desc}</div>
+            </button>
+          ))}
+        </div>
 
         <label className="label mt-3">Date</label>
         <input type="date" className="input text-sm" value={date} onChange={e => setDate(e.target.value)} />
