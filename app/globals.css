@@ -11,6 +11,7 @@
   --text-subtle:        #6B8078;
   --border:             rgba(11, 31, 23, 0.10);
   --shadow-float:       0 20px 40px -24px rgba(11, 31, 23, 0.18);
+  --ring-primary:       rgba(76, 138, 26, 0.35);
   --brand-primary:      #4C8A1A;
   --brand-primary-on:   #FFFFFF;
   --brand-accent:       #D45A3A;
@@ -40,6 +41,7 @@
   --text-subtle:        #63798A;
   --border:             rgba(255, 255, 255, 0.12);
   --shadow-float:       0 30px 60px -30px rgba(0, 0, 0, 0.65);
+  --ring-primary:       rgba(212, 255, 61, 0.35);
   --brand-primary:      #D4FF3D;
   --brand-primary-on:   #10230A;
   --brand-accent:       #FF8B6B;

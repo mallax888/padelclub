@@ -380,8 +380,8 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
   return (
     <div className="rounded-2xl p-3.5" style={{
       background: 'var(--bg-surface)',
-      border: `1px solid ${isNext ? 'var(--brand-primary)' : 'var(--border)'}`,
-      boxShadow: isNext ? '0 0 0 1px var(--brand-primary-muted), 0 20px 40px -20px var(--brand-primary-muted)' : 'var(--shadow-float)',
+      border: '1px solid var(--border)',
+      boxShadow: isNext ? '0 0 0 1px var(--ring-primary), 0 30px 70px -20px var(--ring-primary)' : 'var(--shadow-float)',
     }}>
       {isNext && (
         <div className="flex items-center gap-1.5 text-xs font-semibold mb-2.5" style={{ color: 'var(--brand-primary)' }}>
