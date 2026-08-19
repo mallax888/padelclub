@@ -755,8 +755,8 @@ export default function BookingFlow({
               <span className="text-lg font-extrabold">Confirming…</span>
             ) : (
               <>
-                <span className="text-sm font-bold uppercase tracking-wide">Pay</span>
-                <span className="text-3xl sm:text-2xl font-black leading-none">
+                <span className="text-lg font-bold uppercase tracking-wide">Pay</span>
+                <span className="text-3xl sm:text-2xl leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
                   {formatPrice(Math.round(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice), currency)}
                 </span>
                 <span className="text-xl font-bold">→</span>
