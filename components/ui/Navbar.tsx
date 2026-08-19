@@ -34,6 +34,9 @@ const ICONS: Record<string, JSX.Element> = {
   '/tournaments': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/><circle cx="12" cy="9" r="2.2"/></svg>
   ),
+  '/ladders': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="6" y1="2" x2="6" y2="22"/><line x1="18" y1="2" x2="18" y2="22"/><line x1="6" y1="7" x2="18" y2="7"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="6" y1="17" x2="18" y2="17"/></svg>
+  ),
 }
 
 const NAV_ITEMS = [
@@ -44,6 +47,7 @@ const NAV_ITEMS = [
   { href: '/players',      label: 'Players' },
   { href: '/record-match', label: 'Record match' },
   { href: '/tournaments',  label: 'Tournaments' },
+  { href: '/ladders',      label: 'Ladders' },
 ]
 
 // The 4 most-used destinations get a permanent slot in the mobile bottom
