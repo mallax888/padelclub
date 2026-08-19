@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd, formatDate, localDateStr } from '@/lib/utils'
+import { cn, formatNzd, formatDate } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
@@ -191,10 +191,11 @@ export default function MyBookingsList({
   const [showHistory, setShowHistory] = useState(false)
 
   const mem = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
-  const today = localDateStr()
-  const upcoming = bookings.filter(b => b.date >= today && b.status !== 'cancelled')
-  const past = bookings.filter(b => b.date < today || b.status === 'cancelled')
-  const upcomingJoined = joinedGames.filter(j => (j.bookings?.date ?? '') >= today)
+  const now = new Date()
+  const hasEnded = (date: string, endTime: string) => new Date(`${date}T${endTime}`) <= now
+  const upcoming = bookings.filter(b => b.status !== 'cancelled' && !hasEnded(b.date, b.end_time))
+  const past = bookings.filter(b => b.status === 'cancelled' || hasEnded(b.date, b.end_time))
+  const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time))
 
   const handleCancel = async (id: string) => {
     const booking = bookings.find(b => b.id === id)
