@@ -287,37 +287,26 @@ export default function MyBookingsList({
         </div>
       )}
 
-      {/* Stat tiles — icon badge + label + value */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      {/* Stat row — flat label/value pairs, no icon badges */}
+      <div className="flex mb-5 pb-4" style={{ borderBottom: '1px solid var(--border)', gap: 28 }}>
         {[
-          { label: 'Upcoming', value: upcoming.length, bg: 'var(--brand-blue)', glow: 'var(--glow-blue)', icon: (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
-          ) },
-          { label: 'Credits', value: '$' + (profile?.credits ?? 0), bg: 'var(--brand-primary)', glow: 'var(--glow-primary)', icon: (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5a2.5 2.5 0 0 1 2.5-2h1a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 0 2.5-2"/></svg>
-          ) },
-          { label: 'Membership', value: mem.name, bg: 'var(--brand-accent)', glow: 'var(--glow-accent)', icon: (
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
-          ) },
-        ].map(({ label, value, bg, glow, icon }) => (
-          <div key={label} className="rounded-xl p-2.5 flex items-center gap-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="inline-flex items-center justify-center rounded-full shrink-0" style={{ width: 24, height: 24, background: bg, color: 'var(--bg-surface)', boxShadow: glow }}>
-              {icon}
-            </div>
-            <div className="min-w-0">
-              <div className="text-[9.5px] font-bold uppercase tracking-wide truncate" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-              <div className="text-sm font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
-            </div>
+          { label: 'Upcoming', value: upcoming.length },
+          { label: 'Credits', value: '$' + (profile?.credits ?? 0) },
+          { label: 'Membership', value: mem.name },
+        ].map(({ label, value }) => (
+          <div key={label} className="min-w-0">
+            <div className="text-[10.5px] font-semibold truncate" style={{ color: 'var(--text-subtle)' }}>{label}</div>
+            <div className="text-xl truncate" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{value}</div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl p-2.5 mb-4 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+      <div className="rounded-2xl p-3 mb-5 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)', boxShadow: 'var(--shadow-float)' }}>
         <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit. Reschedule to a new date/time any time before the 24hr mark, no charge.
       </div>
 
       {/* New booking — Direction B: muted emerald, bordered, normal height */}
-      <Link href="/book" className="flex items-center justify-between rounded-xl p-3.5 mb-5 transition-all hover:scale-[1.01]"
+      <Link href="/book" className="flex items-center justify-between rounded-2xl p-3.5 mb-5 transition-all hover:scale-[1.01]"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted) inset' }}>
         <div>
           <div className="text-base font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary)', lineHeight: 1.1 }}>+ New booking</div>
@@ -389,10 +378,10 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
   const [showReschedule, setShowReschedule] = useState(false)
 
   return (
-    <div className="rounded-xl p-3" style={{
+    <div className="rounded-2xl p-3.5" style={{
       background: 'var(--bg-surface)',
       border: `1px solid ${isNext ? 'var(--brand-primary)' : 'var(--border)'}`,
-      boxShadow: isNext ? 'var(--glow-primary)' : 'none',
+      boxShadow: isNext ? 'var(--glow-primary)' : 'var(--shadow-float)',
     }}>
       {isNext && (
         <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide mb-2" style={{ color: 'var(--brand-primary)' }}>
@@ -404,7 +393,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
           <DateBlock dateStr={b.date} />
           <div className="min-w-0">
-            <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
               {b.courts?.name} — {b.courts?.type}
             </div>
             {venue && (
@@ -419,7 +408,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{formatNzd(b.price_nzd)}</div>
+          <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatNzd(b.price_nzd)}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
@@ -506,12 +495,12 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
 
   return (
-    <div className="rounded-xl p-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <div className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
       <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
           <DateBlock dateStr={b.date} />
           <div className="min-w-0">
-            <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
               {b.courts?.name} — {b.courts?.type}
             </div>
             <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--brand-accent)' }}>
@@ -529,7 +518,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{formatNzd(j.amount_nzd)}</div>
+          <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatNzd(j.amount_nzd)}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-primary)' }}>Paid ✓</div>
           {venue && (
             <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">

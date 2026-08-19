@@ -98,6 +98,7 @@ export default function NewTournamentForm({ players, organizerId }: { players: P
               style={{
                 background: format === f.value ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
                 border: `1px solid ${format === f.value ? 'var(--brand-primary)' : 'var(--border)'}`,
+                boxShadow: format === f.value ? 'var(--glow-primary)' : 'none',
               }}>
               <div className="text-sm font-semibold" style={{ color: format === f.value ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{f.label}</div>
               <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{f.desc}</div>
