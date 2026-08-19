@@ -110,11 +110,11 @@ function dateParts(dateStr: string) {
   }
 }
 
-const DateBlock = ({ dateStr }: { dateStr: string }) => {
+const DateBlock = ({ dateStr, muted }: { dateStr: string; muted?: boolean }) => {
   const { month, day, weekday } = dateParts(dateStr)
   return (
     <div className="w-12 rounded-xl overflow-hidden text-center shrink-0" style={{ border: '1px solid var(--border)' }}>
-      <div className="text-[9px] font-extrabold uppercase tracking-wide py-0.5" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{month}</div>
+      <div className="text-[9px] font-extrabold uppercase tracking-wide py-0.5" style={muted ? { background: 'var(--bg-raised)', color: 'var(--text-muted)' } : { background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{month}</div>
       <div className="text-lg font-extrabold leading-tight pt-0.5" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>{day}</div>
       <div className="text-[9px] font-bold pb-1" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{weekday}</div>
     </div>
@@ -376,12 +376,14 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
   const [showReschedule, setShowReschedule] = useState(false)
+  const muted = !isNext && !past
 
   return (
     <div className="rounded-2xl p-3.5" style={{
       background: isNext ? 'var(--bg-surface)' : 'var(--bg-raised)',
       border: '1px solid var(--border)',
       boxShadow: isNext ? '0 0 0 1px var(--ring-primary), 0 30px 70px -20px var(--ring-primary)' : 'var(--shadow-float)',
+      opacity: muted ? 0.72 : 1,
     }}>
       {isNext && (
         <div className="flex items-center gap-1.5 text-xs font-semibold mb-2.5" style={{ color: 'var(--brand-primary)' }}>
@@ -391,13 +393,13 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
       )}
       <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
-          <DateBlock dateStr={b.date} />
+          <DateBlock dateStr={b.date} muted={muted} />
           <div className="min-w-0">
             <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
               {b.courts?.name} — {b.courts?.type}
             </div>
             {venue && (
-              <div className="text-xs font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
+              <div className={muted ? 'text-xs font-semibold mt-0.5 flex items-center gap-1.5' : 'text-xs font-bold mt-0.5 flex items-center gap-1.5'} style={{ color: muted ? 'var(--text-muted)' : 'var(--brand-primary)' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 {venue.name}
               </div>
@@ -408,8 +410,8 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatNzd(b.price_nzd)}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
+          <div className="text-lg leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 400 : 500 }}>{formatNzd(b.price_nzd)}</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
               className="text-[10px] font-medium -mt-1" style={{ color: payment.color, textDecoration: 'underline' }}>
