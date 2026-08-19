@@ -807,6 +807,150 @@ export interface Database {
           },
         ]
       }
+      ladders: {
+        Row: {
+          id: string
+          created_at: string
+          name: string
+          venue_slug: string | null
+          status: 'active' | 'archived'
+          max_challenge_gap: number
+          organizer_id: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          name: string
+          venue_slug?: string | null
+          status?: 'active' | 'archived'
+          max_challenge_gap?: number
+          organizer_id?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          name?: string
+          venue_slug?: string | null
+          status?: 'active' | 'archived'
+          max_challenge_gap?: number
+          organizer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ladders_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ladder_entries: {
+        Row: {
+          id: string
+          created_at: string
+          ladder_id: string
+          player_id: string
+          position: number
+          wins: number
+          losses: number
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          ladder_id: string
+          player_id: string
+          position: number
+          wins?: number
+          losses?: number
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          ladder_id?: string
+          player_id?: string
+          position?: number
+          wins?: number
+          losses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ladder_entries_ladder_id_fkey"
+            columns: ["ladder_id"]
+            isOneToOne: false
+            referencedRelation: "ladders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ladder_entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ladder_challenges: {
+        Row: {
+          id: string
+          created_at: string
+          ladder_id: string
+          challenger_entry_id: string
+          defender_entry_id: string
+          status: 'pending' | 'accepted' | 'declined' | 'completed'
+          score: string | null
+          winner_entry_id: string | null
+          responded_at: string | null
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          ladder_id: string
+          challenger_entry_id: string
+          defender_entry_id: string
+          status?: 'pending' | 'accepted' | 'declined' | 'completed'
+          score?: string | null
+          winner_entry_id?: string | null
+          responded_at?: string | null
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          ladder_id?: string
+          challenger_entry_id?: string
+          defender_entry_id?: string
+          status?: 'pending' | 'accepted' | 'declined' | 'completed'
+          score?: string | null
+          winner_entry_id?: string | null
+          responded_at?: string | null
+          completed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ladder_challenges_ladder_id_fkey"
+            columns: ["ladder_id"]
+            isOneToOne: false
+            referencedRelation: "ladders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ladder_challenges_challenger_entry_id_fkey"
+            columns: ["challenger_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ladder_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ladder_challenges_defender_entry_id_fkey"
+            columns: ["defender_entry_id"]
+            isOneToOne: false
+            referencedRelation: "ladder_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -826,6 +970,22 @@ export interface Database {
       }
       increment_tournament_player_stats: {
         Args: { p_tournament_player_id: string; p_points: number; p_won: boolean }
+        Returns: undefined
+      }
+      join_ladder: {
+        Args: { p_ladder_id: string }
+        Returns: string
+      }
+      create_ladder_challenge: {
+        Args: { p_defender_entry_id: string }
+        Returns: string
+      }
+      respond_ladder_challenge: {
+        Args: { p_challenge_id: string; p_accept: boolean }
+        Returns: undefined
+      }
+      report_ladder_challenge: {
+        Args: { p_challenge_id: string; p_winner_entry_id: string; p_score: string }
         Returns: undefined
       }
     }
@@ -848,6 +1008,9 @@ export type Match = Database['public']['Tables']['matches']['Row']
 export type Tournament = Database['public']['Tables']['tournaments']['Row']
 export type TournamentPlayer = Database['public']['Tables']['tournament_players']['Row']
 export type TournamentMatch = Database['public']['Tables']['tournament_matches']['Row']
+export type Ladder = Database['public']['Tables']['ladders']['Row']
+export type LadderEntry = Database['public']['Tables']['ladder_entries']['Row']
+export type LadderChallenge = Database['public']['Tables']['ladder_challenges']['Row']
 
 export type MembershipTier = 'casual' | 'club' | 'pro'
 
