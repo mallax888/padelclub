@@ -305,14 +305,17 @@ export default function MyBookingsList({
         <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit. Reschedule to a new date/time any time before the 24hr mark, no charge.
       </div>
 
-      {/* New booking — Direction B: muted emerald, bordered, normal height */}
-      <Link href="/book" className="flex items-center justify-between rounded-2xl p-3.5 mb-5 transition-all hover:scale-[1.01]"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted) inset' }}>
-        <div>
-          <div className="text-base font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary)', lineHeight: 1.1 }}>+ New booking</div>
-          <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--text-muted)' }}>Book a court in seconds</div>
+      {/* New booking — neutral card, solid lime CTA pill */}
+      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl p-3.5 mb-5 transition-all hover:scale-[1.01]"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div className="min-w-0">
+          <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>New booking</div>
+          <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Book a court in seconds</div>
         </div>
-        <div style={{ fontSize: 24 }}>🎾</div>
+        <span className="shrink-0 text-sm px-4 py-2.5 rounded-full whitespace-nowrap"
+          style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800 }}>
+          + Book now
+        </span>
       </Link>
 
       <div className="mb-5">
