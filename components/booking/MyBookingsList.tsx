@@ -74,12 +74,12 @@ function getInitial(name: string) {
 }
 
 const PlayerChip = ({ name, paid }: { name: string; paid: boolean }) => (
-  <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-xs font-semibold"
+  <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-xs font-medium"
     style={{ background: 'var(--bg-raised)', border: `1px solid ${paid ? 'var(--brand-primary)' : 'var(--border)'}`, color: paid ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
-    <span className="inline-flex items-center justify-center rounded-full text-[9px] font-black shrink-0" style={{ width: 18, height: 18, background: avatarColor(name), color: '#fff' }}>
+    <span className="inline-flex items-center justify-center rounded-full text-[9px] font-bold shrink-0" style={{ width: 18, height: 18, background: avatarColor(name), color: '#fff' }}>
       {getInitial(name)}
     </span>
-    {name}{paid ? ' ✓' : ''}
+    {name.split(' ')[0]}{paid ? ' ✓' : ''}
     {!paid && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--brand-yellow)', flexShrink: 0 }} />}
   </span>
 )
@@ -126,11 +126,11 @@ const DirectionsButton = ({ address }: { address: string }) => (
     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
     target="_blank"
     rel="noopener noreferrer"
-    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all whitespace-nowrap"
-    style={{ background: 'var(--brand-blue)', color: '#fff', border: '1px solid var(--brand-blue)' }}
+    className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl transition-all whitespace-nowrap flex-1"
+    style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
     onClick={e => e.stopPropagation()}
   >
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-subtle)' }}><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
     Directions
   </a>
 )
@@ -151,11 +151,11 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
       endTime: booking.end_time,
     })}
     download={`padelclub-${booking.date}.ics`}
-    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full transition-all whitespace-nowrap"
-    style={{ background: 'var(--brand-yellow)', color: 'var(--brand-yellow-on)', border: '1px solid var(--brand-yellow)' }}
+    className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl transition-all whitespace-nowrap flex-1"
+    style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
     onClick={e => e.stopPropagation()}
   >
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-subtle)' }}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
     Add to calendar
   </a>
 )
@@ -381,11 +381,11 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
     <div className="rounded-2xl p-3.5" style={{
       background: 'var(--bg-surface)',
       border: `1px solid ${isNext ? 'var(--brand-primary)' : 'var(--border)'}`,
-      boxShadow: isNext ? 'var(--glow-primary)' : 'var(--shadow-float)',
+      boxShadow: isNext ? '0 0 0 1px var(--brand-primary-muted), 0 20px 40px -20px var(--brand-primary-muted)' : 'var(--shadow-float)',
     }}>
       {isNext && (
-        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide mb-2" style={{ color: 'var(--brand-primary)' }}>
-          <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--brand-primary)' }} />
+        <div className="flex items-center gap-1.5 text-xs font-semibold mb-2.5" style={{ color: 'var(--brand-primary)' }}>
+          <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--brand-primary)' }} />
           Up next
         </div>
       )}
@@ -430,7 +430,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
         <div className="flex flex-wrap items-center gap-2">
           {splits.length > 0 && (
             <>
-              <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Split with:</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>With</span>
               {splits.map(s => {
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               const paid = s.status === 'paid'
@@ -534,7 +534,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
       </div>
       {coPlayers.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 pt-2.5 mt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
-          <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>With:</span>
+          <span className="text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>With</span>
           {coPlayers.map(cp => (
             <PlayerChip key={cp.user_id} name={cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} paid={cp.status === 'paid'} />
           ))}
