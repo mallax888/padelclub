@@ -72,11 +72,11 @@ export default function VenueSwitcher({
             boxShadow: open ? 'var(--glow-primary)' : 'none',
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary)', flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', flexShrink: 0 }}>
             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
           </svg>
           <div className="flex-1 min-w-0">
-            <div className="text-base font-semibold truncate" style={{ color: 'var(--brand-primary)' }}>
+            <div className="text-base font-semibold truncate" style={{ color: 'var(--brand-primary-text)' }}>
               {selected.name}
             </div>
             <div className="text-xs truncate" style={{ color: 'var(--text-subtle)' }}>
@@ -157,7 +157,7 @@ export default function VenueSwitcher({
                       >
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium truncate"
-                            style={{ color: venue.slug === selected.slug ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
+                            style={{ color: venue.slug === selected.slug ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>
                             {venue.name}
                           </div>
                           <div className="text-xs truncate" style={{ color: 'var(--text-subtle)' }}>
@@ -168,7 +168,7 @@ export default function VenueSwitcher({
                           <span className="text-[10px] px-2 py-0.5 rounded-full font-medium"
                             style={{
                               background: venue.isLive ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)',
-                              color: venue.isLive ? 'var(--brand-primary)' : 'var(--brand-accent)',
+                              color: venue.isLive ? 'var(--brand-primary-text)' : 'var(--brand-accent)',
                             }}>
                             {venue.isLive ? 'Live' : 'Soon'}
                           </span>
@@ -243,7 +243,7 @@ export default function VenueSwitcher({
             >
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium truncate"
-                  style={{ color: venue.slug === selected.slug ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
+                  style={{ color: venue.slug === selected.slug ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>
                   {venue.name}
                 </div>
                 <div className="text-xs truncate" style={{ color: 'var(--text-subtle)' }}>
@@ -253,7 +253,7 @@ export default function VenueSwitcher({
               <span className="text-[10px] px-2 py-0.5 rounded-full font-medium shrink-0"
                 style={{
                   background: venue.isLive ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)',
-                  color: venue.isLive ? 'var(--brand-primary)' : 'var(--brand-accent)',
+                  color: venue.isLive ? 'var(--brand-primary-text)' : 'var(--brand-accent)',
                 }}>
                 {venue.isLive ? 'Live' : 'Soon'}
               </span>

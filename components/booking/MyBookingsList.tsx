@@ -75,7 +75,7 @@ function getInitial(name: string) {
 
 const PlayerChip = ({ name, paid }: { name: string; paid: boolean }) => (
   <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-full text-xs font-medium"
-    style={{ background: 'var(--bg-raised)', border: `1px solid ${paid ? 'var(--brand-primary)' : 'var(--border)'}`, color: paid ? 'var(--brand-primary)' : 'var(--text-primary)' }}>
+    style={{ background: 'var(--bg-raised)', border: `1px solid ${paid ? 'var(--brand-primary)' : 'var(--border)'}`, color: paid ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>
     <span className="inline-flex items-center justify-center rounded-full text-[9px] font-bold shrink-0" style={{ width: 18, height: 18, background: avatarColor(name), color: '#fff' }}>
       {getInitial(name)}
     </span>
@@ -85,10 +85,10 @@ const PlayerChip = ({ name, paid }: { name: string; paid: boolean }) => (
 )
 
 function paymentLabel(method: string, stripeId: string | null) {
-  if (method === 'card' && stripeId) return { label: 'Paid', color: 'var(--brand-primary)' }
+  if (method === 'card' && stripeId) return { label: 'Paid', color: 'var(--brand-primary-text)' }
   if (method === 'card' && !stripeId) return { label: 'Payment pending', color: 'var(--text-muted)' }
-  if (method === 'credits') return { label: 'Paid with credits', color: 'var(--brand-primary)' }
-  if (method === 'membership_allowance') return { label: 'Membership', color: 'var(--brand-primary)' }
+  if (method === 'credits') return { label: 'Paid with credits', color: 'var(--brand-primary-text)' }
+  if (method === 'membership_allowance') return { label: 'Membership', color: 'var(--brand-primary-text)' }
   if (method === 'staff_block') return { label: 'Staff block', color: 'var(--text-muted)' }
   return { label: method, color: 'var(--text-muted)' }
 }
@@ -164,7 +164,7 @@ const BookAgainButton = ({ courtId, durationMinutes }: { courtId: string; durati
   <Link
     href={`/book?courtId=${courtId}&duration=${durationMinutes}`}
     className="text-xs font-semibold px-2.5 py-1.5 rounded-lg"
-    style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)' }}
+    style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}
   >
     Book again
   </Link>
@@ -322,7 +322,7 @@ export default function MyBookingsList({
         </div>
         {upcoming.length === 0 ? (
           <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary)' }}>book a court</Link>
+            No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary-text)' }}>book a court</Link>
           </div>
         ) : (
           <div className="space-y-2">
@@ -387,7 +387,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
       opacity: muted ? 0.72 : 1,
     }}>
       {isNext && (
-        <div className="flex items-center gap-1.5 text-xs font-semibold mb-2.5" style={{ color: 'var(--brand-primary)' }}>
+        <div className="flex items-center gap-1.5 text-xs font-semibold mb-2.5" style={{ color: 'var(--brand-primary-text)' }}>
           <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--brand-primary)' }} />
           Up next
         </div>
@@ -400,7 +400,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
               {b.courts?.name} — {b.courts?.type}
             </div>
             {venue && (
-              <div className={muted ? 'text-xs font-semibold mt-0.5 flex items-center gap-1.5' : 'text-xs font-bold mt-0.5 flex items-center gap-1.5'} style={{ color: muted ? 'var(--text-muted)' : 'var(--brand-primary)' }}>
+              <div className={muted ? 'text-xs font-semibold mt-0.5 flex items-center gap-1.5' : 'text-xs font-bold mt-0.5 flex items-center gap-1.5'} style={{ color: muted ? 'var(--text-muted)' : 'var(--brand-primary-text)' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 {venue.name}
               </div>
@@ -412,7 +412,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
           <div className="text-lg leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 400 : 500 }}>{formatNzd(b.price_nzd)}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{b.status}</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
               className="text-[10px] font-medium -mt-1" style={{ color: payment.color, textDecoration: 'underline' }}>
@@ -456,7 +456,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
                 type="button"
                 onClick={() => setShowReschedule(true)}
                 className="btn btn-sm"
-                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)', fontWeight: 600 }}
+                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)', fontWeight: 600 }}
               >
                 Reschedule
               </button>
@@ -510,7 +510,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
               Joining {organizerName}'s game
             </div>
             {venue && (
-              <div className="text-xs font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary)' }}>
+              <div className="text-xs font-bold mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--brand-primary-text)' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                 {venue.name}
               </div>
@@ -522,7 +522,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
           <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatNzd(j.amount_nzd)}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-primary)' }}>Paid ✓</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-primary-text)' }}>Paid ✓</div>
           {venue && (
             <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">
               <DirectionsButton address={venue.address} />

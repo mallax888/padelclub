@@ -192,7 +192,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
                 key={i}
                 onClick={() => openSet(i)}
                 className="text-xs font-semibold px-2.5 py-1 rounded-lg"
-                style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)' }}
+                style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}
               >
                 Set {i + 1}: {score.t1}–{score.t2}
               </button>
@@ -204,11 +204,11 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
           <div className="pt-4" style={{ borderTop: '1px solid var(--border)' }}>
             <div className="text-center text-xs font-bold uppercase tracking-wide mb-3" style={{ color: 'var(--text-muted)' }}>Set {activeSetIndex + 1}</div>
             <div className="flex items-center justify-center gap-6 mb-3">
-              <ScoreStepper value={draftT1} onChange={setDraftT1} color="var(--brand-primary)" />
+              <ScoreStepper value={draftT1} onChange={setDraftT1} color="var(--brand-primary-text)" />
               <span style={{ fontSize: 22, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
               <ScoreStepper value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" />
             </div>
-            <div className="text-center text-xs font-medium mb-3" style={{ color: draftValid ? 'var(--brand-primary)' : 'var(--text-muted)' }}>
+            <div className="text-center text-xs font-medium mb-3" style={{ color: draftValid ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>
               {draftT1 === draftT2 ? 'Scores can\u2019t be tied' : draftValid ? `Valid \u2014 Team ${draftT1 > draftT2 ? 1 : 2} wins this set` : 'Not a valid padel score yet'}
             </div>
             <button
@@ -228,7 +228,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         )}
 
         {matchWinner && (
-          <div className="text-center text-sm font-semibold py-3 mt-4 rounded-xl" style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}` }}>
+          <div className="text-center text-sm font-semibold py-3 mt-4 rounded-xl" style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: matchWinner === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}` }}>
             🏆 Team {matchWinner} wins {sets.map(s => `${s.t1}–${s.t2}`).join(', ')}
           </div>
         )}
@@ -236,7 +236,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary)' }}>Team 1</div>
+          <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary-text)' }}>Team 1</div>
           <div className="space-y-2">
             <div><label className="label">Player 1 *</label><PlayerSelect value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
             <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>

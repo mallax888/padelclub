@@ -108,10 +108,10 @@ export default function AdminDashboard({
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary)' },
+          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)' },
           { label: 'Total bookings',   value: bookings.filter(b => b.status === 'confirmed').length, color: 'var(--text-primary)' },
           { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)' },
-          { label: 'Revenue',          value: formatNzd(revenue), color: 'var(--brand-primary)' },
+          { label: 'Revenue',          value: formatNzd(revenue), color: 'var(--brand-primary-text)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl p-4"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
@@ -130,7 +130,7 @@ export default function AdminDashboard({
             className="px-4 py-2 text-sm capitalize transition-colors"
             style={{
               borderBottom: `2px solid ${tab === t ? 'var(--brand-primary)' : 'transparent'}`,
-              color: tab === t ? 'var(--brand-primary)' : 'var(--text-muted)',
+              color: tab === t ? 'var(--brand-primary-text)' : 'var(--text-muted)',
               fontWeight: tab === t ? 500 : 400,
               marginBottom: -1,
             }}
@@ -249,7 +249,7 @@ export default function AdminDashboard({
                   <td className="px-4 py-3">
                     <span className="badge badge-member capitalize">{m.membership_tier}</span>
                   </td>
-                  <td className="px-4 py-3" style={{ color: 'var(--brand-primary)' }}>{m.credits}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits}</td>
                   <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
                   <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
                     {(m as any).created_at?.slice(0,10)}
@@ -446,7 +446,7 @@ function BoardView({
                 const extra = dayBookings.length - 2
                 return (
                   <div key={idx} style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
+                    <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary-text)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
                     {show.map((b: any) => {
                       const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
                       return <div key={b.id} style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: date < today ? 'rgba(170,170,170,0.3)' : color + '38', color: date < today ? 'rgba(255,255,255,0.8)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: date < today ? 'line-through' : 'none' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
@@ -473,7 +473,7 @@ function BoardView({
               <tr>
                 <th className="sticky left-0 px-3 py-2 text-left font-semibold whitespace-nowrap" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {weekDates.map(d => (
-                  <th key={d} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', minWidth: 90 }}>
+                  <th key={d} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', minWidth: 90 }}>
                     {dayLabel(d)}
                   </th>
                 ))}
@@ -492,7 +492,7 @@ function BoardView({
                         {dayBookings.length === 0 ? <div className="h-5" /> : (
                           <div className="space-y-1">
                             {dayBookings.map((b: any) => (
-                              <div key={b.id} className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                              <div key={b.id} className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
                                 {b.start_time.slice(0,5)} {b.profiles?.full_name?.split(' ')[0] ?? '—'}
                               </div>
                             ))}
@@ -528,7 +528,7 @@ function BoardView({
                     return (
                       <td key={t} className="px-1 py-1 text-center" style={{ borderBottom: '1px solid var(--border)', minWidth: 60 }}>
                         {b ? (
-                          <div className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                          <div className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
                             {b.profiles?.full_name?.split(' ')[0] ?? '—'}
                           </div>
                         ) : <div className="h-5" />}

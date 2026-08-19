@@ -49,13 +49,13 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
 
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-lg p-2" style={{ background: 'var(--bg-raised)' }}>
-            <div className="text-lg font-semibold" style={{ color: 'var(--brand-primary)' }}>
+            <div className="text-lg font-semibold" style={{ color: 'var(--brand-primary-text)' }}>
               {player.ranking_points ?? 0}
             </div>
             <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Points</div>
           </div>
           <div className="rounded-lg p-2" style={{ background: 'var(--bg-raised)' }}>
-            <div className="text-lg font-semibold" style={{ color: 'var(--brand-primary)' }}>
+            <div className="text-lg font-semibold" style={{ color: 'var(--brand-primary-text)' }}>
               {player.wins ?? 0}
             </div>
             <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Wins</div>

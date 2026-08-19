@@ -164,7 +164,7 @@ export default function TournamentHub({
             {playerName(m.team1_player1_id)} / {playerName(m.team1_player2_id)}
           </div>
           {m.status === 'completed' ? (
-            <div className="text-lg shrink-0" style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{m.team1_score}</div>
+            <div className="text-lg shrink-0" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{m.team1_score}</div>
           ) : canScore ? (
             <input type="number" min={0} className="input text-sm text-center" style={{ width: 56 }}
               value={draft.t1} onChange={e => setScoreDrafts(prev => ({ ...prev, [m.id]: { t1: e.target.value, t2: prev[m.id]?.t2 ?? '' } }))} />
@@ -226,7 +226,7 @@ export default function TournamentHub({
                       className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-left text-sm"
                       style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
                       {p.nickname ?? p.full_name}
-                      <span style={{ color: 'var(--brand-primary)' }}>{addingPlayerId === p.id ? '…' : '+'}</span>
+                      <span style={{ color: 'var(--brand-primary-text)' }}>{addingPlayerId === p.id ? '…' : '+'}</span>
                     </button>
                   ))}
                 </div>
@@ -257,7 +257,7 @@ export default function TournamentHub({
           <div className="space-y-1.5">
             {leaderboard.map((p, i) => (
               <div key={p.id} className="flex items-center gap-3 text-sm">
-                <span className="w-5 text-center font-bold" style={{ color: i < 3 ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{i + 1}</span>
+                <span className="w-5 text-center font-bold" style={{ color: i < 3 ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{i + 1}</span>
                 <span className="flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>{p.guest_name ?? p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}</span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.games_won}/{p.games_played} won</span>
                 <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{p.total_points}</span>

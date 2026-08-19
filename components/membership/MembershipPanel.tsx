@@ -140,7 +140,7 @@ export default function MembershipPanel({
               <ul className="space-y-1.5 mt-3 flex-1">
                 {mem.features.map(f => (
                   <li key={f} className="text-sm flex items-start gap-2" style={{ color: 'var(--text-muted)' }}>
-                    <span className="mt-0.5 shrink-0" style={{ color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.95rem' }}>✓</span>
+                    <span className="mt-0.5 shrink-0" style={{ color: 'var(--brand-primary-text)', fontWeight: 700, fontSize: '0.95rem' }}>✓</span>
                     {f}
                   </li>
                 ))}
@@ -151,7 +151,7 @@ export default function MembershipPanel({
                 style={{
                   cursor: isCurrent ? 'default' : 'pointer',
                   background: isCurrent ? 'var(--brand-primary-muted)' : undefined,
-                  color: isCurrent ? 'var(--brand-primary)' : undefined,
+                  color: isCurrent ? 'var(--brand-primary-text)' : undefined,
                   border: isCurrent ? '1px solid var(--brand-primary)' : undefined,
                   fontWeight: 600,
                 }}
@@ -185,7 +185,7 @@ export default function MembershipPanel({
                 boxShadow: isSelected ? '0 0 0 1px var(--ring-primary), 0 20px 40px -15px var(--ring-primary)' : 'var(--shadow-float)',
               }}
             >
-              <div className="text-3xl font-semibold" style={{ color: 'var(--brand-primary)' }}>
+              <div className="text-3xl font-semibold" style={{ color: 'var(--brand-primary-text)' }}>
                 {pack.sessions}
               </div>
               <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>sessions</div>
@@ -243,7 +243,7 @@ export default function MembershipPanel({
                       {tx.description}
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium"
-                      style={{ color: tx.amount > 0 ? 'var(--brand-primary)' : 'var(--brand-accent)' }}>
+                      style={{ color: tx.amount > 0 ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}>
                       {tx.amount > 0 ? '+' : ''}{tx.amount}
                     </td>
                   </tr>

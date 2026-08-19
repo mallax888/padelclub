@@ -58,7 +58,7 @@ export default function SignupPage() {
               <circle cx="50" cy="50" r="46" fill="none" stroke="#AA8800" strokeWidth="1"/>
             </svg>
             <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', userSelect: 'none' }}>
-              PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
             </div>
           </div>
           <p className="text-sm font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>
@@ -110,7 +110,7 @@ export default function SignupPage() {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                  style={{ color: showPassword ? 'var(--brand-primary)' : 'var(--text-subtle)' }}
+                  style={{ color: showPassword ? 'var(--brand-primary-text)' : 'var(--text-subtle)' }}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
                   {showPassword ? (
@@ -141,7 +141,7 @@ export default function SignupPage() {
 
         <p className="text-center text-sm mt-4" style={{ color: 'var(--text-muted)' }}>
           Already have an account?{' '}
-          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary)' }}>
+          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary-text)' }}>
             Sign in
           </Link>
         </p>

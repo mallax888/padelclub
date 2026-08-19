@@ -40,7 +40,7 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
           <div key={court.id} className="flex flex-col items-center gap-2">
             <span
               className="text-xs font-medium px-3 py-1 rounded-full"
-              style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}
+              style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}
             >
               {court.name}
             </span>
