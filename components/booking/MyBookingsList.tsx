@@ -305,17 +305,14 @@ export default function MyBookingsList({
         <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit. Reschedule to a new date/time any time before the 24hr mark, no charge.
       </div>
 
-      {/* New booking — neutral card, solid lime CTA pill */}
-      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl p-3.5 mb-5 transition-all hover:scale-[1.01]"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+      {/* New booking — solid lime CTA card */}
+      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-5 py-[18px] mb-5 transition-all hover:scale-[1.01]"
+        style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
         <div className="min-w-0">
-          <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>New booking</div>
-          <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Book a court in seconds</div>
+          <div className="text-[17px]" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.01em' }}>+ New booking</div>
+          <div className="text-xs mt-0.5" style={{ fontWeight: 600, opacity: 0.75 }}>Book a court in seconds</div>
         </div>
-        <span className="shrink-0 text-sm px-4 py-2.5 rounded-full whitespace-nowrap"
-          style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800 }}>
-          + Book now
-        </span>
+        <div className="shrink-0 text-2xl">🎾</div>
       </Link>
 
       <div className="mb-5">
@@ -382,7 +379,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
 
   return (
     <div className="rounded-2xl p-3.5" style={{
-      background: 'var(--bg-surface)',
+      background: isNext ? 'var(--bg-surface)' : 'var(--bg-raised)',
       border: '1px solid var(--border)',
       boxShadow: isNext ? '0 0 0 1px var(--ring-primary), 0 30px 70px -20px var(--ring-primary)' : 'var(--shadow-float)',
     }}>
