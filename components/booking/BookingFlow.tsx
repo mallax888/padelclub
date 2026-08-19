@@ -635,7 +635,7 @@ export default function BookingFlow({
       {/* STEP: Confirm */}
       {step === 'confirm' && (
         <div className="animate-fade-in">
-          <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             {[
               ['Venue', venue?.name],
               ['Court', court?.name + ' — ' + court?.type],
@@ -653,12 +653,12 @@ export default function BookingFlow({
             ))}
             <div className="flex justify-between pt-3">
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl font-bold" style={{ color: 'var(--brand-primary)' }}>{formatPrice(courtPrice, currency)}</span>
+              <span className="text-xl" style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatPrice(courtPrice, currency)}</span>
             </div>
           </div>
 
           {/* Open match toggle */}
-          <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>🎾 Open to other players?</div>
@@ -712,7 +712,7 @@ export default function BookingFlow({
             )}
           </div>
 
-          <div className="rounded-xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Split the cost?</div>
@@ -730,7 +730,11 @@ export default function BookingFlow({
                   return (
                     <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}
                       className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all"
-                      style={{ background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)' }}>
+                      style={{
+                        background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
+                        border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
+                        boxShadow: selected ? 'var(--glow-primary)' : 'none',
+                      }}>
                       <span className="text-sm" style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
                       {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} each</span>}
                     </button>

@@ -113,8 +113,8 @@ export default function AdminDashboard({
           { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)' },
           { label: 'Revenue',          value: formatNzd(revenue), color: 'var(--brand-primary)' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-xl p-4"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div key={label} className="rounded-2xl p-4"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
             <div className="text-xl font-semibold" style={{ color }}>{value}</div>
           </div>
@@ -170,8 +170,8 @@ export default function AdminDashboard({
 
       {/* Bookings tab */}
       {tab === 'bookings' && (
-        <div className="rounded-xl overflow-x-auto"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl overflow-x-auto"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -222,8 +222,8 @@ export default function AdminDashboard({
 
       {/* Members tab */}
       {tab === 'members' && (
-        <div className="rounded-xl overflow-x-auto"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl overflow-x-auto"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
@@ -269,8 +269,8 @@ export default function AdminDashboard({
               No courts found for this venue.
             </div>
           ) : venueCourts.map(c => (
-            <div key={c.id} className="rounded-xl p-5"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div key={c.id} className="rounded-2xl p-5"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
@@ -298,8 +298,8 @@ export default function AdminDashboard({
         <div className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ background: 'rgba(0,0,0,0.6)' }}
           onClick={e => e.target === e.currentTarget && setShowBlock(false)}>
-          <div className="rounded-xl p-6 w-full max-w-sm"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="rounded-2xl p-6 w-full max-w-sm"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="font-semibold text-base mb-4" style={{ color: 'var(--text-primary)' }}>
               Block court time
             </div>
@@ -467,7 +467,7 @@ function BoardView({
           </div>
         </div>
       ) : viewMode === 'week' ? (
-        <div className="rounded-xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
@@ -507,7 +507,7 @@ function BoardView({
           </table>
         </div>
       ) : (
-        <div className="rounded-xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
