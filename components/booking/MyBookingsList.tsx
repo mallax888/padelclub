@@ -288,52 +288,54 @@ export default function MyBookingsList({
       )}
 
       {/* Stat tiles — icon badge + label + value */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      <div className="grid grid-cols-3 gap-2 mb-4">
         {[
           { label: 'Upcoming', value: upcoming.length, bg: 'var(--brand-blue)', glow: 'var(--glow-blue)', icon: (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>
           ) },
           { label: 'Credits', value: '$' + (profile?.credits ?? 0), bg: 'var(--brand-primary)', glow: 'var(--glow-primary)', icon: (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5a2.5 2.5 0 0 1 2.5-2h1a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 0 2.5-2"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5a2.5 2.5 0 0 1 2.5-2h1a2.5 2.5 0 0 1 0 5h-1a2.5 2.5 0 0 0 0 5h1a2.5 2.5 0 0 0 2.5-2"/></svg>
           ) },
           { label: 'Membership', value: mem.name, bg: 'var(--brand-accent)', glow: 'var(--glow-accent)', icon: (
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg>
           ) },
         ].map(({ label, value, bg, glow, icon }) => (
-          <div key={label} className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-            <div className="inline-flex items-center justify-center rounded-full mb-2.5" style={{ width: 32, height: 32, background: bg, color: 'var(--bg-surface)', boxShadow: glow }}>
+          <div key={label} className="rounded-xl p-2.5 flex items-center gap-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="inline-flex items-center justify-center rounded-full shrink-0" style={{ width: 24, height: 24, background: bg, color: 'var(--bg-surface)', boxShadow: glow }}>
               {icon}
             </div>
-            <div className="text-[10.5px] font-bold mb-0.5 uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-            <div className="text-lg font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
+            <div className="min-w-0">
+              <div className="text-[9.5px] font-bold uppercase tracking-wide truncate" style={{ color: 'var(--text-subtle)' }}>{label}</div>
+              <div className="text-sm font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
+            </div>
           </div>
         ))}
       </div>
 
-      <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+      <div className="rounded-xl p-2.5 mb-4 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
         <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit. Reschedule to a new date/time any time before the 24hr mark, no charge.
       </div>
 
       {/* New booking — Direction B: muted emerald, bordered, normal height */}
-      <Link href="/book" className="flex items-center justify-between rounded-2xl p-5 mb-6 transition-all hover:scale-[1.01]"
+      <Link href="/book" className="flex items-center justify-between rounded-xl p-3.5 mb-5 transition-all hover:scale-[1.01]"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted) inset' }}>
         <div>
-          <div className="text-xl font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary)', lineHeight: 1.1 }}>+ New booking</div>
-          <div className="text-sm font-bold mt-1" style={{ color: 'var(--text-muted)' }}>Book a court in seconds</div>
+          <div className="text-base font-black uppercase tracking-wide" style={{ color: 'var(--brand-primary)', lineHeight: 1.1 }}>+ New booking</div>
+          <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--text-muted)' }}>Book a court in seconds</div>
         </div>
-        <div style={{ fontSize: 34 }}>🎾</div>
+        <div style={{ fontSize: 24 }}>🎾</div>
       </Link>
 
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
+      <div className="mb-5">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-extrabold" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
         </div>
         {upcoming.length === 0 ? (
           <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary)' }}>book a court</Link>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-2">
             {upcoming.map((b, i) => (
               <BookingRow key={b.id} booking={b} isNext={i === 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} />
             ))}
@@ -342,9 +344,9 @@ export default function MyBookingsList({
       </div>
 
       {upcomingJoined.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-extrabold mb-3" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
-          <div className="space-y-3">
+        <div className="mb-5">
+          <h2 className="text-base font-extrabold mb-2" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
+          <div className="space-y-2">
             {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
         </div>
@@ -352,7 +354,7 @@ export default function MyBookingsList({
 
       {past.length > 0 && (
         <div>
-          <div className="inline-flex gap-1 p-1 rounded-full mb-3" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+          <div className="inline-flex gap-1 p-1 rounded-full mb-2" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
             <button onClick={() => setShowHistory(false)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
               style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
               Upcoming
@@ -363,7 +365,7 @@ export default function MyBookingsList({
             </button>
           </div>
           {showHistory && (
-            <div className="space-y-3 opacity-60">
+            <div className="space-y-2 opacity-60">
               {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} />)}
             </div>
           )}
@@ -387,18 +389,18 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
   const [showReschedule, setShowReschedule] = useState(false)
 
   return (
-    <div className="rounded-2xl p-4" style={{
+    <div className="rounded-xl p-3" style={{
       background: 'var(--bg-surface)',
       border: `1px solid ${isNext ? 'var(--brand-primary)' : 'var(--border)'}`,
       boxShadow: isNext ? 'var(--glow-primary)' : 'none',
     }}>
       {isNext && (
-        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary)' }}>
+        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide mb-2" style={{ color: 'var(--brand-primary)' }}>
           <span style={{ width: 6, height: 6, borderRadius: 999, background: 'var(--brand-primary)' }} />
           Up next
         </div>
       )}
-      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
           <DateBlock dateStr={b.date} />
           <div className="min-w-0">
@@ -430,12 +432,12 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
         </div>
       </div>
       {!past && venue && (
-        <div className="flex flex-wrap gap-1.5 mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
           <DirectionsButton address={venue.address} />
           <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="flex flex-wrap items-center gap-2">
           {splits.length > 0 && (
             <>
@@ -504,8 +506,8 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
 
   return (
-    <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+    <div className="rounded-xl p-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
           <DateBlock dateStr={b.date} />
           <div className="min-w-0">
@@ -542,7 +544,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
         </div>
       </div>
       {coPlayers.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pt-3 mt-3" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="flex flex-wrap items-center gap-2 pt-2.5 mt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
           <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>With:</span>
           {coPlayers.map(cp => (
             <PlayerChip key={cp.user_id} name={cp.profiles?.nickname ?? cp.profiles?.full_name ?? 'Player'} paid={cp.status === 'paid'} />
