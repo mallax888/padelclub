@@ -50,7 +50,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div style={{ fontFamily: 'Georgia,serif', fontSize: 32, fontWeight: 700, color: 'var(--text-primary)' }}>
-            Padel<span style={{ color: 'var(--brand-primary)' }}>Club</span>
+            Padel<span style={{ color: 'var(--brand-primary-text)' }}>Club</span>
           </div>
           <p className="text-xs tracking-widest uppercase mt-1" style={{ color: 'var(--text-subtle)' }}>
             Set a new password

@@ -72,7 +72,7 @@ function SidebarLink({ href, label, active }: { href: string; label: string; act
       className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-colors relative"
       style={{
         background: active ? 'var(--bg-raised)' : 'transparent',
-        color: active ? 'var(--brand-primary)' : 'var(--text-muted)',
+        color: active ? 'var(--brand-primary-text)' : 'var(--text-muted)',
         fontWeight: active ? 650 : 500,
       }}
       onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--text-primary)' }}
@@ -139,7 +139,7 @@ export default function Navbar() {
             onClick={() => setMenuOpen(false)}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
             <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
-              PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
             </span>
           </Link>
           <div className="flex items-center gap-2 shrink-0">
@@ -198,7 +198,7 @@ export default function Navbar() {
           <Link href="/book" className="flex items-center gap-2 font-bold text-sm px-1.5 mb-5">
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
             <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
-              PADEL<span style={{ color: 'var(--brand-primary)' }}>CLUB</span>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
             </span>
           </Link>
 
@@ -278,7 +278,7 @@ export default function Navbar() {
                   className="flex items-center px-3 py-3 rounded-lg text-base transition-colors"
                   style={{
                     background: pathname.startsWith(item.href) ? 'var(--bg-raised)' : 'transparent',
-                    color: pathname.startsWith(item.href) ? 'var(--brand-primary)' : 'var(--text-primary)',
+                    color: pathname.startsWith(item.href) ? 'var(--brand-primary-text)' : 'var(--text-primary)',
                     fontWeight: pathname.startsWith(item.href) ? 500 : 400,
                   }}>
                   {item.label}
@@ -306,10 +306,10 @@ export default function Navbar() {
                               background: 'linear-gradient(155deg, var(--brand-primary-muted), transparent 70%)',
                               border: '1px solid var(--brand-primary)',
                             }}>
-                            <div className="text-sm font-extrabold" style={{ color: 'var(--brand-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                            <div className="text-sm font-extrabold" style={{ color: 'var(--brand-primary-text)', fontVariantNumeric: 'tabular-nums' }}>
                               {s.stat.value}
                             </div>
-                            <div className="text-[7px] font-bold mt-0.5" style={{ color: 'var(--brand-primary)', letterSpacing: '0.03em' }}>
+                            <div className="text-[7px] font-bold mt-0.5" style={{ color: 'var(--brand-primary-text)', letterSpacing: '0.03em' }}>
                               {s.stat.unit}
                             </div>
                           </div>

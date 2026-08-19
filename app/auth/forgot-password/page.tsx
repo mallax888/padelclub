@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-2">
             <div style={{ fontFamily: 'Georgia,serif', fontSize: 32, fontWeight: 700, color: 'var(--text-primary)' }}>
-              Padel<span style={{ color: 'var(--brand-primary)' }}>Club</span>
+              Padel<span style={{ color: 'var(--brand-primary-text)' }}>Club</span>
             </div>
           </div>
           <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-subtle)' }}>
@@ -75,7 +75,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <p className="text-center text-sm mt-4" style={{ color: 'var(--text-muted)' }}>
-          <Link href="/auth/login" style={{ color: 'var(--brand-primary)' }}>← Back to sign in</Link>
+          <Link href="/auth/login" style={{ color: 'var(--brand-primary-text)' }}>← Back to sign in</Link>
         </p>
       </div>
     </div>

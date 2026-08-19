@@ -287,7 +287,7 @@ export default function FindGameList({
               <span className="text-xs px-2.5 py-1 rounded-full capitalize"
                 style={{
                   background: match.match_type === 'competitive' ? 'var(--brand-accent-muted)' : 'var(--brand-primary-muted)',
-                  color: match.match_type === 'competitive' ? 'var(--brand-accent)' : 'var(--brand-primary)',
+                  color: match.match_type === 'competitive' ? 'var(--brand-accent)' : 'var(--brand-primary-text)',
                 }}>
                 {match.match_type}
               </span>
@@ -346,7 +346,7 @@ export default function FindGameList({
                         )}
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                        style={{ background: 'var(--bg-raised)', color: 'var(--brand-primary)' }}>
+                        style={{ background: 'var(--bg-raised)', color: 'var(--brand-primary-text)' }}>
                         {skillLabel(p.profiles?.skill_rating, p.profiles?.skill_level)}
                       </span>
                     </div>
@@ -424,7 +424,7 @@ export default function FindGameList({
               </button>
             ) : myEntry?.status === 'pending' ? (
               <div className="text-xs text-center py-2 rounded-lg"
-                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
                 Request pending — waiting for organizer
               </div>
             ) : (

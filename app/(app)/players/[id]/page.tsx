@@ -86,7 +86,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
               {getInitials(player.full_name)}
             </div>
             <div className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-xs font-bold"
-              style={{ background: 'var(--bg-base)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary)' }}>
+              style={{ background: 'var(--bg-base)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
               #{player.member_number}
             </div>
           </div>
@@ -99,7 +99,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
             )}
             <div className="flex flex-wrap gap-2 mt-2">
               <span className="text-xs px-2.5 py-1 rounded-full capitalize"
-                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
                 {player.membership_tier ?? 'casual'}
               </span>
               <span className="text-xs px-2.5 py-1 rounded-full capitalize"
@@ -123,8 +123,8 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
       {/* Stats grid */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         {[
-          { label: 'Points',   value: player.ranking_points ?? 0, color: 'var(--brand-primary)' },
-          { label: 'Wins',     value: wins,                        color: 'var(--brand-primary)' },
+          { label: 'Points',   value: player.ranking_points ?? 0, color: 'var(--brand-primary-text)' },
+          { label: 'Wins',     value: wins,                        color: 'var(--brand-primary-text)' },
           { label: 'Losses',   value: losses,                      color: 'var(--brand-accent)' },
           { label: 'Win rate', value: winRate + '%',               color: 'var(--text-primary)' },
         ].map(stat => (
@@ -151,7 +151,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
                     onMouseEnter={undefined}>
                     <div className="flex-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{opp.name}</div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{opp.wins}W</span>
+                      <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary-text)' }}>{opp.wins}W</span>
                       <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>–</span>
                       <span className="text-xs font-semibold" style={{ color: 'var(--brand-accent)' }}>{opp.losses}L</span>
                       <div className="w-16 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-raised)' }}>
@@ -180,7 +180,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
                     style={{ borderBottom: '1px solid var(--border)' }}>
                     <div className="flex-1 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{p.name}</div>
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.together} matches together</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
                       {winPct}% win rate
                     </span>
                   </div>
@@ -209,7 +209,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
                 <div key={m.id} className="flex items-center gap-3 py-2"
                   style={{ borderBottom: '1px solid var(--border)' }}>
                   <div className="w-12 text-xs font-bold text-center px-1.5 py-0.5 rounded-lg shrink-0"
-                    style={{ background: won ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: won ? 'var(--brand-primary)' : 'var(--brand-accent)' }}>
+                    style={{ background: won ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: won ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}>
                     {won ? 'WIN' : 'LOSS'}
                   </div>
                   <div className="flex-1 min-w-0">

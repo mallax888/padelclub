@@ -119,7 +119,7 @@ export default function OnboardingFlow({
                       <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{level.label}</div>
                       <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{level.desc}</div>
                     </div>
-                    {skillLevel === level.value && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
+                    {skillLevel === level.value && <span style={{ color: 'var(--brand-primary-text)' }}>✓</span>}
                   </button>
                 ))}
               </div>
@@ -147,7 +147,7 @@ export default function OnboardingFlow({
                           }}
                         >
                           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{v.name}</span>
-                          {homeVenueSlug === v.slug && <span style={{ color: 'var(--brand-primary)' }}>✓</span>}
+                          {homeVenueSlug === v.slug && <span style={{ color: 'var(--brand-primary-text)' }}>✓</span>}
                         </button>
                       ))}
                     </div>

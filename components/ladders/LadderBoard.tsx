@@ -186,7 +186,7 @@ export default function LadderBoard({ ladder, entries, challenges, isStaff, curr
                     </div>
                     {reportingId !== c.id && (
                       <button type="button" onClick={() => setReportingId(c.id)}
-                        className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)' }}>
+                        className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
                         Report result
                       </button>
                     )}

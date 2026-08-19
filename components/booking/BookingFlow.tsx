@@ -118,7 +118,7 @@ export default function BookingFlow({
 
   const busynessLabel = (ratio: number | undefined) => {
     if (ratio === undefined) return null
-    if (ratio < 0.2) return { text: 'Quiet', color: 'var(--brand-primary)' }
+    if (ratio < 0.2) return { text: 'Quiet', color: 'var(--brand-primary-text)' }
     if (ratio < 0.5) return { text: 'Moderate', color: 'var(--brand-yellow)' }
     return { text: 'Busy', color: 'var(--brand-crimson)' }
   }
@@ -426,24 +426,24 @@ export default function BookingFlow({
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
               >
                 <div>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary)', marginBottom: 12 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', marginBottom: 12 }}>
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
                   </svg>
                   <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-primary)', fontWeight: 600 }}>{totalCourts}</span> courts
+                    <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{totalCourts}</span> courts
                   </div>
                 </div>
                 <div className="flex gap-1 mt-3 flex-wrap">
                   {venues.slice(0,2).map(v => (
                     <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary-muted)' }}>
+                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary-muted)' }}>
                       {v.name.split(' ').slice(-2).join(' ')}
                     </span>
                   ))}
                   {venues.length > 2 && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', border: '1px solid var(--brand-primary-muted)' }}>
+                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary-muted)' }}>
                       +{venues.length - 2} more
                     </span>
                   )}
@@ -550,7 +550,7 @@ export default function BookingFlow({
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-bold" style={{ color: 'var(--brand-primary)' }}>
+                <div className="text-sm font-bold" style={{ color: 'var(--brand-primary-text)' }}>
                   {formatPrice(Math.round(c.price_per_hour * (1 - discount)), currency)}/hr
                 </div>
                 {discount > 0 && (
@@ -577,7 +577,7 @@ export default function BookingFlow({
             >
               <div className="text-xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{d.label}</div>
               {court && (
-                <div className="text-xs" style={{ color: 'var(--brand-primary)' }}>
+                <div className="text-xs" style={{ color: 'var(--brand-primary-text)' }}>
                   from {formatPrice(Math.round(court.price_per_hour * (1 - discount) * d.value), currency)}
                 </div>
               )}
@@ -620,7 +620,7 @@ export default function BookingFlow({
                   <div className="text-sm font-semibold">{t}</div>
                   {available && (
                     <div className="text-[10px] mt-0.5 font-medium"
-                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary)' }}>
+                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary-text)' }}>
                       {peak ? '⚡ Peak' : '✓ Off-peak'}
                     </div>
                   )}
@@ -653,7 +653,7 @@ export default function BookingFlow({
             ))}
             <div className="flex justify-between pt-3">
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl" style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatPrice(courtPrice, currency)}</span>
+              <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatPrice(courtPrice, currency)}</span>
             </div>
           </div>
 
@@ -735,8 +735,8 @@ export default function BookingFlow({
                         border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
                         boxShadow: selected ? 'var(--glow-primary)' : 'none',
                       }}>
-                      <span className="text-sm" style={{ color: selected ? 'var(--brand-primary)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
-                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary)' }}>{formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} each</span>}
+                      <span className="text-sm" style={{ color: selected ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
+                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} each</span>}
                     </button>
                   )
                 })}

@@ -77,7 +77,7 @@ export default async function PlayersPage() {
                     #{player.member_number}
                   </div>
                 </div>
-                <div className="text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary)' }}>
+                <div className="text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>
                   {player.ranking_points ?? 0}
                 </div>
               </div>

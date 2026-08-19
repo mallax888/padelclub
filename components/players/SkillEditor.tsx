@@ -83,7 +83,7 @@ export default function SkillEditor({
               </div>
             </div>
             {selected === level.value && (
-              <span className="text-xs font-medium" style={{ color: 'var(--brand-primary)' }}>✓</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--brand-primary-text)' }}>✓</span>
             )}
           </button>
         ))}

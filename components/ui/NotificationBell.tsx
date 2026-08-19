@@ -161,7 +161,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
         </span>
         <div className="flex items-center gap-3">
           {unread > 0 && (
-            <button onClick={markAllRead} className="text-xs" style={{ color: 'var(--brand-primary)' }}>
+            <button onClick={markAllRead} className="text-xs" style={{ color: 'var(--brand-primary-text)' }}>
               Mark all read
             </button>
           )}

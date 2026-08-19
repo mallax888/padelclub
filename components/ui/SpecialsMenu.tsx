@@ -71,10 +71,10 @@ export default function SpecialsMenu() {
                       background: 'linear-gradient(155deg, var(--brand-primary-muted), transparent 70%)',
                       border: '1px solid var(--brand-primary)',
                     }}>
-                    <div className="text-lg font-extrabold" style={{ color: 'var(--brand-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                    <div className="text-lg font-extrabold" style={{ color: 'var(--brand-primary-text)', fontVariantNumeric: 'tabular-nums' }}>
                       {s.stat.value}
                     </div>
-                    <div className="text-[8px] font-bold mt-0.5" style={{ color: 'var(--brand-primary)', letterSpacing: '0.03em' }}>
+                    <div className="text-[8px] font-bold mt-0.5" style={{ color: 'var(--brand-primary-text)', letterSpacing: '0.03em' }}>
                       {s.stat.unit}
                     </div>
                   </div>
@@ -104,7 +104,7 @@ export default function SpecialsMenu() {
                   {s.website && (
                     <a href={s.website} target="_blank" rel="noopener noreferrer"
                       className="text-[10.5px] font-medium mt-1 inline-block"
-                      style={{ color: 'var(--brand-primary)' }}
+                      style={{ color: 'var(--brand-primary-text)' }}
                       onClick={e => e.stopPropagation()}>
                       Visit website →
                     </a>

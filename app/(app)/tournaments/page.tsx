@@ -15,7 +15,7 @@ export default async function TournamentsPage() {
     .order('date', { ascending: false })
 
   const statusStyle = (status: string) => {
-    if (status === 'in_progress') return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary)', label: 'Live' }
+    if (status === 'in_progress') return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', label: 'Live' }
     if (status === 'completed') return { background: 'var(--bg-raised)', color: 'var(--text-muted)', label: 'Completed' }
     return { background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)', label: 'Draft' }
   }
