@@ -59,7 +59,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl p-6 mb-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 8px 32px 0 rgba(0,0,0,0.18)' }}>
+        <div className="rounded-2xl p-6 mb-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="label">Email address</label>
