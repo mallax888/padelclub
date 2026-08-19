@@ -35,8 +35,8 @@ export default async function PlayersPage() {
         <PlayersDirectory players={players} />
 
         {/* Leaderboard — full width on mobile, sidebar on desktop */}
-        <div className="w-full lg:w-64 lg:shrink-0 rounded-xl overflow-hidden"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="w-full lg:w-64 lg:shrink-0 rounded-2xl overflow-hidden"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <div className="px-4 py-3 flex items-center justify-between"
             style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
             <div className="flex items-center gap-2">

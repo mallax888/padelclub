@@ -91,8 +91,8 @@ export default function MembershipPanel({
   return (
     <div style={{ userSelect: 'none' }}>
       {/* Current plan summary */}
-      <div className="rounded-xl p-5 mb-6 flex items-center gap-4"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="rounded-2xl p-5 mb-6 flex items-center gap-4"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
           style={{ background: 'var(--brand-primary-muted)' }}>🏅</div>
         <div className="flex-1">
@@ -117,11 +117,11 @@ export default function MembershipPanel({
           return (
             <div
               key={mem.id}
-              className="relative flex flex-col rounded-xl p-5"
+              className="relative flex flex-col rounded-2xl p-5"
               style={{
                 background: 'var(--bg-surface)',
-                border: `${isCurrent ? '2px' : '1px'} solid ${isCurrent ? 'var(--brand-primary)' : 'var(--border)'}`,
-                boxShadow: isCurrent ? 'var(--glow-primary)' : 'none',
+                border: '1px solid var(--border)',
+                boxShadow: isCurrent ? '0 0 0 1px var(--ring-primary), 0 30px 70px -20px var(--ring-primary)' : 'var(--shadow-float)',
               }}
             >
               {mem.featured && (
@@ -178,11 +178,11 @@ export default function MembershipPanel({
             <div
               key={pack.id}
               onClick={() => setSelectedPack(isSelected ? null : pack.id)}
-              className="cursor-pointer text-center transition-all rounded-xl p-5"
+              className="cursor-pointer text-center transition-all rounded-2xl p-5"
               style={{
                 background: isSelected ? 'var(--brand-primary-muted)' : 'var(--bg-surface)',
                 border: `1px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border)'}`,
-                boxShadow: isSelected ? 'var(--glow-primary)' : 'none',
+                boxShadow: isSelected ? '0 0 0 1px var(--ring-primary), 0 20px 40px -15px var(--ring-primary)' : 'var(--shadow-float)',
               }}
             >
               <div className="text-3xl font-semibold" style={{ color: 'var(--brand-primary)' }}>
@@ -218,8 +218,8 @@ export default function MembershipPanel({
           <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
             Credit history
           </h2>
-          <div className="rounded-xl overflow-hidden"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="rounded-2xl overflow-hidden"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
