@@ -82,7 +82,7 @@ export default function OnboardingFlow({
           ))}
         </div>
 
-        <div className="rounded-2xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl p-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           {step === 'nickname' && (
             <>
               <div className="text-2xl mb-2">🎾</div>
