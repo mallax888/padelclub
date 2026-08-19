@@ -44,9 +44,9 @@ export default async function TournamentsPage() {
             return (
               <Link key={t.id} href={`/tournaments/${t.id}`}
                 className="flex items-center justify-between rounded-2xl p-4 transition-all hover:scale-[1.005]"
-                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
                 <div className="min-w-0">
-                  <div className="font-extrabold text-sm" style={{ color: 'var(--text-primary)' }}>{t.name}</div>
+                  <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{t.name}</div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     {t.format === 'mexicano' ? 'Mexicano' : 'Americano'} · {venue?.name ?? t.venue_slug} · {formatDate(t.date)}
                   </div>

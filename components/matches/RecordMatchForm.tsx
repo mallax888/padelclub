@@ -170,7 +170,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
 
   return (
     <div className="max-w-lg mx-auto space-y-4">
-      <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(180deg, var(--bg-surface), var(--bg-raised))', border: '1px solid var(--border)' }}>
+      <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(180deg, var(--bg-surface), var(--bg-raised))', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 min-w-0 text-center">
             <Avatar label={team1Name} active={!!team1p1} color="var(--brand-primary)" colorOn="var(--brand-primary-on)" />
@@ -235,14 +235,14 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary)' }}>Team 1</div>
           <div className="space-y-2">
             <div><label className="label">Player 1 *</label><PlayerSelect value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
             <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
           </div>
         </div>
-        <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-accent)' }}>Team 2</div>
           <div className="space-y-2">
             <div><label className="label">Player 1 *</label><PlayerSelect value={team2p1} onChange={setTeam2p1} exclude={[team1p1, team1p2, team2p2]} /></div>
@@ -251,7 +251,7 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         </div>
       </div>
 
-      <div className="rounded-xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <label className="label">Notes (optional)</label>
         <textarea className="input text-sm" rows={2} placeholder="Any notes about the match..." value={notes} onChange={e => setNotes(e.target.value)} maxLength={200} />
       </div>

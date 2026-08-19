@@ -157,14 +157,14 @@ export default function TournamentHub({
     const canScore = m.status === 'pending' && (isStaff || isParticipant)
 
     return (
-      <div className="rounded-xl p-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      <div className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>{courtName(m.court_id)}</div>
         <div className="flex items-center justify-between gap-2">
           <div className="text-sm font-semibold min-w-0" style={{ color: 'var(--text-primary)' }}>
             {playerName(m.team1_player1_id)} / {playerName(m.team1_player2_id)}
           </div>
           {m.status === 'completed' ? (
-            <div className="text-lg font-black shrink-0" style={{ color: 'var(--brand-primary)' }}>{m.team1_score}</div>
+            <div className="text-lg shrink-0" style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{m.team1_score}</div>
           ) : canScore ? (
             <input type="number" min={0} className="input text-sm text-center" style={{ width: 56 }}
               value={draft.t1} onChange={e => setScoreDrafts(prev => ({ ...prev, [m.id]: { t1: e.target.value, t2: prev[m.id]?.t2 ?? '' } }))} />
@@ -175,7 +175,7 @@ export default function TournamentHub({
             {playerName(m.team2_player1_id)} / {playerName(m.team2_player2_id)}
           </div>
           {m.status === 'completed' ? (
-            <div className="text-lg font-black shrink-0" style={{ color: 'var(--brand-accent)' }}>{m.team2_score}</div>
+            <div className="text-lg shrink-0" style={{ color: 'var(--brand-accent)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{m.team2_score}</div>
           ) : canScore ? (
             <input type="number" min={0} className="input text-sm text-center" style={{ width: 56 }}
               value={draft.t2} onChange={e => setScoreDrafts(prev => ({ ...prev, [m.id]: { t1: prev[m.id]?.t1 ?? '', t2: e.target.value } }))} />
@@ -201,7 +201,7 @@ export default function TournamentHub({
       </div>
 
       {isStaff && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <button onClick={() => setShowRoster(!showRoster)} className="flex items-center gap-2 text-sm font-bold" style={{ color: 'var(--text-muted)' }}>
             <span>{showRoster ? '▼' : '▶'}</span>
             <span>Players ({tournamentPlayers.length})</span>
@@ -252,7 +252,7 @@ export default function TournamentHub({
       )}
 
       {leaderboard.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <h2 className="text-sm font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--text-primary)' }}>Leaderboard</h2>
           <div className="space-y-1.5">
             {leaderboard.map((p, i) => (
@@ -260,7 +260,7 @@ export default function TournamentHub({
                 <span className="w-5 text-center font-bold" style={{ color: i < 3 ? 'var(--brand-primary)' : 'var(--text-muted)' }}>{i + 1}</span>
                 <span className="flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>{p.guest_name ?? p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}</span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.games_won}/{p.games_played} won</span>
-                <span className="font-black" style={{ color: 'var(--text-primary)' }}>{p.total_points}</span>
+                <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{p.total_points}</span>
               </div>
             ))}
           </div>
