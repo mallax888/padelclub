@@ -271,8 +271,8 @@ export default function FindGameList({
         const isFull = spotsLeft <= 0
 
         return (
-          <div key={match.id} className="rounded-xl p-5"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div key={match.id} className="rounded-2xl p-5"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
 
             {/* Header */}
             <div className="flex items-start justify-between mb-3">

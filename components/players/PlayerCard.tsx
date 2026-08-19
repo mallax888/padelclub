@@ -7,8 +7,8 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
   return (
     <Link href={`/players/${player.id}`}>
       <div
-        className="rounded-xl p-5 cursor-pointer transition-all hover:scale-[1.01]"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+        className="rounded-2xl p-5 cursor-pointer transition-all hover:scale-[1.01]"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}
         onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
         onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
       >
