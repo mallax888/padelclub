@@ -28,10 +28,19 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
   const supabase = createClient()
   const router = useRouter()
 
+  const [format, setFormat] = useState<'doubles' | 'singles'>('doubles')
   const [team1p1, setTeam1p1] = useState('')
   const [team1p2, setTeam1p2] = useState('')
   const [team2p1, setTeam2p1] = useState('')
   const [team2p2, setTeam2p2] = useState('')
+
+  const changeFormat = (f: 'doubles' | 'singles') => {
+    setFormat(f)
+    if (f === 'singles') {
+      setTeam1p2('')
+      setTeam2p2('')
+    }
+  }
   const [sets, setSets] = useState<SetScore[]>([])
   const [editingSet, setEditingSet] = useState<number | null>(null)
   const [draftT1, setDraftT1] = useState(0)
@@ -170,6 +179,24 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
 
   return (
     <div className="max-w-lg mx-auto space-y-4">
+      <div className="grid grid-cols-2 gap-1.5">
+        {([
+          { value: 'doubles' as const, label: 'Doubles', desc: '2 vs 2' },
+          { value: 'singles' as const, label: 'Singles', desc: '1 vs 1' },
+        ]).map(f => (
+          <button key={f.value} type="button" onClick={() => changeFormat(f.value)}
+            className="text-left px-3 py-2 rounded-lg transition-colors"
+            style={{
+              background: format === f.value ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
+              border: `1px solid ${format === f.value ? 'var(--brand-primary)' : 'var(--border)'}`,
+              boxShadow: format === f.value ? 'var(--glow-primary)' : 'none',
+            }}>
+            <div className="text-sm font-semibold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{f.label}</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{f.desc}</div>
+          </button>
+        ))}
+      </div>
+
       <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(180deg, var(--bg-surface), var(--bg-raised))', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 min-w-0 text-center">
@@ -239,14 +266,18 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
           <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary-text)' }}>Team 1</div>
           <div className="space-y-2">
             <div><label className="label">Player 1 *</label><PlayerSelect value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
-            <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
+            {format === 'doubles' && (
+              <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
+            )}
           </div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-accent)' }}>Team 2</div>
           <div className="space-y-2">
             <div><label className="label">Player 1 *</label><PlayerSelect value={team2p1} onChange={setTeam2p1} exclude={[team1p1, team1p2, team2p2]} /></div>
-            <div><label className="label">Player 2</label><PlayerSelect value={team2p2} onChange={setTeam2p2} exclude={[team1p1, team1p2, team2p1]} /></div>
+            {format === 'doubles' && (
+              <div><label className="label">Player 2</label><PlayerSelect value={team2p2} onChange={setTeam2p2} exclude={[team1p1, team1p2, team2p1]} /></div>
+            )}
           </div>
         </div>
       </div>
