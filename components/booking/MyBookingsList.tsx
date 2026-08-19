@@ -126,7 +126,7 @@ const DirectionsButton = ({ address }: { address: string }) => (
     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
     target="_blank"
     rel="noopener noreferrer"
-    className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl transition-all whitespace-nowrap flex-1"
+    className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl transition-all whitespace-nowrap"
     style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
     onClick={e => e.stopPropagation()}
   >
@@ -151,7 +151,7 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
       endTime: booking.end_time,
     })}
     download={`padelclub-${booking.date}.ics`}
-    className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-3 py-2 rounded-xl transition-all whitespace-nowrap flex-1"
+    className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl transition-all whitespace-nowrap"
     style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
     onClick={e => e.stopPropagation()}
   >
