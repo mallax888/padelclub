@@ -1,4 +1,4 @@
-﻿import type { Metadata } from 'next'
+﻿import type { Metadata, Viewport } from 'next'
 import { Inter, Manrope } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
@@ -7,6 +7,7 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import { createServerClient } from '@/lib/supabase-server'
 import Script from 'next/script'
 import SupportChatButton from '@/components/ui/SupportChatButton'
+import ThemeColorSync from '@/components/ui/ThemeColorSync'
 
 const inter = Inter({ subsets: ['latin'] })
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display' })
@@ -25,8 +26,18 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
     'apple-mobile-web-app-title': 'PadelClub',
-    'theme-color': '#0A1B27',
   },
+}
+
+// A single static theme-color doesn't track the auto light/dark switch --
+// Android was showing a dark status/address bar over a light-mode page.
+// These two, media-matched, keep the browser chrome colour in sync with
+// --bg-base in each theme (app/globals.css).
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#EEF3F1' },
+    { media: '(prefers-color-scheme: dark)', color: '#050C11' },
+  ],
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -38,10 +49,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <link rel="icon" href="/icons/icon-192.png" type="image/png" />
-        <meta name="theme-color" content="#0A1B27" />
       </head>
       <body className={`${inter.className} ${manrope.variable}`}>
         <ThemeProvider defaultTheme="system" enableSystem>
+          <ThemeColorSync />
           <AuthProvider session={session}>
             {children}
             <Toaster position="bottom-right" containerStyle={{ right: 130, bottom: 30 }}
