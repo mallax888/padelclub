@@ -25,7 +25,8 @@
     "react-hot-toast": "^2.4.1",
     "resend": "^6.12.4",
     "stripe": "^22.3.0",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "xero-node": "^19.1.0"
   },
   "devDependencies": {
     "@types/node": "^20",

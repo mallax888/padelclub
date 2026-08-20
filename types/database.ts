@@ -989,6 +989,62 @@ export interface Database {
           },
         ]
       }
+      xero_connections: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          tenant_id: string
+          tenant_name: string | null
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          bank_account_id: string | null
+          bank_account_name: string | null
+          revenue_account_code: string | null
+          revenue_account_name: string | null
+          connected_by: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          tenant_id: string
+          tenant_name?: string | null
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          bank_account_id?: string | null
+          bank_account_name?: string | null
+          revenue_account_code?: string | null
+          revenue_account_name?: string | null
+          connected_by?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          tenant_id?: string
+          tenant_name?: string | null
+          access_token?: string
+          refresh_token?: string
+          expires_at?: string
+          bank_account_id?: string | null
+          bank_account_name?: string | null
+          revenue_account_code?: string | null
+          revenue_account_name?: string | null
+          connected_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xero_connections_connected_by_fkey"
+            columns: ["connected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
