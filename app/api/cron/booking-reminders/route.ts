@@ -3,9 +3,11 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { sendPushToUser } from '@/lib/push'
 
 // A booking is "due" once its start time falls inside this window from now.
-// The window is wider than the cron interval (run every 15 min, see
-// vercel.json) so a slightly-delayed run can't skip a booking entirely --
-// reminder_sent_at still guarantees each booking only gets pushed once.
+// The window is wider than the trigger interval (run every 15 min via
+// .github/workflows/booking-reminders.yml -- Vercel Hobby only allows daily
+// cron, so GitHub Actions' scheduler is used instead) so a slightly-delayed
+// run can't skip a booking entirely -- reminder_sent_at still guarantees
+// each booking only gets pushed once.
 const WINDOW_START_MIN = 105
 const WINDOW_END_MIN = 135
 

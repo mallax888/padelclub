@@ -1,0 +1,19 @@
+name: Booking reminders
+
+# Vercel Hobby plan only allows daily cron jobs, but the "court time in 2
+# hours" push notification needs to be checked much more often than that --
+# this workflow is the free workaround, calling the same endpoint on GitHub's
+# scheduler instead of Vercel's.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call booking-reminders endpoint
+        run: |
+          curl -sS -f -X GET "${{ vars.APP_URL }}/api/cron/booking-reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
