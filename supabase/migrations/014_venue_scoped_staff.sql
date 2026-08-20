@@ -12,20 +12,23 @@
 alter table public.profiles
   add column if not exists managed_venue_slug text;
 
--- Note on scope: the "Anyone can view active courts" / "Anyone can check
--- availability" policies stay untouched below -- every member legitimately
--- needs to see every venue's courts/availability to book anywhere on the
--- platform, so those two rows-visible-to-anyone policies can't be
--- venue-restricted without breaking normal booking. That means read
--- scoping for Admin's own views comes from the app's own queries
--- (app/(app)/admin/page.tsx filters explicitly by managed_venue_slug),
--- while the policies below are what actually stop a scoped manager from
--- *writing* to another venue's courts/bookings/members/tournaments/ladders
--- -- there's no competing permissive write policy on any of these, so RLS
--- fully enforces the write side.
+-- Note on scope: "Anyone can view active courts" / "Anyone can check
+-- availability" (every member needs to see every venue to book anywhere),
+-- and "Members can view all profiles" (the players directory/leaderboard,
+-- open to every member, not staff-specific) all stay untouched below --
+-- none of these can be venue-restricted without breaking a normal feature
+-- for everyone. Read scoping for Admin's own views instead comes from the
+-- app's own queries (app/(app)/admin/page.tsx filters explicitly by
+-- managed_venue_slug), while the policies below are what actually stop a
+-- scoped manager from *writing* to another venue's courts/bookings/
+-- subscriptions/tournaments/ladders -- there's no competing permissive
+-- write policy on any of these, so RLS fully enforces the write side.
+--
+-- Every drop below uses "if exists" so this migration is safe to re-run
+-- if it partially applied on an earlier attempt.
 
 -- courts
-drop policy "Staff can manage courts" on public.courts;
+drop policy if exists "Staff can manage courts" on public.courts;
 create policy "Staff can manage courts"
   on public.courts for all
   using (exists (
@@ -35,7 +38,7 @@ create policy "Staff can manage courts"
   ));
 
 -- bookings
-drop policy "Staff can view all bookings" on public.bookings;
+drop policy if exists "Staff can view all bookings" on public.bookings;
 create policy "Staff can view all bookings"
   on public.bookings for select
   using (exists (
@@ -45,7 +48,7 @@ create policy "Staff can view all bookings"
       and (p.managed_venue_slug is null or p.managed_venue_slug = c.venue_slug)
   ));
 
-drop policy "Staff can manage all bookings" on public.bookings;
+drop policy if exists "Staff can manage all bookings" on public.bookings;
 create policy "Staff can manage all bookings"
   on public.bookings for all
   using (exists (
@@ -55,19 +58,13 @@ create policy "Staff can manage all bookings"
       and (p.managed_venue_slug is null or p.managed_venue_slug = c.venue_slug)
   ));
 
--- profiles / membership_subscriptions / credit_transactions -- scoped by
--- the player's home_venue_slug (set during onboarding), the closest
--- existing concept to "which club is this player a member of".
-drop policy "Staff can view all profiles" on public.profiles;
-create policy "Staff can view all profiles"
-  on public.profiles for select
-  using (exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role in ('staff', 'admin')
-      and (p.managed_venue_slug is null or p.managed_venue_slug = profiles.home_venue_slug)
-  ));
-
-drop policy "Staff can manage subscriptions" on public.membership_subscriptions;
+-- membership_subscriptions / credit_transactions -- scoped by the player's
+-- home_venue_slug (set during onboarding), the closest existing concept to
+-- "which club is this player a member of". (profiles itself is left alone
+-- here -- its SELECT policy is "Members can view all profiles", open to
+-- every member for the players directory, not a staff-only policy to
+-- narrow.)
+drop policy if exists "Staff can manage subscriptions" on public.membership_subscriptions;
 create policy "Staff can manage subscriptions"
   on public.membership_subscriptions for all
   using (exists (
@@ -77,7 +74,7 @@ create policy "Staff can manage subscriptions"
       and (p.managed_venue_slug is null or p.managed_venue_slug = member.home_venue_slug)
   ));
 
-drop policy "Staff can view all transactions" on public.credit_transactions;
+drop policy if exists "Staff can view all transactions" on public.credit_transactions;
 create policy "Staff can view all transactions"
   on public.credit_transactions for select
   using (exists (
@@ -88,7 +85,7 @@ create policy "Staff can view all transactions"
   ));
 
 -- tournaments -- already has its own venue_slug column
-drop policy "Staff manage tournaments" on public.tournaments;
+drop policy if exists "Staff manage tournaments" on public.tournaments;
 create policy "Staff manage tournaments"
   on public.tournaments for all
   using (exists (
@@ -102,7 +99,7 @@ create policy "Staff manage tournaments"
       and (p.managed_venue_slug is null or p.managed_venue_slug = tournaments.venue_slug)
   ));
 
-drop policy "Staff manage tournament players" on public.tournament_players;
+drop policy if exists "Staff manage tournament players" on public.tournament_players;
 create policy "Staff manage tournament players"
   on public.tournament_players for all
   using (exists (
@@ -118,7 +115,7 @@ create policy "Staff manage tournament players"
       and (p.managed_venue_slug is null or p.managed_venue_slug = t.venue_slug)
   ));
 
-drop policy "Staff manage tournament matches" on public.tournament_matches;
+drop policy if exists "Staff manage tournament matches" on public.tournament_matches;
 create policy "Staff manage tournament matches"
   on public.tournament_matches for all
   using (exists (
@@ -137,7 +134,7 @@ create policy "Staff manage tournament matches"
 -- ladders -- venue_slug is nullable there (a ladder isn't required to
 -- belong to one venue), so an unscoped ladder stays manageable by any
 -- staff regardless of their own scoping.
-drop policy "Staff manage ladders" on public.ladders;
+drop policy if exists "Staff manage ladders" on public.ladders;
 create policy "Staff manage ladders"
   on public.ladders for all
   using (exists (
