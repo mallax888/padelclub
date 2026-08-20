@@ -9,15 +9,25 @@ import { SKILL_LEVELS } from '@/lib/skill-levels'
 export default function SkillEditor({
   userId,
   currentSkillLevel,
+  hasPlayed,
 }: {
   userId: string
   currentSkillLevel: string | null
+  hasPlayed: boolean
 }) {
   const supabase = createClient()
   const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [selected, setSelected] = useState(currentSkillLevel ?? 'beginner')
   const [saving, setSaving] = useState(false)
+
+  if (hasPlayed) {
+    return (
+      <div className="text-xs mt-2" style={{ color: 'var(--text-subtle)' }}>
+        Skill level is now earned from your match results
+      </div>
+    )
+  }
 
   const handleSave = async () => {
     setSaving(true)

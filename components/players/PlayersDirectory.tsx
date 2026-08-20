@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import PlayerCard from '@/components/players/PlayerCard'
-import { SKILL_LEVELS } from '@/lib/skill-levels'
+import { SKILL_LEVELS, skillLevelForRating } from '@/lib/skill-levels'
 
 const SKILL_FILTERS = [{ value: 'all', label: 'All' }, ...SKILL_LEVELS.map(l => ({ value: l.value, label: l.label }))]
 
@@ -14,7 +14,7 @@ export default function PlayersDirectory({ players }: { players: any[] }) {
     const q = query.trim().toLowerCase()
     return players.filter(p => {
       const matchesQuery = !q || (p.full_name ?? '').toLowerCase().includes(q) || (p.nickname ?? '').toLowerCase().includes(q)
-      const matchesSkill = skillFilter === 'all' || (p.skill_level ?? 'beginner') === skillFilter
+      const matchesSkill = skillFilter === 'all' || skillLevelForRating(p.skill_rating) === skillFilter
       return matchesQuery && matchesSkill
     })
   }, [players, query, skillFilter])

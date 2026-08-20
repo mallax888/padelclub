@@ -1061,6 +1061,10 @@ export interface Database {
         Args: { p_user_id: string; p_win: boolean; p_points: number }
         Returns: undefined
       }
+      apply_skill_rating_delta: {
+        Args: { p_user_id: string; p_delta: number }
+        Returns: undefined
+      }
       accept_match_player: {
         Args: { p_request_id: string }
         Returns: boolean

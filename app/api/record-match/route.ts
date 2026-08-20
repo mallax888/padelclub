@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { average, ratingDelta } from '@/lib/elo'
 
 const POINTS = { win: 10, loss: 2, win_bonus: 5 }
 
@@ -75,6 +76,27 @@ export async function POST(request: Request) {
   }
   for (const id of losers) {
     await admin.rpc('record_match_result', { p_user_id: id, p_win: false, p_points: POINTS.loss })
+  }
+
+  // Elo-style skill_rating adjustment -- this is what actually corrects an
+  // over- or under-ranked player over time, instead of their onboarding
+  // self-assessment sitting fixed forever. Doubles: each side's rating is
+  // the average of its two players (solo player = a "team" of one); the
+  // resulting delta is applied equally to both players on that side.
+  const { data: ratingRows } = await admin.from('profiles').select('id, skill_rating').in('id', players)
+  const ratingById: Record<string, number> = {}
+  for (const row of ratingRows ?? []) ratingById[row.id] = row.skill_rating ?? 1.0
+
+  const winnerRating = average(winners.map((id: string) => ratingById[id] ?? 1.0))
+  const loserRating = average(losers.map((id: string) => ratingById[id] ?? 1.0))
+  const winnerDelta = ratingDelta(winnerRating, loserRating, true)
+  const loserDelta = ratingDelta(loserRating, winnerRating, false)
+
+  for (const id of winners) {
+    await admin.rpc('apply_skill_rating_delta', { p_user_id: id, p_delta: winnerDelta })
+  }
+  for (const id of losers) {
+    await admin.rpc('apply_skill_rating_delta', { p_user_id: id, p_delta: loserDelta })
   }
 
   return NextResponse.json({ success: true })
