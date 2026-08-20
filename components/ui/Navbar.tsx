@@ -4,6 +4,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from './AuthProvider'
 import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
+import PushNotificationToggle from '@/components/ui/PushNotificationToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
 import SpecialsMenu from '@/components/ui/SpecialsMenu'
 import { SPECIALS, cadencePill } from '@/lib/specials'
@@ -149,6 +150,7 @@ export default function Navbar() {
               </span>
             )}
             <ThemeToggle />
+            {profile && <PushNotificationToggle />}
             {profile && <NotificationBell userId={profile.id} />}
             {profile && (
               <div style={{
@@ -249,6 +251,7 @@ export default function Navbar() {
               </div>
               <div className="flex items-center gap-1 px-1.5">
                 <ThemeToggle />
+                <PushNotificationToggle />
                 <NotificationBell userId={profile.id} panelPosition="flyout" />
                 <button onClick={handleSignOut} className="btn btn-sm ml-auto">
                   Sign out
