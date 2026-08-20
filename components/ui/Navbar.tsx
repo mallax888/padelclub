@@ -268,9 +268,17 @@ export default function Navbar() {
             style={{ background: 'rgba(0,0,0,0.5)' }}
             onClick={() => setMenuOpen(false)}
           />
-          {/* Menu panel */}
-          <div className="fixed top-14 left-0 right-0 z-50 md:hidden"
-            style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}>
+          {/* Menu panel — height-capped and scrollable so every item (down to
+              Sign out at the very bottom) stays reachable regardless of how
+              tall the content gets (nav items + Specials) or how short the
+              screen is. */}
+          <div className="fixed top-14 left-0 right-0 z-50 md:hidden overflow-y-auto"
+            style={{
+              background: 'var(--bg-surface)',
+              borderBottom: '1px solid var(--border)',
+              maxHeight: 'calc(100vh - 56px)',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }}>
             <div className="px-4 py-3 space-y-1">
               {NAV_ITEMS.map(item => (
                 <Link key={item.href} href={item.href}
@@ -328,7 +336,7 @@ export default function Navbar() {
                   })}
                 </div>
               )}
-              <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
+              <div className="pt-3 mt-2 pb-3" style={{ borderTop: '1px solid var(--border)' }}>
                 {profile && (
                   <div className="flex items-center justify-between px-3 py-2">
                     <div>
