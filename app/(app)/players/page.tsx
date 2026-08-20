@@ -10,7 +10,7 @@ export default async function PlayersPage() {
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, nickname, member_number, skill_level, membership_tier, ranking_points, wins, losses, role')
+      .select('id, full_name, nickname, member_number, skill_level, skill_rating, membership_tier, ranking_points, wins, losses, role')
       .order('member_number', { ascending: true })
 
     if (!error && data) {

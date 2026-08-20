@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import NicknameEditor from '@/components/players/NicknameEditor'
 import SkillEditor from '@/components/players/SkillEditor'
+import { skillLabelForRating } from '@/lib/skill-levels'
 
 export default async function PlayerDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerClient()
@@ -36,6 +37,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
   const wins = player.wins ?? 0
   const losses = player.losses ?? 0
   const winRate = totalMatches > 0 ? Math.round((wins / (wins + losses)) * 100) : 0
+  const hasPlayed = wins + losses > 0
 
   // Head to head — count opponents and results
   const h2h: Record<string, { name: string; wins: number; losses: number; id: string }> = {}
@@ -104,13 +106,13 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
               </span>
               <span className="text-xs px-2.5 py-1 rounded-full capitalize"
                 style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>
-                {player.skill_level ?? 'beginner'}
+                {skillLabelForRating(player.skill_rating)}
               </span>
             </div>
             {isOwnProfile && (
               <div className="flex flex-col gap-1 mt-1">
                 <NicknameEditor userId={player.id} currentNickname={player.nickname} />
-                <SkillEditor userId={player.id} currentSkillLevel={player.skill_level} />
+                <SkillEditor userId={player.id} currentSkillLevel={player.skill_level} hasPlayed={hasPlayed} />
               </div>
             )}
           </div>
@@ -236,7 +238,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
         <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Player details</div>
         {[
           ['Member number', `#${player.member_number}`],
-          ['Skill level', player.skill_level ? player.skill_level.charAt(0).toUpperCase() + player.skill_level.slice(1) : 'Beginner'],
+          ['Skill level', skillLabelForRating(player.skill_rating)],
           ['Favourite court', player.favourite_court ?? '—'],
           ['Member since', player.created_at?.slice(0, 10) ?? '—'],
         ].map(([label, value]) => (

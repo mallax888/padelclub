@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { getInitials } from '@/lib/utils'
+import { skillLabelForRating } from '@/lib/skill-levels'
 
 export default function PlayerCard({ player, index }: { player: any; index: number }) {
   return (
@@ -37,7 +38,7 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
               </div>
             )}
             <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
-              #{player.member_number} · {player.skill_level ?? 'beginner'} · {player.membership_tier ?? 'casual'}
+              #{player.member_number} · {skillLabelForRating(player.skill_rating)} · {player.membership_tier ?? 'casual'}
             </div>
           </div>
           {index < 3 && (

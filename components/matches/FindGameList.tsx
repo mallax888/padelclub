@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatDate, getInitials } from '@/lib/utils'
+import { skillLabelForRating } from '@/lib/skill-levels'
 
 type MatchPlayer = {
   id: string
@@ -29,18 +30,13 @@ type OpenMatch = {
   open_match_players: MatchPlayer[]
 }
 
-function skillLabel(rating: number | null | undefined, skillLevel?: string | null) {
-  if (skillLevel) return skillLevel.charAt(0).toUpperCase() + skillLevel.slice(1)
-  if (rating == null) return 'Beginner'
-  if (rating < 2.5) return 'Beginner'
-  if (rating < 4) return 'Intermediate'
-  if (rating < 5.5) return 'Advanced'
-  return 'Pro'
-}
-
+// Always derived from the numeric skill_rating (kept accurate by actual
+// match results, see lib/elo.ts) rather than the self-declared skill_level
+// string -- that string is what caused "over-ranked" pairing complaints,
+// since it's set once at onboarding and nothing ever corrected it.
 function skillLabelForRange(min: number, max: number) {
-  const lo = skillLabel(min)
-  const hi = skillLabel(max)
+  const lo = skillLabelForRating(min)
+  const hi = skillLabelForRating(max)
   return lo === hi ? lo : `${lo} – ${hi}`
 }
 
@@ -347,7 +343,7 @@ export default function FindGameList({
                       </span>
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
                         style={{ background: 'var(--bg-raised)', color: 'var(--brand-primary-text)' }}>
-                        {skillLabel(p.profiles?.skill_rating, p.profiles?.skill_level)}
+                        {skillLabelForRating(p.profiles?.skill_rating)}
                       </span>
                     </div>
                   ))}
@@ -375,7 +371,7 @@ export default function FindGameList({
                           {p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
                         </div>
                         <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>
-                          {skillLabel(p.profiles?.skill_rating, p.profiles?.skill_level)}
+                          {skillLabelForRating(p.profiles?.skill_rating)}
                         </div>
                       </div>
                     </div>
