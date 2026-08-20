@@ -31,6 +31,7 @@ export interface Database {
           email: string | null
           onboarding_completed: boolean
           home_venue_slug: string | null
+          managed_venue_slug: string | null
         }
         Insert: {
           id: string
@@ -53,6 +54,7 @@ export interface Database {
           email?: string | null
           onboarding_completed?: boolean
           home_venue_slug?: string | null
+          managed_venue_slug?: string | null
         }
         Update: {
           id?: string
@@ -75,6 +77,7 @@ export interface Database {
           email?: string | null
           onboarding_completed?: boolean
           home_venue_slug?: string | null
+          managed_venue_slug?: string | null
         }
         Relationships: []
       }
