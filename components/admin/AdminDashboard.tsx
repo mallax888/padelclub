@@ -354,6 +354,7 @@ function BoardView({
   boardDate: string
   setBoardDate: (d: string) => void
 }) {
+  const [dayDetail, setDayDetail] = useState<string | null>(null)
   const dayLabel = (d: string) => {
     const date = new Date(d + 'T00:00:00')
     return date.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -445,13 +446,14 @@ function BoardView({
                 const show = dayBookings.slice(0, 2)
                 const extra = dayBookings.length - 2
                 return (
-                  <div key={idx} style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1 }}>
+                  <div key={idx} onClick={() => dayBookings.length > 0 && setDayDetail(date)}
+                    style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default' }}>
                     <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary-text)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
                     {show.map((b: any) => {
                       const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
                       return <div key={b.id} style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: date < today ? 'rgba(170,170,170,0.3)' : color + '38', color: date < today ? 'rgba(255,255,255,0.8)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: date < today ? 'line-through' : 'none' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
                     })}
-                    {extra > 0 && <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-primary)', padding: '0 4px' }}>+{extra} more</div>}
+                    {extra > 0 && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand-primary-text)', padding: '0 4px' }}>+{extra} more</div>}
                   </div>
                 )
               })
@@ -541,6 +543,67 @@ function BoardView({
           </table>
         </div>
       )}
+
+      {dayDetail && (() => {
+        const detailBookings = bookings
+          .filter((b: any) => b.date === dayDetail && venueCourts.some((c: any) => c.id === b.court_id) && b.status !== 'cancelled')
+          .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
+        const detailDate = new Date(dayDetail + 'T00:00:00')
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.6)' }}
+            onClick={e => e.target === e.currentTarget && setDayDetail(null)}>
+            <div className="rounded-2xl w-full max-w-md max-h-[80vh] flex flex-col"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+              <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div>
+                  <div className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+                    {detailDate.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    {detailBookings.length} {detailBookings.length === 1 ? 'booking' : 'bookings'}
+                  </div>
+                </div>
+                <button onClick={() => setDayDetail(null)} className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>✕</button>
+              </div>
+              <div className="overflow-y-auto px-5 py-3 space-y-2">
+                {detailBookings.map((b: any) => {
+                  const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
+                  return (
+                    <div key={b.id} className="rounded-xl p-3" style={{ background: 'var(--bg-raised)' }}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
+                          <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                            {b.profiles?.full_name ?? 'Unknown player'}
+                          </div>
+                        </div>
+                        <div className="text-sm shrink-0" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
+                          {formatNzd(b.price_nzd)}
+                        </div>
+                      </div>
+                      <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                        {b.courts?.name} · {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                          style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
+                          {b.status}
+                        </span>
+                        <span className="text-[10px] capitalize" style={{ color: 'var(--text-subtle)' }}>{b.payment_method?.replace('_', ' ')}</span>
+                      </div>
+                      {b.notes && (
+                        <div className="text-xs mt-1.5 italic" style={{ color: 'var(--text-subtle)' }}>{b.notes}</div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
