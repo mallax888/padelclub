@@ -7,6 +7,8 @@ import { cn, formatNzd, formatDate, generateTimeSlots, getNextNDates, localDateS
 import type { Court, Profile } from '@/types/database'
 import { VENUES } from '@/lib/venues'
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
+import ClubAnalytics from '@/components/admin/ClubAnalytics'
+import type { ClubAnalytics as ClubAnalyticsData } from '@/lib/analytics'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 
@@ -28,14 +30,16 @@ export default function AdminDashboard({
   members,
   courts,
   managedVenueSlug,
+  analytics,
 }: {
   bookings: AdminBooking[]
   members: Profile[]
   courts: Court[]
   managedVenueSlug?: string | null
+  analytics: ClubAnalyticsData
 }) {
   const router = useRouter()
-  const [tab, setTab] = useState<'board' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
+  const [tab, setTab] = useState<'board' | 'analytics' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
   const [selectedVenueSlug, setSelectedVenueSlug] = useState<string>('')
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
   const [boardDate, setBoardDate] = useState(localDateStr())
@@ -126,7 +130,7 @@ export default function AdminDashboard({
 
       {/* Tabs */}
       <div className="flex gap-1 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-        {(['board', 'bookings', 'members', 'courts', 'xero'] as const).map(t => (
+        {(['board', 'analytics', 'bookings', 'members', 'courts', 'xero'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -176,6 +180,8 @@ export default function AdminDashboard({
       {tab === 'board' && (
         <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} />
       )}
+
+      {tab === 'analytics' && <ClubAnalytics data={analytics} />}
 
       {/* Bookings tab */}
       {tab === 'bookings' && (

@@ -1,6 +1,9 @@
 import { createServerClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import AdminDashboard from '@/components/admin/AdminDashboard'
+import { computeClubAnalytics } from '@/lib/analytics'
+import { localDateStr } from '@/lib/utils'
+import { addDays, format } from 'date-fns'
 
 export default async function AdminPage() {
   const supabase = createServerClient()
@@ -37,17 +40,36 @@ export default async function AdminPage() {
     .eq('role', 'member')
     .order('created_at', { ascending: false })
 
+  // Wide enough to compute both the weekly trend (last 8 weeks) and each
+  // member's most recent booking for the "drifting away" list -- see
+  // lib/analytics.ts. Kept as its own bounded query rather than reusing
+  // the board's `bookings` above (that one's capped at 100 rows, oldest
+  // first, which isn't useful for a rolling trend).
+  let analyticsBookingsQuery = supabase
+    .from('bookings')
+    .select('user_id, court_id, date, price_nzd, status, courts!inner(venue_slug)')
+    .gte('date', format(addDays(new Date(), -90), 'yyyy-MM-dd'))
+
   if (managedVenueSlug) {
     bookingsQuery = bookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtsQuery = courtsQuery.eq('venue_slug', managedVenueSlug)
     membersQuery = membersQuery.eq('home_venue_slug', managedVenueSlug)
+    analyticsBookingsQuery = analyticsBookingsQuery.eq('courts.venue_slug', managedVenueSlug)
   }
 
-  const [{ data: bookings }, { data: members }, { data: courts }] = await Promise.all([
+  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }] = await Promise.all([
     bookingsQuery,
     membersQuery,
     courtsQuery,
+    analyticsBookingsQuery,
   ])
+
+  const analytics = computeClubAnalytics(
+    analyticsBookings ?? [],
+    (members ?? []) as any,
+    courts?.length ?? 0,
+    localDateStr()
+  )
 
   return (
     <div>
@@ -55,7 +77,7 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-semibold">Admin</h1>
         <p className="text-sm text-gray-500 mt-1">Manage bookings, members and courts</p>
       </div>
-      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} />
+      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} analytics={analytics} />
     </div>
   )
 }
