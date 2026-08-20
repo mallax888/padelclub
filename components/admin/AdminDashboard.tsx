@@ -26,10 +26,12 @@ export default function AdminDashboard({
   bookings,
   members,
   courts,
+  managedVenueSlug,
 }: {
   bookings: AdminBooking[]
   members: Profile[]
   courts: Court[]
+  managedVenueSlug?: string | null
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<'board' | 'bookings' | 'members' | 'courts'>('board')
@@ -149,11 +151,17 @@ export default function AdminDashboard({
       {/* Venue selector - shared across Board / Bookings / Courts */}
       {(tab === 'board' || tab === 'bookings' || tab === 'courts') && venuesWithCourts.length > 0 && (
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-          <select className="input text-sm w-auto" value={activeVenue} onChange={e => setSelectedVenueSlug(e.target.value)}>
-            {venuesWithCourts.map(v => (
-              <option key={v.slug} value={v.slug}>{v.name} — {v.region}</option>
-            ))}
-          </select>
+          {managedVenueSlug ? (
+            <div className="text-sm font-medium px-1" style={{ color: 'var(--text-primary)' }}>
+              {venuesWithCourts[0]?.name ?? managedVenueSlug} — {venuesWithCourts[0]?.region}
+            </div>
+          ) : (
+            <select className="input text-sm w-auto" value={activeVenue} onChange={e => setSelectedVenueSlug(e.target.value)}>
+              {venuesWithCourts.map(v => (
+                <option key={v.slug} value={v.slug}>{v.name} — {v.region}</option>
+              ))}
+            </select>
+          )}
           {tab === 'bookings' && (
             <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>
               <input type="checkbox" checked={showPastBookings} onChange={e => setShowPastBookings(e.target.checked)} />
