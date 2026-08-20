@@ -34,7 +34,7 @@ export default function LoginPage() {
 
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-3 mb-3">
-            <svg width="56" height="56" viewBox="0 0 100 100">
+            <svg width="56" height="56" viewBox="0 0 100 100" style={{ colorScheme: 'light' }}>
               <defs>
                 <radialGradient id="ball" cx="38%" cy="30%" r="65%">
                   <stop offset="0%" stopColor="#FFFF80"/>
