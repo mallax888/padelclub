@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { cn, formatNzd, formatDate, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
 import type { Court, Profile } from '@/types/database'
 import { VENUES } from '@/lib/venues'
+import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 
@@ -34,7 +35,7 @@ export default function AdminDashboard({
   managedVenueSlug?: string | null
 }) {
   const router = useRouter()
-  const [tab, setTab] = useState<'board' | 'bookings' | 'members' | 'courts'>('board')
+  const [tab, setTab] = useState<'board' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
   const [selectedVenueSlug, setSelectedVenueSlug] = useState<string>('')
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
   const [boardDate, setBoardDate] = useState(localDateStr())
@@ -125,7 +126,7 @@ export default function AdminDashboard({
 
       {/* Tabs */}
       <div className="flex gap-1 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-        {(['board', 'bookings', 'members', 'courts'] as const).map(t => (
+        {(['board', 'bookings', 'members', 'courts', 'xero'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -300,6 +301,8 @@ export default function AdminDashboard({
           ))}
         </div>
       )}
+
+      {tab === 'xero' && <XeroSettingsPanel />}
 
       {/* Block court modal */}
       {showBlock && (

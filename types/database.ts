@@ -142,6 +142,7 @@ export interface Database {
           payment_method: 'card' | 'credits' | 'membership_allowance' | 'staff_block'
           notes: string | null
           stripe_payment_id: string | null
+          reminder_sent_at: string | null
         }
         Insert: {
           id?: string
@@ -158,6 +159,7 @@ export interface Database {
           payment_method?: 'card' | 'credits' | 'membership_allowance' | 'staff_block'
           notes?: string | null
           stripe_payment_id?: string | null
+          reminder_sent_at?: string | null
         }
         Update: {
           id?: string
@@ -174,6 +176,7 @@ export interface Database {
           payment_method?: 'card' | 'credits' | 'membership_allowance' | 'staff_block'
           notes?: string | null
           stripe_payment_id?: string | null
+          reminder_sent_at?: string | null
         }
         Relationships: [
           {
@@ -954,6 +957,97 @@ export interface Database {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          id: string
+          created_at: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          user_id?: string
+          endpoint?: string
+          p256dh?: string
+          auth?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      xero_connections: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          tenant_id: string
+          tenant_name: string | null
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          bank_account_id: string | null
+          bank_account_name: string | null
+          revenue_account_code: string | null
+          revenue_account_name: string | null
+          connected_by: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          tenant_id: string
+          tenant_name?: string | null
+          access_token: string
+          refresh_token: string
+          expires_at: string
+          bank_account_id?: string | null
+          bank_account_name?: string | null
+          revenue_account_code?: string | null
+          revenue_account_name?: string | null
+          connected_by?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          tenant_id?: string
+          tenant_name?: string | null
+          access_token?: string
+          refresh_token?: string
+          expires_at?: string
+          bank_account_id?: string | null
+          bank_account_name?: string | null
+          revenue_account_code?: string | null
+          revenue_account_name?: string | null
+          connected_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "xero_connections_connected_by_fkey"
+            columns: ["connected_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1014,6 +1108,7 @@ export type TournamentMatch = Database['public']['Tables']['tournament_matches']
 export type Ladder = Database['public']['Tables']['ladders']['Row']
 export type LadderEntry = Database['public']['Tables']['ladder_entries']['Row']
 export type LadderChallenge = Database['public']['Tables']['ladder_challenges']['Row']
+export type PushSubscriptionRow = Database['public']['Tables']['push_subscriptions']['Row']
 
 export type MembershipTier = 'casual' | 'club' | 'pro'
 

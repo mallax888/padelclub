@@ -5,6 +5,7 @@ import { sendBookingConfirmationEmail } from '@/lib/emails'
 import { formatDate, formatNzd } from '@/lib/utils'
 import { getAppUrl } from '@/lib/env'
 import { getActiveSpecialsForVenueDate } from '@/lib/specials'
+import { syncReceiveMoneyToXero } from '@/lib/xero'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -19,10 +20,27 @@ export async function POST(request: Request) {
     const session = event.data.object as any
     const { bookingId, userId, splitId, type, sessions, tier } = session.metadata
     const supabase = createAdminClient()
+    const appUrl = getAppUrl(request)
+    // Every branch below represents real cash landing in the bank via
+    // Stripe (as opposed to a booking paid with existing credits/membership
+    // allowance, which is just an internal balance drawdown -- that revenue
+    // was already recorded here at the point the credits/membership were
+    // originally purchased). session.amount_total is Stripe's own record of
+    // what was actually charged, in cents.
+    const amountNzd = typeof session.amount_total === 'number' ? session.amount_total / 100 : 0
+
     if (type === 'membership' && userId && tier) {
       // Re-setting the same tier on a retried delivery is harmless (unlike
       // credits, there's nothing to double-apply), so no dedup guard needed.
       await supabase.from('profiles').update({ membership_tier: tier }).eq('id', userId)
+      const { data: member } = await supabase.from('profiles').select('full_name, nickname').eq('id', userId).single()
+      await syncReceiveMoneyToXero(supabase, appUrl, {
+        amountNzd,
+        description: `Membership — ${tier}`,
+        reference: `Membership ${session.id}`,
+        contactName: member?.nickname ?? member?.full_name,
+        idempotencyKey: session.id,
+      })
     } else if (type === 'credit_pack' && userId) {
       // Stripe can redeliver this event (timeout, 5xx, etc). stripe_session_id
       // is unique, so a retry's insert is ignored instead of applying the
@@ -42,6 +60,14 @@ export async function POST(request: Request) {
         // purchases landing close together for the same user would otherwise
         // race and one increment could get silently lost.
         await supabase.rpc('increment_credits', { p_user_id: userId, p_amount: parseInt(sessions, 10) })
+        const { data: buyer } = await supabase.from('profiles').select('full_name, nickname').eq('id', userId).single()
+        await syncReceiveMoneyToXero(supabase, appUrl, {
+          amountNzd,
+          description: `${sessions}-session credit pack`,
+          reference: `Credit pack ${session.id}`,
+          contactName: buyer?.nickname ?? buyer?.full_name,
+          idempotencyKey: session.id,
+        })
       }
     } else if (type === 'split_payment' && splitId) {
       // Only the first delivery of a retried event actually matches
@@ -64,6 +90,13 @@ export async function POST(request: Request) {
         if (notifyError) {
           console.error('Failed to notify', split.invited_by, 'of split payment:', notifyError)
         }
+        await syncReceiveMoneyToXero(supabase, appUrl, {
+          amountNzd,
+          description: 'Booking split payment',
+          reference: `Split payment ${session.id}`,
+          contactName: payerName,
+          idempotencyKey: session.id,
+        })
       }
     } else if (bookingId) {
       // Bookings are inserted already 'confirmed' at checkout time (before
@@ -107,6 +140,14 @@ export async function POST(request: Request) {
             console.error('Failed to send booking confirmation email:', emailError)
           }
         }
+
+        await syncReceiveMoneyToXero(supabase, appUrl, {
+          amountNzd,
+          description: `${(booking.courts as any)?.name ?? 'Court'} booking — ${formatDate(booking.date)}`,
+          reference: `Booking ${session.id}`,
+          contactName: recipient?.nickname ?? recipient?.full_name,
+          idempotencyKey: session.id,
+        })
       }
     }
   }
