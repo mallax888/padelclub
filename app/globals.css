@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 :root {
+  /* Tells the browser this page fully themes itself for both color
+     schemes -- without it, Android Chrome's "Force Dark" auto-darkens
+     the page on top of our own dark theme, which is what was skewing
+     bright colors like --brand-primary's lime-yellow toward brown. */
+  color-scheme: light;
   --bg-base:            #EEF3F1;
   --bg-surface:         #FFFFFF;
   --bg-raised:          #F3F7F5;
@@ -34,6 +39,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --bg-base:            #050C11;
   --bg-surface:         #0A1620;
   --bg-raised:          #102131;
