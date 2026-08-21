@@ -153,14 +153,14 @@ export default function Navbar() {
             {profile && <PushNotificationToggle />}
             {profile && <NotificationBell userId={profile.id} />}
             {profile && (
-              <div style={{
+              <Link href={`/players/${profile.id}`} style={{
                 width: 30, height: 30, borderRadius: '50%',
                 background: 'var(--brand-primary)', color: 'var(--brand-primary-on)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: 700, boxShadow: 'var(--glow-primary)',
               }}>
                 {getInitials(profile.full_name)}
-              </div>
+              </Link>
             )}
           </div>
         </div>
@@ -253,7 +253,7 @@ export default function Navbar() {
                 <ThemeToggle />
                 <PushNotificationToggle />
                 <NotificationBell userId={profile.id} panelPosition="flyout" />
-                <button onClick={handleSignOut} className="btn btn-sm ml-auto">
+                <button onClick={handleSignOut} className="btn btn-sm btn-danger ml-auto">
                   Sign out
                 </button>
               </div>

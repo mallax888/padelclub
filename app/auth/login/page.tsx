@@ -32,20 +32,30 @@ export default function LoginPage() {
 
   const handlePasskeyLogin = async () => {
     setPasskeyLoading(true)
-    const { data, error } = await supabase.auth.signInWithPasskey()
-    setPasskeyLoading(false)
-    if (error) {
-      // The user backing out of the fingerprint/Face ID prompt shouldn't
-      // read as an error -- only surface genuine failures.
-      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
-        toast.error(error.message || 'Could not sign in with fingerprint')
+    try {
+      const { data, error } = await supabase.auth.signInWithPasskey()
+      if (error) {
+        // The user backing out of the fingerprint/Face ID prompt shouldn't
+        // read as an error -- only surface genuine failures.
+        if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
+          toast.error(error.message || 'Could not sign in with fingerprint')
+        }
+        return
       }
-      return
-    }
-    if (data.session) {
-      toast.success('Welcome back!')
-      router.push('/book')
-      router.refresh()
+      if (data.session) {
+        toast.success('Welcome back!')
+        router.push('/book')
+        router.refresh()
+      }
+    } catch (e: any) {
+      // signInWithPasskey() can throw instead of returning `error` for some
+      // failures -- without this the button would stay stuck on "Waiting
+      // for fingerprint..." forever instead of resetting.
+      if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') {
+        toast.error(e?.message || 'Could not sign in with fingerprint')
+      }
+    } finally {
+      setPasskeyLoading(false)
     }
   }
 
