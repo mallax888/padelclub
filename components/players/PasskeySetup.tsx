@@ -47,20 +47,30 @@ export default function PasskeySetup() {
 
   const handleRegister = async () => {
     setRegistering(true)
-    const { data, error } = await supabase.auth.registerPasskey()
-    if (error) {
-      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
-        toast.error(error.message || 'Could not set up fingerprint sign-in')
+    try {
+      const { data, error } = await supabase.auth.registerPasskey()
+      if (error) {
+        if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
+          toast.error(error.message || 'Could not set up fingerprint sign-in')
+        }
+        return
       }
+      if (data?.id) {
+        await supabase.auth.passkey.update({ passkeyId: data.id, friendlyName: deviceLabel() })
+      }
+      toast.success('Fingerprint sign-in is set up!')
+      refresh()
+    } catch (e: any) {
+      // registerPasskey() can throw instead of returning `error` for some
+      // failures (no platform authenticator, blocked by browser policy,
+      // etc.) -- without this the button would stay stuck on "Follow the
+      // prompt..." forever instead of resetting.
+      if (e?.name !== 'NotAllowedError' && e?.name !== 'AbortError') {
+        toast.error(e?.message || 'Could not set up fingerprint sign-in')
+      }
+    } finally {
       setRegistering(false)
-      return
     }
-    if (data?.id) {
-      await supabase.auth.passkey.update({ passkeyId: data.id, friendlyName: deviceLabel() })
-    }
-    toast.success('Fingerprint sign-in is set up!')
-    setRegistering(false)
-    refresh()
   }
 
   const handleDelete = async (passkeyId: string) => {

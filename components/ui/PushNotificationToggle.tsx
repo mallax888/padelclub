@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
+import { Smartphone } from 'lucide-react'
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
@@ -100,16 +101,10 @@ export default function PushNotificationToggle() {
       className="relative inline-flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-150 hover:bg-[var(--bg-raised)]"
       style={{ color: enabled ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}
     >
-      {enabled ? (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-      ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M18 8a6 6 0 0 0-9.33-5M18 8a6 6 0 0 1 6 6v3a4 4 0 0 0 2 3H2a4 4 0 0 0 2-3v-3a6 6 0 0 1 1-3.32"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-          <line x1="1" y1="1" x2="23" y2="23"/>
+      <Smartphone size={18} strokeWidth={2} />
+      {!enabled && (
+        <svg width="18" height="18" viewBox="0 0 24 24" style={{ position: 'absolute' }}>
+          <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       )}
     </button>
