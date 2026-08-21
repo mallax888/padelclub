@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [passkeyLoading, setPasskeyLoading] = useState(false)
+  const passkeySupported = typeof window !== 'undefined' && !!window.PublicKeyCredential
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,6 +27,25 @@ export default function LoginPage() {
       router.refresh()
     }
     setLoading(false)
+  }
+
+  const handlePasskeyLogin = async () => {
+    setPasskeyLoading(true)
+    const { data, error } = await supabase.auth.signInWithPasskey()
+    setPasskeyLoading(false)
+    if (error) {
+      // The user backing out of the fingerprint/Face ID prompt shouldn't
+      // read as an error -- only surface genuine failures.
+      if (error.name !== 'NotAllowedError' && error.name !== 'AbortError') {
+        toast.error(error.message || 'Could not sign in with fingerprint')
+      }
+      return
+    }
+    if (data.session) {
+      toast.success('Welcome back!')
+      router.push('/book')
+      router.refresh()
+    }
   }
 
   return (
@@ -60,6 +81,32 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl p-6 mb-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          {passkeySupported && (
+            <>
+              <button
+                type="button"
+                onClick={handlePasskeyLogin}
+                disabled={passkeyLoading}
+                className="w-full py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 mb-4"
+                style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 .5 2.2"/>
+                  <path d="M7 7a5 5 0 0 1 10 0v3"/>
+                  <path d="M12 12v2a6 6 0 0 1-1.5 4"/>
+                  <path d="M17 12v1a9 9 0 0 1-2 5.7"/>
+                  <path d="M4.5 16.5A9 9 0 0 1 4 13v-1"/>
+                  <path d="M9 21a10 10 0 0 0 3-6"/>
+                </svg>
+                {passkeyLoading ? 'Waiting for fingerprint…' : 'Sign in with fingerprint'}
+              </button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>or use your password</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+              </div>
+            </>
+          )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="label">Email address</label>
