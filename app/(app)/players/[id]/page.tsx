@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import NicknameEditor from '@/components/players/NicknameEditor'
 import SkillEditor from '@/components/players/SkillEditor'
+import PasskeySetup from '@/components/players/PasskeySetup'
 import { skillLabelForRating } from '@/lib/skill-levels'
 
 export default async function PlayerDetailPage({ params }: { params: { id: string } }) {
@@ -113,6 +114,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
               <div className="flex flex-col gap-1 mt-1">
                 <NicknameEditor userId={player.id} currentNickname={player.nickname} />
                 <SkillEditor userId={player.id} currentSkillLevel={player.skill_level} hasPlayed={hasPlayed} />
+                <PasskeySetup />
               </div>
             )}
           </div>
