@@ -307,13 +307,13 @@ export default function MyBookingsList({
       </div>
 
       {/* New booking — solid lime CTA card */}
-      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-5 py-[18px] mb-5 transition-all hover:scale-[1.01]"
+      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-5 py-[21px] mb-5 transition-all hover:scale-[1.01]"
         style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
         <div className="min-w-0">
-          <div className="text-[17px]" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.01em' }}>+ New booking</div>
-          <div className="text-xs mt-0.5" style={{ fontWeight: 600, opacity: 0.75 }}>Book a court in seconds</div>
+          <div className="text-2xl" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.01em' }}>+ New booking</div>
+          <div className="text-[13px] mt-0.5" style={{ fontWeight: 600, opacity: 0.75 }}>Book a court in seconds</div>
         </div>
-        <div className="shrink-0 text-2xl">🎾</div>
+        <div className="shrink-0" style={{ fontSize: '1.7rem' }}>🎾</div>
       </Link>
 
       <div className="mb-5">
@@ -411,7 +411,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-2xl leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 400 : 600 }}>{formatNzd(b.price_nzd)}</div>
+          <div className="text-[30px] leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 400 : 600 }}>{formatNzd(b.price_nzd)}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
