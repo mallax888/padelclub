@@ -43,10 +43,10 @@ export default function SignupPage() {
           <div className="flex items-center justify-center gap-3 mb-3">
             <svg width="56" height="56" viewBox="0 0 100 100" style={{ colorScheme: 'light' }}>
               <defs>
-                <radialGradient id="ball" cx="38%" cy="30%" r="65%">
-                  <stop offset="0%" stopColor="#FFFF80"/>
-                  <stop offset="40%" stopColor="#FFE000"/>
-                  <stop offset="100%" stopColor="#AAAA00"/>
+                <radialGradient id="ball" cx="38%" cy="30%" r="70%">
+                  <stop offset="0%" stopColor="#FFFFFF"/>
+                  <stop offset="35%" stopColor="#FFEB3B"/>
+                  <stop offset="100%" stopColor="#F2C200"/>
                 </radialGradient>
                 <filter id="fuzz">
                   <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="n"/>
@@ -55,7 +55,6 @@ export default function SignupPage() {
               </defs>
               <circle cx="50" cy="50" r="46" fill="url(#ball)" filter="url(#fuzz)"/>
               <ellipse cx="38" cy="32" rx="14" ry="9" fill="white" opacity="0.25" transform="rotate(-25 38 32)"/>
-              <circle cx="50" cy="50" r="46" fill="none" stroke="#AA8800" strokeWidth="1"/>
             </svg>
             <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', userSelect: 'none' }}>
               PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
