@@ -249,10 +249,10 @@ export default function FindGameList({
       <div className="rounded-xl text-center py-16"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-subtle)' }}>
         <svg width="40" height="40" viewBox="0 0 48 48" className="mx-auto mb-3">
-          <g transform="rotate(-14 24 20)">
-            <rect x="21" y="26" width="6" height="16" rx="2.5" fill="var(--brand-accent)"/>
-            <rect x="10" y="4" width="22" height="28" rx="11" fill="var(--brand-accent)"/>
-            {[15, 21, 27].map(cx => [10, 15.5, 21, 26.5].map(cy => (
+          <g transform="rotate(-14 20 24)">
+            <rect x="9" y="4" width="22" height="26" rx="11" fill="var(--brand-accent)"/>
+            <rect x="17" y="28" width="6" height="15" rx="2.5" fill="var(--brand-accent)"/>
+            {[14, 20, 26].map(cx => [10, 15.5, 21, 26.5].map(cy => (
               <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.3" fill="var(--bg-surface)"/>
             )))}
           </g>
