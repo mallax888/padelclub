@@ -4,6 +4,7 @@ import AdminDashboard from '@/components/admin/AdminDashboard'
 import { computeClubAnalytics } from '@/lib/analytics'
 import { localDateStr } from '@/lib/utils'
 import { addDays, format } from 'date-fns'
+import { VENUES, COUNTRIES } from '@/lib/venues'
 
 export default async function AdminPage() {
   const supabase = createServerClient()
@@ -20,12 +21,25 @@ export default async function AdminPage() {
   }
 
   // A scoped club manager (managed_venue_slug set) only ever sees their own
-  // venue's data here -- RLS backs this up for writes, but courts/bookings
-  // also have public read policies (any member needs to see every venue's
-  // availability to book), so cross-venue rows aren't blocked by RLS alone
-  // for reads. Filtering explicitly here is what actually restricts Admin's
-  // own view. An unscoped staff/admin (the default) is unaffected.
+  // venue's data here -- RLS backs this up for writes (see
+  // 017_country_scoped_staff.sql), but courts/bookings also have public
+  // read policies (any member needs to see every venue's availability to
+  // book), so cross-venue rows aren't blocked by RLS alone for reads.
+  // Filtering explicitly here is what actually restricts Admin's own view.
+  // An unscoped staff/admin (the default) is unaffected.
   const managedVenueSlug: string | null = (profile as any).managed_venue_slug ?? null
+
+  // Broader than managed_venue_slug: a club owner scoped to a whole country
+  // (no specific venue) manages every venue in that country but should
+  // never see another country's data -- e.g. a real NZ club owner
+  // shouldn't see South Africa's bookings/members/revenue just because
+  // this deployment also hosts other countries' clubs. Only takes effect
+  // when managed_venue_slug isn't already set (that's the narrower scope).
+  const managedCountry: string | null = (profile as any).managed_country ?? null
+  const managedCountryVenueSlugs: string[] | null =
+    !managedVenueSlug && managedCountry
+      ? VENUES.filter(v => COUNTRIES.find(c => c.name === managedCountry)?.regions.includes(v.region)).map(v => v.slug)
+      : null
 
   // Bounded on the past only (no upper bound) -- a row-count limit ordered
   // oldest-first would silently show ancient history once a club passes
@@ -69,6 +83,12 @@ export default async function AdminPage() {
     membersQuery = membersQuery.eq('home_venue_slug', managedVenueSlug)
     analyticsBookingsQuery = analyticsBookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtPerfQuery = courtPerfQuery.eq('courts.venue_slug', managedVenueSlug)
+  } else if (managedCountryVenueSlugs) {
+    bookingsQuery = bookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
+    courtsQuery = courtsQuery.in('venue_slug', managedCountryVenueSlugs)
+    membersQuery = membersQuery.in('home_venue_slug', managedCountryVenueSlugs)
+    analyticsBookingsQuery = analyticsBookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
+    courtPerfQuery = courtPerfQuery.in('courts.venue_slug', managedCountryVenueSlugs)
   }
 
   const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }] = await Promise.all([
@@ -100,7 +120,7 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-semibold">Admin</h1>
         <p className="text-sm text-gray-500 mt-1">Manage bookings, members and courts</p>
       </div>
-      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} analytics={analytics} courtPerfBookings={courtPerfBookings} />
+      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} />
     </div>
   )
 }

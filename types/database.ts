@@ -32,6 +32,7 @@ export interface Database {
           onboarding_completed: boolean
           home_venue_slug: string | null
           managed_venue_slug: string | null
+          managed_country: string | null
         }
         Insert: {
           id: string
@@ -55,6 +56,7 @@ export interface Database {
           onboarding_completed?: boolean
           home_venue_slug?: string | null
           managed_venue_slug?: string | null
+          managed_country?: string | null
         }
         Update: {
           id?: string
@@ -78,6 +80,7 @@ export interface Database {
           onboarding_completed?: boolean
           home_venue_slug?: string | null
           managed_venue_slug?: string | null
+          managed_country?: string | null
         }
         Relationships: []
       }
