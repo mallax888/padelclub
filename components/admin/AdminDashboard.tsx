@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatNzd, formatDate, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
 import type { Court, Profile } from '@/types/database'
-import { VENUES } from '@/lib/venues'
+import { VENUES, COUNTRIES } from '@/lib/venues'
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking } from '@/lib/analytics'
@@ -43,6 +43,8 @@ export default function AdminDashboard({
   const router = useRouter()
   const [tab, setTab] = useState<'board' | 'analytics' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
   const [selectedVenueSlug, setSelectedVenueSlug] = useState<string>('')
+  const [selectedCountry, setSelectedCountry] = useState<string>('')
+  const [selectedCity, setSelectedCity] = useState<string>('')
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
   const [boardDate, setBoardDate] = useState(localDateStr())
   const [showBlock, setShowBlock] = useState(false)
@@ -84,7 +86,31 @@ export default function AdminDashboard({
   const liveVenues = VENUES.filter(v => v.isLive)
   const selectableVenues = managedVenueSlug ? liveVenues.filter(v => v.slug === managedVenueSlug) : liveVenues
   const courtTabVenues = selectableVenues
-  const activeVenue = selectedVenueSlug || managedVenueSlug || venuesWithCourts[0]?.slug || selectableVenues[0]?.slug || ''
+
+  // Country -> City -> Venue drill-down, scoped to whichever venue list the
+  // current tab cares about. Each level only matters once it actually has
+  // more than one option -- with a single live NZ venue today this
+  // collapses to just the venue name, and grows into real navigation once
+  // more cities/countries go live without any code changes needed.
+  const venuesForTab = tab === 'courts' ? courtTabVenues : venuesWithCourts
+  const availableCountries = COUNTRIES.filter(c => venuesForTab.some(v => c.regions.includes(v.region)))
+  const defaultVenue = venuesForTab.find(v => v.slug === managedVenueSlug) ?? venuesForTab[0]
+  const activeCountryName = selectedCountry && availableCountries.some(c => c.name === selectedCountry)
+    ? selectedCountry
+    : availableCountries.find(c => c.regions.includes(defaultVenue?.region ?? ''))?.name ?? availableCountries[0]?.name ?? ''
+  const citiesInCountry = Array.from(new Set(
+    venuesForTab
+      .filter(v => availableCountries.find(c => c.name === activeCountryName)?.regions.includes(v.region))
+      .map(v => v.region)
+  ))
+  const activeCityName = selectedCity && citiesInCountry.includes(selectedCity)
+    ? selectedCity
+    : (citiesInCountry.includes(defaultVenue?.region ?? '') ? defaultVenue?.region : citiesInCountry[0]) ?? ''
+  const venuesInCity = venuesForTab.filter(v => v.region === activeCityName)
+  const activeVenue = selectedVenueSlug && venuesInCity.some(v => v.slug === selectedVenueSlug)
+    ? selectedVenueSlug
+    : managedVenueSlug || venuesInCity[0]?.slug || ''
+
   const venueCourts = courts.filter((c: any) => c.venue_slug === activeVenue)
   const venueCourtIds = new Set(venueCourts.map(c => c.id))
 
@@ -252,11 +278,29 @@ export default function AdminDashboard({
               {(venuesWithCourts[0] ?? selectableVenues[0])?.name ?? managedVenueSlug} — {(venuesWithCourts[0] ?? selectableVenues[0])?.region ?? ''}
             </div>
           ) : (
-            <select className="input text-sm w-auto" value={activeVenue} onChange={e => setSelectedVenueSlug(e.target.value)}>
-              {(tab === 'courts' ? courtTabVenues : venuesWithCourts).map(v => (
-                <option key={v.slug} value={v.slug}>{v.name} — {v.region}</option>
-              ))}
-            </select>
+            <div className="flex flex-wrap items-center gap-2">
+              {availableCountries.length > 1 && (
+                <select className="input text-sm w-auto" value={activeCountryName}
+                  onChange={e => { setSelectedCountry(e.target.value); setSelectedCity(''); setSelectedVenueSlug('') }}>
+                  {availableCountries.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </select>
+              )}
+              {citiesInCountry.length > 1 && (
+                <select className="input text-sm w-auto" value={activeCityName}
+                  onChange={e => { setSelectedCity(e.target.value); setSelectedVenueSlug('') }}>
+                  {citiesInCountry.map(city => <option key={city} value={city}>{city}</option>)}
+                </select>
+              )}
+              {venuesInCity.length > 1 ? (
+                <select className="input text-sm w-auto" value={activeVenue} onChange={e => setSelectedVenueSlug(e.target.value)}>
+                  {venuesInCity.map(v => <option key={v.slug} value={v.slug}>{v.name}</option>)}
+                </select>
+              ) : (
+                <div className="text-sm font-medium px-1" style={{ color: 'var(--text-primary)' }}>
+                  {venuesInCity[0]?.name ?? ''}{citiesInCountry.length <= 1 ? ` — ${venuesInCity[0]?.region ?? ''}` : ''}
+                </div>
+              )}
+            </div>
           )}
           {tab === 'bookings' && (
             <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>
