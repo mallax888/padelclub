@@ -419,7 +419,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-[30px] leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 400 : 600 }}>{formatNzd(b.price_nzd)}</div>
+          <div className="text-[30px] leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 500 : 700 }}>{formatNzd(b.price_nzd)}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
@@ -529,7 +529,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatNzd(j.amount_nzd)}</div>
+          <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatNzd(j.amount_nzd)}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-primary-text)' }}>Paid ✓</div>
           {venue && (
             <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">
