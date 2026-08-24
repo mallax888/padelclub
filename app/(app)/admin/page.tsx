@@ -54,18 +54,29 @@ export default async function AdminPage() {
     .select('user_id, court_id, date, price_nzd, status, courts!inner(venue_slug)')
     .gte('date', ninetyDaysAgo)
 
+  // Bounded to just over a year so the Court Performance "year" view has a
+  // full 365 days to work with -- separate from analyticsBookingsQuery above
+  // since that one only needs 90 days.
+  const oneYearAgo = format(addDays(new Date(), -370), 'yyyy-MM-dd')
+  let courtPerfQuery = supabase
+    .from('bookings')
+    .select('court_id, date, price_nzd, status, courts!inner(name, venue_slug)')
+    .gte('date', oneYearAgo)
+
   if (managedVenueSlug) {
     bookingsQuery = bookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtsQuery = courtsQuery.eq('venue_slug', managedVenueSlug)
     membersQuery = membersQuery.eq('home_venue_slug', managedVenueSlug)
     analyticsBookingsQuery = analyticsBookingsQuery.eq('courts.venue_slug', managedVenueSlug)
+    courtPerfQuery = courtPerfQuery.eq('courts.venue_slug', managedVenueSlug)
   }
 
-  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }] = await Promise.all([
+  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }] = await Promise.all([
     bookingsQuery,
     membersQuery,
     courtsQuery,
     analyticsBookingsQuery,
+    courtPerfQuery,
   ])
 
   const analytics = computeClubAnalytics(
@@ -75,13 +86,21 @@ export default async function AdminPage() {
     localDateStr()
   )
 
+  const courtPerfBookings = (courtPerfRows ?? []).map((b: any) => ({
+    court_id: b.court_id,
+    court_name: b.courts?.name ?? 'Court',
+    date: b.date,
+    price_nzd: b.price_nzd,
+    status: b.status,
+  }))
+
   return (
     <div>
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">Admin</h1>
         <p className="text-sm text-gray-500 mt-1">Manage bookings, members and courts</p>
       </div>
-      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} analytics={analytics} />
+      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} analytics={analytics} courtPerfBookings={courtPerfBookings} />
     </div>
   )
 }

@@ -1,11 +1,16 @@
 'use client'
 
-import { formatNzd } from '@/lib/utils'
-import type { ClubAnalytics as ClubAnalyticsData } from '@/lib/analytics'
+import { useState } from 'react'
+import { formatNzd, localDateStr } from '@/lib/utils'
+import { computeCourtPerformance, type ClubAnalytics as ClubAnalyticsData, type CourtPerformanceBooking, type CourtPerformancePeriod } from '@/lib/analytics'
 
-export default function ClubAnalytics({ data }: { data: ClubAnalyticsData }) {
+export default function ClubAnalytics({ data, courtPerfBookings }: { data: ClubAnalyticsData; courtPerfBookings: CourtPerformanceBooking[] }) {
   const { utilization7d, uniquePlayers30d, revenue30d, activeMembers, weeklyTrend, atRisk } = data
   const maxBookings = Math.max(1, ...weeklyTrend.map(w => w.bookings))
+
+  const [courtPerfPeriod, setCourtPerfPeriod] = useState<CourtPerformancePeriod>('month')
+  const courtPerformance = computeCourtPerformance(courtPerfBookings, localDateStr(), courtPerfPeriod)
+  const maxCourtRevenue = Math.max(1, ...courtPerformance.map(c => c.revenue))
 
   return (
     <div>
@@ -22,6 +27,44 @@ export default function ClubAnalytics({ data }: { data: ClubAnalyticsData }) {
             <div className="text-xl font-semibold" style={{ color }}>{value}</div>
           </div>
         ))}
+      </div>
+
+      {/* Court performance */}
+      <div className="rounded-2xl p-5 mb-4"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Most popular courts by revenue</div>
+          <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+            {(['week', 'month', 'year'] as const).map(p => (
+              <button key={p} onClick={() => setCourtPerfPeriod(p)}
+                className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
+                style={{ background: courtPerfPeriod === p ? 'var(--brand-primary)' : 'transparent', color: courtPerfPeriod === p ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+        {courtPerformance.length === 0 ? (
+          <div className="text-sm text-center py-6" style={{ color: 'var(--text-subtle)' }}>
+            No bookings in this period yet.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {courtPerformance.map(c => (
+              <div key={c.courtId}>
+                <div className="flex items-baseline justify-between gap-2 mb-1">
+                  <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{c.courtName}</div>
+                  <div className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
+                    {formatNzd(c.revenue)} · {c.bookings} {c.bookings === 1 ? 'booking' : 'bookings'}
+                  </div>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-raised)' }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(2, (c.revenue / maxCourtRevenue) * 100)}%`, background: 'var(--brand-primary)' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
