@@ -30,6 +30,7 @@ export default function AdminDashboard({
   members,
   courts,
   managedVenueSlug,
+  managedCountry,
   analytics,
   courtPerfBookings,
 }: {
@@ -37,6 +38,7 @@ export default function AdminDashboard({
   members: Profile[]
   courts: Court[]
   managedVenueSlug?: string | null
+  managedCountry?: string | null
   analytics: ClubAnalyticsData
   courtPerfBookings: CourtPerformanceBooking[]
 }) {
@@ -84,7 +86,15 @@ export default function AdminDashboard({
   // run. Board/Bookings only make sense for a venue that already has courts
   // to show, so they stay scoped to that subset of the live ones.
   const liveVenues = VENUES.filter(v => v.isLive)
-  const selectableVenues = managedVenueSlug ? liveVenues.filter(v => v.slug === managedVenueSlug) : liveVenues
+  // A country-scoped club owner (managed_country, no specific venue) can
+  // add courts to any live venue in their own country -- including a
+  // brand-new one with zero courts yet -- but should never see another
+  // country's venues here at all, even ones with no courts to filter by.
+  const selectableVenues = managedVenueSlug
+    ? liveVenues.filter(v => v.slug === managedVenueSlug)
+    : managedCountry
+    ? liveVenues.filter(v => COUNTRIES.find(c => c.name === managedCountry)?.regions.includes(v.region))
+    : liveVenues
   const courtTabVenues = selectableVenues
 
   // Country -> City -> Venue drill-down, scoped to whichever venue list the
