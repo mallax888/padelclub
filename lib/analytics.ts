@@ -39,6 +39,49 @@ export type ClubAnalytics = {
   atRisk: AtRiskMember[]
 }
 
+export type CourtPerformanceBooking = {
+  court_id: string
+  court_name: string
+  date: string
+  price_nzd: number
+  status: string
+}
+
+export type CourtPerformance = {
+  courtId: string
+  courtName: string
+  bookings: number
+  revenue: number
+}
+
+export type CourtPerformancePeriod = 'week' | 'month' | 'year'
+
+// Client-side pure function (no server-only deps) so the Admin UI can toggle
+// week/month/year instantly against one already-fetched, 370-day-bounded
+// booking set instead of re-querying per period.
+export function computeCourtPerformance(
+  bookings: CourtPerformanceBooking[],
+  todayStr: string,
+  period: CourtPerformancePeriod
+): CourtPerformance[] {
+  const today = parseISO(todayStr)
+  const daysBack = period === 'week' ? 6 : period === 'month' ? 29 : 364
+  const since = format(addDays(today, -daysBack), 'yyyy-MM-dd')
+  const counted = bookings.filter(b => (b.status === 'confirmed' || b.status === 'completed') && b.date >= since)
+
+  const byCourt = new Map<string, CourtPerformance>()
+  for (const b of counted) {
+    const existing = byCourt.get(b.court_id)
+    if (existing) {
+      existing.bookings += 1
+      existing.revenue += b.price_nzd || 0
+    } else {
+      byCourt.set(b.court_id, { courtId: b.court_id, courtName: b.court_name, bookings: 1, revenue: b.price_nzd || 0 })
+    }
+  }
+  return Array.from(byCourt.values()).sort((a, b) => b.revenue - a.revenue)
+}
+
 export function computeClubAnalytics(
   bookings: AnalyticsBooking[],
   members: AnalyticsMember[],

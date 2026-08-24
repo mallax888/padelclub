@@ -8,7 +8,7 @@ import type { Court, Profile } from '@/types/database'
 import { VENUES } from '@/lib/venues'
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
-import type { ClubAnalytics as ClubAnalyticsData } from '@/lib/analytics'
+import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking } from '@/lib/analytics'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 
@@ -31,12 +31,14 @@ export default function AdminDashboard({
   courts,
   managedVenueSlug,
   analytics,
+  courtPerfBookings,
 }: {
   bookings: AdminBooking[]
   members: Profile[]
   courts: Court[]
   managedVenueSlug?: string | null
   analytics: ClubAnalyticsData
+  courtPerfBookings: CourtPerformanceBooking[]
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<'board' | 'analytics' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
@@ -70,12 +72,17 @@ export default function AdminDashboard({
   const revenue = bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + b.price_nzd, 0)
   const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
 
-  const venuesWithCourts = VENUES.filter(v => courts.some((c: any) => c.venue_slug === v.slug))
-  // Courts tab needs to offer every configured venue, including one with no
+  const venuesWithCourts = VENUES.filter(v => v.isLive && courts.some((c: any) => c.venue_slug === v.slug))
+  // Courts tab needs to offer every *live* venue, including one with no
   // courts yet -- that's exactly the "onboard a new club's first courts"
-  // case this tab exists to support. Board/Bookings only make sense for a
-  // venue that already has courts to show.
-  const selectableVenues = (managedVenueSlug ? VENUES.filter(v => v.slug === managedVenueSlug) : VENUES)
+  // case this tab exists to support. lib/venues.ts also carries a long list
+  // of not-yet-signed "coming soon" venues used for marketing/expansion
+  // planning (isLive: false) -- those aren't real clubs in this deployment
+  // and would just clutter an admin's venue picker with places they don't
+  // run. Board/Bookings only make sense for a venue that already has courts
+  // to show, so they stay scoped to that subset of the live ones.
+  const liveVenues = VENUES.filter(v => v.isLive)
+  const selectableVenues = managedVenueSlug ? liveVenues.filter(v => v.slug === managedVenueSlug) : liveVenues
   const courtTabVenues = selectableVenues
   const activeVenue = selectedVenueSlug || managedVenueSlug || venuesWithCourts[0]?.slug || selectableVenues[0]?.slug || ''
   const venueCourts = courts.filter((c: any) => c.venue_slug === activeVenue)
@@ -262,7 +269,7 @@ export default function AdminDashboard({
         <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} />
       )}
 
-      {tab === 'analytics' && <ClubAnalytics data={analytics} />}
+      {tab === 'analytics' && <ClubAnalytics data={analytics} courtPerfBookings={courtPerfBookings} />}
 
       {/* Bookings tab */}
       {tab === 'bookings' && (
