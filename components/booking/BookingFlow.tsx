@@ -393,7 +393,7 @@ export default function BookingFlow({
               </div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
               <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                {c.regions.length} cities · {VENUES.filter(v => c.regions.includes(v.region)).length} venues · {VENUES.filter(v => c.regions.includes(v.region)).reduce((s, v) => s + v.courts.length, 0)} courts
+                {c.regions.length} cities · {VENUES.filter(v => c.regions.includes(v.region)).length} venues · {courts.filter(ct => VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length} courts
               </div>
             </button>
           ))}
@@ -410,8 +410,7 @@ export default function BookingFlow({
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
           {countryFilteredRegions.map(r => {
             const venues = VENUES.filter(v => v.region === r)
-            const totalCourts = venues.reduce((s, v) => s + v.courts.length, 0)
-            const hasLive = venues.some(v => v.isLive)
+            const totalCourts = courts.filter(ct => venues.some(v => v.slug === (ct as any).venue_slug)).length
             return (
               <button key={r}
                 onClick={() => { setRegion(r); setVenue(null); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('venue'); playSelectionSound() }}
@@ -452,11 +451,19 @@ export default function BookingFlow({
       {/* STEP: Venue */}
       {step === 'venue' && (
         <div className="space-y-2 animate-fade-in">
-          {regionVenues.map(v => (
+          {regionVenues.map(v => {
+            const realCourtCount = courts.filter(c => (c as any).venue_slug === v.slug).length
+            return (
             <button key={v.slug}
-              onClick={() => { setVenue(v); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('date'); playSelectionSound() }}
+              onClick={() => {
+                if (realCourtCount === 0) {
+                  toast.error(`${v.name} doesn't have any courts set up yet.`)
+                  return
+                }
+                setVenue(v); setDate(null); setCourt(null); setDuration(null); setTime(null); setStep('date'); playSelectionSound()
+              }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', opacity: realCourtCount === 0 ? 0.6 : 1 }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
@@ -466,11 +473,11 @@ export default function BookingFlow({
                   {v.address.split(',').slice(0,2).join(',')}
                 </div>
                 <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  {v.courts.length} courts
+                  {realCourtCount > 0 ? `${realCourtCount} courts` : 'Courts coming soon'}
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
-                {!v.isLive && (
+                {realCourtCount === 0 && (
                   <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
                     style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
                     Soon
@@ -481,7 +488,8 @@ export default function BookingFlow({
                 </svg>
               </div>
             </button>
-          ))}
+            )
+          })}
         </div>
       )}
 
