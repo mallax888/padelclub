@@ -27,12 +27,18 @@ export default async function AdminPage() {
   // own view. An unscoped staff/admin (the default) is unaffected.
   const managedVenueSlug: string | null = (profile as any).managed_venue_slug ?? null
 
+  // Bounded on the past only (no upper bound) -- a row-count limit ordered
+  // oldest-first would silently show ancient history once a club passes
+  // that many bookings ever, freezing the whole Board/Bookings view and the
+  // stat cards on stale data instead of anything current or upcoming.
+  const ninetyDaysAgo = format(addDays(new Date(), -90), 'yyyy-MM-dd')
+
   let bookingsQuery = supabase
     .from('bookings')
     .select('*, profiles(full_name, membership_tier), courts!inner(name, type, venue_slug)')
+    .gte('date', ninetyDaysAgo)
     .order('date', { ascending: true })
     .order('start_time', { ascending: true })
-    .limit(100)
   let courtsQuery = supabase.from('courts').select('*').order('name')
   let membersQuery = supabase
     .from('profiles')
@@ -42,13 +48,11 @@ export default async function AdminPage() {
 
   // Wide enough to compute both the weekly trend (last 8 weeks) and each
   // member's most recent booking for the "drifting away" list -- see
-  // lib/analytics.ts. Kept as its own bounded query rather than reusing
-  // the board's `bookings` above (that one's capped at 100 rows, oldest
-  // first, which isn't useful for a rolling trend).
+  // lib/analytics.ts.
   let analyticsBookingsQuery = supabase
     .from('bookings')
     .select('user_id, court_id, date, price_nzd, status, courts!inner(venue_slug)')
-    .gte('date', format(addDays(new Date(), -90), 'yyyy-MM-dd'))
+    .gte('date', ninetyDaysAgo)
 
   if (managedVenueSlug) {
     bookingsQuery = bookingsQuery.eq('courts.venue_slug', managedVenueSlug)
