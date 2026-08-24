@@ -93,6 +93,12 @@ export default function AdminDashboard({
     .filter(b => showPastBookings || b.date >= today)
     .sort((a, b) => (a.date === b.date ? a.start_time.localeCompare(b.start_time) : a.date.localeCompare(b.date)))
 
+  // Every venue in lib/venues.ts names its courts generically ("Court 1",
+  // "Court 2"...), so leaving this unscoped mixes different venues' courts
+  // together under the same display name in the leaderboard -- same
+  // venueCourtIds scoping as bookingsForVenue above.
+  const courtPerfForVenue = courtPerfBookings.filter(b => venueCourtIds.has(b.court_id))
+
   const memberTiers = Array.from(new Set(members.map(m => m.membership_tier))).sort()
   const memberSearchTerm = memberSearch.trim().toLowerCase()
   const visibleMembers = members.filter(m => {
@@ -269,7 +275,7 @@ export default function AdminDashboard({
         <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} />
       )}
 
-      {tab === 'analytics' && <ClubAnalytics data={analytics} courtPerfBookings={courtPerfBookings} />}
+      {tab === 'analytics' && <ClubAnalytics data={analytics} courtPerfBookings={courtPerfForVenue} />}
 
       {/* Bookings tab */}
       {tab === 'bookings' && (
