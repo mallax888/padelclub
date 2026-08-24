@@ -51,6 +51,17 @@ export default function AdminDashboard({
     time: '09:00',
     notes: '',
   })
+  const [editingCourt, setEditingCourt] = useState<Court | 'new' | null>(null)
+  const [courtForm, setCourtForm] = useState({
+    name: '',
+    type: '',
+    price_per_hour: '',
+    price_per_hour_peak: '',
+    is_active: true,
+    is_indoor: true,
+    description: '',
+  })
+  const [savingCourt, setSavingCourt] = useState(false)
 
   const today = localDateStr()
   const todayBookings = bookings.filter(b => b.date === today && b.status !== 'cancelled')
@@ -58,7 +69,13 @@ export default function AdminDashboard({
   const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
 
   const venuesWithCourts = VENUES.filter(v => courts.some((c: any) => c.venue_slug === v.slug))
-  const activeVenue = selectedVenueSlug || venuesWithCourts[0]?.slug || ''
+  // Courts tab needs to offer every configured venue, including one with no
+  // courts yet -- that's exactly the "onboard a new club's first courts"
+  // case this tab exists to support. Board/Bookings only make sense for a
+  // venue that already has courts to show.
+  const selectableVenues = (managedVenueSlug ? VENUES.filter(v => v.slug === managedVenueSlug) : VENUES)
+  const courtTabVenues = selectableVenues
+  const activeVenue = selectedVenueSlug || managedVenueSlug || venuesWithCourts[0]?.slug || selectableVenues[0]?.slug || ''
   const venueCourts = courts.filter((c: any) => c.venue_slug === activeVenue)
   const venueCourtIds = new Set(venueCourts.map(c => c.id))
 
@@ -110,6 +127,54 @@ export default function AdminDashboard({
     }
   }
 
+  const openAddCourt = () => {
+    setCourtForm({ name: '', type: '', price_per_hour: '', price_per_hour_peak: '', is_active: true, is_indoor: true, description: '' })
+    setEditingCourt('new')
+  }
+
+  const openEditCourt = (court: Court) => {
+    setCourtForm({
+      name: court.name,
+      type: court.type,
+      price_per_hour: String(court.price_per_hour),
+      price_per_hour_peak: (court as any).price_per_hour_peak != null ? String((court as any).price_per_hour_peak) : '',
+      is_active: court.is_active,
+      is_indoor: court.is_indoor,
+      description: (court as any).description ?? '',
+    })
+    setEditingCourt(court)
+  }
+
+  const saveCourt = async () => {
+    if (!courtForm.name.trim() || !courtForm.type.trim() || !courtForm.price_per_hour) {
+      toast.error('Name, type and price are required')
+      return
+    }
+    setSavingCourt(true)
+    const { createClient } = await import('@/lib/supabase-browser')
+    const supabase = createClient()
+    const payload = {
+      name: courtForm.name.trim(),
+      type: courtForm.type.trim(),
+      price_per_hour: parseFloat(courtForm.price_per_hour),
+      price_per_hour_peak: courtForm.price_per_hour_peak ? parseFloat(courtForm.price_per_hour_peak) : null,
+      is_active: courtForm.is_active,
+      is_indoor: courtForm.is_indoor,
+      description: courtForm.description.trim() || null,
+    }
+    const { error } = editingCourt === 'new'
+      ? await supabase.from('courts').insert({ ...payload, venue_slug: activeVenue })
+      : await supabase.from('courts').update(payload).eq('id', (editingCourt as Court).id)
+    setSavingCourt(false)
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+    toast.success(editingCourt === 'new' ? 'Court added' : 'Court updated')
+    setEditingCourt(null)
+    router.refresh()
+  }
+
   return (
     <div>
       {/* Stat cards */}
@@ -154,15 +219,15 @@ export default function AdminDashboard({
       </div>
 
       {/* Venue selector - shared across Board / Bookings / Courts */}
-      {(tab === 'board' || tab === 'bookings' || tab === 'courts') && venuesWithCourts.length > 0 && (
+      {((tab === 'board' || tab === 'bookings') && venuesWithCourts.length > 0) || (tab === 'courts' && courtTabVenues.length > 0) ? (
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           {managedVenueSlug ? (
             <div className="text-sm font-medium px-1" style={{ color: 'var(--text-primary)' }}>
-              {venuesWithCourts[0]?.name ?? managedVenueSlug} — {venuesWithCourts[0]?.region}
+              {(venuesWithCourts[0] ?? selectableVenues[0])?.name ?? managedVenueSlug} — {(venuesWithCourts[0] ?? selectableVenues[0])?.region ?? ''}
             </div>
           ) : (
             <select className="input text-sm w-auto" value={activeVenue} onChange={e => setSelectedVenueSlug(e.target.value)}>
-              {venuesWithCourts.map(v => (
+              {(tab === 'courts' ? courtTabVenues : venuesWithCourts).map(v => (
                 <option key={v.slug} value={v.slug}>{v.name} — {v.region}</option>
               ))}
             </select>
@@ -173,8 +238,11 @@ export default function AdminDashboard({
               Show past bookings
             </label>
           )}
+          {tab === 'courts' && (
+            <button className="btn btn-primary btn-sm" onClick={openAddCourt}>+ Add court</button>
+          )}
         </div>
-      )}
+      ) : null}
 
 {/* Board tab */}
       {tab === 'board' && (
@@ -281,11 +349,17 @@ export default function AdminDashboard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {venueCourts.length === 0 ? (
             <div className="rounded-xl text-center py-12 text-sm sm:col-span-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-              No courts found for this venue.
+              No courts yet for this venue.
+              <div className="mt-3">
+                <button className="btn btn-primary btn-sm" onClick={openAddCourt}>+ Add the first court</button>
+              </div>
             </div>
           ) : venueCourts.map(c => (
-            <div key={c.id} className="rounded-2xl p-5"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+            <button key={c.id} onClick={() => openEditCourt(c)} className="text-left rounded-2xl p-5 transition-colors"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-surface)')}
+            >
               <div className="flex items-start justify-between">
                 <div>
                   <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
@@ -298,12 +372,12 @@ export default function AdminDashboard({
                 </span>
               </div>
               <div className="mt-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                {formatNzd(c.price_per_hour)}/hr · {(c as any).surface}
+                {formatNzd(c.price_per_hour)}/hr{(c as any).price_per_hour_peak != null ? ` · ${formatNzd((c as any).price_per_hour_peak)}/hr peak` : ''} · {(c as any).surface}
               </div>
               {(c as any).description && (
                 <div className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>{(c as any).description}</div>
               )}
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -352,6 +426,72 @@ export default function AdminDashboard({
             <div className="flex gap-3 mt-5">
               <button className="btn flex-1 justify-center" onClick={() => setShowBlock(false)}>Cancel</button>
               <button className="btn btn-primary flex-1 justify-center" onClick={blockCourt}>Block court</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/edit court modal */}
+      {editingCourt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={e => e.target === e.currentTarget && setEditingCourt(null)}>
+          <div className="rounded-2xl p-6 w-full max-w-sm"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+            <div className="font-semibold text-base mb-4" style={{ color: 'var(--text-primary)' }}>
+              {editingCourt === 'new' ? 'Add court' : 'Edit court'}
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="label">Name</label>
+                <input type="text" className="input" placeholder="Court 5"
+                  value={courtForm.name}
+                  onChange={e => setCourtForm(f => ({...f, name: e.target.value}))} />
+              </div>
+              <div>
+                <label className="label">Type</label>
+                <input type="text" className="input" placeholder="Glass-backed"
+                  value={courtForm.type}
+                  onChange={e => setCourtForm(f => ({...f, type: e.target.value}))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="label">Price / hr</label>
+                  <input type="number" step="0.01" min="0" className="input" placeholder="70.00"
+                    value={courtForm.price_per_hour}
+                    onChange={e => setCourtForm(f => ({...f, price_per_hour: e.target.value}))} />
+                </div>
+                <div>
+                  <label className="label">Peak price (optional)</label>
+                  <input type="number" step="0.01" min="0" className="input" placeholder="80.00"
+                    value={courtForm.price_per_hour_peak}
+                    onChange={e => setCourtForm(f => ({...f, price_per_hour_peak: e.target.value}))} />
+                </div>
+              </div>
+              <div>
+                <label className="label">Description (optional)</label>
+                <input type="text" className="input" placeholder="Premium indoor glass court"
+                  value={courtForm.description}
+                  onChange={e => setCourtForm(f => ({...f, description: e.target.value}))} />
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                  <input type="checkbox" checked={courtForm.is_indoor}
+                    onChange={e => setCourtForm(f => ({...f, is_indoor: e.target.checked}))} />
+                  Indoor
+                </label>
+                <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-primary)' }}>
+                  <input type="checkbox" checked={courtForm.is_active}
+                    onChange={e => setCourtForm(f => ({...f, is_active: e.target.checked}))} />
+                  Active
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-5">
+              <button className="btn flex-1 justify-center" onClick={() => setEditingCourt(null)}>Cancel</button>
+              <button className="btn btn-primary flex-1 justify-center" disabled={savingCourt} onClick={saveCourt}>
+                {savingCourt ? 'Saving…' : editingCourt === 'new' ? 'Add court' : 'Save changes'}
+              </button>
             </div>
           </div>
         </div>
