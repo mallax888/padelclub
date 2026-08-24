@@ -221,11 +221,19 @@ export default function MyBookingsList({
       toast.error(data.error ?? 'Could not cancel — please try again.')
     } else {
       const receiptUrl = isPaid ? 'https://dashboard.stripe.com/test/payments/' + (booking as any).stripe_payment_id : null
-      const message = !data.isPaid
+      const message = data.refundFailed
+        ? 'Booking cancelled, but your refund could not be processed automatically — please contact support so we can sort it out.'
+        : !data.isPaid
         ? 'Booking cancelled.'
         : data.hoursUntil < 24
         ? 'Booking cancelled. ' + formatNzd(data.creditAmount) + ' credit added to your account.'
         : 'Booking cancelled. Full refund will appear on your card in 5-10 business days.'
+      if (data.refundFailed) {
+        toast.error(message, { duration: 8000 })
+        router.refresh()
+        setCancelling(null)
+        return
+      }
       toast.success(
         receiptUrl ? (
           <span>

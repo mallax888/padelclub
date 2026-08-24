@@ -27,6 +27,15 @@ export async function POST(request: Request) {
     if (verified.userId !== session.user.id) {
       return NextResponse.json({ error: 'Not your booking' }, { status: 403 })
     }
+    // Without this, a retried/duplicate request (stalled redirect, refresh
+    // mid-flow, double submit) could open a second Checkout Session for a
+    // booking that's already been paid, charging the card twice.
+    if (verified.stripePaymentId) {
+      return NextResponse.json({ error: 'This booking has already been paid for.' }, { status: 400 })
+    }
+    if (verified.status === 'cancelled') {
+      return NextResponse.json({ error: 'This booking has been cancelled.' }, { status: 400 })
+    }
 
     const { data: booking } = await admin.from('bookings').select('court_id').eq('id', bookingId).single()
     const { data: court } = booking ? await admin.from('courts').select('venue_slug').eq('id', booking.court_id).single() : { data: null }
