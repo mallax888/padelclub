@@ -656,7 +656,7 @@ export default function BookingFlow({
             ))}
             <div className="flex justify-between pt-3">
               <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{formatPrice(courtPrice, currency)}</span>
+              <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
             </div>
           </div>
 
@@ -758,8 +758,8 @@ export default function BookingFlow({
               <span className="text-lg font-extrabold">Confirming…</span>
             ) : (
               <>
-                <span className="text-lg font-bold uppercase tracking-wide">Pay</span>
-                <span className="text-3xl sm:text-2xl leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
+                <span className="text-3xl sm:text-2xl font-bold uppercase tracking-wide">Pay</span>
+                <span className="text-3xl sm:text-2xl leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
                   {formatPrice(Math.round(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice), currency)}
                 </span>
                 <span className="text-xl font-bold">→</span>

@@ -835,7 +835,7 @@ function BoardView({
                             {b.profiles?.full_name ?? 'Unknown player'}
                           </div>
                         </div>
-                        <div className="text-sm shrink-0" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
+                        <div className="text-sm shrink-0" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
                           {formatNzd(b.price_nzd)}
                         </div>
                       </div>
