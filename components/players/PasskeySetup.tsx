@@ -120,7 +120,11 @@ export default function PasskeySetup() {
         className="text-xs px-3 py-1.5 rounded-lg transition-all"
         style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}
       >
-        {registering ? 'Follow the prompt…' : '🔒 Add fingerprint sign-in for this device'}
+        {registering
+          ? 'Follow the prompt…'
+          : passkeys.length > 0
+          ? '🔒 Add another device'
+          : '🔒 Add fingerprint sign-in for this device'}
       </button>
     </div>
   )
