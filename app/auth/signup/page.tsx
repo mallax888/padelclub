@@ -43,18 +43,20 @@ export default function SignupPage() {
           <div className="flex items-center justify-center gap-3 mb-3">
             <svg width="56" height="56" viewBox="0 0 100 100" style={{ colorScheme: 'light' }}>
               <defs>
-                <radialGradient id="ball" cx="38%" cy="30%" r="70%">
-                  <stop offset="0%" stopColor="#FFFFFF"/>
-                  <stop offset="35%" stopColor="#FFEB3B"/>
-                  <stop offset="100%" stopColor="#F2C200"/>
+                <radialGradient id="ball" cx="35%" cy="28%" r="75%">
+                  <stop offset="0%" stopColor="#F7FFD6"/>
+                  <stop offset="40%" stopColor="#D4FF3D"/>
+                  <stop offset="100%" stopColor="#8FAE1E"/>
                 </radialGradient>
-                <filter id="fuzz">
-                  <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="n"/>
-                  <feDisplacementMap in="SourceGraphic" in2="n" scale="2" xChannelSelector="R" yChannelSelector="G"/>
-                </filter>
+                <clipPath id="ballClip">
+                  <circle cx="50" cy="50" r="46"/>
+                </clipPath>
               </defs>
-              <circle cx="50" cy="50" r="46" fill="url(#ball)" filter="url(#fuzz)"/>
-              <ellipse cx="38" cy="32" rx="14" ry="9" fill="white" opacity="0.25" transform="rotate(-25 38 32)"/>
+              <circle cx="50" cy="50" r="46" fill="url(#ball)"/>
+              <g clipPath="url(#ballClip)">
+                <path d="M 50 4 C 20 20, 20 40, 50 50 C 80 60, 80 80, 50 96" fill="none" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" transform="rotate(25 50 50)"/>
+              </g>
+              <ellipse cx="34" cy="28" rx="14" ry="9" fill="white" opacity="0.35" transform="rotate(-25 34 28)"/>
             </svg>
             <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', userSelect: 'none' }}>
               PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
