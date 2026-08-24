@@ -181,18 +181,19 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     <div className="max-w-lg mx-auto space-y-4">
       <div className="grid grid-cols-2 gap-1.5">
         {([
-          { value: 'doubles' as const, label: 'Doubles', desc: '2 vs 2' },
-          { value: 'singles' as const, label: 'Singles', desc: '1 vs 1' },
+          { value: 'doubles' as const, label: 'Doubles', desc: '2 vs 2', icon: '👥' },
+          { value: 'singles' as const, label: 'Singles', desc: '1 vs 1', icon: '🧍' },
         ]).map(f => (
           <button key={f.value} type="button" onClick={() => changeFormat(f.value)}
-            className="text-left px-3 py-2 rounded-lg transition-colors"
+            className="flex flex-col items-center justify-center text-center px-3 py-3 rounded-lg transition-all hover:scale-[1.02]"
             style={{
               background: format === f.value ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
               border: `1px solid ${format === f.value ? 'var(--brand-primary)' : 'var(--border)'}`,
               boxShadow: format === f.value ? 'var(--glow-primary)' : 'none',
             }}>
-            <div className="text-sm font-semibold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{f.label}</div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{f.desc}</div>
+            <div className="text-lg leading-none mb-1">{f.icon}</div>
+            <div className="text-base font-bold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{f.label}</div>
+            <div className="text-xs mt-0.5 font-semibold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-muted)', opacity: format === f.value ? 0.85 : 1 }}>{f.desc}</div>
           </button>
         ))}
       </div>
@@ -202,13 +203,13 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
           <div className="flex-1 min-w-0 text-center">
             <Avatar label={team1Name} active={!!team1p1} color="var(--brand-primary)" colorOn="var(--brand-primary-on)" />
             <div className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{team1Name}</div>
-            {team1Sub && <div className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>&amp; {team1Sub}</div>}
+            {team1Sub && <div className="text-sm font-bold mt-0.5 truncate" style={{ color: 'var(--text-primary)' }}>&amp; {team1Sub}</div>}
           </div>
           <div className="text-xs font-black shrink-0" style={{ color: 'var(--text-muted)', letterSpacing: '0.1em' }}>VS</div>
           <div className="flex-1 min-w-0 text-center">
             <Avatar label={team2Name} active={!!team2p1} color="var(--brand-accent)" colorOn="#fff" />
             <div className="text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{team2Name}</div>
-            {team2Sub && <div className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>&amp; {team2Sub}</div>}
+            {team2Sub && <div className="text-sm font-bold mt-0.5 truncate" style={{ color: 'var(--text-primary)' }}>&amp; {team2Sub}</div>}
           </div>
         </div>
 
