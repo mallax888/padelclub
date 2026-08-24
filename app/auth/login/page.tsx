@@ -91,25 +91,6 @@ export default function LoginPage() {
         </div>
 
         <div className="rounded-2xl p-6 mb-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          {passkeySupported && (
-            <>
-              <button
-                type="button"
-                onClick={handlePasskeyLogin}
-                disabled={passkeyLoading}
-                className="w-full py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 mb-4"
-                style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-              >
-                <Fingerprint size={18} strokeWidth={2} />
-                {passkeyLoading ? 'Waiting for fingerprint…' : 'Sign in with fingerprint'}
-              </button>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-                <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>or use your password</span>
-                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
-              </div>
-            </>
-          )}
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="label">Email address</label>
@@ -167,6 +148,25 @@ export default function LoginPage() {
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
+          {passkeySupported && (
+            <>
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+                <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>or</span>
+                <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+              </div>
+              <button
+                type="button"
+                onClick={handlePasskeyLogin}
+                disabled={passkeyLoading}
+                className="w-full py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+              >
+                <Fingerprint size={18} strokeWidth={2} />
+                {passkeyLoading ? 'Waiting for fingerprint…' : 'Ace'}
+              </button>
+            </>
+          )}
         </div>
 
         <div className="text-center text-sm space-y-2">
