@@ -45,6 +45,8 @@ export default function AdminDashboard({
   const [boardDate, setBoardDate] = useState(localDateStr())
   const [showBlock, setShowBlock] = useState(false)
   const [showPastBookings, setShowPastBookings] = useState(false)
+  const [memberSearch, setMemberSearch] = useState('')
+  const [memberTierFilter, setMemberTierFilter] = useState<'all' | string>('all')
   const [blockForm, setBlockForm] = useState({
     courtId: courts[0]?.id ?? '',
     date: getNextNDates(1)[0],
@@ -83,6 +85,17 @@ export default function AdminDashboard({
   const visibleBookings = bookingsForVenue
     .filter(b => showPastBookings || b.date >= today)
     .sort((a, b) => (a.date === b.date ? a.start_time.localeCompare(b.start_time) : a.date.localeCompare(b.date)))
+
+  const memberTiers = Array.from(new Set(members.map(m => m.membership_tier))).sort()
+  const memberSearchTerm = memberSearch.trim().toLowerCase()
+  const visibleMembers = members.filter(m => {
+    if (memberTierFilter !== 'all' && m.membership_tier !== memberTierFilter) return false
+    if (!memberSearchTerm) return true
+    const haystack = [
+      (m as any).nickname, m.full_name, (m as any).member_number != null ? `#${(m as any).member_number}` : null,
+    ].filter(Boolean).join(' ').toLowerCase()
+    return haystack.includes(memberSearchTerm)
+  })
 
   const cancelBooking = async (id: string) => {
     if (!confirm('Cancel this booking?')) return
@@ -305,42 +318,61 @@ export default function AdminDashboard({
 
       {/* Members tab */}
       {tab === 'members' && (
-        <div className="rounded-2xl overflow-x-auto"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['#','Name','Membership','Credits','Role','Joined'].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-medium"
-                    style={{ color: 'var(--text-subtle)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {members.map(m => (
-                <tr key={m.id} className="last:border-0 transition-colors"
-                  style={{ borderBottom: '1px solid var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
-                    #{(m as any).member_number ?? '—'}
-                  </td>
-                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {(m as any).nickname ?? m.full_name ?? '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className="badge badge-member capitalize">{m.membership_tier}</span>
-                  </td>
-                  <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits}</td>
-                  <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
-                    {(m as any).created_at?.slice(0,10)}
-                  </td>
+        <div>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <input type="text" className="input text-sm w-auto flex-1 min-w-[180px]" placeholder="Search by name or member #…"
+              value={memberSearch} onChange={e => setMemberSearch(e.target.value)} />
+            <select className="input text-sm w-auto" value={memberTierFilter} onChange={e => setMemberTierFilter(e.target.value)}>
+              <option value="all">All memberships</option>
+              {memberTiers.map(t => <option key={t} value={t} className="capitalize">{t}</option>)}
+            </select>
+            <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
+              {visibleMembers.length} of {members.length}
+            </span>
+          </div>
+          <div className="rounded-2xl overflow-x-auto"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['#','Name','Membership','Credits','Role','Joined'].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-medium"
+                      style={{ color: 'var(--text-subtle)' }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {visibleMembers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                      No members match your search.
+                    </td>
+                  </tr>
+                ) : visibleMembers.map(m => (
+                  <tr key={m.id} className="last:border-0 transition-colors"
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
+                      #{(m as any).member_number ?? '—'}
+                    </td>
+                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {(m as any).nickname ?? m.full_name ?? '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="badge badge-member capitalize">{m.membership_tier}</span>
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits}</td>
+                    <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
+                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
+                      {(m as any).created_at?.slice(0,10)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
