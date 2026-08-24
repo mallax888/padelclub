@@ -11,10 +11,10 @@ import { computeCourtPrice } from '@/lib/pricing'
 export async function verifyAndCorrectBookingPrice(
   admin: SupabaseClient<Database>,
   bookingId: string,
-): Promise<{ verifiedPrice: number; userId: string | null } | null> {
+): Promise<{ verifiedPrice: number; userId: string | null; status: string; stripePaymentId: string | null } | null> {
   const { data: booking } = await admin
     .from('bookings')
-    .select('id, court_id, date, start_time, duration_minutes, price_nzd, user_id')
+    .select('id, court_id, date, start_time, duration_minutes, price_nzd, user_id, status, stripe_payment_id')
     .eq('id', bookingId)
     .single()
   if (!booking) return null
@@ -44,5 +44,5 @@ export async function verifyAndCorrectBookingPrice(
     await admin.from('bookings').update({ price_nzd: verifiedPrice }).eq('id', bookingId)
   }
 
-  return { verifiedPrice, userId: booking.user_id }
+  return { verifiedPrice, userId: booking.user_id, status: booking.status, stripePaymentId: booking.stripe_payment_id }
 }

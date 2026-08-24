@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { stripe } from '@/lib/stripe'
 
 export async function POST(request: Request) {
   const supabase = createServerClient()
@@ -12,10 +13,10 @@ export async function POST(request: Request) {
   const { bookingId } = await request.json()
   const admin = createAdminClient()
 
-  // .neq('status','cancelled') is the guard against double-crediting: a
+  // .neq('status','cancelled') is the guard against double-processing: a
   // second cancel request (double click, retry, two open tabs) finds no row
   // still in a cancellable state and matches nothing, instead of silently
-  // re-running the credit-award branch below a second time.
+  // re-running the refund/credit-award branches below a second time.
   const { data: booking } = await admin
     .from('bookings')
     .update({ status: 'cancelled' })
@@ -32,12 +33,28 @@ export async function POST(request: Request) {
   const isPaid = !!booking.stripe_payment_id
   const hoursUntil = (new Date(`${booking.date}T${booking.start_time}`).getTime() - Date.now()) / (1000 * 60 * 60)
 
+  // Cancellation policy, shown to the user before they confirm (see
+  // MyBookingsList): 24hrs+ notice = full refund to card, under 24hrs = 50%
+  // back as account credit.
   let creditAmount = 0
-  if (isPaid && hoursUntil < 24) {
+  let refundFailed = false
+  if (isPaid && hoursUntil >= 24) {
+    try {
+      await stripe.refunds.create({ payment_intent: booking.stripe_payment_id! })
+    } catch (err: any) {
+      // A charge that's already fully refunded (e.g. a retried request that
+      // raced the guard above) errors the same way a genuine failure would --
+      // treat that one case as success, since the money's already back.
+      if (err?.code !== 'charge_already_refunded') {
+        console.error('Stripe refund failed for booking', bookingId, err)
+        refundFailed = true
+      }
+    }
+  } else if (isPaid && hoursUntil < 24) {
     creditAmount = Math.round(booking.price_nzd * 0.5)
     const { data: profile } = await admin.from('profiles').select('credits').eq('id', session.user.id).single()
     await admin.from('profiles').update({ credits: (profile?.credits ?? 0) + creditAmount }).eq('id', session.user.id)
   }
 
-  return NextResponse.json({ success: true, isPaid, hoursUntil, creditAmount })
+  return NextResponse.json({ success: true, isPaid, hoursUntil, creditAmount, refundFailed })
 }
