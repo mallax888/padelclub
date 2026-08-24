@@ -22,6 +22,21 @@ export type Venue = {
   amenities: VenueAmenity[]
 }
 
+export type Country = {
+  name: string
+  flag: string
+  regions: string[]
+}
+
+// Shared between the public booking flow's Country -> City -> Venue steps
+// and Admin's venue picker, so the two never drift out of sync with each
+// other or with the regions actually used below.
+export const COUNTRIES: Country[] = [
+  { name: 'New Zealand', flag: 'https://flagcdn.com/w80/nz.png', regions: ['Auckland', 'Wellington', 'Christchurch'] },
+  { name: 'South Africa', flag: 'https://flagcdn.com/w80/za.png', regions: ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'] },
+  { name: 'Australia', flag: 'https://flagcdn.com/w80/au.png', regions: ['Sydney', 'Melbourne', 'Brisbane', 'Perth'] },
+]
+
 export const VENUES: Venue[] = [
   // ── NEW ZEALAND ─────────────────────────────────────────
   {
