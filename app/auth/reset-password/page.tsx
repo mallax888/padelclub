@@ -1,7 +1,8 @@
 ﻿'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function ResetPasswordPage() {
@@ -11,15 +12,41 @@ export default function ResetPasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
+  const [linkFailed, setLinkFailed] = useState(false)
+  const readyRef = useRef(false)
+
+  const markReady = () => {
+    readyRef.current = true
+    setReady(true)
+  }
 
   useEffect(() => {
-    // Exchange the hash tokens from the reset email for a valid session
+    // Exchange the hash tokens from the reset email for a valid session.
+    // Also check for a session directly on mount -- the SDK can process the
+    // URL's recovery token before this listener attaches, so the
+    // PASSWORD_RECOVERY event alone isn't reliable on its own.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) markReady()
+    })
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
-        setReady(true)
+        markReady()
       }
     })
-    return () => subscription.unsubscribe()
+
+    // No fallback previously existed here -- an expired/already-used link,
+    // or the SDK simply failing to fire PASSWORD_RECOVERY, left the page
+    // stuck on "Verifying your reset link..." forever with nothing to
+    // click. Surface a real error instead of hanging indefinitely.
+    const timeout = setTimeout(() => {
+      if (!readyRef.current) setLinkFailed(true)
+    }, 8000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   const handleUpdate = async (e: React.FormEvent) => {
@@ -57,7 +84,20 @@ export default function ResetPasswordPage() {
           </p>
         </div>
 
-        {!ready ? (
+        {linkFailed ? (
+          <div className="rounded-xl p-6 text-center" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="text-2xl mb-2">🔗</div>
+            <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>This reset link didn't work</div>
+            <div className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+              It may have expired or already been used. Request a new one below.
+            </div>
+            <Link href="/auth/forgot-password"
+              className="inline-block w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
+              style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
+              Send a new reset link
+            </Link>
+          </div>
+        ) : !ready ? (
           <div className="rounded-xl p-6 text-center" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
             <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
               Verifying your reset link…
