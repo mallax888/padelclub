@@ -22,18 +22,32 @@ export default function ResetPasswordPage() {
   }
 
   useEffect(() => {
-    // Supabase's recovery link can land here two different ways depending
-    // on the project's auth flow setting: the older implicit flow puts the
-    // session straight in the URL hash (auto-detected, surfaces as a
-    // PASSWORD_RECOVERY event / an existing session), while the newer PKCE
-    // flow (the supabase-js default for browser clients) puts a one-time
-    // ?code= in the query string that has to be explicitly exchanged for a
-    // session -- nothing does that automatically. Without this, a PKCE
-    // project's reset links would hang on "Verifying..." forever even
-    // though the link itself is completely valid, because the event this
-    // page was waiting for was never going to fire. Handle both.
-    const code = new URLSearchParams(window.location.search).get('code')
-    if (code) {
+    // Supabase's recovery link can land here a few different ways. The
+    // older implicit flow puts the session straight in the URL hash
+    // (auto-detected, surfaces as a PASSWORD_RECOVERY event / an existing
+    // session). The PKCE flow puts a one-time ?code= that has to be
+    // exchanged via exchangeCodeForSession() -- but that exchange requires
+    // a code_verifier stashed in *this* browser at request time, so it
+    // fails outright if the link is opened in a different browser/device
+    // than the one that requested the reset (e.g. Mail's in-app browser).
+    // ?token_hash=&type=recovery (once the email template points here
+    // directly instead of via Supabase's PKCE-wrapping verify redirect)
+    // sidesteps that: verifyOtp checks the token itself, no local secret
+    // required, so it works from any browser. Handle all three.
+    const params = new URLSearchParams(window.location.search)
+    const code = params.get('code')
+    const tokenHash = params.get('token_hash')
+    const otpType = params.get('type')
+
+    if (tokenHash && otpType === 'recovery') {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }).then(({ data, error }) => {
+        if (data.session) markReady()
+        else if (error && !readyRef.current) {
+          setFailReason(error.message)
+          setLinkFailed(true)
+        }
+      })
+    } else if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
         if (data.session) markReady()
         else if (error && !readyRef.current) {
