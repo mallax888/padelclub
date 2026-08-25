@@ -21,10 +21,24 @@ export default function ResetPasswordPage() {
   }
 
   useEffect(() => {
-    // Exchange the hash tokens from the reset email for a valid session.
-    // Also check for a session directly on mount -- the SDK can process the
-    // URL's recovery token before this listener attaches, so the
-    // PASSWORD_RECOVERY event alone isn't reliable on its own.
+    // Supabase's recovery link can land here two different ways depending
+    // on the project's auth flow setting: the older implicit flow puts the
+    // session straight in the URL hash (auto-detected, surfaces as a
+    // PASSWORD_RECOVERY event / an existing session), while the newer PKCE
+    // flow (the supabase-js default for browser clients) puts a one-time
+    // ?code= in the query string that has to be explicitly exchanged for a
+    // session -- nothing does that automatically. Without this, a PKCE
+    // project's reset links would hang on "Verifying..." forever even
+    // though the link itself is completely valid, because the event this
+    // page was waiting for was never going to fire. Handle both.
+    const code = new URLSearchParams(window.location.search).get('code')
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (data.session) markReady()
+        else if (error && !readyRef.current) setLinkFailed(true)
+      })
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) markReady()
     })
@@ -35,10 +49,8 @@ export default function ResetPasswordPage() {
       }
     })
 
-    // No fallback previously existed here -- an expired/already-used link,
-    // or the SDK simply failing to fire PASSWORD_RECOVERY, left the page
-    // stuck on "Verifying your reset link..." forever with nothing to
-    // click. Surface a real error instead of hanging indefinitely.
+    // Fallback for any other way this could still get stuck -- surface a
+    // real error instead of hanging indefinitely.
     const timeout = setTimeout(() => {
       if (!readyRef.current) setLinkFailed(true)
     }, 8000)
