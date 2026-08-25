@@ -13,6 +13,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [ready, setReady] = useState(false)
   const [linkFailed, setLinkFailed] = useState(false)
+  const [failReason, setFailReason] = useState('')
   const readyRef = useRef(false)
 
   const markReady = () => {
@@ -35,7 +36,10 @@ export default function ResetPasswordPage() {
     if (code) {
       supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
         if (data.session) markReady()
-        else if (error && !readyRef.current) setLinkFailed(true)
+        else if (error && !readyRef.current) {
+          setFailReason(error.message)
+          setLinkFailed(true)
+        }
       })
     }
 
@@ -103,6 +107,11 @@ export default function ResetPasswordPage() {
             <div className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
               It may have expired or already been used. Request a new one below.
             </div>
+            {failReason && (
+              <div className="text-xs mb-4 font-mono" style={{ color: 'var(--text-subtle)' }}>
+                {failReason}
+              </div>
+            )}
             <Link href="/auth/forgot-password"
               className="inline-block w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
               style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
