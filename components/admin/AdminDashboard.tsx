@@ -3,9 +3,13 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd, formatDate, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
+import { cn, formatDate, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
 import type { Court, Profile } from '@/types/database'
-import { VENUES, COUNTRIES } from '@/lib/venues'
+import { VENUES, COUNTRIES, getVenue } from '@/lib/venues'
+import { currencyForRegion, formatPrice, sumByCurrency, formatMultiCurrency } from '@/lib/currency'
+
+const currencyForVenueSlug = (venueSlug: string | null | undefined) =>
+  currencyForRegion(venueSlug ? getVenue(venueSlug).region : undefined)
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking } from '@/lib/analytics'
@@ -22,7 +26,7 @@ type AdminBooking = {
   payment_method: string
   notes: string | null
   profiles: { full_name: string | null; membership_tier: string } | null
-  courts: { name: string; type: string } | null
+  courts: { name: string; type: string; venue_slug?: string | null } | null
 }
 
 export default function AdminDashboard({
@@ -73,7 +77,14 @@ export default function AdminDashboard({
 
   const today = localDateStr()
   const todayBookings = bookings.filter(b => b.date === today && b.status !== 'cancelled')
-  const revenue = bookings.filter(b => b.status === 'confirmed').reduce((s, b) => s + b.price_nzd, 0)
+  // Bookings can span multiple countries/currencies for an unscoped admin --
+  // summing raw amounts together regardless of currency would produce a
+  // meaningless blended number, so this totals per currency instead.
+  const revenueByCurrency = sumByCurrency(
+    bookings.filter(b => b.status === 'confirmed'),
+    b => currencyForVenueSlug(b.courts?.venue_slug),
+    b => b.price_nzd
+  )
   const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
 
   const venuesWithCourts = VENUES.filter(v => v.isLive && courts.some((c: any) => c.venue_slug === v.slug))
@@ -147,15 +158,29 @@ export default function AdminDashboard({
   })
 
   const cancelBooking = async (id: string) => {
-    if (!confirm('Cancel this booking?')) return
-    const { createClient } = await import('@/lib/supabase-browser')
-    const supabase = createClient()
-    const { error } = await supabase.from('bookings').update({ status: 'cancelled' }).eq('id', id)
-    if (error) {
-      toast.error('Could not cancel booking')
+    if (!confirm('Cancel this booking? If it was paid, the member will be refunded per the standard cancellation policy (full refund 24h+ out, 50% credit under 24h).')) return
+    const res = await fetch('/api/admin/cancel-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: id }),
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      toast.error(data.error ?? 'Could not cancel booking')
       return
     }
-    toast.success('Booking cancelled')
+    const currency = currencyForVenueSlug(bookings.find(b => b.id === id)?.courts?.venue_slug)
+    const message = data.refundFailed
+      ? 'Booking cancelled, but the refund could not be processed automatically — check Stripe.'
+      : !data.isPaid
+      ? 'Booking cancelled.'
+      : data.creditsRefunded > 0
+      ? 'Booking cancelled. 1 session credit refunded.'
+      : data.creditAmount > 0
+      ? `Booking cancelled. ${formatPrice(data.creditAmount, currency)} credit added for the member.`
+      : 'Booking cancelled. Full refund issued to the member\'s card.'
+    if (data.refundFailed) toast.error(message, { duration: 8000 })
+    else toast.success(message)
     router.refresh()
   }
 
@@ -245,7 +270,7 @@ export default function AdminDashboard({
           { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)' },
           { label: 'Total bookings',   value: bookings.filter(b => b.status === 'confirmed').length, color: 'var(--text-primary)' },
           { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)' },
-          { label: 'Revenue',          value: formatNzd(revenue), color: 'var(--brand-primary-text)' },
+          { label: 'Revenue',          value: formatMultiCurrency(revenueByCurrency), color: 'var(--brand-primary-text)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl p-4"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
@@ -364,7 +389,7 @@ export default function AdminDashboard({
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDate(b.date)}</td>
                   <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{b.start_time.slice(0,5)}</td>
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {b.price_nzd > 0 ? formatNzd(b.price_nzd) : '—'}
+                    {b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug)) : '—'}
                   </td>
                   <td className="px-4 py-3">
                     <span className={cn('badge', `status-${b.status}`)}>{b.status}</span>
@@ -471,7 +496,7 @@ export default function AdminDashboard({
                 </span>
               </div>
               <div className="mt-3 text-sm" style={{ color: 'var(--text-muted)' }}>
-                {formatNzd(c.price_per_hour)}/hr{(c as any).price_per_hour_peak != null ? ` · ${formatNzd((c as any).price_per_hour_peak)}/hr peak` : ''} · {(c as any).surface}
+                {formatPrice(c.price_per_hour, currencyForVenueSlug((c as any).venue_slug))}/hr{(c as any).price_per_hour_peak != null ? ` · ${formatPrice((c as any).price_per_hour_peak, currencyForVenueSlug((c as any).venue_slug))}/hr peak` : ''} · {(c as any).surface}
               </div>
               {(c as any).description && (
                 <div className="text-xs mt-1" style={{ color: 'var(--text-subtle)' }}>{(c as any).description}</div>
@@ -836,7 +861,7 @@ function BoardView({
                           </div>
                         </div>
                         <div className="text-sm shrink-0" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
-                          {formatNzd(b.price_nzd)}
+                          {formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug))}
                         </div>
                       </div>
                       <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatNzd, formatDate } from '@/lib/utils'
+import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
@@ -204,11 +205,12 @@ export default function MyBookingsList({
     const now = new Date()
     const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
     const isPaid = !!(booking as any).stripe_payment_id
+    const currency = currencyForRegion(VENUES.find(v => v.slug === (booking.courts as any)?.venue_slug)?.region)
     const policy = !isPaid
       ? 'Cancel this booking?\n\nNo payment has been charged yet, so this will simply be cancelled with no charge or credit.'
       : hoursUntil >= 24
       ? 'Cancel this booking?\n\nSince it is more than 24 hours away you will receive a FULL REFUND to your card within 5-10 business days.'
-      : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatNzd(booking.price_nzd * 0.5) + ') as account credit.'
+      : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatPrice(booking.price_nzd * 0.5, currency) + ') as account credit.'
     if (!confirm(policy)) return
     setCancelling(id)
     const res = await fetch('/api/cancel-booking', {
@@ -226,7 +228,7 @@ export default function MyBookingsList({
         : !data.isPaid
         ? 'Booking cancelled.'
         : data.hoursUntil < 24
-        ? 'Booking cancelled. ' + formatNzd(data.creditAmount) + ' credit added to your account.'
+        ? 'Booking cancelled. ' + formatPrice(data.creditAmount, currency) + ' credit added to your account.'
         : 'Booking cancelled. Full refund will appear on your card in 5-10 business days.'
       if (data.refundFailed) {
         toast.error(message, { duration: 8000 })
@@ -419,7 +421,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-[30px] leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 500 : 700 }}>{formatNzd(b.price_nzd)}</div>
+          <div className="text-[30px] leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 500 : 700 }}>{formatPrice(b.price_nzd, currencyForRegion(venue?.region))}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
@@ -529,7 +531,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatNzd(j.amount_nzd)}</div>
+          <div className="text-lg leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(j.amount_nzd, currencyForRegion(venue?.region))}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--brand-primary-text)' }}>Paid ✓</div>
           {venue && (
             <div className="flex flex-wrap gap-1.5 mt-0.5 justify-end">

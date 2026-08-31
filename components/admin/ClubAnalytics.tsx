@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { formatNzd, localDateStr } from '@/lib/utils'
+import { localDateStr } from '@/lib/utils'
+import { formatPrice, formatMultiCurrency } from '@/lib/currency'
 import { computeCourtPerformance, type ClubAnalytics as ClubAnalyticsData, type CourtPerformanceBooking, type CourtPerformancePeriod } from '@/lib/analytics'
 
 export default function ClubAnalytics({ data, courtPerfBookings }: { data: ClubAnalyticsData; courtPerfBookings: CourtPerformanceBooking[] }) {
-  const { utilization7d, uniquePlayers30d, revenue30d, activeMembers, weeklyTrend, atRisk } = data
+  const { utilization7d, uniquePlayers30d, revenueByCurrency30d, activeMembers, weeklyTrend, atRisk } = data
   const maxBookings = Math.max(1, ...weeklyTrend.map(w => w.bookings))
 
   const [courtPerfPeriod, setCourtPerfPeriod] = useState<CourtPerformancePeriod>('month')
@@ -18,7 +19,7 @@ export default function ClubAnalytics({ data, courtPerfBookings }: { data: ClubA
         {[
           { label: 'Court utilization (7d)', value: `${utilization7d}%`, color: 'var(--brand-primary-text)' },
           { label: 'Unique players (30d)', value: uniquePlayers30d, color: 'var(--text-primary)' },
-          { label: 'Booking revenue (30d)', value: formatNzd(revenue30d), color: 'var(--brand-primary-text)' },
+          { label: 'Booking revenue (30d)', value: formatMultiCurrency(revenueByCurrency30d), color: 'var(--brand-primary-text)' },
           { label: 'Active members', value: activeMembers, color: 'var(--brand-accent)' },
         ].map(({ label, value, color }) => (
           <div key={label} className="rounded-2xl p-4"
@@ -55,7 +56,7 @@ export default function ClubAnalytics({ data, courtPerfBookings }: { data: ClubA
                 <div className="flex items-baseline justify-between gap-2 mb-1">
                   <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{c.courtName}</div>
                   <div className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>
-                    {formatNzd(c.revenue)} · {c.bookings} {c.bookings === 1 ? 'booking' : 'bookings'}
+                    {formatPrice(c.revenue, c.currency)} · {c.bookings} {c.bookings === 1 ? 'booking' : 'bookings'}
                   </div>
                 </div>
                 <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-raised)' }}>
@@ -74,7 +75,7 @@ export default function ClubAnalytics({ data, courtPerfBookings }: { data: ClubA
           <div className="text-sm font-medium mb-4" style={{ color: 'var(--text-primary)' }}>Bookings per week</div>
           <div className="flex items-end gap-2" style={{ height: 140 }}>
             {weeklyTrend.map((w, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full" title={`${w.bookings} bookings · ${formatNzd(w.revenue)}`}>
+              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full" title={`${w.bookings} bookings · ${formatMultiCurrency(w.revenueByCurrency)}`}>
                 <div className="text-[10px] mb-1" style={{ color: 'var(--text-subtle)' }}>{w.bookings || ''}</div>
                 <div className="w-full rounded-t"
                   style={{
