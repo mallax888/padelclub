@@ -12,7 +12,8 @@ const currencyForVenueSlug = (venueSlug: string | null | undefined) =>
   currencyForRegion(venueSlug ? getVenue(venueSlug).region : undefined)
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
-import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking } from '@/lib/analytics'
+import FinancialReports from '@/components/admin/FinancialReports'
+import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking, FinancialCreditTx } from '@/lib/analytics'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 
@@ -24,6 +25,7 @@ type AdminBooking = {
   status: string
   price_nzd: number
   payment_method: string
+  stripe_payment_id?: string | null
   notes: string | null
   profiles: { full_name: string | null; membership_tier: string } | null
   courts: { name: string; type: string; venue_slug?: string | null } | null
@@ -37,6 +39,7 @@ export default function AdminDashboard({
   managedCountry,
   analytics,
   courtPerfBookings,
+  creditTransactions,
 }: {
   bookings: AdminBooking[]
   members: Profile[]
@@ -45,9 +48,10 @@ export default function AdminDashboard({
   managedCountry?: string | null
   analytics: ClubAnalyticsData
   courtPerfBookings: CourtPerformanceBooking[]
+  creditTransactions: FinancialCreditTx[]
 }) {
   const router = useRouter()
-  const [tab, setTab] = useState<'board' | 'analytics' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
+  const [tab, setTab] = useState<'board' | 'analytics' | 'reports' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
   const [selectedVenueSlug, setSelectedVenueSlug] = useState<string>('')
   const [selectedCountry, setSelectedCountry] = useState<string>('')
   const [selectedCity, setSelectedCity] = useState<string>('')
@@ -145,6 +149,32 @@ export default function AdminDashboard({
   // together under the same display name in the leaderboard -- same
   // venueCourtIds scoping as bookingsForVenue above.
   const courtPerfForVenue = courtPerfBookings.filter(b => venueCourtIds.has(b.court_id))
+
+  const upcomingBookings = bookingsForVenue
+    .filter(b => b.status !== 'cancelled' && b.status !== 'blocked' && b.date >= today)
+    .sort((a, b) => (a.date === b.date ? a.start_time.localeCompare(b.start_time) : a.date.localeCompare(b.date)))
+    .slice(0, 8)
+    .map(b => ({
+      id: b.id,
+      date: b.date,
+      start_time: b.start_time,
+      court_name: b.courts?.name ?? 'Court',
+      member_name: b.profiles?.full_name ?? '—',
+      price_nzd: b.price_nzd,
+      venue_slug: b.courts?.venue_slug,
+    }))
+
+  const financialReportBookings = bookingsForVenue.map(b => ({
+    date: b.date,
+    status: b.status,
+    price_nzd: b.price_nzd,
+    payment_method: b.payment_method,
+    stripe_payment_id: b.stripe_payment_id ?? null,
+    venue_slug: b.courts?.venue_slug,
+    start_time: b.start_time,
+    court_name: b.courts?.name ?? 'Court',
+    member_name: b.profiles?.full_name ?? '—',
+  }))
 
   const memberTiers = Array.from(new Set(members.map(m => m.membership_tier))).sort()
   const memberSearchTerm = memberSearch.trim().toLowerCase()
@@ -282,7 +312,7 @@ export default function AdminDashboard({
 
       {/* Tabs */}
       <div className="flex gap-1 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
-        {(['board', 'analytics', 'bookings', 'members', 'courts', 'xero'] as const).map(t => (
+        {(['board', 'analytics', 'reports', 'bookings', 'members', 'courts', 'xero'] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -306,7 +336,7 @@ export default function AdminDashboard({
       </div>
 
       {/* Venue selector - shared across Board / Bookings / Courts */}
-      {((tab === 'board' || tab === 'bookings') && venuesWithCourts.length > 0) || (tab === 'courts' && courtTabVenues.length > 0) ? (
+      {((tab === 'board' || tab === 'bookings' || tab === 'analytics' || tab === 'reports') && venuesWithCourts.length > 0) || (tab === 'courts' && courtTabVenues.length > 0) ? (
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           {managedVenueSlug ? (
             <div className="text-sm font-medium px-1" style={{ color: 'var(--text-primary)' }}>
@@ -354,7 +384,19 @@ export default function AdminDashboard({
         <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} />
       )}
 
-      {tab === 'analytics' && <ClubAnalytics data={analytics} courtPerfBookings={courtPerfForVenue} />}
+      {tab === 'analytics' && (
+        <ClubAnalytics
+          data={analytics}
+          courtPerfBookings={courtPerfForVenue}
+          heatmapBookings={bookingsForVenue}
+          courtCount={venueCourts.length}
+          upcomingBookings={upcomingBookings}
+        />
+      )}
+
+      {tab === 'reports' && (
+        <FinancialReports bookings={financialReportBookings} creditTransactions={creditTransactions} />
+      )}
 
       {/* Bookings tab */}
       {tab === 'bookings' && (
