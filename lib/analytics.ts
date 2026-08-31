@@ -1,4 +1,9 @@
 import { addDays, format, parseISO, differenceInCalendarDays } from 'date-fns'
+import { currencyForRegion, sumByCurrency, type CurrencyCode } from '@/lib/currency'
+import { getVenue } from '@/lib/venues'
+
+const currencyForVenueSlug = (venueSlug: string | null | undefined): CurrencyCode =>
+  currencyForRegion(venueSlug ? getVenue(venueSlug).region : undefined)
 
 // Matches the booking flow's own operating window (generateTimeSlots(7, 22, 60)
 // in components/admin/AdminDashboard.tsx) -- 15 one-hour slots/day. Utilization
@@ -11,6 +16,7 @@ export type AnalyticsBooking = {
   date: string
   price_nzd: number
   status: string
+  venue_slug?: string | null
 }
 
 export type AnalyticsMember = {
@@ -20,7 +26,9 @@ export type AnalyticsMember = {
   membership_tier: string
 }
 
-export type WeeklyTrendPoint = { label: string; bookings: number; revenue: number }
+export type CurrencyTotal = { currency: CurrencyCode; amount: number }
+
+export type WeeklyTrendPoint = { label: string; bookings: number; revenueByCurrency: CurrencyTotal[] }
 
 export type AtRiskMember = {
   id: string
@@ -32,7 +40,7 @@ export type AtRiskMember = {
 export type ClubAnalytics = {
   utilization7d: number
   uniquePlayers30d: number
-  revenue30d: number
+  revenueByCurrency30d: CurrencyTotal[]
   bookings30d: number
   activeMembers: number
   weeklyTrend: WeeklyTrendPoint[]
@@ -45,6 +53,7 @@ export type CourtPerformanceBooking = {
   date: string
   price_nzd: number
   status: string
+  venue_slug?: string | null
 }
 
 export type CourtPerformance = {
@@ -52,6 +61,7 @@ export type CourtPerformance = {
   courtName: string
   bookings: number
   revenue: number
+  currency: CurrencyCode
 }
 
 export type CourtPerformancePeriod = 'week' | 'month' | 'year'
@@ -76,7 +86,13 @@ export function computeCourtPerformance(
       existing.bookings += 1
       existing.revenue += b.price_nzd || 0
     } else {
-      byCourt.set(b.court_id, { courtId: b.court_id, courtName: b.court_name, bookings: 1, revenue: b.price_nzd || 0 })
+      byCourt.set(b.court_id, {
+        courtId: b.court_id,
+        courtName: b.court_name,
+        bookings: 1,
+        revenue: b.price_nzd || 0,
+        currency: currencyForVenueSlug(b.venue_slug),
+      })
     }
   }
   return Array.from(byCourt.values()).sort((a, b) => b.revenue - a.revenue)
@@ -101,7 +117,7 @@ export function computeClubAnalytics(
   const totalSlots7d = courtCount * SLOTS_PER_DAY * 7
   const utilization7d = totalSlots7d > 0 ? Math.min(100, Math.round((last7.length / totalSlots7d) * 100)) : 0
   const uniquePlayers30d = new Set(last30.map(b => b.user_id).filter(Boolean)).size
-  const revenue30d = last30.reduce((s, b) => s + (b.price_nzd || 0), 0)
+  const revenueByCurrency30d = sumByCurrency(last30, b => currencyForVenueSlug(b.venue_slug), b => b.price_nzd || 0)
   const activeMembers = members.filter(m => m.membership_tier !== 'casual').length
 
   const weeklyTrend: WeeklyTrendPoint[] = []
@@ -112,7 +128,7 @@ export function computeClubAnalytics(
     weeklyTrend.push({
       label: w === 0 ? 'This week' : format(addDays(today, -to), 'MMM d'),
       bookings: bucket.length,
-      revenue: bucket.reduce((s, b) => s + (b.price_nzd || 0), 0),
+      revenueByCurrency: sumByCurrency(bucket, b => currencyForVenueSlug(b.venue_slug), b => b.price_nzd || 0),
     })
   }
 
@@ -134,5 +150,5 @@ export function computeClubAnalytics(
     .sort((a, b) => (b.daysSinceLastBooking ?? 9999) - (a.daysSinceLastBooking ?? 9999))
     .slice(0, 12)
 
-  return { utilization7d, uniquePlayers30d, revenue30d, bookings30d: last30.length, activeMembers, weeklyTrend, atRisk }
+  return { utilization7d, uniquePlayers30d, revenueByCurrency30d, bookings30d: last30.length, activeMembers, weeklyTrend, atRisk }
 }

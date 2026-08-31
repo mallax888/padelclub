@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
-import { stripe } from '@/lib/stripe'
+import { applyCancellationRefund } from '@/lib/cancellation'
 
 export async function POST(request: Request) {
   const supabase = createServerClient()
@@ -23,38 +23,13 @@ export async function POST(request: Request) {
     .eq('id', bookingId)
     .eq('user_id', session.user.id)
     .neq('status', 'cancelled')
-    .select('id, date, start_time, price_nzd, stripe_payment_id')
+    .select('id, user_id, date, start_time, price_nzd, stripe_payment_id, payment_method')
     .maybeSingle()
 
   if (!booking) {
     return NextResponse.json({ error: 'Booking already cancelled or not found' }, { status: 400 })
   }
 
-  const isPaid = !!booking.stripe_payment_id
-  const hoursUntil = (new Date(`${booking.date}T${booking.start_time}`).getTime() - Date.now()) / (1000 * 60 * 60)
-
-  // Cancellation policy, shown to the user before they confirm (see
-  // MyBookingsList): 24hrs+ notice = full refund to card, under 24hrs = 50%
-  // back as account credit.
-  let creditAmount = 0
-  let refundFailed = false
-  if (isPaid && hoursUntil >= 24) {
-    try {
-      await stripe.refunds.create({ payment_intent: booking.stripe_payment_id! })
-    } catch (err: any) {
-      // A charge that's already fully refunded (e.g. a retried request that
-      // raced the guard above) errors the same way a genuine failure would --
-      // treat that one case as success, since the money's already back.
-      if (err?.code !== 'charge_already_refunded') {
-        console.error('Stripe refund failed for booking', bookingId, err)
-        refundFailed = true
-      }
-    }
-  } else if (isPaid && hoursUntil < 24) {
-    creditAmount = Math.round(booking.price_nzd * 0.5)
-    const { data: profile } = await admin.from('profiles').select('credits').eq('id', session.user.id).single()
-    await admin.from('profiles').update({ credits: (profile?.credits ?? 0) + creditAmount }).eq('id', session.user.id)
-  }
-
-  return NextResponse.json({ success: true, isPaid, hoursUntil, creditAmount, refundFailed })
+  const result = await applyCancellationRefund(admin, booking)
+  return NextResponse.json({ success: true, ...result })
 }

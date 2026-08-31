@@ -33,6 +33,23 @@ export async function POST(request: Request) {
       // Re-setting the same tier on a retried delivery is harmless (unlike
       // credits, there's nothing to double-apply), so no dedup guard needed.
       await supabase.from('profiles').update({ membership_tier: tier }).eq('id', userId)
+      // membership_subscriptions previously just sat there unused -- the
+      // tier flag on profiles never expired on its own, so a one-time "1
+      // month" payment silently granted the discount forever. Recording a
+      // real started_at/ends_at here is what the expiry cron (see
+      // /api/cron/expire-memberships) checks to actually lapse it after a
+      // month, same as any other subscription. Any previous subscription
+      // row for this user is superseded by this new payment.
+      const startedAt = new Date()
+      const endsAt = new Date(startedAt)
+      endsAt.setMonth(endsAt.getMonth() + 1)
+      await supabase.from('membership_subscriptions').insert({
+        user_id: userId,
+        tier,
+        status: 'active',
+        started_at: startedAt.toISOString(),
+        ends_at: endsAt.toISOString(),
+      })
       const { data: member } = await supabase.from('profiles').select('full_name, nickname').eq('id', userId).single()
       await syncReceiveMoneyToXero(supabase, appUrl, {
         amountNzd,

@@ -100,7 +100,14 @@ export default async function AdminPage() {
   ])
 
   const analytics = computeClubAnalytics(
-    analyticsBookings ?? [],
+    (analyticsBookings ?? []).map((b: any) => ({
+      user_id: b.user_id,
+      court_id: b.court_id,
+      date: b.date,
+      price_nzd: b.price_nzd,
+      status: b.status,
+      venue_slug: b.courts?.venue_slug ?? null,
+    })),
     (members ?? []) as any,
     courts?.length ?? 0,
     localDateStr()
@@ -112,6 +119,7 @@ export default async function AdminPage() {
     date: b.date,
     price_nzd: b.price_nzd,
     status: b.status,
+    venue_slug: b.courts?.venue_slug ?? null,
   }))
 
   return (
