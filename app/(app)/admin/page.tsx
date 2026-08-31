@@ -77,27 +77,46 @@ export default async function AdminPage() {
     .select('court_id, date, price_nzd, status, courts!inner(name, venue_slug)')
     .gte('date', oneYearAgo)
 
+  // Same 90-day bound as bookingsQuery, for the Reports tab's credits
+  // issued/used/refunded figures. credit_transactions isn't tied to a
+  // venue directly -- scoped the same way its own RLS policy scopes it
+  // (see 017_country_scoped_staff.sql): by the transacting member's
+  // home_venue_slug.
+  let creditTxQuery = supabase
+    .from('credit_transactions')
+    .select('created_at, amount, type, profiles!inner(home_venue_slug)')
+    .gte('created_at', ninetyDaysAgo)
+
   if (managedVenueSlug) {
     bookingsQuery = bookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtsQuery = courtsQuery.eq('venue_slug', managedVenueSlug)
     membersQuery = membersQuery.eq('home_venue_slug', managedVenueSlug)
     analyticsBookingsQuery = analyticsBookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtPerfQuery = courtPerfQuery.eq('courts.venue_slug', managedVenueSlug)
+    creditTxQuery = creditTxQuery.eq('profiles.home_venue_slug', managedVenueSlug)
   } else if (managedCountryVenueSlugs) {
     bookingsQuery = bookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     courtsQuery = courtsQuery.in('venue_slug', managedCountryVenueSlugs)
     membersQuery = membersQuery.in('home_venue_slug', managedCountryVenueSlugs)
     analyticsBookingsQuery = analyticsBookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     courtPerfQuery = courtPerfQuery.in('courts.venue_slug', managedCountryVenueSlugs)
+    creditTxQuery = creditTxQuery.in('profiles.home_venue_slug', managedCountryVenueSlugs)
   }
 
-  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }] = await Promise.all([
+  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }, { data: creditTxRows }] = await Promise.all([
     bookingsQuery,
     membersQuery,
     courtsQuery,
     analyticsBookingsQuery,
     courtPerfQuery,
+    creditTxQuery,
   ])
+
+  const creditTransactions = (creditTxRows ?? []).map((t: any) => ({
+    created_at: t.created_at,
+    amount: t.amount,
+    type: t.type,
+  }))
 
   const analytics = computeClubAnalytics(
     (analyticsBookings ?? []).map((b: any) => ({
@@ -128,7 +147,7 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-semibold">Admin</h1>
         <p className="text-sm text-gray-500 mt-1">Manage bookings, members and courts</p>
       </div>
-      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} />
+      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} />
     </div>
   )
 }
