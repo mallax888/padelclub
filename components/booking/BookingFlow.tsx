@@ -315,7 +315,12 @@ export default function BookingFlow({
         courtName: court.name + ' — ' + court.type,
         date: formatDate(date),
         time: time + ' — ' + endTime,
-        splitCount: makePublic ? 4 : 1,
+        // create-checkout derives the actual split count itself from the
+        // booking_splits rows just inserted above -- it doesn't trust a
+        // client-supplied number (previously it did, keyed off `makePublic`
+        // of all things, which had nothing to do with bill-splitting and
+        // let anyone get charged a quarter price with no one ever billed
+        // the rest).
       }),
     })
     const { url, error: stripeError } = await res.json()
