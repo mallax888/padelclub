@@ -677,7 +677,29 @@ function BoardView({
   boardDate: string
   setBoardDate: (d: string) => void
 }) {
+  const router = useRouter()
   const [dayDetail, setDayDetail] = useState<string | null>(null)
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null)
+  const [moving, setMoving] = useState(false)
+
+  const moveBooking = async (bookingId: string, newDate: string) => {
+    setMoving(true)
+    const res = await fetch('/api/admin/reschedule-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId, newDate }),
+    })
+    const data = await res.json()
+    setMoving(false)
+    if (!res.ok) {
+      toast.error(data.error ?? 'Could not reschedule booking')
+      return
+    }
+    toast.success('Booking moved')
+    router.refresh()
+  }
+
   const dayLabel = (d: string) => {
     const date = new Date(d + 'T00:00:00')
     return date.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' })
@@ -768,13 +790,41 @@ function BoardView({
                 const dayNum = parseInt(date.slice(8, 10))
                 const show = dayBookings.slice(0, 2)
                 const extra = dayBookings.length - 2
+                const isPast = date < today
+                const isDragOver = dragOverDate === date && !isPast
                 return (
                   <div key={idx} onClick={() => dayBookings.length > 0 && setDayDetail(date)}
-                    style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default' }}>
+                    onDragOver={e => { if (!isPast) { e.preventDefault(); setDragOverDate(date) } }}
+                    onDragLeave={() => setDragOverDate(prev => (prev === date ? null : prev))}
+                    onDrop={e => {
+                      e.preventDefault()
+                      setDragOverDate(null)
+                      const id = e.dataTransfer.getData('text/booking-id') || draggedId
+                      setDraggedId(null)
+                      if (!id || isPast) return
+                      const dragged = bookings.find((b: any) => b.id === id)
+                      if (dragged && dragged.date === date) return // dropped back on its own day, nothing to do
+                      moveBooking(id, date)
+                    }}
+                    style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
                     <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary-text)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
                     {show.map((b: any) => {
                       const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
-                      return <div key={b.id} style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: date < today ? 'rgba(170,170,170,0.3)' : color + '38', color: date < today ? 'rgba(255,255,255,0.8)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: date < today ? 'line-through' : 'none' }}>{b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}</div>
+                      return (
+                        <div key={b.id}
+                          draggable={!isPast && !moving}
+                          onDragStart={e => {
+                            e.stopPropagation()
+                            e.dataTransfer.setData('text/booking-id', b.id)
+                            e.dataTransfer.effectAllowed = 'move'
+                            setDraggedId(b.id)
+                          }}
+                          onDragEnd={() => { setDraggedId(null); setDragOverDate(null) }}
+                          title={!isPast ? 'Drag to another day to reschedule' : undefined}
+                          style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: isPast ? 'rgba(170,170,170,0.3)' : color + '38', color: isPast ? 'rgba(255,255,255,0.8)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isPast ? 'line-through' : 'none', cursor: isPast ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                          {b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}
+                        </div>
+                      )
                     })}
                     {extra > 0 && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand-primary-text)', padding: '0 4px' }}>+{extra} more</div>}
                   </div>
