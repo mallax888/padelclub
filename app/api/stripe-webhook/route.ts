@@ -2,7 +2,9 @@
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendBookingConfirmationEmail } from '@/lib/emails'
-import { formatDate, formatNzd } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
+import { currencyForRegion, formatPrice } from '@/lib/currency'
+import { getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { getActiveSpecialsForVenueDate } from '@/lib/specials'
 import { syncReceiveMoneyToXero } from '@/lib/xero'
@@ -140,6 +142,7 @@ export async function POST(request: Request) {
         if (recipient?.email) {
           try {
             const venueSlug = (booking.courts as any)?.venue_slug
+            const venue = venueSlug ? getVenue(venueSlug) : null
             await sendBookingConfirmationEmail({
               to: recipient.email,
               name: recipient.nickname ?? recipient.full_name ?? 'there',
@@ -147,9 +150,10 @@ export async function POST(request: Request) {
               date: formatDate(booking.date),
               time: `${booking.start_time.slice(0, 5)} — ${booking.end_time.slice(0, 5)}`,
               duration: `${booking.duration_minutes} min`,
-              total: formatNzd(booking.price_nzd),
+              total: formatPrice(booking.price_nzd, currencyForRegion(venue?.region)),
               appUrl: getAppUrl(request),
               specials: venueSlug ? getActiveSpecialsForVenueDate(venueSlug, booking.date) : [],
+              venueLabel: venue ? `PadelClub · ${venue.name}, ${venue.region}` : 'PadelClub',
             })
           } catch (emailError) {
             // Booking is already confirmed — don't fail the webhook (and

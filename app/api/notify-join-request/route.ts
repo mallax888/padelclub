@@ -1,51 +1,97 @@
 import { resend } from '@/lib/resend'
+import { renderEmailShell } from '@/lib/email-template'
 import { NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { formatDate } from '@/lib/utils'
+import { getVenue } from '@/lib/venues'
 
+// Previously this route trusted every field (organizerEmail, playerName,
+// court, date, time, matchUrl) straight from the request body with no
+// authentication check at all -- anyone, logged in or not, could POST here
+// and make the app's own Resend account send an official-looking "PadelClub"
+// email to any address, saying anything, linking anywhere. Now the caller
+// must be signed in and must actually hold the pending request this email is
+// about; every value in the email is looked up server-side instead of
+// trusted from the client.
 export async function POST(request: Request) {
-  try {
-    const { organizerEmail, organizerName, playerName, court, date, time, matchUrl, organizerId } = await request.json()
+  const supabase = createServerClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
 
+  const { matchId } = await request.json()
+  if (!matchId) {
+    return NextResponse.json({ error: 'Missing matchId' }, { status: 400 })
+  }
+
+  const admin = createAdminClient()
+
+  const { data: myRequest } = await admin
+    .from('open_match_players')
+    .select('id')
+    .eq('match_id', matchId)
+    .eq('player_id', session.user.id)
+    .eq('status', 'pending')
+    .maybeSingle()
+  if (!myRequest) {
+    return NextResponse.json({ error: 'No pending request found for this match' }, { status: 403 })
+  }
+
+  const { data: match } = await admin
+    .from('open_matches')
+    .select('organizer_id, date, start_time, end_time, venue_slug, courts(name)')
+    .eq('id', matchId)
+    .maybeSingle()
+  if (!match?.organizer_id) {
+    return NextResponse.json({ error: 'Match not found' }, { status: 404 })
+  }
+
+  const [{ data: organizer }, { data: me }] = await Promise.all([
+    admin.from('profiles').select('email, full_name, nickname').eq('id', match.organizer_id).single(),
+    admin.from('profiles').select('full_name, nickname').eq('id', session.user.id).single(),
+  ])
+  if (!organizer?.email) {
+    return NextResponse.json({ success: true }) // nothing to notify, not an error
+  }
+
+  const venue = getVenue(match.venue_slug)
+  const court = (match.courts as any)?.name ?? 'Court'
+  const date = formatDate(match.date)
+  const time = `${match.start_time.slice(0, 5)}–${match.end_time.slice(0, 5)}`
+  const playerName = me?.nickname ?? me?.full_name ?? 'A player'
+  const organizerName = organizer.nickname ?? organizer.full_name ?? 'Organizer'
+  const matchUrl = `${new URL(request.url).origin}/find-a-game`
+
+  try {
     await resend.emails.send({
       from: 'PadelClub <onboarding@resend.dev>',
-      to: organizerEmail,
+      to: organizer.email,
       subject: `${playerName} wants to join your match — ${court}, ${date}`,
-      html: `
-        <div style="font-family:system-ui;max-width:500px;margin:0 auto;padding:24px">
-          <div style="background:#18181B;padding:20px 24px;border-radius:10px 10px 0 0;border-bottom:2px solid #4DFFEE">
-            <h1 style="color:#4DFFEE;margin:0;font-size:20px">🎾 Join request!</h1>
-          </div>
-          <div style="background:#1a1a1a;padding:24px;border-radius:0 0 10px 10px;border:1px solid #333">
-            <p style="color:#F4F4F5;margin:0 0 16px">Hi ${organizerName}, <strong style="color:#4DFFEE">${playerName}</strong> wants to join your match.</p>
-            <table style="width:100%;border-collapse:collapse">
-              <tr><td style="padding:8px 0;color:#A1A1AA;font-size:14px;border-bottom:1px solid #333">Court</td><td style="padding:8px 0;font-weight:500;font-size:14px;border-bottom:1px solid #333;text-align:right;color:#F4F4F5">${court}</td></tr>
-              <tr><td style="padding:8px 0;color:#A1A1AA;font-size:14px;border-bottom:1px solid #333">Date</td><td style="padding:8px 0;font-weight:500;font-size:14px;border-bottom:1px solid #333;text-align:right;color:#F4F4F5">${date}</td></tr>
-              <tr><td style="padding:8px 0;color:#A1A1AA;font-size:14px">Time</td><td style="padding:8px 0;font-weight:500;font-size:14px;text-align:right;color:#F4F4F5">${time}</td></tr>
-            </table>
-            <p style="color:#A1A1AA;font-size:13px;margin:16px 0">Log in to accept or decline this request.</p>
-            <div style="margin-top:20px;text-align:center">
-              <a href="${matchUrl}" style="background:#4DFFEE;color:#001F1D;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">View match</a>
-            </div>
-          </div>
-          <p style="color:#555;font-size:12px;text-align:center;margin-top:16px">PadelClub · New Zealand</p>
-        </div>
-      `,
+      html: renderEmailShell({
+        heading: '🎾 Join request!',
+        intro: `Hi ${organizerName}, <strong>${playerName}</strong> wants to join your match.`,
+        rows: [
+          { label: 'Court', value: court },
+          { label: 'Date', value: date },
+          { label: 'Time', value: time },
+        ],
+        extraHtml: `<p style="color:#9BB0BC;font-size:13px;margin:16px 0 0">Log in to accept or decline this request.</p>`,
+        ctaText: 'View match',
+        ctaUrl: matchUrl,
+        footer: `PadelClub · ${venue.name}, ${venue.region}`,
+      }),
     })
-
-    if (organizerId) {
-      const sb = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      )
-      await sb.from('notifications').insert({
-        user_id: organizerId,
-        type: 'join_request',
-        message: playerName + ' wants to join your match on ' + court + ' — ' + date + ' at ' + time,
-      })
-    }
-
-    return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 })
+    console.error('Failed to send join-request email:', error)
   }
+
+  await admin.from('notifications').insert({
+    user_id: match.organizer_id,
+    type: 'join_request',
+    message: `${playerName} wants to join your match on ${court} — ${date} at ${time}`,
+  })
+
+  return NextResponse.json({ success: true })
 }
