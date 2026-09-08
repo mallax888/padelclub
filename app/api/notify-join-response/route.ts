@@ -1,39 +1,90 @@
 import { resend } from '@/lib/resend'
+import { renderEmailShell, EMAIL_BRAND } from '@/lib/email-template'
 import { NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { formatDate } from '@/lib/utils'
+import { getVenue } from '@/lib/venues'
 
+// Previously this trusted a client-supplied `accepted` boolean and raw
+// playerEmail/name/court/date/time with no auth check -- anyone could make
+// the app send an "accepted"/"declined" email, for any match, to any
+// address. Now the caller must be the match's organizer, and whether it was
+// an accept or a decline is read back from the actual open_match_players
+// row rather than trusted from the request body.
 export async function POST(request: Request) {
-  try {
-    const { playerEmail, playerName, accepted, court, date, time, matchUrl } = await request.json()
+  const supabase = createServerClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  }
 
+  const { matchId, playerId } = await request.json()
+  if (!matchId || !playerId) {
+    return NextResponse.json({ error: 'Missing matchId or playerId' }, { status: 400 })
+  }
+
+  const admin = createAdminClient()
+
+  const { data: match } = await admin
+    .from('open_matches')
+    .select('organizer_id, date, start_time, end_time, venue_slug, courts(name)')
+    .eq('id', matchId)
+    .maybeSingle()
+  if (!match?.organizer_id) {
+    return NextResponse.json({ error: 'Match not found' }, { status: 404 })
+  }
+  if (match.organizer_id !== session.user.id) {
+    return NextResponse.json({ error: 'Only the match organizer can trigger this' }, { status: 403 })
+  }
+
+  const { data: joinRequest } = await admin
+    .from('open_match_players')
+    .select('status')
+    .eq('match_id', matchId)
+    .eq('player_id', playerId)
+    .maybeSingle()
+  if (!joinRequest || (joinRequest.status !== 'accepted' && joinRequest.status !== 'declined')) {
+    return NextResponse.json({ error: 'No resolved request found for this player' }, { status: 404 })
+  }
+  const accepted = joinRequest.status === 'accepted'
+
+  const { data: player } = await admin.from('profiles').select('email, full_name, nickname').eq('id', playerId).single()
+  if (!player?.email) {
+    return NextResponse.json({ success: true })
+  }
+
+  const venue = getVenue(match.venue_slug)
+  const court = (match.courts as any)?.name ?? 'Court'
+  const date = formatDate(match.date)
+  const time = `${match.start_time.slice(0, 5)}–${match.end_time.slice(0, 5)}`
+  const playerName = player.nickname ?? player.full_name ?? 'Player'
+  const matchUrl = `${new URL(request.url).origin}/find-a-game`
+  const accentColor = accepted ? EMAIL_BRAND.primary : EMAIL_BRAND.crimson
+
+  try {
     await resend.emails.send({
       from: 'PadelClub <onboarding@resend.dev>',
-      to: playerEmail,
+      to: player.email,
       subject: accepted ? `You're in! ${court}, ${date}` : `Match request declined — ${court}, ${date}`,
-      html: `
-        <div style="font-family:system-ui;max-width:500px;margin:0 auto;padding:24px">
-          <div style="background:#18181B;padding:20px 24px;border-radius:10px 10px 0 0;border-bottom:2px solid ${accepted ? '#4DFFEE' : '#FF2D78'}">
-            <h1 style="color:${accepted ? '#4DFFEE' : '#FF2D78'};margin:0;font-size:20px">${accepted ? "🎾 You're in!" : '❌ Request declined'}</h1>
-          </div>
-          <div style="background:#1a1a1a;padding:24px;border-radius:0 0 10px 10px;border:1px solid #333">
-            <p style="color:#F4F4F5;margin:0 0 16px">
-              Hi ${playerName}, your request to join the match at <strong style="color:${accepted ? '#4DFFEE' : '#FF2D78'}">${court}</strong> has been <strong>${accepted ? 'accepted' : 'declined'}</strong>.
-            </p>
-            <table style="width:100%;border-collapse:collapse">
-              <tr><td style="padding:8px 0;color:#A1A1AA;font-size:14px;border-bottom:1px solid #333">Court</td><td style="padding:8px 0;font-weight:500;font-size:14px;border-bottom:1px solid #333;text-align:right;color:#F4F4F5">${court}</td></tr>
-              <tr><td style="padding:8px 0;color:#A1A1AA;font-size:14px;border-bottom:1px solid #333">Date</td><td style="padding:8px 0;font-weight:500;font-size:14px;border-bottom:1px solid #333;text-align:right;color:#F4F4F5">${date}</td></tr>
-              <tr><td style="padding:8px 0;color:#A1A1AA;font-size:14px">Time</td><td style="padding:8px 0;font-weight:500;font-size:14px;text-align:right;color:#F4F4F5">${time}</td></tr>
-            </table>
-            ${accepted ? `
-            <div style="margin-top:20px;text-align:center">
-              <a href="${matchUrl}" style="background:#4DFFEE;color:#001F1D;padding:10px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">View match</a>
-            </div>` : ''}
-          </div>
-          <p style="color:#555;font-size:12px;text-align:center;margin-top:16px">PadelClub · New Zealand</p>
-        </div>
-      `,
+      html: renderEmailShell({
+        accentColor,
+        accentOn: accepted ? EMAIL_BRAND.primaryOn : '#fff',
+        heading: accepted ? "🎾 You're in!" : '❌ Request declined',
+        intro: `Hi ${playerName}, your request to join the match at <strong>${court}</strong> has been <strong>${accepted ? 'accepted' : 'declined'}</strong>.`,
+        rows: [
+          { label: 'Court', value: court },
+          { label: 'Date', value: date },
+          { label: 'Time', value: time },
+        ],
+        ctaText: accepted ? 'View match' : undefined,
+        ctaUrl: accepted ? matchUrl : undefined,
+        footer: `PadelClub · ${venue.name}, ${venue.region}`,
+      }),
     })
-    return NextResponse.json({ success: true })
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 })
+    console.error('Failed to send join-response email:', error)
   }
+
+  return NextResponse.json({ success: true })
 }
