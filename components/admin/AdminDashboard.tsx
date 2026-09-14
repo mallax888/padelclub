@@ -1155,24 +1155,54 @@ function BoardView({
               <tr>
                 <th className="px-3 py-3 text-left font-semibold" style={{ width: 100, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {TIME_ROWS.map(t => (
-                  <th key={t} className="px-1 py-3 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)' }}>{t}</th>
+                  <th key={t} className="px-1 py-3 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>{t}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {(() => {
                 const isPastDay = boardDate < today
-                return venueCourts.map((court: any) => (
-                <tr key={court.id}>
-                  <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                    {court.name}
-                  </td>
-                  {TIME_ROWS.map(t => {
+                return venueCourts.map((court: any) => {
+                  const cells: JSX.Element[] = []
+                  let i = 0
+                  // Walk the hourly columns left to right, merging every column a
+                  // single booking covers (its duration may span several hours)
+                  // into one cell instead of repeating the same label in each --
+                  // that repetition was also why a short name like "Malcolm"
+                  // looked cramped: it was only ever getting one hour's width
+                  // even when the booking itself ran for two.
+                  while (i < TIME_ROWS.length) {
+                    const t = TIME_ROWS[i]
                     const b = bookings.find((b: any) => b.court_id === court.id && b.date === boardDate && b.status !== 'cancelled' && b.start_time.slice(0,5) <= t && b.end_time.slice(0,5) > t)
                     const cellKey = `${court.id}-${t}`
                     const isDragOver = dragOverCell === cellKey && !isPastDay
-                    return (
-                      <td key={t} className="px-1 py-1.5 text-center"
+
+                    if (!b) {
+                      cells.push(
+                        <td key={t} className="px-1 py-1.5 text-center"
+                          onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
+                          onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
+                          onDrop={e => {
+                            e.preventDefault()
+                            setDragOverCell(null)
+                            const id = e.dataTransfer.getData('text/booking-id') || draggedId
+                            setDraggedId(null)
+                            if (!id || isPastDay) return
+                            moveBooking(id, { newCourtId: court.id, newStartTime: t })
+                          }}
+                          style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
+                          <div style={{ height: DAY_CELL_HEIGHT }} />
+                        </td>
+                      )
+                      i += 1
+                      continue
+                    }
+
+                    let span = 1
+                    while (i + span < TIME_ROWS.length && TIME_ROWS[i + span] < b.end_time.slice(0, 5)) span++
+                    const appearance = cellAppearance(b)
+                    cells.push(
+                      <td key={t} colSpan={span} className="px-1 py-1.5 text-center"
                         onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
                         onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
                         onDrop={e => {
@@ -1180,34 +1210,36 @@ function BoardView({
                           setDragOverCell(null)
                           const id = e.dataTransfer.getData('text/booking-id') || draggedId
                           setDraggedId(null)
-                          if (!id || isPastDay) return
-                          if (b && b.id === id) return // dropped back on one of its own occupied cells
+                          if (!id || isPastDay || id === b.id) return
                           moveBooking(id, { newCourtId: court.id, newStartTime: t })
                         }}
-                        style={{ borderBottom: '1px solid var(--border)', background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
-                        {b ? (() => {
-                          const appearance = cellAppearance(b)
-                          return (
-                            <div
-                              draggable={!isPastDay && !moving}
-                              onDragStart={e => {
-                                e.dataTransfer.setData('text/booking-id', b.id)
-                                e.dataTransfer.effectAllowed = 'move'
-                                setDraggedId(b.id)
-                              }}
-                              onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
-                              title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
-                              className="rounded-md px-1 flex items-center justify-center text-center text-xs font-semibold leading-tight"
-                              style={{ height: DAY_CELL_HEIGHT, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1, overflow: 'hidden', wordBreak: 'break-word' }}>
-                              {appearance.label}
-                            </div>
-                          )
-                        })() : <div style={{ height: DAY_CELL_HEIGHT }} />}
+                        style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
+                        <div
+                          draggable={!isPastDay && !moving}
+                          onDragStart={e => {
+                            e.dataTransfer.setData('text/booking-id', b.id)
+                            e.dataTransfer.effectAllowed = 'move'
+                            setDraggedId(b.id)
+                          }}
+                          onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
+                          title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
+                          className="rounded-md px-1 flex items-center justify-center text-center text-xs font-semibold whitespace-nowrap"
+                          style={{ height: DAY_CELL_HEIGHT, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1, overflow: 'hidden' }}>
+                          {appearance.label}
+                        </div>
                       </td>
                     )
-                  })}
-                </tr>
-                ))
+                    i += span
+                  }
+                  return (
+                    <tr key={court.id}>
+                      <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                        {court.name}
+                      </td>
+                      {cells}
+                    </tr>
+                  )
+                })
               })()}
             </tbody>
           </table>
