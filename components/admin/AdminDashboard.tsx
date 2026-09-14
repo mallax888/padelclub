@@ -23,28 +23,24 @@ const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 // Trailing-7-day mini trend line for a stat card -- no charting library
 // needed for a single series this small.
 function Sparkline({ data, color }: { data: number[]; color: string }) {
-  const w = 56
+  const w = 64
   const h = 24
   const max = Math.max(...data, 1)
-  const barW = w / data.length
+  const min = Math.min(...data, 0)
+  const range = max - min || 1
+  const points = data.map((v, i) => {
+    const x = data.length > 1 ? (i / (data.length - 1)) * w : w / 2
+    const y = h - ((v - min) / range) * h
+    return [x, y] as const
+  })
+  const last = points[points.length - 1]
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
-      {data.map((v, i) => {
-        const barH = Math.max((v / max) * h, 2)
-        return (
-          <rect key={i} x={i * barW + barW * 0.15} y={h - barH} width={barW * 0.7} height={barH}
-            rx={1} fill={color} opacity={i === data.length - 1 ? 1 : 0.55} />
-        )
-      })}
+      <polyline points={points.map(p => p.join(',')).join(' ')} fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
+      {last && <circle cx={last[0]} cy={last[1]} r="2" fill={color} />}
     </svg>
   )
-}
-
-const STAT_ICONS: Record<string, JSX.Element> = {
-  calendar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>,
-  players: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  revenue: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5 1.3 2 3 2.5 3 1.1 3 2.5-1.3 2.5-3 2.5-3-1.1-3-2.5"/></svg>,
-  members: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-4-4M17 3a4 4 0 0 1 0 8"/></svg>,
 }
 
 type AdminBooking = {
@@ -438,29 +434,26 @@ export default function AdminDashboard({
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Today's bookings", value: todayBookings.length, icon: 'calendar', trend: bookingsTrend, trendLabel: 'vs same day last week', spark: bookingsSpark },
-          { label: 'Players today',    value: playersToday, icon: 'players', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
-          { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), icon: 'revenue', trend: revenueTrend, trendLabel: 'vs same day last week', spark: revenueSpark },
-          { label: 'Paying members',   value: memberCount, icon: 'members', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
-        ].map(({ label, value, icon, trend, trendLabel, spark }) => (
-          <div key={label} className="rounded-2xl p-4"
+          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week', spark: bookingsSpark },
+          { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
+          { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week', spark: revenueSpark },
+          { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
+        ].map(({ label, value, color, trend, trendLabel, spark }) => (
+          <div key={label} className="rounded-2xl p-4 flex items-center justify-between gap-3"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: '#E8352F', color: '#fff' }}>
-                <span style={{ width: 16, height: 16 }}>{STAT_ICONS[icon]}</span>
+            <div className="min-w-0">
+              <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <div className="text-xl font-semibold" style={{ color }}>{value}</div>
+                {trend !== null && (
+                  <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
+                    {trend > 0 ? '↑' : trend < 0 ? '↓' : '–'}{Math.abs(trend)}%
+                  </span>
+                )}
               </div>
-              <Sparkline data={spark} color="#E8352F" />
+              <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
             </div>
-            <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{value}</div>
-              {trend !== null && (
-                <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
-                  {trend > 0 ? '↑' : trend < 0 ? '↓' : '–'}{Math.abs(trend)}%
-                </span>
-              )}
-            </div>
-            <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
+            <Sparkline data={spark} color={color} />
           </div>
         ))}
       </div>
@@ -536,17 +529,15 @@ export default function AdminDashboard({
 
 {/* Board tab */}
       {tab === 'board' && (
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 min-w-0">
-            <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
-            <BoardFooterStrip
-              thisWeekCount={thisWeekVenueBookings.length}
-              thisWeekTrend={thisWeekTrend}
-              peakTime={peakTime}
-              mostPopularCourtName={mostPopularCourtName}
-              avgDurationLabel={avgDurationLabel}
-            />
-          </div>
+        <div className="flex flex-col gap-4">
+          <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
+          <BoardFooterStrip
+            thisWeekCount={thisWeekVenueBookings.length}
+            thisWeekTrend={thisWeekTrend}
+            peakTime={peakTime}
+            mostPopularCourtName={mostPopularCourtName}
+            avgDurationLabel={avgDurationLabel}
+          />
           <BoardRightRail
             todayCounts={todayCounts}
             upcomingBookings={upcomingBookings}
@@ -866,20 +857,14 @@ function BoardView({
   // name there is more confusing than useful); a public find-a-game match
   // gets its own colour so staff can spot an open-to-anyone slot at a
   // glance, distinct from an ordinary private booking.
-  // Every occupied slot renders in the same solid red, matching the
-  // reference layout, rather than colour-coding by booking type -- the
-  // label text is still what distinguishes Blocked / Open Play / a named
-  // booking from one another.
   const cellAppearance = (b: any): { background: string; color: string; label: string } => {
-    const background = '#E8352F'
-    const color = '#ffffff'
     if (b.status === 'blocked') {
-      return { background, color, label: 'Blocked' }
+      return { background: 'var(--brand-crimson-muted)', color: 'var(--brand-crimson)', label: 'Blocked' }
     }
     if (publicBookingIdSet.has(b.id)) {
-      return { background, color, label: b.profiles?.full_name?.split(' ')[0] ?? 'Open Play' }
+      return { background: '#10B98133', color: '#10B981', label: b.profiles?.full_name?.split(' ')[0] ?? 'Open Play' }
     }
-    return { background, color, label: b.profiles?.full_name?.split(' ')[0] ?? '—' }
+    return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', label: b.profiles?.full_name?.split(' ')[0] ?? '—' }
   }
 
   const moveBooking = async (bookingId: string, changes: { newDate?: string; newCourtId?: string; newStartTime?: string }) => {
@@ -926,21 +911,6 @@ function BoardView({
   const TIME_ROWS = Array.from({ length: 16 }, (_, i) => String(7 + i).padStart(2, '0') + ':00')
   const weekDates = getWeekDates()
   const today = localDateStr()
-
-  // Day/Week schedule chrome (toolbar, pills, grid headers/borders) uses a
-  // red/black theme by request -- the bookings themselves keep their usual
-  // category colors (lime/green/crimson) via cellAppearance below, since a
-  // uniform color there would erase the at-a-glance type differentiation.
-  const schedule = {
-    panelBg: '#0d0d0d',
-    headerBg: '#150808',
-    border: '#2a1414',
-    accent: '#E8352F',
-    accentOn: '#ffffff',
-    muted: '#8a6a68',
-    rowBorder: '#221010',
-  }
-
   const courtColors = ['var(--brand-primary)', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#10B981']
   const colorMap: Record<string, string> = {}
   venueCourts.forEach((court: any, i: number) => { colorMap[court.id] = courtColors[i % courtColors.length] })
@@ -953,30 +923,31 @@ function BoardView({
 
   return (
     <div className="space-y-4">
+      <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Today's Bookings</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => shiftDate(-1)} className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: schedule.headerBg, border: `1px solid ${schedule.border}`, color: schedule.muted }}>←</button>
-          <span className="text-sm font-medium px-2" style={{ color: 'var(--text-primary)' }}>{title}</span>
-          <button onClick={() => shiftDate(1)} className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: schedule.headerBg, border: `1px solid ${schedule.border}`, color: schedule.muted }}>→</button>
+          <button onClick={() => shiftDate(-1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>←</button>
+          <span className="text-base font-semibold px-2" style={{ color: 'var(--text-primary)' }}>{title}</span>
+          <button onClick={() => shiftDate(1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>→</button>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex gap-1 rounded-lg p-1" style={{ background: schedule.headerBg, border: `1px solid ${schedule.border}` }}>
+          <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
             {(['day', 'week', 'month'] as const).map(m => (
               <button key={m} onClick={() => setViewMode(m)}
-                className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
-                style={{ background: viewMode === m ? schedule.accent : 'transparent', color: viewMode === m ? schedule.accentOn : schedule.muted }}>
+                className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+                style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
                 {m}
               </button>
             ))}
           </div>
           {viewMode === 'day' && (
-            <div className="flex gap-1 rounded-lg p-1" style={{ background: schedule.headerBg, border: `1px solid ${schedule.border}` }}>
+            <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
               {(['grid', 'list'] as const).map(m => (
                 <button key={m} onClick={() => setDayLayout(m)}
-                  className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
-                  style={{ background: dayLayout === m ? schedule.accent : 'transparent', color: dayLayout === m ? schedule.accentOn : schedule.muted }}>
+                  className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+                  style={{ background: dayLayout === m ? 'var(--brand-primary)' : 'transparent', color: dayLayout === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
                   {m}
                 </button>
               ))}
@@ -986,35 +957,33 @@ function BoardView({
       </div>
 
       {viewMode === 'day' && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() - 7); setBoardDate(localDateStr(d)) }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: schedule.headerBg, border: `1px solid ${schedule.border}`, color: schedule.muted }}>‹</button>
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-thin flex-1 pb-1">
-            {Array.from({ length: 7 }, (_, i) => {
-              const d = new Date(boardDate + 'T00:00:00')
-              d.setDate(d.getDate() + i)
-              return localDateStr(d)
-            }).map(d => (
-              <button key={d} onClick={() => setBoardDate(d)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-colors"
-                style={{
-                  background: d === boardDate ? schedule.accent : schedule.headerBg,
-                  color: d === boardDate ? schedule.accentOn : (d === today ? schedule.accent : schedule.muted),
-                  border: `1px solid ${d === boardDate ? schedule.accent : schedule.border}`,
-                }}>
-                {dayLabel(d)}
-              </button>
-            ))}
-          </div>
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>‹</button>
+          {Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(boardDate + 'T00:00:00')
+            d.setDate(d.getDate() + i)
+            return localDateStr(d)
+          }).map(d => (
+            <button key={d} onClick={() => setBoardDate(d)}
+              className="px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+              style={{
+                background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
+                color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
+                border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
+              }}>
+              {dayLabel(d)}
+            </button>
+          ))}
           <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() + 7); setBoardDate(localDateStr(d)) }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: schedule.headerBg, border: `1px solid ${schedule.border}`, color: schedule.muted }}>›</button>
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>›</button>
         </div>
       )}
 
       {venueCourts.length === 0 ? (
-        <div className="rounded-xl text-center py-12 text-sm" style={{ background: schedule.panelBg, border: `1px solid ${schedule.border}`, color: schedule.muted }}>
+        <div className="rounded-xl text-center py-12 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
           No courts found for this venue.
         </div>
       ) : viewMode === 'month' ? (
@@ -1097,13 +1066,13 @@ function BoardView({
           </div>
         </div>
       ) : viewMode === 'week' ? (
-        <div className="rounded-2xl overflow-x-auto scrollbar-thin" style={{ background: schedule.panelBg, border: `1px solid ${schedule.border}`, boxShadow: 'var(--shadow-float)' }}>
-          <table className="w-full text-xs border-collapse">
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          <table className="w-full table-fixed text-sm border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 px-3 py-2 text-left font-semibold whitespace-nowrap" style={{ background: schedule.headerBg, color: 'var(--text-primary)', borderBottom: `1px solid ${schedule.border}`, borderRight: `1px solid ${schedule.border}` }}>Court</th>
+                <th className="px-3 py-3 text-left font-semibold whitespace-nowrap" style={{ width: 110, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {weekDates.map(d => (
-                  <th key={d} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? schedule.accent : 'var(--text-primary)', background: d === today ? 'rgba(232,53,47,0.14)' : schedule.headerBg, borderBottom: `1px solid ${schedule.border}`, borderLeft: `1px solid ${schedule.border}`, minWidth: 90 }}>
+                  <th key={d} className="px-2 py-3 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
                     {dayLabel(d)}
                   </th>
                 ))}
@@ -1112,19 +1081,19 @@ function BoardView({
             <tbody>
               {venueCourts.map((court: any) => (
                 <tr key={court.id}>
-                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: schedule.panelBg, color: 'var(--text-primary)', borderBottom: `1px solid ${schedule.rowBorder}`, borderRight: `1px solid ${schedule.border}` }}>
+                  <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                     {court.name}
                   </td>
                   {weekDates.map(d => {
                     const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
                     return (
-                      <td key={d} className="px-1 py-1 text-center align-top" style={{ borderBottom: `1px solid ${schedule.rowBorder}`, borderLeft: `1px solid ${schedule.border}`, minWidth: 90 }}>
-                        {dayBookings.length === 0 ? <div className="h-5" /> : (
+                      <td key={d} className="px-1.5 py-1.5 text-center align-top" style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
+                        {dayBookings.length === 0 ? <div className="h-6" /> : (
                           <div className="space-y-1">
                             {dayBookings.map((b: any) => {
                               const appearance = cellAppearance(b)
                               return (
-                                <div key={b.id} className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: appearance.background, color: appearance.color }}>
+                                <div key={b.id} className="rounded-md px-1.5 py-1.5 text-xs font-semibold truncate" style={{ background: appearance.background, color: appearance.color }}>
                                   {b.start_time.slice(0,5)} {appearance.label}
                                 </div>
                               )
@@ -1140,14 +1109,14 @@ function BoardView({
           </table>
         </div>
       ) : dayLayout === 'list' ? (
-        <div className="rounded-2xl overflow-hidden" style={{ background: schedule.panelBg, border: `1px solid ${schedule.border}`, boxShadow: 'var(--shadow-float)' }}>
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           {(() => {
             const dayBookings = bookings
               .filter((b: any) => b.date === boardDate && b.status !== 'cancelled')
               .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
             if (dayBookings.length === 0) {
               return (
-                <div className="px-4 py-10 text-sm text-center" style={{ color: schedule.muted }}>
+                <div className="px-4 py-10 text-sm text-center" style={{ color: 'var(--text-subtle)' }}>
                   No bookings for this day.
                 </div>
               )
@@ -1156,10 +1125,10 @@ function BoardView({
               const appearance = cellAppearance(b)
               const court = venueCourts.find((c: any) => c.id === b.court_id)
               return (
-                <div key={b.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${schedule.rowBorder}` }}>
+                <div key={b.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
                   <div className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-primary)', width: 44 }}>{b.start_time.slice(0, 5)}</div>
                   <div style={{ width: 8, height: 8, borderRadius: 999, background: colorMap[b.court_id] ?? 'var(--brand-primary)', flexShrink: 0 }} />
-                  <div className="text-xs shrink-0 truncate" style={{ color: schedule.muted, width: 70 }}>{court?.name ?? 'Court'}</div>
+                  <div className="text-xs shrink-0 truncate" style={{ color: 'var(--text-muted)', width: 70 }}>{court?.name ?? 'Court'}</div>
                   <div className="text-xs font-semibold rounded-md px-2 py-1 truncate flex-1" style={{ background: appearance.background, color: appearance.color }}>
                     {appearance.label}
                   </div>
@@ -1172,13 +1141,13 @@ function BoardView({
           })()}
         </div>
       ) : (
-        <div className="rounded-2xl overflow-x-auto scrollbar-thin" style={{ background: schedule.panelBg, border: `1px solid ${schedule.border}`, boxShadow: 'var(--shadow-float)' }}>
-          <table className="w-full text-xs border-collapse">
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          <table className="w-full table-fixed text-sm border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 px-3 py-2 text-left font-semibold" style={{ background: schedule.headerBg, color: 'var(--text-primary)', borderBottom: `1px solid ${schedule.border}`, borderRight: `1px solid ${schedule.border}` }}>Court</th>
+                <th className="px-3 py-3 text-left font-semibold" style={{ width: 100, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {TIME_ROWS.map(t => (
-                  <th key={t} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: schedule.headerBg, borderBottom: `1px solid ${schedule.border}`, minWidth: 60 }}>{t}</th>
+                  <th key={t} className="px-1 py-3 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)' }}>{t}</th>
                 ))}
               </tr>
             </thead>
@@ -1187,7 +1156,7 @@ function BoardView({
                 const isPastDay = boardDate < today
                 return venueCourts.map((court: any) => (
                 <tr key={court.id}>
-                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: schedule.panelBg, color: 'var(--text-primary)', borderBottom: `1px solid ${schedule.rowBorder}`, borderRight: `1px solid ${schedule.border}` }}>
+                  <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                     {court.name}
                   </td>
                   {TIME_ROWS.map(t => {
@@ -1195,7 +1164,7 @@ function BoardView({
                     const cellKey = `${court.id}-${t}`
                     const isDragOver = dragOverCell === cellKey && !isPastDay
                     return (
-                      <td key={t} className="px-1 py-1 text-center"
+                      <td key={t} className="px-1 py-1.5 text-center"
                         onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
                         onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
                         onDrop={e => {
@@ -1207,7 +1176,7 @@ function BoardView({
                           if (b && b.id === id) return // dropped back on one of its own occupied cells
                           moveBooking(id, { newCourtId: court.id, newStartTime: t })
                         }}
-                        style={{ borderBottom: `1px solid ${schedule.rowBorder}`, minWidth: 60, background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
+                        style={{ borderBottom: '1px solid var(--border)', background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
                         {b ? (() => {
                           const appearance = cellAppearance(b)
                           return (
@@ -1220,16 +1189,12 @@ function BoardView({
                               }}
                               onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
                               title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
-                              className="rounded-md px-1 py-1 text-[10px] font-semibold truncate"
+                              className="rounded-md px-1 py-1.5 text-xs font-semibold truncate"
                               style={{ background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                               {appearance.label}
                             </div>
                           )
-                        })() : (
-                          <div className="rounded-md px-1 py-1 text-[10px] font-medium" style={{ border: `1px dashed ${schedule.border}`, color: schedule.muted }}>
-                            Available
-                          </div>
-                        )}
+                        })() : <div className="h-6" />}
                       </td>
                     )
                   })}
