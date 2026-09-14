@@ -681,14 +681,15 @@ function BoardView({
   const [dayDetail, setDayDetail] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
   const [dragOverDate, setDragOverDate] = useState<string | null>(null)
+  const [dragOverCell, setDragOverCell] = useState<string | null>(null)
   const [moving, setMoving] = useState(false)
 
-  const moveBooking = async (bookingId: string, newDate: string) => {
+  const moveBooking = async (bookingId: string, changes: { newDate?: string; newCourtId?: string; newStartTime?: string }) => {
     setMoving(true)
     const res = await fetch('/api/admin/reschedule-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId, newDate }),
+      body: JSON.stringify({ bookingId, ...changes }),
     })
     const data = await res.json()
     setMoving(false)
@@ -804,7 +805,7 @@ function BoardView({
                       if (!id || isPast) return
                       const dragged = bookings.find((b: any) => b.id === id)
                       if (dragged && dragged.date === date) return // dropped back on its own day, nothing to do
-                      moveBooking(id, date)
+                      moveBooking(id, { newDate: date })
                     }}
                     style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
                     <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary-text)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
@@ -893,17 +894,43 @@ function BoardView({
               </tr>
             </thead>
             <tbody>
-              {venueCourts.map((court: any) => (
+              {(() => {
+                const isPastDay = boardDate < today
+                return venueCourts.map((court: any) => (
                 <tr key={court.id}>
                   <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                     {court.name}
                   </td>
                   {TIME_ROWS.map(t => {
                     const b = bookings.find((b: any) => b.court_id === court.id && b.date === boardDate && b.status !== 'cancelled' && b.start_time.slice(0,5) <= t && b.end_time.slice(0,5) > t)
+                    const cellKey = `${court.id}-${t}`
+                    const isDragOver = dragOverCell === cellKey && !isPastDay
                     return (
-                      <td key={t} className="px-1 py-1 text-center" style={{ borderBottom: '1px solid var(--border)', minWidth: 60 }}>
+                      <td key={t} className="px-1 py-1 text-center"
+                        onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
+                        onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
+                        onDrop={e => {
+                          e.preventDefault()
+                          setDragOverCell(null)
+                          const id = e.dataTransfer.getData('text/booking-id') || draggedId
+                          setDraggedId(null)
+                          if (!id || isPastDay) return
+                          if (b && b.id === id) return // dropped back on one of its own occupied cells
+                          moveBooking(id, { newCourtId: court.id, newStartTime: t })
+                        }}
+                        style={{ borderBottom: '1px solid var(--border)', minWidth: 60, background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
                         {b ? (
-                          <div className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
+                          <div
+                            draggable={!isPastDay && !moving}
+                            onDragStart={e => {
+                              e.dataTransfer.setData('text/booking-id', b.id)
+                              e.dataTransfer.effectAllowed = 'move'
+                              setDraggedId(b.id)
+                            }}
+                            onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
+                            title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
+                            className="rounded-md px-1 py-1 text-[10px] font-semibold truncate"
+                            style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                             {b.profiles?.full_name?.split(' ')[0] ?? '—'}
                           </div>
                         ) : <div className="h-5" />}
@@ -911,7 +938,8 @@ function BoardView({
                     )
                   })}
                 </tr>
-              ))}
+                ))
+              })()}
             </tbody>
           </table>
         </div>
