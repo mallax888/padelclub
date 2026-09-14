@@ -78,11 +78,12 @@ export async function GET(request: Request) {
     // doesn't create a booking_splits row or any other payment record, so
     // there's no real "paid" status to show here, only join status.
     const players = [
-      { id: booking.user_id, rowId: null as string | null, name: organizerName, role: 'organizer', joinStatus: null as string | null, replacedName: null as string | null },
+      { id: booking.user_id, playerId: booking.user_id, rowId: null as string | null, name: organizerName, role: 'organizer', joinStatus: null as string | null, replacedName: null as string | null },
       ...(matchPlayers ?? [])
         .filter((p: any) => p.status !== 'declined')
         .map((p: any) => ({
           id: p.player_id,
+          playerId: p.player_id,
           rowId: p.id,
           name: p.profiles?.nickname ?? p.profiles?.full_name ?? '—',
           role: 'joined',
@@ -110,9 +111,10 @@ export async function GET(request: Request) {
     + (splits ?? []).filter((s: any) => s.status === 'paid').reduce((sum: number, s: any) => sum + Number(s.amount_nzd), 0)
 
   const players = [
-    { id: booking.user_id, rowId: null as string | null, name: organizerName, role: 'organizer', paymentStatus: organizerPaid ? 'paid' : 'pending', amount: organizerShare, replacedName: null as string | null },
+    { id: booking.user_id, playerId: booking.user_id, rowId: null as string | null, name: organizerName, role: 'organizer', paymentStatus: organizerPaid ? 'paid' : 'pending', amount: organizerShare, replacedName: null as string | null },
     ...(splits ?? []).map((s: any) => ({
       id: s.id,
+      playerId: s.user_id,
       rowId: s.id,
       name: s.profiles?.nickname ?? s.profiles?.full_name ?? '—',
       role: 'invited',

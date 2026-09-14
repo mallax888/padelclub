@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   if (type === 'split') {
     const { data: current } = await supabase
       .from('booking_splits')
-      .select('id, user_id')
+      .select('id, user_id, booking_id')
       .eq('id', rowId)
       .maybeSingle()
     if (!current) {
@@ -44,6 +44,27 @@ export async function POST(request: Request) {
     }
     if (current.user_id === newPlayerId) {
       return NextResponse.json({ error: 'That player already has this seat.' }, { status: 400 })
+    }
+
+    // Without this, slotting in someone who already holds a seat on this
+    // booking (or is the organizer, whose share is the booking itself) would
+    // give them two seats and double-count them in the collected total.
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('user_id')
+      .eq('id', current.booking_id)
+      .maybeSingle()
+    if (booking?.user_id === newPlayerId) {
+      return NextResponse.json({ error: 'They booked this court — they already have a spot.' }, { status: 400 })
+    }
+    const { data: existingSeat } = await supabase
+      .from('booking_splits')
+      .select('id')
+      .eq('booking_id', current.booking_id)
+      .eq('user_id', newPlayerId)
+      .maybeSingle()
+    if (existingSeat) {
+      return NextResponse.json({ error: 'They already have a spot on this booking.' }, { status: 400 })
     }
 
     const { data: updated, error } = await supabase
@@ -60,7 +81,7 @@ export async function POST(request: Request) {
 
   const { data: current } = await supabase
     .from('open_match_players')
-    .select('id, player_id')
+    .select('id, player_id, match_id')
     .eq('id', rowId)
     .maybeSingle()
   if (!current) {
@@ -68,6 +89,26 @@ export async function POST(request: Request) {
   }
   if (current.player_id === newPlayerId) {
     return NextResponse.json({ error: 'That player already has this seat.' }, { status: 400 })
+  }
+
+  // Same reason as the split branch: one player, one seat per match.
+  const { data: match } = await supabase
+    .from('open_matches')
+    .select('organizer_id')
+    .eq('id', current.match_id)
+    .maybeSingle()
+  if (match?.organizer_id === newPlayerId) {
+    return NextResponse.json({ error: 'They organised this match — they already have a spot.' }, { status: 400 })
+  }
+  const { data: existingSeat } = await supabase
+    .from('open_match_players')
+    .select('id')
+    .eq('match_id', current.match_id)
+    .eq('player_id', newPlayerId)
+    .neq('status', 'declined')
+    .maybeSingle()
+  if (existingSeat) {
+    return NextResponse.json({ error: 'They already have a spot in this match.' }, { status: 400 })
   }
 
   // A replacement joining an open match takes the seat outright -- they're
