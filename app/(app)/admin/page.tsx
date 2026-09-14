@@ -158,12 +158,6 @@ export default async function AdminPage() {
   }))
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage bookings, members and courts</p>
-      </div>
-      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} />
-    </div>
+    <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }
