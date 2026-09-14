@@ -87,6 +87,17 @@ export default async function AdminPage() {
     .select('created_at, amount, type, profiles!inner(home_venue_slug)')
     .gte('created_at', ninetyDaysAgo)
 
+  // Which bookings are also public "find a game" matches -- open_matches
+  // carries venue_slug directly, so it's scoped the same simple way courts
+  // are, no join needed. Used purely to colour those cells differently on
+  // the Board (see AdminDashboard) so staff can tell an open-to-anyone
+  // booking apart from a private one at a glance.
+  let openMatchesQuery = supabase
+    .from('open_matches')
+    .select('booking_id')
+    .gte('date', ninetyDaysAgo)
+    .not('booking_id', 'is', null)
+
   if (managedVenueSlug) {
     bookingsQuery = bookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtsQuery = courtsQuery.eq('venue_slug', managedVenueSlug)
@@ -94,6 +105,7 @@ export default async function AdminPage() {
     analyticsBookingsQuery = analyticsBookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtPerfQuery = courtPerfQuery.eq('courts.venue_slug', managedVenueSlug)
     creditTxQuery = creditTxQuery.eq('profiles.home_venue_slug', managedVenueSlug)
+    openMatchesQuery = openMatchesQuery.eq('venue_slug', managedVenueSlug)
   } else if (managedCountryVenueSlugs) {
     bookingsQuery = bookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     courtsQuery = courtsQuery.in('venue_slug', managedCountryVenueSlugs)
@@ -101,16 +113,20 @@ export default async function AdminPage() {
     analyticsBookingsQuery = analyticsBookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     courtPerfQuery = courtPerfQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     creditTxQuery = creditTxQuery.in('profiles.home_venue_slug', managedCountryVenueSlugs)
+    openMatchesQuery = openMatchesQuery.in('venue_slug', managedCountryVenueSlugs)
   }
 
-  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }, { data: creditTxRows }] = await Promise.all([
+  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }, { data: creditTxRows }, { data: openMatchRows }] = await Promise.all([
     bookingsQuery,
     membersQuery,
     courtsQuery,
     analyticsBookingsQuery,
     courtPerfQuery,
     creditTxQuery,
+    openMatchesQuery,
   ])
+
+  const publicBookingIds = (openMatchRows ?? []).map((m: any) => m.booking_id as string)
 
   const creditTransactions = (creditTxRows ?? []).map((t: any) => ({
     created_at: t.created_at,
@@ -147,7 +163,7 @@ export default async function AdminPage() {
         <h1 className="text-2xl font-semibold">Admin</h1>
         <p className="text-sm text-gray-500 mt-1">Manage bookings, members and courts</p>
       </div>
-      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} />
+      <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} />
     </div>
   )
 }
