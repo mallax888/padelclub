@@ -13,6 +13,9 @@ const currencyForVenueSlug = (venueSlug: string | null | undefined) =>
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import FinancialReports from '@/components/admin/FinancialReports'
+import AdminSidebar from '@/components/admin/AdminSidebar'
+import BoardRightRail from '@/components/admin/BoardRightRail'
+import BoardFooterStrip from '@/components/admin/BoardFooterStrip'
 import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking, FinancialCreditTx } from '@/lib/analytics'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 60)
@@ -41,6 +44,7 @@ export default function AdminDashboard({
   courtPerfBookings,
   creditTransactions,
   publicBookingIds,
+  staffName,
 }: {
   bookings: AdminBooking[]
   members: Profile[]
@@ -51,6 +55,7 @@ export default function AdminDashboard({
   courtPerfBookings: CourtPerformanceBooking[]
   creditTransactions: FinancialCreditTx[]
   publicBookingIds: string[]
+  staffName: string | null
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<'board' | 'analytics' | 'reports' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
@@ -193,6 +198,51 @@ export default function AdminDashboard({
       venue_slug: b.courts?.venue_slug,
     }))
 
+  // Today's Bookings Overview donut -- same category split as the Board
+  // grid's own colour-coding (see BoardView's cellAppearance below), just
+  // counted instead of rendered as cells.
+  const publicBookingIdSet = new Set(publicBookingIds)
+  const todayVenueBookings = bookingsForVenue.filter((b: any) => b.date === today && b.status !== 'cancelled')
+  const todayCounts = {
+    blocked: todayVenueBookings.filter(b => b.status === 'blocked').length,
+    openPlay: todayVenueBookings.filter(b => b.status !== 'blocked' && publicBookingIdSet.has(b.id)).length,
+    regular: todayVenueBookings.filter(b => b.status !== 'blocked' && !publicBookingIdSet.has(b.id)).length,
+  }
+
+  // Footer summary strip -- all four figures share the same trailing-7-day
+  // window as the "This week" label implies, rather than mixing windows.
+  const sixDaysAgo = (() => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() - 6); return localDateStr(d) })()
+  const prevWeekStart = (() => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() - 13); return localDateStr(d) })()
+  const thisWeekVenueBookings = bookingsForVenue.filter((b: any) => b.date >= sixDaysAgo && b.date <= today && b.status === 'confirmed')
+  const prevWeekVenueBookings = bookingsForVenue.filter((b: any) => b.date >= prevWeekStart && b.date < sixDaysAgo && b.status === 'confirmed')
+  const thisWeekTrend = pctChange(thisWeekVenueBookings.length, prevWeekVenueBookings.length)
+
+  const hourCounts = new Map<string, number>()
+  for (const b of thisWeekVenueBookings) {
+    const h = b.start_time.slice(0, 5)
+    hourCounts.set(h, (hourCounts.get(h) ?? 0) + 1)
+  }
+  let peakTime: string | null = null
+  let peakCount = 0
+  hourCounts.forEach((c, h) => { if (c > peakCount) { peakCount = c; peakTime = h } })
+
+  const courtCounts = new Map<string, number>()
+  for (const b of thisWeekVenueBookings) {
+    const cid = (b as any).court_id
+    courtCounts.set(cid, (courtCounts.get(cid) ?? 0) + 1)
+  }
+  let mostPopularCourtId: string | null = null
+  let mostPopularCourtCount = 0
+  courtCounts.forEach((c, cid) => { if (c > mostPopularCourtCount) { mostPopularCourtCount = c; mostPopularCourtId = cid } })
+  const mostPopularCourtName = mostPopularCourtId ? venueCourts.find(c => c.id === mostPopularCourtId)?.name ?? null : null
+
+  const avgDurationMin = thisWeekVenueBookings.length > 0
+    ? Math.round(thisWeekVenueBookings.reduce((s, b: any) => s + (b.duration_minutes ?? 60), 0) / thisWeekVenueBookings.length)
+    : null
+  const avgDurationLabel = avgDurationMin === null ? null
+    : avgDurationMin >= 60 ? `${Math.floor(avgDurationMin / 60)}h${avgDurationMin % 60 ? ' ' + (avgDurationMin % 60) + 'm' : ''}`
+    : `${avgDurationMin}m`
+
   const financialReportBookings = bookingsForVenue.map(b => ({
     date: b.date,
     status: b.status,
@@ -321,8 +371,24 @@ export default function AdminDashboard({
     router.refresh()
   }
 
+  const heroVenue = activeVenue ? getVenue(activeVenue) : null
+  const heroHour = new Date().getHours()
+  const heroGreeting = heroHour < 12 ? 'Good morning' : heroHour < 18 ? 'Good afternoon' : 'Good evening'
+
   return (
-    <div>
+    <div className="flex gap-6">
+      <AdminSidebar tab={tab} setTab={setTab} venueName={heroVenue?.name ?? 'Your club'} venueRegion={heroVenue?.region ?? ''} staffName={staffName} />
+      <div className="flex-1 min-w-0">
+      {/* Hero greeting */}
+      <div className="rounded-2xl p-5 mb-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--brand-primary-text)' }}>{heroVenue?.name ?? 'Your club'}</div>
+        <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{heroGreeting}{staffName ? `, ${staffName}` : ''}</div>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mt-1">
+          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Here's what's happening at your club today.</div>
+          <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>{formatDate(today)}</div>
+        </div>
+      </div>
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
@@ -347,8 +413,8 @@ export default function AdminDashboard({
         ))}
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-4" style={{ borderBottom: '1px solid var(--border)' }}>
+      {/* Tabs -- mobile only; md+ uses the sidebar instead */}
+      <div className="flex gap-1 mb-4 md:hidden overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
         {(['board', 'analytics', 'reports', 'bookings', 'members', 'courts', 'xero'] as const).map(t => (
           <button
             key={t}
@@ -418,7 +484,24 @@ export default function AdminDashboard({
 
 {/* Board tab */}
       {tab === 'board' && (
-        <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1 min-w-0">
+            <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
+            <BoardFooterStrip
+              thisWeekCount={thisWeekVenueBookings.length}
+              thisWeekTrend={thisWeekTrend}
+              peakTime={peakTime}
+              mostPopularCourtName={mostPopularCourtName}
+              avgDurationLabel={avgDurationLabel}
+            />
+          </div>
+          <BoardRightRail
+            todayCounts={todayCounts}
+            upcomingBookings={upcomingBookings}
+            onBlockCourt={() => setShowBlock(true)}
+            onAddCourt={openAddCourt}
+          />
+        </div>
       )}
 
       {tab === 'analytics' && (
@@ -699,6 +782,7 @@ export default function AdminDashboard({
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }
