@@ -915,6 +915,12 @@ function BoardView({
   const colorMap: Record<string, string> = {}
   venueCourts.forEach((court: any, i: number) => { colorMap[court.id] = courtColors[i % courtColors.length] })
 
+  // Fixed height for every Day-grid cell's content, booked or empty, so a
+  // court row never grows taller just because one of its slots has a
+  // booking -- otherwise switching dates (or a booking appearing/clearing)
+  // shifts row heights and everything below the grid along with them.
+  const DAY_CELL_HEIGHT = 38
+
   const title = viewMode === 'month'
     ? new Date(boardDate + 'T00:00:00').toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' })
     : viewMode === 'week'
@@ -957,25 +963,27 @@ function BoardView({
       </div>
 
       {viewMode === 'day' && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-start gap-2">
           <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() - 7); setBoardDate(localDateStr(d)) }}
             className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>‹</button>
-          {Array.from({ length: 7 }, (_, i) => {
-            const d = new Date(boardDate + 'T00:00:00')
-            d.setDate(d.getDate() + i)
-            return localDateStr(d)
-          }).map(d => (
-            <button key={d} onClick={() => setBoardDate(d)}
-              className="px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
-              style={{
-                background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
-                color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
-                border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
-              }}>
-              {dayLabel(d)}
-            </button>
-          ))}
+          <div className="flex gap-2 flex-wrap flex-1">
+            {Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(boardDate + 'T00:00:00')
+              d.setDate(d.getDate() + i)
+              return localDateStr(d)
+            }).map(d => (
+              <button key={d} onClick={() => setBoardDate(d)}
+                className="px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                style={{
+                  background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
+                  color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
+                  border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
+                }}>
+                {dayLabel(d)}
+              </button>
+            ))}
+          </div>
           <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() + 7); setBoardDate(localDateStr(d)) }}
             className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>›</button>
@@ -1189,12 +1197,12 @@ function BoardView({
                               }}
                               onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
                               title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
-                              className="rounded-md px-1 py-1.5 text-xs font-semibold truncate"
-                              style={{ background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                              className="rounded-md px-1 flex items-center justify-center text-center text-xs font-semibold leading-tight"
+                              style={{ height: DAY_CELL_HEIGHT, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1, overflow: 'hidden', wordBreak: 'break-word' }}>
                               {appearance.label}
                             </div>
                           )
-                        })() : <div className="h-6" />}
+                        })() : <div style={{ height: DAY_CELL_HEIGHT }} />}
                       </td>
                     )
                   })}
