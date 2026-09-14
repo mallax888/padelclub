@@ -529,17 +529,15 @@ export default function AdminDashboard({
 
 {/* Board tab */}
       {tab === 'board' && (
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 min-w-0">
-            <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
-            <BoardFooterStrip
-              thisWeekCount={thisWeekVenueBookings.length}
-              thisWeekTrend={thisWeekTrend}
-              peakTime={peakTime}
-              mostPopularCourtName={mostPopularCourtName}
-              avgDurationLabel={avgDurationLabel}
-            />
-          </div>
+        <div className="flex flex-col gap-4">
+          <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
+          <BoardFooterStrip
+            thisWeekCount={thisWeekVenueBookings.length}
+            thisWeekTrend={thisWeekTrend}
+            peakTime={peakTime}
+            mostPopularCourtName={mostPopularCourtName}
+            avgDurationLabel={avgDurationLabel}
+          />
           <BoardRightRail
             todayCounts={todayCounts}
             upcomingBookings={upcomingBookings}
@@ -925,19 +923,20 @@ function BoardView({
 
   return (
     <div className="space-y-4">
+      <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Today's Bookings</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <button onClick={() => shiftDate(-1)} className="w-8 h-8 rounded-lg flex items-center justify-center"
+          <button onClick={() => shiftDate(-1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>←</button>
-          <span className="text-sm font-medium px-2" style={{ color: 'var(--text-primary)' }}>{title}</span>
-          <button onClick={() => shiftDate(1)} className="w-8 h-8 rounded-lg flex items-center justify-center"
+          <span className="text-base font-semibold px-2" style={{ color: 'var(--text-primary)' }}>{title}</span>
+          <button onClick={() => shiftDate(1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>→</button>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
             {(['day', 'week', 'month'] as const).map(m => (
               <button key={m} onClick={() => setViewMode(m)}
-                className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
+                className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
                 style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
                 {m}
               </button>
@@ -947,7 +946,7 @@ function BoardView({
             <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
               {(['grid', 'list'] as const).map(m => (
                 <button key={m} onClick={() => setDayLayout(m)}
-                  className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
+                  className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
                   style={{ background: dayLayout === m ? 'var(--brand-primary)' : 'transparent', color: dayLayout === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
                   {m}
                 </button>
@@ -958,29 +957,27 @@ function BoardView({
       </div>
 
       {viewMode === 'day' && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() - 7); setBoardDate(localDateStr(d)) }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>‹</button>
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-thin flex-1 pb-1">
-            {Array.from({ length: 7 }, (_, i) => {
-              const d = new Date(boardDate + 'T00:00:00')
-              d.setDate(d.getDate() + i)
-              return localDateStr(d)
-            }).map(d => (
-              <button key={d} onClick={() => setBoardDate(d)}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-colors"
-                style={{
-                  background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
-                  color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
-                  border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
-                }}>
-                {dayLabel(d)}
-              </button>
-            ))}
-          </div>
+          {Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(boardDate + 'T00:00:00')
+            d.setDate(d.getDate() + i)
+            return localDateStr(d)
+          }).map(d => (
+            <button key={d} onClick={() => setBoardDate(d)}
+              className="px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+              style={{
+                background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
+                color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
+                border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
+              }}>
+              {dayLabel(d)}
+            </button>
+          ))}
           <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() + 7); setBoardDate(localDateStr(d)) }}
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>›</button>
         </div>
       )}
@@ -1069,13 +1066,13 @@ function BoardView({
           </div>
         </div>
       ) : viewMode === 'week' ? (
-        <div className="rounded-2xl overflow-x-auto scrollbar-thin" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <table className="w-full text-xs border-collapse">
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          <table className="w-full table-fixed text-sm border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 px-3 py-2 text-left font-semibold whitespace-nowrap" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
+                <th className="px-3 py-3 text-left font-semibold whitespace-nowrap" style={{ width: 110, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {weekDates.map(d => (
-                  <th key={d} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', minWidth: 90 }}>
+                  <th key={d} className="px-2 py-3 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
                     {dayLabel(d)}
                   </th>
                 ))}
@@ -1084,19 +1081,19 @@ function BoardView({
             <tbody>
               {venueCourts.map((court: any) => (
                 <tr key={court.id}>
-                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                  <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                     {court.name}
                   </td>
                   {weekDates.map(d => {
                     const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
                     return (
-                      <td key={d} className="px-1 py-1 text-center align-top" style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', minWidth: 90 }}>
-                        {dayBookings.length === 0 ? <div className="h-5" /> : (
+                      <td key={d} className="px-1.5 py-1.5 text-center align-top" style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
+                        {dayBookings.length === 0 ? <div className="h-6" /> : (
                           <div className="space-y-1">
                             {dayBookings.map((b: any) => {
                               const appearance = cellAppearance(b)
                               return (
-                                <div key={b.id} className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: appearance.background, color: appearance.color }}>
+                                <div key={b.id} className="rounded-md px-1.5 py-1.5 text-xs font-semibold truncate" style={{ background: appearance.background, color: appearance.color }}>
                                   {b.start_time.slice(0,5)} {appearance.label}
                                 </div>
                               )
@@ -1144,13 +1141,13 @@ function BoardView({
           })()}
         </div>
       ) : (
-        <div className="rounded-2xl overflow-x-auto scrollbar-thin" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <table className="w-full text-xs border-collapse">
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          <table className="w-full table-fixed text-sm border-collapse">
             <thead>
               <tr>
-                <th className="sticky left-0 px-3 py-2 text-left font-semibold" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
+                <th className="px-3 py-3 text-left font-semibold" style={{ width: 100, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                 {TIME_ROWS.map(t => (
-                  <th key={t} className="px-2 py-2 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', minWidth: 60 }}>{t}</th>
+                  <th key={t} className="px-1 py-3 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)' }}>{t}</th>
                 ))}
               </tr>
             </thead>
@@ -1159,7 +1156,7 @@ function BoardView({
                 const isPastDay = boardDate < today
                 return venueCourts.map((court: any) => (
                 <tr key={court.id}>
-                  <td className="sticky left-0 px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                  <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                     {court.name}
                   </td>
                   {TIME_ROWS.map(t => {
@@ -1167,7 +1164,7 @@ function BoardView({
                     const cellKey = `${court.id}-${t}`
                     const isDragOver = dragOverCell === cellKey && !isPastDay
                     return (
-                      <td key={t} className="px-1 py-1 text-center"
+                      <td key={t} className="px-1 py-1.5 text-center"
                         onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
                         onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
                         onDrop={e => {
@@ -1179,7 +1176,7 @@ function BoardView({
                           if (b && b.id === id) return // dropped back on one of its own occupied cells
                           moveBooking(id, { newCourtId: court.id, newStartTime: t })
                         }}
-                        style={{ borderBottom: '1px solid var(--border)', minWidth: 60, background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
+                        style={{ borderBottom: '1px solid var(--border)', background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
                         {b ? (() => {
                           const appearance = cellAppearance(b)
                           return (
@@ -1192,12 +1189,12 @@ function BoardView({
                               }}
                               onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
                               title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
-                              className="rounded-md px-1 py-1 text-[10px] font-semibold truncate"
+                              className="rounded-md px-1 py-1.5 text-xs font-semibold truncate"
                               style={{ background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                               {appearance.label}
                             </div>
                           )
-                        })() : <div className="h-5" />}
+                        })() : <div className="h-6" />}
                       </td>
                     )
                   })}

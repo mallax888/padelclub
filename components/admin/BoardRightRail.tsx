@@ -66,7 +66,7 @@ export default function BoardRightRail({
   ]
 
   return (
-    <div className="w-full lg:w-72 shrink-0 space-y-4">
+    <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Today's Bookings Overview</div>
         <div className="flex items-center gap-4">
