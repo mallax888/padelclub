@@ -20,6 +20,29 @@ import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking, Finan
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 
+// Trailing-7-day mini trend line for a stat card -- no charting library
+// needed for a single series this small.
+function Sparkline({ data, color }: { data: number[]; color: string }) {
+  const w = 64
+  const h = 24
+  const max = Math.max(...data, 1)
+  const min = Math.min(...data, 0)
+  const range = max - min || 1
+  const points = data.map((v, i) => {
+    const x = data.length > 1 ? (i / (data.length - 1)) * w : w / 2
+    const y = h - ((v - min) / range) * h
+    return [x, y] as const
+  })
+  const last = points[points.length - 1]
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="shrink-0">
+      <polyline points={points.map(p => p.join(',')).join(' ')} fill="none" stroke={color} strokeWidth="1.5"
+        strokeLinejoin="round" strokeLinecap="round" opacity="0.85" />
+      {last && <circle cx={last[0]} cy={last[1]} r="2" fill={color} />}
+    </svg>
+  )
+}
+
 type AdminBooking = {
   id: string
   date: string
@@ -124,6 +147,25 @@ export default function AdminDashboard({
   // alone (downgrades/upgrades since then aren't reflected, only growth).
   const memberCountAsOf7DaysAgo = members.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= sevenDaysAgo).length
   const membersTrend = pctChange(memberCount, memberCountAsOf7DaysAgo)
+
+  // Sparkline series for the stat cards -- same underlying figures as the
+  // trend badges above, just spread across the trailing 7 days instead of
+  // collapsed to a single day-over-day comparison.
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today + 'T00:00:00')
+    d.setDate(d.getDate() - (6 - i))
+    return localDateStr(d)
+  })
+  const bookingsSpark = last7Days.map(d => bookings.filter(b => b.date === d && b.status !== 'cancelled').length)
+  const playersSpark = last7Days.map(d => {
+    const confirmed = bookings.filter(b => b.date === d && b.status === 'confirmed')
+    return new Set(confirmed.map((b: any) => b.user_id).filter(Boolean)).size
+  })
+  const revenueSpark = last7Days.map(d => {
+    const confirmed = bookings.filter(b => b.date === d && b.status === 'confirmed')
+    return sumByCurrency(confirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd).reduce((s, r) => s + r.amount, 0)
+  })
+  const membersSpark = last7Days.map(d => members.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= d).length)
 
   const venuesWithCourts = VENUES.filter(v => v.isLive && courts.some((c: any) => c.venue_slug === v.slug))
   // Courts tab needs to offer every *live* venue, including one with no
@@ -392,23 +434,26 @@ export default function AdminDashboard({
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week' },
-          { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week' },
-          { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week' },
-          { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago' },
-        ].map(({ label, value, color, trend, trendLabel }) => (
-          <div key={label} className="rounded-2xl p-4"
+          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week', spark: bookingsSpark },
+          { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
+          { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week', spark: revenueSpark },
+          { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
+        ].map(({ label, value, color, trend, trendLabel, spark }) => (
+          <div key={label} className="rounded-2xl p-4 flex items-center justify-between gap-3"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-            <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-            <div className="flex items-baseline gap-2 flex-wrap">
-              <div className="text-xl font-semibold" style={{ color }}>{value}</div>
-              {trend !== null && (
-                <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
-                  {trend > 0 ? '↑' : trend < 0 ? '↓' : '–'}{Math.abs(trend)}%
-                </span>
-              )}
+            <div className="min-w-0">
+              <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <div className="text-xl font-semibold" style={{ color }}>{value}</div>
+                {trend !== null && (
+                  <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
+                    {trend > 0 ? '↑' : trend < 0 ? '↓' : '–'}{Math.abs(trend)}%
+                  </span>
+                )}
+              </div>
+              <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
             </div>
-            <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
+            <Sparkline data={spark} color={color} />
           </div>
         ))}
       </div>
@@ -805,6 +850,7 @@ function BoardView({
   const [dragOverDate, setDragOverDate] = useState<string | null>(null)
   const [dragOverCell, setDragOverCell] = useState<string | null>(null)
   const [moving, setMoving] = useState(false)
+  const [dayLayout, setDayLayout] = useState<'grid' | 'list'>('grid')
   const publicBookingIdSet = new Set(publicBookingIds)
 
   // A single place to decide how a booking cell looks: a staff-blocked slot
@@ -887,16 +933,57 @@ function BoardView({
           <button onClick={() => shiftDate(1)} className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>→</button>
         </div>
-        <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
-          {(['day', 'week', 'month'] as const).map(m => (
-            <button key={m} onClick={() => setViewMode(m)}
-              className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
-              style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
-              {m}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+            {(['day', 'week', 'month'] as const).map(m => (
+              <button key={m} onClick={() => setViewMode(m)}
+                className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
+                style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
+                {m}
+              </button>
+            ))}
+          </div>
+          {viewMode === 'day' && (
+            <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+              {(['grid', 'list'] as const).map(m => (
+                <button key={m} onClick={() => setDayLayout(m)}
+                  className="px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all"
+                  style={{ background: dayLayout === m ? 'var(--brand-primary)' : 'transparent', color: dayLayout === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
+                  {m}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {viewMode === 'day' && (
+        <div className="flex items-center gap-2">
+          <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() - 7); setBoardDate(localDateStr(d)) }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>‹</button>
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-thin flex-1 pb-1">
+            {Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(boardDate + 'T00:00:00')
+              d.setDate(d.getDate() + i)
+              return localDateStr(d)
+            }).map(d => (
+              <button key={d} onClick={() => setBoardDate(d)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shrink-0 transition-colors"
+                style={{
+                  background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
+                  color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
+                  border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
+                }}>
+                {dayLabel(d)}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() + 7); setBoardDate(localDateStr(d)) }}
+            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>›</button>
+        </div>
+      )}
 
       {venueCourts.length === 0 ? (
         <div className="rounded-xl text-center py-12 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
@@ -1023,6 +1110,38 @@ function BoardView({
               ))}
             </tbody>
           </table>
+        </div>
+      ) : dayLayout === 'list' ? (
+        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          {(() => {
+            const dayBookings = bookings
+              .filter((b: any) => b.date === boardDate && b.status !== 'cancelled')
+              .sort((a: any, b: any) => a.start_time.localeCompare(b.start_time))
+            if (dayBookings.length === 0) {
+              return (
+                <div className="px-4 py-10 text-sm text-center" style={{ color: 'var(--text-subtle)' }}>
+                  No bookings for this day.
+                </div>
+              )
+            }
+            return dayBookings.map((b: any) => {
+              const appearance = cellAppearance(b)
+              const court = venueCourts.find((c: any) => c.id === b.court_id)
+              return (
+                <div key={b.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <div className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-primary)', width: 44 }}>{b.start_time.slice(0, 5)}</div>
+                  <div style={{ width: 8, height: 8, borderRadius: 999, background: colorMap[b.court_id] ?? 'var(--brand-primary)', flexShrink: 0 }} />
+                  <div className="text-xs shrink-0 truncate" style={{ color: 'var(--text-muted)', width: 70 }}>{court?.name ?? 'Court'}</div>
+                  <div className="text-xs font-semibold rounded-md px-2 py-1 truncate flex-1" style={{ background: appearance.background, color: appearance.color }}>
+                    {appearance.label}
+                  </div>
+                  <div className="text-xs font-semibold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>
+                    {b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyForVenueSlug(court?.venue_slug)) : '—'}
+                  </div>
+                </div>
+              )
+            })
+          })()}
         </div>
       ) : (
         <div className="rounded-2xl overflow-x-auto scrollbar-thin" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
