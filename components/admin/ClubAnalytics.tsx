@@ -100,7 +100,7 @@ export default function ClubAnalytics({
       </div>
 
       {/* Occupancy heatmap */}
-      <div className="rounded-2xl p-5 mb-4 overflow-x-auto"
+      <div className="rounded-2xl p-5 mb-4 overflow-x-auto scrollbar-thin"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>When the club gets busy</div>
         <div className="text-xs mb-4" style={{ color: 'var(--text-subtle)' }}>Occupancy by day and hour, last 28 days</div>

@@ -520,7 +520,7 @@ export default function AdminDashboard({
 
       {/* Bookings tab */}
       {tab === 'bookings' && (
-        <div className="rounded-2xl overflow-x-auto"
+        <div className="rounded-2xl overflow-x-auto scrollbar-thin"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-sm">
             <thead>
@@ -584,7 +584,7 @@ export default function AdminDashboard({
               {visibleMembers.length} of {members.length}
             </span>
           </div>
-          <div className="rounded-2xl overflow-x-auto"
+          <div className="rounded-2xl overflow-x-auto scrollbar-thin"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <table className="w-full text-sm">
               <thead>
@@ -982,7 +982,7 @@ function BoardView({
           </div>
         </div>
       ) : viewMode === 'week' ? (
-        <div className="rounded-2xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div className="rounded-2xl overflow-x-auto scrollbar-thin" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
@@ -1025,7 +1025,7 @@ function BoardView({
           </table>
         </div>
       ) : (
-        <div className="rounded-2xl overflow-x-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div className="rounded-2xl overflow-x-auto scrollbar-thin" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-xs border-collapse">
             <thead>
               <tr>
