@@ -1,5 +1,5 @@
 import { createServerClient } from '@/lib/supabase-server'
-import { getInitials, formatDate } from '@/lib/utils'
+import { getInitials, formatDate, formatDateWithYear } from '@/lib/utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import NicknameEditor from '@/components/players/NicknameEditor'
@@ -226,7 +226,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
                     </div>
                   </div>
                   <div className="text-[10px] shrink-0" style={{ color: 'var(--text-subtle)' }}>
-                    {m.played_at ? new Date(m.played_at).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : ''}
+                    {m.played_at ? formatDate(m.played_at) : ''}
                   </div>
                 </div>
               )
@@ -242,7 +242,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
           ['Member number', `#${player.member_number}`],
           ['Skill level', skillLabelForRating(player.skill_rating)],
           ['Favourite court', player.favourite_court ?? '—'],
-          ['Member since', player.created_at?.slice(0, 10) ?? '—'],
+          ['Member since', player.created_at ? formatDateWithYear(player.created_at) : '—'],
         ].map(([label, value]) => (
           <div key={label} className="flex justify-between py-2 text-sm"
             style={{ borderBottom: '1px solid var(--border)' }}>
