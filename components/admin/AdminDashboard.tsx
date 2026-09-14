@@ -16,6 +16,7 @@ import FinancialReports from '@/components/admin/FinancialReports'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import BoardRightRail from '@/components/admin/BoardRightRail'
 import BoardFooterStrip from '@/components/admin/BoardFooterStrip'
+import BookingRosterModal from '@/components/admin/BookingRosterModal'
 import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking, FinancialCreditTx } from '@/lib/analytics'
 
 const TIME_SLOTS = generateTimeSlots(7, 22, 60)
@@ -849,7 +850,9 @@ function BoardView({
   const [dragOverCell, setDragOverCell] = useState<string | null>(null)
   const [moving, setMoving] = useState(false)
   const [dayLayout, setDayLayout] = useState<'grid' | 'list'>('grid')
+  const [rosterBooking, setRosterBooking] = useState<{ id: string; title: string; subtitle: string } | null>(null)
   const publicBookingIdSet = new Set(publicBookingIds)
+  const venueCurrency = currencyForVenueSlug(venueCourts[0]?.venue_slug)
 
   // A single place to decide how a booking cell looks: a staff-blocked slot
   // reads as unavailable rather than a real booking (and its "booker" is
@@ -1133,7 +1136,15 @@ function BoardView({
               const appearance = cellAppearance(b)
               const court = venueCourts.find((c: any) => c.id === b.court_id)
               return (
-                <div key={b.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div key={b.id} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid var(--border)', cursor: b.status === 'blocked' ? 'default' : 'pointer' }}
+                  onClick={() => {
+                    if (b.status === 'blocked') return
+                    setRosterBooking({
+                      id: b.id,
+                      title: `${court?.name ?? 'Court'} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                      subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
+                    })
+                  }}>
                   <div className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-primary)', width: 44 }}>{b.start_time.slice(0, 5)}</div>
                   <div style={{ width: 8, height: 8, borderRadius: 999, background: colorMap[b.court_id] ?? 'var(--brand-primary)', flexShrink: 0 }} />
                   <div className="text-xs shrink-0 truncate" style={{ color: 'var(--text-muted)', width: 70 }}>{court?.name ?? 'Court'}</div>
@@ -1222,7 +1233,15 @@ function BoardView({
                             setDraggedId(b.id)
                           }}
                           onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
-                          title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
+                          onClick={() => {
+                            if (b.status === 'blocked') return
+                            setRosterBooking({
+                              id: b.id,
+                              title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                              subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
+                            })
+                          }}
+                          title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to reschedule'}
                           className="rounded-md px-1 flex items-center justify-center text-center text-xs font-semibold whitespace-nowrap"
                           style={{ height: DAY_CELL_HEIGHT, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1, overflow: 'hidden' }}>
                           {appearance.label}
@@ -1306,6 +1325,16 @@ function BoardView({
           </div>
         )
       })()}
+
+      {rosterBooking && (
+        <BookingRosterModal
+          bookingId={rosterBooking.id}
+          title={rosterBooking.title}
+          subtitle={rosterBooking.subtitle}
+          currency={venueCurrency}
+          onClose={() => setRosterBooking(null)}
+        />
+      )}
     </div>
   )
 }
