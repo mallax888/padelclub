@@ -40,6 +40,7 @@ export default function AdminDashboard({
   analytics,
   courtPerfBookings,
   creditTransactions,
+  publicBookingIds,
 }: {
   bookings: AdminBooking[]
   members: Profile[]
@@ -49,6 +50,7 @@ export default function AdminDashboard({
   analytics: ClubAnalyticsData
   courtPerfBookings: CourtPerformanceBooking[]
   creditTransactions: FinancialCreditTx[]
+  publicBookingIds: string[]
 }) {
   const router = useRouter()
   const [tab, setTab] = useState<'board' | 'analytics' | 'reports' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
@@ -81,15 +83,42 @@ export default function AdminDashboard({
 
   const today = localDateStr()
   const todayBookings = bookings.filter(b => b.date === today && b.status !== 'cancelled')
-  // Bookings can span multiple countries/currencies for an unscoped admin --
-  // summing raw amounts together regardless of currency would produce a
-  // meaningless blended number, so this totals per currency instead.
-  const revenueByCurrency = sumByCurrency(
-    bookings.filter(b => b.status === 'confirmed'),
-    b => currencyForVenueSlug(b.courts?.venue_slug),
-    b => b.price_nzd
-  )
   const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
+
+  // Trend comparisons for the stat cards -- same day last week for
+  // day-scoped figures, 7 days ago for the member count (which has no
+  // "today" of its own, just a running total). null means "not enough
+  // history to compare" (the prior period was zero) rather than a
+  // misleading divide-by-zero infinity.
+  const sevenDaysAgo = (() => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() - 7); return localDateStr(d) })()
+  const pctChange = (curr: number, prev: number): number | null => {
+    if (prev === 0) return curr > 0 ? null : 0
+    return Math.round(((curr - prev) / prev) * 100)
+  }
+
+  const lastWeekBookings = bookings.filter(b => b.date === sevenDaysAgo && b.status !== 'cancelled')
+  const bookingsTrend = pctChange(todayBookings.length, lastWeekBookings.length)
+
+  const todayConfirmed = todayBookings.filter(b => b.status === 'confirmed')
+  const lastWeekConfirmed = lastWeekBookings.filter(b => b.status === 'confirmed')
+  const playersTrend = pctChange(
+    new Set(todayConfirmed.map((b: any) => b.user_id).filter(Boolean)).size,
+    new Set(lastWeekConfirmed.map((b: any) => b.user_id).filter(Boolean)).size
+  )
+  const playersToday = new Set(todayConfirmed.map((b: any) => b.user_id).filter(Boolean)).size
+
+  const revenueTodayByCurrency = sumByCurrency(todayConfirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd)
+  const revenueTodayTotal = revenueTodayByCurrency.reduce((s, r) => s + r.amount, 0)
+  const revenueLastWeekTotal = sumByCurrency(lastWeekConfirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd)
+    .reduce((s, r) => s + r.amount, 0)
+  const revenueTrend = pctChange(revenueTodayTotal, revenueLastWeekTotal)
+
+  // Proxy for "how has the paying-member count moved" -- there's no
+  // historical snapshot of the count itself, so this compares today's
+  // count against what it would have been 7 days ago based on join dates
+  // alone (downgrades/upgrades since then aren't reflected, only growth).
+  const memberCountAsOf7DaysAgo = members.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= sevenDaysAgo).length
+  const membersTrend = pctChange(memberCount, memberCountAsOf7DaysAgo)
 
   const venuesWithCourts = VENUES.filter(v => v.isLive && courts.some((c: any) => c.venue_slug === v.slug))
   // Courts tab needs to offer every *live* venue, including one with no
@@ -297,15 +326,23 @@ export default function AdminDashboard({
       {/* Stat cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)' },
-          { label: 'Total bookings',   value: bookings.filter(b => b.status === 'confirmed').length, color: 'var(--text-primary)' },
-          { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)' },
-          { label: 'Revenue',          value: formatMultiCurrency(revenueByCurrency), color: 'var(--brand-primary-text)' },
-        ].map(({ label, value, color }) => (
+          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week' },
+          { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week' },
+          { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week' },
+          { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago' },
+        ].map(({ label, value, color, trend, trendLabel }) => (
           <div key={label} className="rounded-2xl p-4"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-            <div className="text-xl font-semibold" style={{ color }}>{value}</div>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="text-xl font-semibold" style={{ color }}>{value}</div>
+              {trend !== null && (
+                <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
+                  {trend > 0 ? '↑' : trend < 0 ? '↓' : '–'}{Math.abs(trend)}%
+                </span>
+              )}
+            </div>
+            <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
           </div>
         ))}
       </div>
@@ -381,7 +418,7 @@ export default function AdminDashboard({
 
 {/* Board tab */}
       {tab === 'board' && (
-        <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} />
+        <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
       )}
 
       {tab === 'analytics' && (
@@ -668,7 +705,7 @@ export default function AdminDashboard({
 
 
 function BoardView({
-  bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate,
+  bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds,
 }: {
   bookings: any[]
   venueCourts: Court[]
@@ -676,6 +713,7 @@ function BoardView({
   setViewMode: (m: 'day' | 'week' | 'month') => void
   boardDate: string
   setBoardDate: (d: string) => void
+  publicBookingIds: string[]
 }) {
   const router = useRouter()
   const [dayDetail, setDayDetail] = useState<string | null>(null)
@@ -683,6 +721,23 @@ function BoardView({
   const [dragOverDate, setDragOverDate] = useState<string | null>(null)
   const [dragOverCell, setDragOverCell] = useState<string | null>(null)
   const [moving, setMoving] = useState(false)
+  const publicBookingIdSet = new Set(publicBookingIds)
+
+  // A single place to decide how a booking cell looks: a staff-blocked slot
+  // reads as unavailable rather than a real booking (and its "booker" is
+  // actually whichever staff member blocked it, not a real customer, so a
+  // name there is more confusing than useful); a public find-a-game match
+  // gets its own colour so staff can spot an open-to-anyone slot at a
+  // glance, distinct from an ordinary private booking.
+  const cellAppearance = (b: any): { background: string; color: string; label: string } => {
+    if (b.status === 'blocked') {
+      return { background: 'var(--brand-crimson-muted)', color: 'var(--brand-crimson)', label: 'Blocked' }
+    }
+    if (publicBookingIdSet.has(b.id)) {
+      return { background: '#10B98133', color: '#10B981', label: b.profiles?.full_name?.split(' ')[0] ?? 'Open Play' }
+    }
+    return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', label: b.profiles?.full_name?.split(' ')[0] ?? '—' }
+  }
 
   const moveBooking = async (bookingId: string, changes: { newDate?: string; newCourtId?: string; newStartTime?: string }) => {
     setMoving(true)
@@ -867,11 +922,14 @@ function BoardView({
                       <td key={d} className="px-1 py-1 text-center align-top" style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', minWidth: 90 }}>
                         {dayBookings.length === 0 ? <div className="h-5" /> : (
                           <div className="space-y-1">
-                            {dayBookings.map((b: any) => (
-                              <div key={b.id} className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
-                                {b.start_time.slice(0,5)} {b.profiles?.full_name?.split(' ')[0] ?? '—'}
-                              </div>
-                            ))}
+                            {dayBookings.map((b: any) => {
+                              const appearance = cellAppearance(b)
+                              return (
+                                <div key={b.id} className="rounded-md px-1 py-1 text-[10px] font-semibold truncate" style={{ background: appearance.background, color: appearance.color }}>
+                                  {b.start_time.slice(0,5)} {appearance.label}
+                                </div>
+                              )
+                            })}
                           </div>
                         )}
                       </td>
@@ -919,21 +977,24 @@ function BoardView({
                           moveBooking(id, { newCourtId: court.id, newStartTime: t })
                         }}
                         style={{ borderBottom: '1px solid var(--border)', minWidth: 60, background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
-                        {b ? (
-                          <div
-                            draggable={!isPastDay && !moving}
-                            onDragStart={e => {
-                              e.dataTransfer.setData('text/booking-id', b.id)
-                              e.dataTransfer.effectAllowed = 'move'
-                              setDraggedId(b.id)
-                            }}
-                            onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
-                            title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
-                            className="rounded-md px-1 py-1 text-[10px] font-semibold truncate"
-                            style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
-                            {b.profiles?.full_name?.split(' ')[0] ?? '—'}
-                          </div>
-                        ) : <div className="h-5" />}
+                        {b ? (() => {
+                          const appearance = cellAppearance(b)
+                          return (
+                            <div
+                              draggable={!isPastDay && !moving}
+                              onDragStart={e => {
+                                e.dataTransfer.setData('text/booking-id', b.id)
+                                e.dataTransfer.effectAllowed = 'move'
+                                setDraggedId(b.id)
+                              }}
+                              onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
+                              title={!isPastDay ? 'Drag to another court or time to reschedule' : undefined}
+                              className="rounded-md px-1 py-1 text-[10px] font-semibold truncate"
+                              style={{ background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                              {appearance.label}
+                            </div>
+                          )
+                        })() : <div className="h-5" />}
                       </td>
                     )
                   })}
