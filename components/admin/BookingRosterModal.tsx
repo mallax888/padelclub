@@ -7,6 +7,7 @@ import type { Profile } from '@/types/database'
 
 type RosterPlayer = {
   id: string
+  playerId: string | null
   rowId: string | null
   name: string
   role: 'organizer' | 'invited' | 'joined'
@@ -80,7 +81,11 @@ export default function BookingRosterModal({
     load()
   }
 
+  // Anyone already on this booking is excluded: giving them a second seat
+  // would list them twice and double-count them in the collected total.
+  const alreadyOnBooking = new Set((data?.players ?? []).map(p => p.playerId).filter(Boolean) as string[])
   const memberMatches = search.trim().length === 0 ? [] : members
+    .filter(m => !alreadyOnBooking.has(m.id))
     .filter(m => {
       const name = ((m as any).nickname ?? m.full_name ?? '').toLowerCase()
       return name.includes(search.trim().toLowerCase())

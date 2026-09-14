@@ -1105,7 +1105,17 @@ function BoardView({
                             {dayBookings.map((b: any) => {
                               const appearance = cellAppearance(b)
                               return (
-                                <div key={b.id} className="rounded-md px-1.5 py-1.5 text-xs font-semibold truncate" style={{ background: appearance.background, color: appearance.color }}>
+                                <div key={b.id} className="rounded-md px-1.5 py-1.5 text-xs font-semibold truncate"
+                                  style={{ background: appearance.background, color: appearance.color, cursor: b.status === 'blocked' ? 'default' : 'pointer' }}
+                                  title={b.status === 'blocked' ? undefined : 'Click to view players and payment status'}
+                                  onClick={() => {
+                                    if (b.status === 'blocked') return
+                                    setRosterBooking({
+                                      id: b.id,
+                                      title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                                      subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
+                                    })
+                                  }}>
                                   {b.start_time.slice(0,5)} {appearance.label}
                                 </div>
                               )
