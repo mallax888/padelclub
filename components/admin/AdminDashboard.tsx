@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatDate, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
+import { cn, formatDate, formatDateCompact, formatDateWithYear, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, getVenue } from '@/lib/venues'
 import { currencyForRegion, formatPrice, sumByCurrency, formatMultiCurrency } from '@/lib/currency'
@@ -664,7 +664,7 @@ export default function AdminDashboard({
                     <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits}</td>
                     <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
-                      {(m as any).created_at?.slice(0,10)}
+                      {(m as any).created_at ? formatDateWithYear((m as any).created_at) : '—'}
                     </td>
                   </tr>
                 ))}
@@ -888,10 +888,8 @@ function BoardView({
     router.refresh()
   }
 
-  const dayLabel = (d: string) => {
-    const date = new Date(d + 'T00:00:00')
-    return date.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' })
-  }
+  // Was a local reimplementation of formatDate, character for character.
+  const dayLabel = formatDate
 
   const shiftDate = (dir: 1 | -1) => {
     const base = new Date(boardDate + 'T00:00:00')
@@ -984,7 +982,7 @@ function BoardView({
                   color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
                   border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
                 }}>
-                {dayLabel(d)}
+                {formatDateCompact(d)}
               </button>
             ))}
           </div>
@@ -1290,7 +1288,7 @@ function BoardView({
               <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
                 <div>
                   <div className="font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
-                    {detailDate.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {formatDate(dayDetail)}
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                     {detailBookings.length} {detailBookings.length === 1 ? 'booking' : 'bookings'}

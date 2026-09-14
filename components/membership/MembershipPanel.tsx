@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd } from '@/lib/utils'
+import { cn, formatNzd, formatDateWithYear } from '@/lib/utils'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile, CreditTransaction, MembershipTier } from '@/types/database'
 import { CREDIT_PACKS } from '@/lib/creditPacks'
@@ -237,7 +237,7 @@ export default function MembershipPanel({
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
                     <td className="px-4 py-2.5 text-xs" style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
-                      {tx.created_at.slice(0, 10)}
+                      {formatDateWithYear(tx.created_at)}
                     </td>
                     <td className="px-4 py-2.5" style={{ color: 'var(--text-primary)', userSelect: 'text' }}>
                       {tx.description}
