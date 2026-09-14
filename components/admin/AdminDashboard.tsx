@@ -531,7 +531,7 @@ export default function AdminDashboard({
 {/* Board tab */}
       {tab === 'board' && (
         <div className="flex flex-col gap-4">
-          <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} />
+          <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
           <BoardFooterStrip
             thisWeekCount={thisWeekVenueBookings.length}
             thisWeekTrend={thisWeekTrend}
@@ -833,7 +833,7 @@ export default function AdminDashboard({
 
 
 function BoardView({
-  bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds,
+  bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members,
 }: {
   bookings: any[]
   venueCourts: Court[]
@@ -842,6 +842,7 @@ function BoardView({
   boardDate: string
   setBoardDate: (d: string) => void
   publicBookingIds: string[]
+  members: Profile[]
 }) {
   const router = useRouter()
   const [dayDetail, setDayDetail] = useState<string | null>(null)
@@ -1332,6 +1333,7 @@ function BoardView({
           title={rosterBooking.title}
           subtitle={rosterBooking.subtitle}
           currency={venueCurrency}
+          members={members}
           onClose={() => setRosterBooking(null)}
         />
       )}
