@@ -936,7 +936,12 @@ function BoardView({
         <div className="flex items-center gap-2">
           <button onClick={() => shiftDate(-1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>←</button>
-          <span className="text-base font-semibold px-2" style={{ color: 'var(--text-primary)' }}>{title}</span>
+          {/* Fixed width, wide enough for the longest title this can hold (a
+              week range like "Mon, 14 Sept – Sun, 20 Sept"). Sizing to the
+              text instead would move the arrow either side of it every time
+              the date changed length. */}
+          <span className="text-base font-semibold px-2 text-center shrink-0"
+            style={{ color: 'var(--text-primary)', width: 240 }}>{title}</span>
           <button onClick={() => shiftDate(1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>→</button>
         </div>
@@ -975,9 +980,13 @@ function BoardView({
               d.setDate(d.getDate() + i)
               return localDateStr(d)
             }).map(d => (
+              // Fixed width rather than padding around the label, so a pill
+              // is the same size whether it reads "Tue 6" or "Mon 12" and
+              // the row never reflows as you page through dates.
               <button key={d} onClick={() => setBoardDate(d)}
-                className="px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors"
+                className="py-2 rounded-lg text-sm font-medium whitespace-nowrap text-center shrink-0 transition-colors"
                 style={{
+                  width: 78,
                   background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
                   color: d === boardDate ? 'var(--brand-primary-on)' : (d === today ? 'var(--brand-primary-text)' : 'var(--text-muted)'),
                   border: `1px solid ${d === boardDate ? 'var(--brand-primary)' : 'var(--border)'}`,
