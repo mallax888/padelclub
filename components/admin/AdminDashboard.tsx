@@ -1294,8 +1294,12 @@ function BoardView({
                             })
                           }}
                           title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to reschedule'}
-                          className="truncate"
-                          style={{ fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 4, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                          className="truncate flex items-center justify-center"
+                          // A day-grid booking owns its cell outright (one
+                          // booking per slot), so it fills the box with the
+                          // name centred, rather than sitting as a small card
+                          // in the top corner the way a week cell's stack does.
+                          style={{ height: MONTH_CELL_HEIGHT - 8, fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 4, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                           {appearance.label}
                         </div>
                       </td>
