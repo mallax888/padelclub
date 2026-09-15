@@ -206,11 +206,21 @@ export default function MyBookingsList({
     const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
     const isPaid = !!(booking as any).stripe_payment_id
     const currency = currencyForRegion(VENUES.find(v => v.slug === (booking.courts as any)?.venue_slug)?.region)
+    // Quote 50% of what this member paid, not 50% of the court fee -- on a
+    // split booking they were only ever charged their own share of it.
+    const bookingSplits = outgoingSplits.filter(s => s.booking_id === booking.id)
+    const yourShare = Math.round((booking.price_nzd / (bookingSplits.length + 1)) * 100) / 100
+    // Everyone else on the booking is refunded in full whatever the notice,
+    // so say so -- cancelling is a lot easier to face when you know you
+    // aren't leaving your mates out of pocket.
+    const othersNote = bookingSplits.some(s => s.status === 'paid')
+      ? '\n\nEveryone else on this booking is refunded in full.'
+      : ''
     const policy = !isPaid
-      ? 'Cancel this booking?\n\nNo payment has been charged yet, so this will simply be cancelled with no charge or credit.'
+      ? 'Cancel this booking?\n\nNo payment has been charged yet, so this will simply be cancelled with no charge or credit.' + othersNote
       : hoursUntil >= 24
-      ? 'Cancel this booking?\n\nSince it is more than 24 hours away you will receive a FULL REFUND to your card within 5-10 business days.'
-      : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatPrice(booking.price_nzd * 0.5, currency) + ') as account credit.'
+      ? 'Cancel this booking?\n\nSince it is more than 24 hours away you will receive a FULL REFUND to your card within 5-10 business days.' + othersNote
+      : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatPrice(yourShare * 0.5, currency) + ') as account credit.' + othersNote
     if (!confirm(policy)) return
     setCancelling(id)
     const res = await fetch('/api/cancel-booking', {
@@ -223,13 +233,16 @@ export default function MyBookingsList({
       toast.error(data.error ?? 'Could not cancel — please try again.')
     } else {
       const receiptUrl = isPaid ? 'https://dashboard.stripe.com/test/payments/' + (booking as any).stripe_payment_id : null
+      const othersRefunded = data.splitsRefunded > 0
+        ? ` Your other ${data.splitsRefunded === 1 ? 'player has' : 'players have'} been refunded in full.`
+        : ''
       const message = data.refundFailed
         ? 'Booking cancelled, but your refund could not be processed automatically — please contact support so we can sort it out.'
         : !data.isPaid
-        ? 'Booking cancelled.'
+        ? 'Booking cancelled.' + othersRefunded
         : data.hoursUntil < 24
-        ? 'Booking cancelled. ' + formatPrice(data.creditAmount, currency) + ' credit added to your account.'
-        : 'Booking cancelled. Full refund will appear on your card in 5-10 business days.'
+        ? 'Booking cancelled. ' + formatPrice(data.creditAmount, currency) + ' credit added to your account.' + othersRefunded
+        : 'Booking cancelled. Full refund will appear on your card in 5-10 business days.' + othersRefunded
       if (data.refundFailed) {
         toast.error(message, { duration: 8000 })
         router.refresh()

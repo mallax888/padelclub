@@ -40,6 +40,8 @@ export async function POST(request: Request) {
   // user's balance and calling Stripe aren't things RLS lets a staff
   // session do directly).
   const admin = createAdminClient()
-  const result = await applyCancellationRefund(admin, booking)
+  // byStaff: the club is cancelling, for the club's own reasons, so nobody
+  // pays the late-notice penalty -- see the policy in lib/cancellation.ts.
+  const result = await applyCancellationRefund(admin, booking, { byStaff: true })
   return NextResponse.json({ success: true, ...result })
 }
