@@ -42,7 +42,22 @@ export async function POST(request: Request) {
       .select('id', { count: 'exact', head: true })
       .eq('booking_id', split.booking_id)
     const totalShares = (count ?? 0) + 1 // +1 for the original booker
-    const shareAmount = Math.round(verified.verifiedPrice / totalShares)
+    // Round in cents, not dollars. Math.round(price / shares) on its own
+    // rounded every share to a whole dollar, so a real share of $29.67 was
+    // charged as $30.00 while the button in My bookings -- which reads the
+    // row's own amount_nzd, set to the cent when the split was created --
+    // still said $29.67. Every split whose share wasn't already a round
+    // dollar was charged up to 50c off what the payer was shown, and the
+    // shares no longer summed to the court fee, since the booker's own
+    // checkout (app/api/create-checkout/route.ts) has always charged to the
+    // cent. Both sides now compute the share the same way.
+    //
+    // Shares that don't divide evenly can still leave a sub-cent residue
+    // against the court fee (a $100 court split 3 ways collects $99.99);
+    // that's the standard cost of equal shares and is off by orders of
+    // magnitude less than the dollar rounding it replaces.
+    const shareCents = Math.round((verified.verifiedPrice / totalShares) * 100)
+    const shareAmount = shareCents / 100
     // Keep the row's own amount in sync with what's actually being charged.
     await admin.from('booking_splits').update({ amount_nzd: shareAmount }).eq('id', splitId)
 
@@ -61,7 +76,7 @@ export async function POST(request: Request) {
               name: `Court split — ${courtName}`,
               description: `${date} · ${time} · Requested by ${invitedByName}`,
             },
-            unit_amount: Math.round(shareAmount * 100),
+            unit_amount: shareCents,
           },
           quantity: 1,
         },
