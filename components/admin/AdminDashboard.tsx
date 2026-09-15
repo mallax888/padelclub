@@ -44,6 +44,27 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
   )
 }
 
+// Day and Week colour a booking by what it is, so their key names those
+// categories. Month colours by court instead and carries its own key listing
+// the courts -- each view's key describes that view's own colouring.
+function BoardCategoryLegend() {
+  const items = [
+    { label: 'Booking', color: 'var(--brand-primary)' },
+    { label: 'Open Play', color: '#10B981' },
+    { label: 'Blocked', color: 'var(--brand-crimson)' },
+  ]
+  return (
+    <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+      {items.map(item => (
+        <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
+          <div style={{ width: 10, height: 10, borderRadius: 2, background: item.color }} />
+          {item.label}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 type AdminBooking = {
   id: string
   date: string
@@ -917,11 +938,11 @@ function BoardView({
   const colorMap: Record<string, string> = {}
   venueCourts.forEach((court: any, i: number) => { colorMap[court.id] = courtColors[i % courtColors.length] })
 
-  // Fixed height for every Day-grid cell's content, booked or empty, so a
-  // court row never grows taller just because one of its slots has a
-  // booking -- otherwise switching dates (or a booking appearing/clearing)
-  // shifts row heights and everything below the grid along with them.
-  const DAY_CELL_HEIGHT = 38
+  // Every Day and Week cell is this tall whether or not it holds a booking,
+  // matching the Month view's boxes. Fixing it also keeps a court row from
+  // growing just because one of its slots filled up, which would shift every
+  // row below it as you page through dates.
+  const MONTH_CELL_HEIGHT = 76
 
   const title = viewMode === 'month'
     ? new Date(boardDate + 'T00:00:00').toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' })
@@ -1085,57 +1106,71 @@ function BoardView({
           </div>
         </div>
       ) : viewMode === 'week' ? (
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <table className="w-full table-fixed text-sm border-collapse">
-            <thead>
-              <tr>
-                <th className="px-3 py-3 text-left font-semibold whitespace-nowrap" style={{ width: 110, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
-                {weekDates.map(d => (
-                  <th key={d} className="px-2 py-3 font-semibold whitespace-nowrap text-center" style={{ color: d === today ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
-                    {dayLabel(d)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {venueCourts.map((court: any) => (
-                <tr key={court.id}>
-                  <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                    {court.name}
-                  </td>
-                  {weekDates.map(d => {
-                    const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
-                    return (
-                      <td key={d} className="px-1.5 py-1.5 text-center align-top" style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
-                        {dayBookings.length === 0 ? <div className="h-6" /> : (
-                          <div className="space-y-1">
-                            {dayBookings.map((b: any) => {
-                              const appearance = cellAppearance(b)
-                              return (
-                                <div key={b.id} className="rounded-md px-1.5 py-1.5 text-xs font-semibold truncate"
-                                  style={{ background: appearance.background, color: appearance.color, cursor: b.status === 'blocked' ? 'default' : 'pointer' }}
-                                  title={b.status === 'blocked' ? undefined : 'Click to view players and payment status'}
-                                  onClick={() => {
-                                    if (b.status === 'blocked') return
-                                    setRosterBooking({
-                                      id: b.id,
-                                      title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
-                                      subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
-                                    })
-                                  }}>
-                                  {b.start_time.slice(0,5)} {appearance.label}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </td>
-                    )
-                  })}
+        <div>
+          <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+            <table className="w-full table-fixed text-sm border-collapse">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2 text-left whitespace-nowrap" style={{ width: 110, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
+                  {weekDates.map(d => (
+                    <th key={d} className="px-2 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: d === today ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                      {formatDateCompact(d)}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {venueCourts.map((court: any, rowIdx: number) => (
+                  <tr key={court.id}>
+                    <td className="px-3 font-medium whitespace-nowrap align-top" style={{ paddingTop: 6, height: MONTH_CELL_HEIGHT, fontSize: 12, background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: rowIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                      {court.name}
+                    </td>
+                    {weekDates.map((d, colIdx) => {
+                      const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
+                      const show = dayBookings.slice(0, 2)
+                      const extra = dayBookings.length - show.length
+                      const isToday = d === today
+                      return (
+                        <td key={d} className="align-top" style={{
+                          height: MONTH_CELL_HEIGHT,
+                          padding: 4,
+                          background: isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)',
+                          boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none',
+                          borderBottom: rowIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)',
+                          borderRight: colIdx === weekDates.length - 1 ? 'none' : '1px solid var(--border)',
+                        }}>
+                          {show.map((b: any) => {
+                            const appearance = cellAppearance(b)
+                            return (
+                              <div key={b.id} className="truncate"
+                                style={{ fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 4, marginBottom: 3, background: appearance.background, color: appearance.color, cursor: b.status === 'blocked' ? 'default' : 'pointer' }}
+                                title={b.status === 'blocked' ? undefined : 'Click to view players and payment status'}
+                                onClick={() => {
+                                  if (b.status === 'blocked') return
+                                  setRosterBooking({
+                                    id: b.id,
+                                    title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                                    subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
+                                  })
+                                }}>
+                                {b.start_time.slice(0, 5)} · {appearance.label}
+                              </div>
+                            )
+                          })}
+                          {extra > 0 && (
+                            <div onClick={() => setDayDetail(d)} style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand-primary-text)', padding: '0 4px', cursor: 'pointer' }}>
+                              +{extra} more
+                            </div>
+                          )}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <BoardCategoryLegend />
         </div>
       ) : dayLayout === 'list' ? (
         <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
@@ -1178,13 +1213,14 @@ function BoardView({
           })()}
         </div>
       ) : (
-        <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div>
+          <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
           <table className="w-full table-fixed text-sm border-collapse">
             <thead>
               <tr>
-                <th className="px-3 py-3 text-left font-semibold" style={{ width: 100, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
-                {TIME_ROWS.map(t => (
-                  <th key={t} className="px-1 py-3 font-semibold whitespace-nowrap text-center" style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>{t}</th>
+                <th className="px-3 py-2 text-left" style={{ width: 100, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
+                {TIME_ROWS.map((t, idx) => (
+                  <th key={t} className="px-1 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)' }}>{t}</th>
                 ))}
               </tr>
             </thead>
@@ -1208,7 +1244,7 @@ function BoardView({
 
                     if (!b) {
                       cells.push(
-                        <td key={t} className="px-1 py-1.5 text-center"
+                        <td key={t} className="align-top"
                           onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
                           onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
                           onDrop={e => {
@@ -1219,9 +1255,7 @@ function BoardView({
                             if (!id || isPastDay) return
                             moveBooking(id, { newCourtId: court.id, newStartTime: t })
                           }}
-                          style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)', background: isDragOver ? 'var(--brand-primary-muted)' : undefined, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }}>
-                          <div style={{ height: DAY_CELL_HEIGHT }} />
-                        </td>
+                          style={{ height: MONTH_CELL_HEIGHT, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }} />
                       )
                       i += 1
                       continue
@@ -1231,7 +1265,7 @@ function BoardView({
                     while (i + span < TIME_ROWS.length && TIME_ROWS[i + span] < b.end_time.slice(0, 5)) span++
                     const appearance = cellAppearance(b)
                     cells.push(
-                      <td key={t} colSpan={span} className="px-1 py-1.5 text-center"
+                      <td key={t} colSpan={span} className="align-top"
                         onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
                         onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
                         onDrop={e => {
@@ -1242,7 +1276,7 @@ function BoardView({
                           if (!id || isPastDay || id === b.id) return
                           moveBooking(id, { newCourtId: court.id, newStartTime: t })
                         }}
-                        style={{ borderBottom: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
+                        style={{ height: MONTH_CELL_HEIGHT, padding: 4, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                         <div
                           draggable={!isPastDay && !moving}
                           onDragStart={e => {
@@ -1260,8 +1294,8 @@ function BoardView({
                             })
                           }}
                           title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to reschedule'}
-                          className="rounded-md px-1 flex items-center justify-center text-center text-xs font-semibold whitespace-nowrap"
-                          style={{ height: DAY_CELL_HEIGHT, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1, overflow: 'hidden' }}>
+                          className="truncate"
+                          style={{ fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 4, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                           {appearance.label}
                         </div>
                       </td>
@@ -1270,7 +1304,7 @@ function BoardView({
                   }
                   return (
                     <tr key={court.id}>
-                      <td className="px-3 py-2 font-medium whitespace-nowrap" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                      <td className="px-3 font-medium whitespace-nowrap align-top" style={{ paddingTop: 6, height: MONTH_CELL_HEIGHT, fontSize: 12, background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                         {court.name}
                       </td>
                       {cells}
@@ -1280,6 +1314,8 @@ function BoardView({
               })()}
             </tbody>
           </table>
+          </div>
+          <BoardCategoryLegend />
         </div>
       )}
 
