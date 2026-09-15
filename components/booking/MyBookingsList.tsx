@@ -389,6 +389,19 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
   const [showReschedule, setShowReschedule] = useState(false)
   const muted = !isNext && !past
 
+  // price_nzd is the whole court fee, but a booking with splits only ever
+  // charged the booker their own share of it -- see create-checkout, which
+  // divides by the split rows + 1 for the booker. Showing the court fee with
+  // "Paid" under it read as "you paid $120" when $30 left the account.
+  //
+  // Rounded in cents the same way create-checkout works out the charge, so
+  // this figure always matches the Stripe receipt the link goes to.
+  const shareCount = splits.length + 1
+  const yourShare = splits.length > 0
+    ? Math.round((b.price_nzd / shareCount) * 100) / 100
+    : null
+  const bookingCurrency = currencyForRegion(venue?.region)
+
   return (
     <div className="rounded-2xl p-3.5" style={{
       background: isNext ? 'var(--bg-surface)' : 'var(--bg-raised)',
@@ -421,7 +434,13 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           </div>
         </div>
         <div className="sm:ml-auto text-right shrink-0 flex flex-col items-end gap-1.5">
-          <div className="text-[30px] leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 500 : 700 }}>{formatPrice(b.price_nzd, currencyForRegion(venue?.region))}</div>
+          <div className="text-[30px] leading-none" style={{ color: muted ? 'var(--text-muted)' : 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: muted ? 500 : 700 }}>{formatPrice(yourShare ?? b.price_nzd, bookingCurrency)}</div>
+          {yourShare !== null && (
+            <div className="text-[10px] font-bold rounded-full px-2 py-0.5 whitespace-nowrap"
+              style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
+              Split {shareCount} ways · {formatPrice(b.price_nzd, bookingCurrency)} court
+            </div>
+          )}
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
             <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
