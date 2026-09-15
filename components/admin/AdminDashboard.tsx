@@ -957,12 +957,16 @@ function BoardView({
         <div className="flex items-center gap-2">
           <button onClick={() => shiftDate(-1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>←</button>
-          {/* Fixed width, wide enough for the longest title this can hold (a
+          {/* Boxed in the same fill and border as the arrows either side so the
+              three read as one control, rather than a bare label with a pair of
+              buttons floating around it.
+
+              Fixed width, wide enough for the longest title this can hold (a
               week range like "Mon, 14 Sept – Sun, 20 Sept"). Sizing to the
               text instead would move the arrow either side of it every time
               the date changed length. */}
-          <span className="text-base font-semibold px-2 text-center shrink-0"
-            style={{ color: 'var(--text-primary)', width: 240 }}>{title}</span>
+          <span className="h-9 px-2 rounded-lg text-base font-semibold shrink-0 flex items-center justify-center"
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)', width: 240 }}>{title}</span>
           <button onClick={() => shiftDate(1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>→</button>
         </div>
