@@ -33,6 +33,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'This split has already been paid' }, { status: 400 })
     }
 
+    // Cancelling withdraws the booking's pending splits, so the check above
+    // already turns away a cancelled court. This covers the rows that were
+    // left 'pending' by a cancellation from before that existed -- paying
+    // one would buy a share of a court nobody is playing on.
+    const { data: parentBooking } = await admin
+      .from('bookings')
+      .select('status')
+      .eq('id', split.booking_id)
+      .single()
+    if (parentBooking?.status === 'cancelled') {
+      return NextResponse.json({ error: 'This booking has been cancelled.' }, { status: 400 })
+    }
+
     const verified = await verifyAndCorrectBookingPrice(admin, split.booking_id)
     if (!verified) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 })

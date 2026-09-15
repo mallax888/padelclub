@@ -343,15 +343,20 @@ export default function AdminDashboard({
       return
     }
     const currency = currencyForVenueSlug(bookings.find(b => b.id === id)?.courts?.venue_slug)
+    // A staff cancel refunds everyone in full, so say how many cards were
+    // credited -- the club is paying it out and should see the count.
+    const othersRefunded = data.splitsRefunded > 0
+      ? ` ${data.splitsRefunded} other ${data.splitsRefunded === 1 ? 'player' : 'players'} refunded in full.`
+      : ''
     const message = data.refundFailed
       ? 'Booking cancelled, but the refund could not be processed automatically — check Stripe.'
       : !data.isPaid
-      ? 'Booking cancelled.'
+      ? 'Booking cancelled.' + othersRefunded
       : data.creditsRefunded > 0
-      ? 'Booking cancelled. 1 session credit refunded.'
+      ? 'Booking cancelled. 1 session credit refunded.' + othersRefunded
       : data.creditAmount > 0
-      ? `Booking cancelled. ${formatPrice(data.creditAmount, currency)} credit added for the member.`
-      : 'Booking cancelled. Full refund issued to the member\'s card.'
+      ? `Booking cancelled. ${formatPrice(data.creditAmount, currency)} credit added for the member.${othersRefunded}`
+      : 'Booking cancelled. Full refund issued to the member\'s card.' + othersRefunded
     if (data.refundFailed) toast.error(message, { duration: 8000 })
     else toast.success(message)
     router.refresh()
