@@ -121,6 +121,14 @@ export async function syncReceiveMoneyToXero(admin: SupabaseClient<Database>, ap
           }],
           bankAccount: { accountID: connection.bank_account_id },
           reference: params.reference,
+          // UTC's date, which is still yesterday's for the first hours of a
+          // New Zealand day, so a handful of transactions a year land in the
+          // previous period. Left as is deliberately rather than overlooked:
+          // the right date is the one in the Xero organisation's own
+          // timezone, and nothing here knows it. This function also syncs
+          // memberships and credit packs, which have no venue to infer a
+          // timezone from, and xero_connections doesn't record the org's.
+          // Worth revisiting if it ever does.
           date: new Date().toISOString().slice(0, 10),
         }],
       },
