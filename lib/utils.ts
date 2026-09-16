@@ -4,13 +4,13 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs)
 }
 
-export function formatNzd(amount: number): string {
-  return new Intl.NumberFormat('en-NZ', {
-    style: 'currency',
-    currency: 'NZD',
-    minimumFractionDigits: 2,
-  }).format(amount)
-}
+// formatNzd used to live here. It rendered every amount through en-NZ, which
+// prints a bare "$37.00" -- indistinguishable from A$ or R to the member
+// reading it, and wrong outright for the two thirds of this app's venues that
+// don't charge in New Zealand dollars. Use formatPrice from lib/currency
+// instead and pass the currency: currencyForRegion(venue.region) for anything
+// derived from a court's price, or 'nzd' explicitly for the membership and
+// credit-pack price list, which is one global list in NZD.
 
 // Every date the app shows a person goes through one of the three helpers
 // below, so the same day never reads as "Tue, 22 Sept" in one place and

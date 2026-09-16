@@ -3,7 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd, formatDateWithYear } from '@/lib/utils'
+import { cn, formatDateWithYear } from '@/lib/utils'
+// Memberships and credit packs are one global price list in NZD -- unlike
+// court fees, which are stored in each venue's own currency. formatPrice
+// renders that as "NZ$149.00" where formatNzd's en-NZ locale gave a bare
+// "$149.00", which an Australian or South African member reads as their
+// own dollars right up until Stripe charges them New Zealand ones.
+import { formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile, CreditTransaction, MembershipTier } from '@/types/database'
 import { CREDIT_PACKS } from '@/lib/creditPacks'
@@ -132,7 +138,7 @@ export default function MembershipPanel({
               )}
               <div className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{mem.name}</div>
               <div className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                {mem.priceNzd === 0 ? 'Free' : formatNzd(mem.priceNzd)}
+                {mem.priceNzd === 0 ? 'Free' : formatPrice(mem.priceNzd, 'nzd')}
                 <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>
                   {mem.period !== 'free' ? mem.period : ''}
                 </span>
@@ -190,7 +196,7 @@ export default function MembershipPanel({
               </div>
               <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>sessions</div>
               <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                {formatNzd(pack.priceNzd)}
+                {formatPrice(pack.priceNzd, 'nzd')}
               </div>
               {pack.save && (
                 <div className="text-xs mt-0.5" style={{ color: 'var(--brand-accent)' }}>{pack.save}</div>
@@ -204,7 +210,7 @@ export default function MembershipPanel({
         <div className="flex items-center gap-3 mb-6">
           <div className="flex-1 text-sm" style={{ color: 'var(--text-muted)' }}>
             {CREDIT_PACKS.find(p => p.id === selectedPack)?.sessions} sessions for{' '}
-            {formatNzd(CREDIT_PACKS.find(p => p.id === selectedPack)?.priceNzd ?? 0)}
+            {formatPrice(CREDIT_PACKS.find(p => p.id === selectedPack)?.priceNzd ?? 0, 'nzd')}
           </div>
           <button className="btn btn-primary" disabled={purchasing} onClick={handlePurchase}>
             {purchasing ? 'Processing…' : 'Purchase credits'}
