@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendPushToUser } from '@/lib/push'
+import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
+
+// The UTC calendar date `days` away from this instant, as 'YYYY-MM-DD'.
+const isoDateOffset = (from: Date, days: number) =>
+  new Date(from.getTime() + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
 // A booking is "due" once its start time falls inside this window from now.
 // The window is wider than the trigger interval (run every 15 min via
@@ -28,19 +33,31 @@ export async function GET(request: Request) {
 
   const { data: bookings, error } = await admin
     .from('bookings')
-    .select('id, user_id, date, start_time, courts(name, type)')
+    .select('id, user_id, date, start_time, courts(name, type, venue_slug)')
     .eq('status', 'confirmed')
     .is('reminder_sent_at', null)
     .not('user_id', 'is', null)
-    .gte('date', windowStart.toISOString().slice(0, 10))
-    .lte('date', windowEnd.toISOString().slice(0, 10))
+    // A day either side of the UTC window, because bookings.date is the
+    // court's calendar date, which is already tomorrow in Auckland while it
+    // is still today in UTC. Narrowing to the UTC date dropped exactly the
+    // bookings this cron exists to remind about; the precise check below is
+    // what actually decides, so casting wider here costs only a few rows.
+    .gte('date', isoDateOffset(windowStart, -1))
+    .lte('date', isoDateOffset(windowEnd, 1))
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   const due = (bookings ?? []).filter(b => {
-    const startsAt = new Date(`${b.date}T${b.start_time}`)
+    // The court's wall clock, not the server's. Parsed as UTC, a 7pm
+    // Auckland booking looked like 7pm UTC -- so the "in 2 hours" push went
+    // out about ten hours after the game had finished.
+    const startsAt = venueInstant(
+      b.date,
+      b.start_time,
+      timezoneForVenueSlug((b.courts as any)?.venue_slug),
+    )
     return startsAt >= windowStart && startsAt <= windowEnd
   })
 

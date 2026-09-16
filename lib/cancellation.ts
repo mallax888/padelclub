@@ -1,10 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { stripe } from '@/lib/stripe'
+import { hoursUntilBooking } from '@/lib/timezone'
 
 export type CancellableBooking = {
   id: string
   user_id: string | null
+  court_id: string
   date: string
   start_time: string
   price_nzd: number
@@ -89,7 +91,17 @@ export async function applyCancellationRefund(
   options: { byStaff?: boolean } = {},
 ): Promise<CancellationResult> {
   const isPaid = !!booking.stripe_payment_id || booking.payment_method === 'credits'
-  const hoursUntil = (new Date(`${booking.date}T${booking.start_time}`).getTime() - Date.now()) / (1000 * 60 * 60)
+  // Measured against the court's own clock. Reading the booking's wall time
+  // as the server's (UTC on Vercel) put this twelve hours out for NZ, so
+  // anyone cancelling between 12 and 24 hours before play cleared the 24-hour
+  // bar and was refunded in full -- while the browser, which does know the
+  // member's timezone, had just told them they'd get 50%.
+  const { data: court } = await admin
+    .from('courts')
+    .select('venue_slug')
+    .eq('id', booking.court_id)
+    .single()
+  const hoursUntil = hoursUntilBooking(booking.date, booking.start_time, court?.venue_slug)
   const fullRefund = options.byStaff === true || hoursUntil >= 24
 
   let creditAmount = 0

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { localDateStr } from '@/lib/utils'
+import { hoursUntilBooking } from '@/lib/timezone'
 
 export async function POST(request: Request) {
   const supabase = createServerClient()
@@ -33,7 +34,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Only confirmed bookings can be rescheduled.' }, { status: 400 })
   }
 
-  const hoursUntil = (new Date(`${booking.date}T${booking.start_time}`).getTime() - Date.now()) / (1000 * 60 * 60)
+  // Against the court's own clock, not the server's -- read as UTC this sat
+  // twelve hours out for NZ, letting reschedules through inside the very
+  // window the check exists to close.
+  const hoursUntil = hoursUntilBooking(
+    booking.date,
+    booking.start_time,
+    (booking.courts as any)?.venue_slug,
+  )
   if (hoursUntil < 24) {
     return NextResponse.json({ error: 'Reschedule is only available more than 24 hours before your booking.' }, { status: 400 })
   }

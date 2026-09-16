@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatNzd, formatDate } from '@/lib/utils'
+import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Profile } from '@/types/database'
@@ -201,9 +202,16 @@ export default function MyBookingsList({
   const handleCancel = async (id: string) => {
     const booking = bookings.find(b => b.id === id)
     if (!booking) return
-    const bookingDateTime = new Date(`${booking.date}T${booking.start_time}`)
-    const now = new Date()
-    const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
+    // The court's clock, the same way the server works it out. Using the
+    // browser's zone instead was right for a member sitting in the venue's
+    // country and wrong for one who isn't -- and either way it was a second
+    // opinion, which is how this dialog came to promise 50% on bookings the
+    // server then refunded in full.
+    const hoursUntil = hoursUntilBooking(
+      booking.date,
+      booking.start_time,
+      (booking.courts as any)?.venue_slug,
+    )
     const isPaid = !!(booking as any).stripe_payment_id
     const currency = currencyForRegion(VENUES.find(v => v.slug === (booking.courts as any)?.venue_slug)?.region)
     // Quote 50% of what this member paid, not 50% of the court fee -- on a
@@ -390,7 +398,14 @@ export default function MyBookingsList({
 
 function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [], bookingWindowDays = 14 }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number }) {
   const router = useRouter()
-  const bookingDateTime = new Date(b.date + 'T' + b.start_time)
+  // The court's clock, matching the server -- otherwise the Reschedule
+  // button offers itself on bookings the API will refuse, or hides on ones
+  // it would allow.
+  const bookingDateTime = venueInstant(
+    b.date,
+    b.start_time,
+    timezoneForVenueSlug((b.courts as any)?.venue_slug),
+  )
   const now = new Date()
   const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
   const canCancel = !past && b.status === 'confirmed' && bookingDateTime > now

@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     .update({ status: 'cancelled' })
     .eq('id', bookingId)
     .neq('status', 'cancelled')
-    .select('id, user_id, date, start_time, price_nzd, stripe_payment_id, payment_method')
+    .select('id, user_id, court_id, date, start_time, price_nzd, stripe_payment_id, payment_method')
     .maybeSingle()
 
   if (!booking) {
