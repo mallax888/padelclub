@@ -33,13 +33,20 @@ export async function GET(request: Request) {
 
   const { client, tenantId, connection } = result
 
-  let bankAccounts: { id: string; name: string }[] = []
+  // currencyCode comes along so Admin can show which currency each account
+  // holds: Xero requires a bank transaction to match its account's currency,
+  // so pairing the ZAR picker with an NZD account would simply fail at sync.
+  let bankAccounts: { id: string; name: string; currencyCode: string | null }[] = []
   let revenueAccounts: { code: string; name: string }[] = []
   try {
     const { body } = await client.accountingApi.getAccounts(tenantId, undefined, 'Type=="BANK"')
     bankAccounts = (body.accounts ?? [])
       .filter(a => a.accountID)
-      .map(a => ({ id: a.accountID!, name: a.name ?? a.code ?? 'Bank account' }))
+      .map(a => ({
+        id: a.accountID!,
+        name: a.name ?? a.code ?? 'Bank account',
+        currencyCode: a.currencyCode ? String(a.currencyCode) : null,
+      }))
   } catch (err) {
     console.error('Failed to fetch Xero bank accounts:', err)
   }
@@ -57,6 +64,10 @@ export async function GET(request: Request) {
     connected: true,
     tenantName: connection.tenant_name,
     bankAccountId: connection.bank_account_id,
+    // Read off the row: these arrive with 021_xero_currency_accounts.sql and
+    // types/database.ts lags until regenerated. Undefined reads as "not set".
+    bankAccountIdAud: (connection as Record<string, unknown>).bank_account_id_aud ?? null,
+    bankAccountIdZar: (connection as Record<string, unknown>).bank_account_id_zar ?? null,
     revenueAccountCode: connection.revenue_account_code,
     bankAccounts,
     revenueAccounts,
