@@ -3,7 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendBookingConfirmationEmail } from '@/lib/emails'
 import { formatDate } from '@/lib/utils'
-import { currencyForRegion, formatPrice } from '@/lib/currency'
+import { currencyForRegion, formatPrice, type CurrencyCode } from '@/lib/currency'
 import { getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { getActiveSpecialsForVenueDate } from '@/lib/specials'
@@ -104,7 +104,12 @@ export async function POST(request: Request) {
         const { error: notifyError } = await supabase.from('notifications').insert({
           user_id: split.invited_by,
           type: 'split_paid',
-          message: payerName + ' paid their share of $' + split.amount_nzd,
+          // session.currency is what Stripe actually charged, so the message
+          // can't disagree with the payment behind it. A bare '$' told a
+          // Johannesburg organiser their mate had paid "$37" for a share
+          // that went through as R37.
+          message: payerName + ' paid their share of '
+            + formatPrice(split.amount_nzd, (session.currency ?? 'nzd') as CurrencyCode),
         })
         if (notifyError) {
           console.error('Failed to notify', split.invited_by, 'of split payment:', notifyError)

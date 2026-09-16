@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatNzd, formatDate } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
@@ -284,10 +284,17 @@ export default function MyBookingsList({
               const court = s.bookings?.courts?.name ?? 'a court'
               const date = s.bookings?.date ? formatDate(s.bookings.date) : ''
               const time = s.bookings?.start_time?.slice(0,5) ?? ''
+              // A share is a slice of the court fee, which is already in the
+              // venue's own currency -- and pay-split charges it in that
+              // currency. Formatting as NZD showed a South African "$37.00"
+              // for a charge Stripe puts through as R37.00.
+              const splitCurrency = currencyForRegion(
+                VENUES.find(v => v.slug === s.bookings?.courts?.venue_slug)?.region,
+              )
               return (
                 <div key={s.id} className="flex items-center justify-between gap-3">
                   <div>
-                    <div className="text-sm font-medium" style={{ color: 'var(--brand-crimson)' }}>You owe {who} {formatNzd(s.amount_nzd)}</div>
+                    <div className="text-sm font-medium" style={{ color: 'var(--brand-crimson)' }}>You owe {who} {formatPrice(s.amount_nzd, splitCurrency)}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{court} · {date} · {time}</div>
                   </div>
                   <button
@@ -310,7 +317,7 @@ export default function MyBookingsList({
                       window.location.href = url
                     }}
                   >
-                    {payingSplit === s.id ? 'Loading...' : `Pay ${formatNzd(s.amount_nzd)}`}
+                    {payingSplit === s.id ? 'Loading...' : `Pay ${formatPrice(s.amount_nzd, splitCurrency)}`}
                   </button>
                 </div>
               )
