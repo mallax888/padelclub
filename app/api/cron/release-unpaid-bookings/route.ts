@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { applyCancellationRefund } from '@/lib/cancellation'
 
 const HOLD_MINUTES = 20
 
@@ -26,7 +27,7 @@ export async function GET(request: Request) {
   // release the slot rather than leave it permanently blocked and unpaid.
   const { data: staleBookings, error: findError } = await supabase
     .from('bookings')
-    .select('id')
+    .select('id, user_id, court_id, date, start_time, price_nzd, stripe_payment_id, payment_method')
     .eq('status', 'confirmed')
     .eq('payment_method', 'card')
     .is('stripe_payment_id', null)
@@ -51,17 +52,39 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: cancelError.message }, { status: 500 })
   }
 
-  // Delete rather than set a status here — booking_splits' valid status
-  // values aren't enforced in the TS types, so a status we can't confirm the
-  // DB accepts risks erroring; deleting the now-moot pending request doesn't.
-  const { error: splitsError } = await supabase.from('booking_splits').delete().in('booking_id', bookingIds).eq('status', 'pending')
-  if (splitsError) {
-    console.error('Failed to clean up booking_splits for released bookings:', splitsError)
+  // The booker never paid, but their friends may well have: a split invite
+  // goes out the moment the booking is created, and someone can pay their
+  // share inside the 20-minute hold. Releasing the slot without giving that
+  // money back left the club holding it for a court nobody plays on.
+  //
+  // applyCancellationRefund is the one place that knows how to unwind a
+  // booking's money, and it does the right thing here without special-casing:
+  // the booker's own branch is skipped (stripe_payment_id is null -- that's
+  // what makes the booking stale in the first place), paid shares are
+  // refunded to the card, and unpaid requests are withdrawn so they can't be
+  // paid against a released court.
+  let sharesRefunded = 0
+  for (const booking of staleBookings) {
+    try {
+      const result = await applyCancellationRefund(supabase, booking, { byStaff: true })
+      sharesRefunded += result.splitsRefunded
+      if (result.refundFailed) {
+        console.error('Refund failed while releasing stale booking', booking.id)
+      }
+    } catch (err) {
+      // One booking's refund blowing up shouldn't strand the rest -- the
+      // slots are already released, which is this cron's main job.
+      console.error('Could not unwind payments for released booking', booking.id, err)
+    }
   }
   const { error: matchError } = await supabase.from('open_matches').update({ status: 'cancelled' }).in('booking_id', bookingIds).eq('status', 'open')
   if (matchError) {
     console.error('Failed to cancel open_matches for released bookings:', matchError)
   }
 
-  return NextResponse.json({ released: cancelled?.length ?? 0, bookingIds: (cancelled ?? []).map(b => b.id) })
+  return NextResponse.json({
+    released: cancelled?.length ?? 0,
+    sharesRefunded,
+    bookingIds: (cancelled ?? []).map(b => b.id),
+  })
 }
