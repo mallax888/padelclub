@@ -1,4 +1,6 @@
-﻿export type CurrencyCode = 'nzd' | 'aud' | 'zar'
+﻿import { getVenue } from '@/lib/venues'
+
+export type CurrencyCode = 'nzd' | 'aud' | 'zar'
 
 const NZ_REGIONS = ['Auckland', 'Wellington', 'Christchurch']
 const AU_REGIONS = ['Sydney', 'Melbourne', 'Brisbane', 'Perth']
@@ -9,6 +11,31 @@ export function currencyForRegion(region: string | undefined | null): CurrencyCo
   if (AU_REGIONS.includes(region)) return 'aud'
   if (ZA_REGIONS.includes(region)) return 'zar'
   return 'nzd'
+}
+
+export function currencyForVenueSlug(venueSlug: string | null | undefined): CurrencyCode {
+  if (!venueSlug) return 'nzd'
+  return currencyForRegion(getVenue(venueSlug).region)
+}
+
+// Court fees need none of this -- each court already stores its price in its
+// own venue's currency. Memberships and credit packs are the exception: one
+// price list sold to members in three countries, so the local figure has to
+// be derived from the NZD one.
+//
+// These are chosen price points, not an exchange rate. Australia pays the
+// same number as New Zealand, and South Africa pays ten times it (NZ$49 ->
+// R490) -- close enough to the real rate while staying a round, sane-looking
+// price. They deliberately don't track the market: a member should see the
+// same price next month as this month.
+const PRICE_MULTIPLIERS: Record<CurrencyCode, number> = {
+  nzd: 1,
+  aud: 1,
+  zar: 10,
+}
+
+export function localPriceFromNzd(priceNzd: number, currency: CurrencyCode): number {
+  return priceNzd * PRICE_MULTIPLIERS[currency]
 }
 
 // Sums a set of amounts that may span more than one venue's currency (an
