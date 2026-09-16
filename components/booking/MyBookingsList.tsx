@@ -179,6 +179,7 @@ export default function MyBookingsList({
   outgoingSplits = [],
   joinedGames = [],
   currentUserId,
+  stripeDashboardBase,
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
@@ -186,6 +187,10 @@ export default function MyBookingsList({
   outgoingSplits?: OutgoingSplit[]
   joinedGames?: JoinedGame[]
   currentUserId?: string
+  // Supplied by the server page: whether receipts point at Stripe's test or
+  // live dashboard depends on which secret key the deployment holds, and that
+  // key must never reach the browser.
+  stripeDashboardBase: string
 }) {
   const router = useRouter()
   const [cancelling, setCancelling] = useState<string | null>(null)
@@ -240,7 +245,7 @@ export default function MyBookingsList({
     if (!res.ok) {
       toast.error(data.error ?? 'Could not cancel — please try again.')
     } else {
-      const receiptUrl = isPaid ? 'https://dashboard.stripe.com/test/payments/' + (booking as any).stripe_payment_id : null
+      const receiptUrl = isPaid ? `${stripeDashboardBase}/${(booking as any).stripe_payment_id}` : null
       const othersRefunded = data.splitsRefunded > 0
         ? ` Your other ${data.splitsRefunded === 1 ? 'player has' : 'players have'} been refunded in full.`
         : ''
@@ -365,7 +370,7 @@ export default function MyBookingsList({
         ) : (
           <div className="space-y-2">
             {upcoming.map((b, i) => (
-              <BookingRow key={b.id} booking={b} isNext={i === 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} />
+              <BookingRow key={b.id} booking={b} isNext={i === 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} />
             ))}
           </div>
         )}
@@ -394,7 +399,7 @@ export default function MyBookingsList({
           </div>
           {showHistory && (
             <div className="space-y-2 opacity-60">
-              {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} />)}
+              {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} stripeDashboardBase={stripeDashboardBase} />)}
             </div>
           )}
         </div>
@@ -403,7 +408,7 @@ export default function MyBookingsList({
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [], bookingWindowDays = 14 }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number }) {
+function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [], bookingWindowDays = 14, stripeDashboardBase }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number; stripeDashboardBase: string }) {
   const router = useRouter()
   // The court's clock, matching the server -- otherwise the Reschedule
   // button offers itself on bookings the API will refuse, or hides on ones
@@ -478,7 +483,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           )}
           <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: !muted && b.status === 'confirmed' ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{b.status}</div>
           {b.stripe_payment_id ? (
-            <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
+            <a href={`${stripeDashboardBase}/${b.stripe_payment_id}`} target="_blank" rel="noopener noreferrer"
               className="text-[10px] font-medium -mt-1" style={{ color: payment.color, textDecoration: 'underline' }}>
               {payment.label} · Receipt ↗
             </a>
@@ -509,7 +514,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
         <div className="flex items-start gap-2 ml-auto">
           {past && b.status !== 'cancelled' && <BookAgainButton courtId={b.court_id} durationMinutes={b.duration_minutes} />}
           {past && b.stripe_payment_id && (
-            <a href={'https://dashboard.stripe.com/test/payments/' + b.stripe_payment_id} target="_blank" rel="noopener noreferrer"
+            <a href={`${stripeDashboardBase}/${b.stripe_payment_id}`} target="_blank" rel="noopener noreferrer"
               className="btn btn-sm" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
               Receipt ↗
             </a>
