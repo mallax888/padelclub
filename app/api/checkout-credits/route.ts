@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@/lib/supabase-server'
 import { CREDIT_PACKS } from '@/lib/creditPacks'
 import { getAppUrl } from '@/lib/env'
+import { currencyForVenueSlug, localPriceFromNzd } from '@/lib/currency'
 
 export async function POST(request: Request) {
   try {
@@ -16,14 +17,26 @@ export async function POST(request: Request) {
     if (!pack) {
       return NextResponse.json({ error: 'Unknown credit pack' }, { status: 400 })
     }
-    const unitAmount = Math.round(pack.priceNzd * 100) // convert to cents
+    // Charged in the member's own currency at that country's price -- see
+    // localPriceFromNzd. Everyone used to be billed New Zealand dollars,
+    // which a South African bank then converted at roughly eleven to one.
+    //
+    // home_venue_slug is set during onboarding; a member who skipped that
+    // step has none and falls back to NZD.
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('home_venue_slug')
+      .eq('id', session.user.id)
+      .single()
+    const currency = currencyForVenueSlug(profile?.home_venue_slug)
+    const unitAmount = Math.round(localPriceFromNzd(pack.priceNzd, currency) * 100)
 
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
-            currency: 'nzd',
+            currency,
             product_data: {
               name: `${pack.sessions}-session credit pack`,
               description: 'PadelClub session credits — use any time, on any court',
