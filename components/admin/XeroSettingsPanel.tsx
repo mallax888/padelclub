@@ -8,8 +8,10 @@ type Status = {
   connected: boolean
   tenantName?: string
   bankAccountId?: string | null
+  bankAccountIdAud?: string | null
+  bankAccountIdZar?: string | null
   revenueAccountCode?: string | null
-  bankAccounts?: { id: string; name: string }[]
+  bankAccounts?: { id: string; name: string; currencyCode?: string | null }[]
   revenueAccounts?: { code: string; name: string }[]
 }
 
@@ -17,6 +19,11 @@ export default function XeroSettingsPanel() {
   const [status, setStatus] = useState<Status | null>(null)
   const [loading, setLoading] = useState(true)
   const [bankAccountId, setBankAccountId] = useState('')
+  // Xero won't take a bank transaction in anything but its bank account's own
+  // currency, so income from Australian and South African venues needs an
+  // account of its own. Left blank where the club doesn't trade there.
+  const [bankAccountIdAud, setBankAccountIdAud] = useState('')
+  const [bankAccountIdZar, setBankAccountIdZar] = useState('')
   const [revenueCode, setRevenueCode] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -27,6 +34,8 @@ export default function XeroSettingsPanel() {
       const data = await res.json()
       setStatus(data)
       setBankAccountId(data.bankAccountId ?? '')
+      setBankAccountIdAud(data.bankAccountIdAud ?? '')
+      setBankAccountIdZar(data.bankAccountIdZar ?? '')
       setRevenueCode(data.revenueAccountCode ?? '')
     } catch {
       toast.error('Could not load Xero status')
@@ -42,7 +51,8 @@ export default function XeroSettingsPanel() {
       return
     }
     setSaving(true)
-    const bankAccount = status?.bankAccounts?.find(a => a.id === bankAccountId)
+    const findBank = (id: string) => status?.bankAccounts?.find(a => a.id === id)
+    const bankAccount = findBank(bankAccountId)
     const revenueAccount = status?.revenueAccounts?.find(a => a.code === revenueCode)
     const res = await fetch('/api/xero/settings', {
       method: 'POST',
@@ -50,6 +60,10 @@ export default function XeroSettingsPanel() {
       body: JSON.stringify({
         bankAccountId,
         bankAccountName: bankAccount?.name,
+        bankAccountIdAud,
+        bankAccountNameAud: findBank(bankAccountIdAud)?.name,
+        bankAccountIdZar,
+        bankAccountNameZar: findBank(bankAccountIdZar)?.name,
         revenueAccountCode: revenueCode,
         revenueAccountName: revenueAccount?.name,
       }),
@@ -59,7 +73,13 @@ export default function XeroSettingsPanel() {
       toast.error('Could not save Xero settings')
       return
     }
-    toast.success('Xero settings saved — payments will now sync automatically')
+    const body = await res.json().catch(() => ({}))
+    if (body.currencyAccountsSaved === false) {
+      // The columns land with migration 021; everything else saved fine.
+      toast.success('Settings saved, but the per-currency accounts need migration 021 run first')
+    } else {
+      toast.success('Xero settings saved — payments will now sync automatically')
+    }
     load()
   }
 
@@ -113,13 +133,35 @@ export default function XeroSettingsPanel() {
 
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Sync settings</div>
-        <label className="label">Bank account payments are recorded against</label>
+        <label className="label">Bank account NZD payments are recorded against</label>
         <select className="input text-sm" value={bankAccountId} onChange={e => setBankAccountId(e.target.value)}>
           <option value="">— select —</option>
           {(status.bankAccounts ?? []).map(a => (
-            <option key={a.id} value={a.id}>{a.name}</option>
+            <option key={a.id} value={a.id}>{a.name}{a.currencyCode ? ` (${a.currencyCode})` : ''}</option>
           ))}
         </select>
+
+        <label className="label mt-3">Bank account AUD payments are recorded against</label>
+        <select className="input text-sm" value={bankAccountIdAud} onChange={e => setBankAccountIdAud(e.target.value)}>
+          <option value="">— none, don't sync Australian payments —</option>
+          {(status.bankAccounts ?? []).map(a => (
+            <option key={a.id} value={a.id}>{a.name}{a.currencyCode ? ` (${a.currencyCode})` : ''}</option>
+          ))}
+        </select>
+
+        <label className="label mt-3">Bank account ZAR payments are recorded against</label>
+        <select className="input text-sm" value={bankAccountIdZar} onChange={e => setBankAccountIdZar(e.target.value)}>
+          <option value="">— none, don't sync South African payments —</option>
+          {(status.bankAccounts ?? []).map(a => (
+            <option key={a.id} value={a.id}>{a.name}{a.currencyCode ? ` (${a.currencyCode})` : ''}</option>
+          ))}
+        </select>
+
+        <div className="text-xs mt-2" style={{ color: 'var(--text-subtle)' }}>
+          Xero only accepts a payment into an account of its own currency, so each
+          country you take bookings in needs its own account. Leave one blank and
+          those payments are skipped rather than filed against the wrong currency.
+        </div>
 
         <label className="label mt-3">Revenue account payments are coded to</label>
         <select className="input text-sm" value={revenueCode} onChange={e => setRevenueCode(e.target.value)}>

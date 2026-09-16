@@ -29,7 +29,11 @@ export async function POST(request: Request) {
     // was already recorded here at the point the credits/membership were
     // originally purchased). session.amount_total is Stripe's own record of
     // what was actually charged, in cents.
-    const amountNzd = typeof session.amount_total === 'number' ? session.amount_total / 100 : 0
+    const amountPaid = typeof session.amount_total === 'number' ? session.amount_total / 100 : 0
+    // The currency Stripe actually charged, carried through to Xero. It used
+    // to be assumed NZD, so a R490 payment was written into the books as the
+    // number 490 against a New Zealand dollar account.
+    const paidCurrency = (session.currency ?? 'nzd') as CurrencyCode
 
     if (type === 'membership' && userId && tier) {
       // Re-setting the same tier on a retried delivery is harmless (unlike
@@ -54,7 +58,8 @@ export async function POST(request: Request) {
       })
       const { data: member } = await supabase.from('profiles').select('full_name, nickname').eq('id', userId).single()
       await syncReceiveMoneyToXero(supabase, appUrl, {
-        amountNzd,
+        amount: amountPaid,
+        currency: paidCurrency,
         description: `Membership — ${tier}`,
         reference: `Membership ${session.id}`,
         contactName: member?.nickname ?? member?.full_name,
@@ -81,7 +86,8 @@ export async function POST(request: Request) {
         await supabase.rpc('increment_credits', { p_user_id: userId, p_amount: parseInt(sessions, 10) })
         const { data: buyer } = await supabase.from('profiles').select('full_name, nickname').eq('id', userId).single()
         await syncReceiveMoneyToXero(supabase, appUrl, {
-          amountNzd,
+          amount: amountPaid,
+          currency: paidCurrency,
           description: `${sessions}-session credit pack`,
           reference: `Credit pack ${session.id}`,
           contactName: buyer?.nickname ?? buyer?.full_name,
@@ -104,18 +110,19 @@ export async function POST(request: Request) {
         const { error: notifyError } = await supabase.from('notifications').insert({
           user_id: split.invited_by,
           type: 'split_paid',
-          // session.currency is what Stripe actually charged, so the message
+          // paidCurrency is what Stripe actually charged, so the message
           // can't disagree with the payment behind it. A bare '$' told a
           // Johannesburg organiser their mate had paid "$37" for a share
           // that went through as R37.
           message: payerName + ' paid their share of '
-            + formatPrice(split.amount_nzd, (session.currency ?? 'nzd') as CurrencyCode),
+            + formatPrice(split.amount_nzd, paidCurrency),
         })
         if (notifyError) {
           console.error('Failed to notify', split.invited_by, 'of split payment:', notifyError)
         }
         await syncReceiveMoneyToXero(supabase, appUrl, {
-          amountNzd,
+          amount: amountPaid,
+          currency: paidCurrency,
           description: 'Booking split payment',
           reference: `Split payment ${session.id}`,
           contactName: payerName,
@@ -168,7 +175,8 @@ export async function POST(request: Request) {
         }
 
         await syncReceiveMoneyToXero(supabase, appUrl, {
-          amountNzd,
+          amount: amountPaid,
+          currency: paidCurrency,
           description: `${(booking.courts as any)?.name ?? 'Court'} booking — ${formatDate(booking.date)}`,
           reference: `Booking ${session.id}`,
           contactName: recipient?.nickname ?? recipient?.full_name,
