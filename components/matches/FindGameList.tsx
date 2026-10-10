@@ -178,7 +178,7 @@ export default function FindGameList({
       <div className="rounded-xl text-center py-16"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-subtle)' }}>
         <div className="text-3xl mb-3">🎾</div>
-        <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No open games right now</div>
+        <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No open play right now</div>
         <div className="text-xs">Book a court and make it public to be the first!</div>
       </div>
     )

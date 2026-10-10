@@ -61,7 +61,7 @@ export default function BoardRightRail({
   const total = todayCounts.regular + todayCounts.openPlay + todayCounts.blocked
   const slices: Slice[] = [
     { label: 'Bookings', count: todayCounts.regular, color: 'var(--brand-primary)' },
-    { label: 'Open Play', count: todayCounts.openPlay, color: '#10B981' },
+    { label: 'Open play', count: todayCounts.openPlay, color: '#10B981' },
     { label: 'Blocked', count: todayCounts.blocked, color: 'var(--brand-crimson)' },
   ]
 

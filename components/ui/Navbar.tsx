@@ -42,7 +42,7 @@ const ICONS: Record<string, JSX.Element> = {
 
 const NAV_ITEMS = [
   { href: '/book',        label: 'Book a court' },
-  { href: '/find-a-game', label: 'Find a game' },
+  { href: '/find-a-game', label: 'Open play' },
   { href: '/mybookings',  label: 'My bookings' },
   { href: '/membership',  label: 'Membership' },
   { href: '/players',      label: 'Players' },
@@ -56,7 +56,7 @@ const NAV_ITEMS = [
 // sign out) lives behind "More", which opens the existing full menu panel.
 const TAB_BAR_ITEMS = [
   { href: '/book',        label: 'Book' },
-  { href: '/find-a-game', label: 'Find' },
+  { href: '/find-a-game', label: 'Open play' },
   { href: '/mybookings',  label: 'Bookings' },
   { href: '/tournaments', label: 'Tournaments' },
 ]

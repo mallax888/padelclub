@@ -711,12 +711,16 @@ export default function BookingFlow({
             </div>
           </div>
 
-          {/* Open match toggle */}
+          {/* Open play toggle. This is where most members meet the feature,
+              so it carries the same name as the nav item they'll later go
+              looking for it under. It was "Open to other players?" here,
+              "Find a game" in the nav, "open matches" on that page and
+              "Open Play" in Admin — all the same thing. */}
           <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>🎾 Open to other players?</div>
-                <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>Let others find and join your game</div>
+                <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>🎾 Open play</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>List your spare seats so other members can join</div>
               </div>
               <button onClick={() => setMakePublic(!makePublic)}
                 style={{

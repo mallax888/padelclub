@@ -28,9 +28,9 @@ export default async function FindGamePage() {
   return (
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Find a game</h1>
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Open play</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          Join open matches and meet other players
+          Join a game someone has opened up, or open one of your own when you book
         </p>
       </div>
       <FindGameList matches={matches ?? []} currentUserId={session?.user?.id ?? ''} />
