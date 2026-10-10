@@ -50,7 +50,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 function BoardCategoryLegend() {
   const items = [
     { label: 'Booking', color: 'var(--brand-primary)' },
-    { label: 'Open Play', color: '#10B981' },
+    { label: 'Open play', color: '#10B981' },
     { label: 'Blocked', color: 'var(--brand-crimson)' },
   ]
   return (
@@ -892,7 +892,7 @@ function BoardView({
       return { background: 'var(--brand-crimson-muted)', color: 'var(--brand-crimson)', label: 'Blocked' }
     }
     if (publicBookingIdSet.has(b.id)) {
-      return { background: '#10B98133', color: '#10B981', label: b.profiles?.full_name?.split(' ')[0] ?? 'Open Play' }
+      return { background: '#10B98133', color: '#10B981', label: b.profiles?.full_name?.split(' ')[0] ?? 'Open play' }
     }
     return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', label: b.profiles?.full_name?.split(' ')[0] ?? '—' }
   }
@@ -1159,7 +1159,7 @@ function BoardView({
                                   setRosterBooking({
                                     id: b.id,
                                     title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
-                                    subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
+                                    subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
                                   })
                                 }}>
                                 {b.start_time.slice(0, 5)} · {appearance.label}
@@ -1204,7 +1204,7 @@ function BoardView({
                     setRosterBooking({
                       id: b.id,
                       title: `${court?.name ?? 'Court'} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
-                      subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
+                      subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
                     })
                   }}>
                   <div className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-primary)', width: 44 }}>{b.start_time.slice(0, 5)}</div>
@@ -1299,7 +1299,7 @@ function BoardView({
                             setRosterBooking({
                               id: b.id,
                               title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
-                              subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open Play' : 'Regular booking'}`,
+                              subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
                             })
                           }}
                           title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to reschedule'}
