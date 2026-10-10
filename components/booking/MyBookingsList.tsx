@@ -345,9 +345,17 @@ export default function MyBookingsList({
         ))}
       </div>
 
-      <div className="rounded-2xl p-3 mb-5 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)', boxShadow: 'var(--shadow-float)' }}>
-        <strong style={{ color: 'var(--text-primary)' }}>Cancellation policy:</strong> Cancel 24hrs+ before = full refund. Cancel under 24hrs = 50% back as account credit. Reschedule to a new date/time any time before the 24hr mark, no charge.
-      </div>
+      {/* The full policy was a permanent four-line paragraph sitting above
+          every booking — read once, scrolled past forever after. The line
+          that matters stays visible; the rest opens on demand. */}
+      <details className="mb-5 text-xs rounded-2xl px-3 py-2.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+        <summary className="cursor-pointer select-none" style={{ listStyle: 'none' }}>
+          Cancel 24hrs+ before for a full refund. <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
+        </summary>
+        <div className="mt-2 pt-2 leading-relaxed" style={{ borderTop: '1px solid var(--border)' }}>
+          Cancel under 24hrs and 50% comes back as account credit. Reschedule to a new date or time any time before the 24hr mark, no charge. Everyone else on a split booking is refunded in full, whatever the notice.
+        </div>
+      </details>
 
       {/* New booking — solid lime CTA card */}
       <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-5 py-[21px] mb-5 transition-all hover:scale-[1.01]"
@@ -359,50 +367,50 @@ export default function MyBookingsList({
         <div className="shrink-0" style={{ fontSize: '1.7rem' }}>🎾</div>
       </Link>
 
-      <div className="mb-5">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-base font-extrabold" style={{ color: 'var(--text-primary)' }}>Upcoming</h2>
-        </div>
-        {upcoming.length === 0 ? (
+      {/* One tab bar that actually switches. "Upcoming" used to appear twice
+          on this screen: as the heading of a list that never hid, and again
+          on a pill below it that only revealed past bookings — so tapping
+          "Upcoming" did nothing visible. */}
+      <div className="inline-flex gap-1 p-1 rounded-full mb-3" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+        <button onClick={() => setShowHistory(false)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
+          style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+          Upcoming ({upcoming.length + upcomingJoined.length})
+        </button>
+        <button onClick={() => setShowHistory(true)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
+          style={showHistory ? { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' } : { color: 'var(--text-subtle)' }}>
+          Past ({past.length})
+        </button>
+      </div>
+
+      {!showHistory && (
+        upcoming.length === 0 && upcomingJoined.length === 0 ? (
           <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary-text)' }}>book a court</Link>
           </div>
         ) : (
+          /* Courts you booked and games you joined, in one list. From the
+             member's side they're the same thing — somewhere to be this week
+             — and keeping them apart meant checking two places to see what
+             was on. The row's own badge says which is which. */
           <div className="space-y-2">
             {upcoming.map((b, i) => (
               <BookingRow key={b.id} booking={b} isNext={i === 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} />
             ))}
-          </div>
-        )}
-      </div>
-
-      {upcomingJoined.length > 0 && (
-        <div className="mb-5">
-          <h2 className="text-base font-extrabold mb-2" style={{ color: 'var(--text-primary)' }}>Games you've joined</h2>
-          <div className="space-y-2">
             {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
-        </div>
+        )
       )}
 
-      {past.length > 0 && (
-        <div>
-          <div className="inline-flex gap-1 p-1 rounded-full mb-2" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            <button onClick={() => setShowHistory(false)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
-              style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
-              Upcoming
-            </button>
-            <button onClick={() => setShowHistory(true)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
-              style={showHistory ? { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' } : { color: 'var(--text-subtle)' }}>
-              Past ({past.length})
-            </button>
+      {showHistory && (
+        past.length === 0 ? (
+          <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            Nothing here yet.
           </div>
-          {showHistory && (
-            <div className="space-y-2 opacity-60">
-              {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} stripeDashboardBase={stripeDashboardBase} />)}
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="space-y-2 opacity-60">
+            {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} stripeDashboardBase={stripeDashboardBase} />)}
+          </div>
+        )
       )}
     </div>
   )
@@ -572,8 +580,14 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
           <DateBlock dateStr={b.date} />
           <div className="min-w-0">
-            <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
-              {b.courts?.name} — {b.courts?.type}
+            <div className="text-[15px] flex items-center gap-2 flex-wrap" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
+              <span>{b.courts?.name} — {b.courts?.type}</span>
+              {/* Marks this row out now that joined games share a list with
+                  your own bookings. */}
+              <span className="text-[9px] font-extrabold uppercase tracking-wide px-2 py-0.5 rounded-full shrink-0"
+                style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
+                Joined
+              </span>
             </div>
             <div className="text-xs font-bold mt-0.5" style={{ color: 'var(--brand-accent)' }}>
               Joining {organizerName}'s game
