@@ -959,6 +959,15 @@ function BoardView({
     <div className="space-y-4">
       <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Today's Bookings</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
+        {/* Day view has the pill strip below, which both shows the date and
+            moves it — so the arrows here were a second way to do the same
+            thing, sitting one row above a near-identical pair that stepped a
+            week instead of a day. In Day the date stays as a heading you
+            read; the pills do the moving. Week and Month have no strip, so
+            they keep the boxed control. */}
+        {viewMode === 'day' ? (
+          <div className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</div>
+        ) : (
         <div className="flex items-center gap-2">
           <button onClick={() => shiftDate(-1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>←</button>
@@ -975,6 +984,7 @@ function BoardView({
           <button onClick={() => shiftDate(1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>→</button>
         </div>
+        )}
         <div className="flex items-center gap-2">
           <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
             {(['day', 'week', 'month'] as const).map(m => (
@@ -1005,9 +1015,14 @@ function BoardView({
             className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>‹</button>
           <div className="flex gap-2 flex-wrap flex-1">
+            {/* Two days behind the selected one, four ahead. The strip used to
+                start at the selected day, so yesterday was only reachable by
+                jumping a whole week back and then forward again — while a
+                board is mostly read forwards, checking what just happened is
+                common enough to be one tap. */}
             {Array.from({ length: 7 }, (_, i) => {
               const d = new Date(boardDate + 'T00:00:00')
-              d.setDate(d.getDate() + i)
+              d.setDate(d.getDate() + i - 2)
               return localDateStr(d)
             }).map(d => (
               // Fixed width rather than padding around the label, so a pill
