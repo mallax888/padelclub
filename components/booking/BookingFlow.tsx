@@ -15,7 +15,21 @@ import { playSelectionSound, playBackSound } from '@/lib/sounds'
 const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-const REGIONS = VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
+// Everything the booking flow offers comes from this list, never VENUES
+// directly. isLive used to be decorative here: it greyed a badge in the venue
+// switcher and gated the admin board, but the booking flow offered every
+// venue in the file regardless -- so a club PadelClub has no agreement with
+// could be picked, booked and paid for.
+const LIVE_VENUES = VENUES.filter(v => v.isLive)
+const REGIONS = LIVE_VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
+const LIVE_COUNTRIES = COUNTRIES.filter(c => c.regions.some(r => REGIONS.includes(r)))
+
+// Asking "which country?" when there is only one is a screen with a single
+// answer on it. While PadelClub runs in New Zealand alone the step drops out
+// of the flow entirely -- including for the back button and Android's back
+// gesture, which both walk STEPS -- and returns on its own the first time a
+// venue goes live somewhere else, with no code change.
+const ONLY_COUNTRY = LIVE_COUNTRIES.length === 1 ? LIVE_COUNTRIES[0].name : null
 
 const DURATIONS = [
   { value: 0.5, label: '30 min'  },
@@ -52,7 +66,10 @@ function durationLabel(d: number) {
 // choose between four identical things. 'when' now carries all of it, and the
 // court is assigned from whatever is actually free.
 type Step = 'country' | 'region' | 'venue' | 'date' | 'duration' | 'time' | 'confirm'
-const STEPS: Step[] = ['country', 'region', 'venue', 'date', 'duration', 'time', 'confirm']
+const STEPS: Step[] = [
+  ...(ONLY_COUNTRY ? [] : (['country'] as Step[])),
+  'region', 'venue', 'date', 'duration', 'time', 'confirm',
+]
 
 // A player in the split picker. splitCount is how many courts this member has
 // already shared with them (from booking_splits) and is absent on a search
@@ -93,13 +110,13 @@ export default function BookingFlow({
   // Onboarding asked where they play and saved it. Walking them through
   // country -> region -> venue again on every booking, to arrive at the club
   // they already named, was three taps of pure ceremony.
-  const homeVenue = VENUES.find(v => v.slug === (profile as any)?.home_venue_slug) ?? null
+  const homeVenue = LIVE_VENUES.find(v => v.slug === (profile as any)?.home_venue_slug) ?? null
   const homeCountry = homeVenue
     ? COUNTRIES.find(c => c.regions.includes(homeVenue.region))?.name ?? null
     : null
 
-  const [step, setStep] = useState<Step>(homeVenue ? 'date' : 'country')
-  const [country, setCountry] = useState<string | null>(homeCountry)
+  const [step, setStep] = useState<Step>(homeVenue ? 'date' : STEPS[0])
+  const [country, setCountry] = useState<string | null>(homeCountry ?? ONLY_COUNTRY)
   const [region, setRegion] = useState<string | null>(homeVenue?.region ?? null)
   const [venue, setVenue] = useState<Venue | null>(homeVenue)
   const currency = currencyForRegion(venue?.region)
@@ -441,7 +458,7 @@ export default function BookingFlow({
     setSubmitting(false)
   }
 
-  const regionVenues = region ? VENUES.filter(v => v.region === region) : []
+  const regionVenues = region ? LIVE_VENUES.filter(v => v.region === region) : []
   const countryFilteredRegions = country ? REGIONS.filter(r => COUNTRIES.find(c => c.name === country)?.regions.includes(r)) : REGIONS
 
 
@@ -504,7 +521,7 @@ export default function BookingFlow({
       {/* STEP: Country */}
       {step === 'country' && (
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
-          {COUNTRIES.map(c => (
+          {LIVE_COUNTRIES.map(c => (
             <button key={c.name}
               onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
               className="rounded-xl p-5 transition-all flex flex-col items-center gap-3"
@@ -517,7 +534,7 @@ export default function BookingFlow({
               </div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
               <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                {c.regions.length} cities · {VENUES.filter(v => c.regions.includes(v.region)).length} venues · {courts.filter(ct => VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length} courts
+                {c.regions.filter(r => REGIONS.includes(r)).length} cities · {LIVE_VENUES.filter(v => c.regions.includes(v.region)).length} venues · {courts.filter(ct => LIVE_VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length} courts
               </div>
             </button>
           ))}
@@ -533,7 +550,7 @@ export default function BookingFlow({
       {step === 'region' && (
         <div className="grid grid-cols-2 gap-3 animate-fade-in">
           {countryFilteredRegions.map(r => {
-            const venues = VENUES.filter(v => v.region === r)
+            const venues = LIVE_VENUES.filter(v => v.region === r)
             const totalCourts = courts.filter(ct => venues.some(v => v.slug === (ct as any).venue_slug)).length
             return (
               <button key={r}
@@ -645,7 +662,7 @@ export default function BookingFlow({
       {step === 'date' && (
         <div className="animate-fade-in">
           <button
-            onClick={() => { setDate(null); setTime(null); setStep('country'); playBackSound() }}
+            onClick={() => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }}
             className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-5 text-left"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary)', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
