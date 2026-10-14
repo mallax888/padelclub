@@ -189,7 +189,13 @@ export default function AdminDashboard({
   })
   const membersSpark = last7Days.map(d => members.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= d).length)
 
-  const venuesWithCourts = VENUES.filter(v => v.isLive && courts.some((c: any) => c.venue_slug === v.slug))
+  // Deliberately not filtered by isLive. A venue with court rows in this
+  // deployment is real whatever the flag says, and it may carry real bookings
+  // -- taking a venue off the booking flow must never take staff's view of
+  // its existing bookings away with it. The Courts tab below is the one that
+  // narrows to live venues, because that picker is about where to add courts
+  // next rather than what already exists.
+  const venuesWithCourts = VENUES.filter(v => courts.some((c: any) => c.venue_slug === v.slug))
   // Courts tab needs to offer every *live* venue, including one with no
   // courts yet -- that's exactly the "onboard a new club's first courts"
   // case this tab exists to support. lib/venues.ts also carries a long list

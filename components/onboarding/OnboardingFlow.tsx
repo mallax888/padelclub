@@ -25,9 +25,12 @@ export default function OnboardingFlow({
   const [homeVenueSlug, setHomeVenueSlug] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
+  // Live venues only. A new member picking a home club they can never book at
+  // would land on a booking flow that doesn't offer it, and their home venue
+  // is what the flow skips three steps to reach.
   const venuesByRegion = useMemo(() => {
     const byRegion: Record<string, typeof VENUES> = {}
-    VENUES.forEach(v => {
+    VENUES.filter(v => v.isLive).forEach(v => {
       byRegion[v.region] = byRegion[v.region] ?? []
       byRegion[v.region].push(v)
     })
