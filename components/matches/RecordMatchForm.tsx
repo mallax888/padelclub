@@ -54,15 +54,77 @@ function RacketPair() {
   )
 }
 
-export default function RecordMatchForm({ players, currentUserId }: { players: Player[]; currentUserId: string }) {
+// Both of these used to be declared inside RecordMatchForm's body. A component
+// defined during render gets a fresh identity on every render, so React tears
+// the old one down and mounts a new one each time any state changes -- which
+// for a <select> means it loses focus mid-interaction. Declaring them at module
+// level keeps the same element alive across renders.
+function ScoreStepper({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) {
+  const dec = () => { if (value > 0) onChange(value - 1) }
+  const inc = () => { if (value < 7) onChange(value + 1) }
+  return (
+    <div className="flex items-center justify-center gap-2" style={{ flex: 1, height: 84, borderRadius: 12, background: 'var(--bg-surface)', border: `1.5px solid ${color}` }}>
+      <button
+        type="button" onClick={dec} disabled={value <= 0}
+        className="flex items-center justify-center rounded-lg"
+        style={{ width: 36, height: 36, fontSize: 20, fontWeight: 700, color, border: `1px solid ${color}`, background: 'var(--bg-raised)', opacity: value <= 0 ? 0.35 : 1, cursor: value <= 0 ? 'not-allowed' : 'pointer' }}
+      >
+        −
+      </button>
+      <div style={{ width: 52, textAlign: 'center', fontSize: 40, fontWeight: 900, fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
+      <button
+        type="button" onClick={inc} disabled={value >= 7}
+        className="flex items-center justify-center rounded-lg"
+        style={{ width: 36, height: 36, fontSize: 20, fontWeight: 700, color, border: `1px solid ${color}`, background: 'var(--bg-raised)', opacity: value >= 7 ? 0.35 : 1, cursor: value >= 7 ? 'not-allowed' : 'pointer' }}
+      >
+        +
+      </button>
+    </div>
+  )
+}
+
+function PlayerSelect({ players, value, onChange, exclude }: {
+  players: Player[]
+  value: string
+  onChange: (v: string) => void
+  exclude: string[]
+}) {
+  return (
+    <select className="input text-sm" value={value} onChange={e => onChange(e.target.value)}>
+      <option value="">— select —</option>
+      {players.filter(p => !exclude.filter(Boolean).includes(p.id) || p.id === value).map(p => (
+        <option key={p.id} value={p.id}>{p.nickname ?? p.full_name}</option>
+      ))}
+    </select>
+  )
+}
+
+export default function RecordMatchForm({
+  players,
+  currentUserId,
+  prefill = null,
+}: {
+  players: Player[]
+  currentUserId: string
+  prefill?: { label: string; playerIds: string[] } | null
+}) {
   const supabase = createClient()
   const router = useRouter()
 
-  const [format, setFormat] = useState<'doubles' | 'singles'>('doubles')
-  const [team1p1, setTeam1p1] = useState('')
-  const [team1p2, setTeam1p2] = useState('')
-  const [team2p1, setTeam2p1] = useState('')
-  const [team2p2, setTeam2p2] = useState('')
+  // Four from a booking is doubles; two is singles. Three means somebody
+  // pulled out and wasn't replaced, so the format is left on doubles and the
+  // empty slot is for the person to fill in.
+  const [format, setFormat] = useState<'doubles' | 'singles'>(
+    prefill?.playerIds.length === 2 ? 'singles' : 'doubles',
+  )
+  // Teams are a guess, not a fact: the booking records who played, never which
+  // pair they played in. Organiser and the next seat form Team 1 because the
+  // organiser is usually one of them -- and all four are editable.
+  const singlesPrefill = prefill?.playerIds.length === 2
+  const [team1p1, setTeam1p1] = useState(prefill?.playerIds[0] ?? '')
+  const [team1p2, setTeam1p2] = useState(singlesPrefill ? '' : prefill?.playerIds[1] ?? '')
+  const [team2p1, setTeam2p1] = useState(singlesPrefill ? prefill?.playerIds[1] ?? '' : prefill?.playerIds[2] ?? '')
+  const [team2p2, setTeam2p2] = useState(prefill?.playerIds[3] ?? '')
 
   const changeFormat = (f: 'doubles' | 'singles') => {
     setFormat(f)
@@ -159,38 +221,6 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     setSubmitting(false)
   }
 
-  const PlayerSelect = ({ value, onChange, exclude }: { value: string; onChange: (v: string) => void; exclude: string[] }) => (
-    <select className="input text-sm" value={value} onChange={e => onChange(e.target.value)}>
-      <option value="">— select —</option>
-      {players.filter(p => !exclude.filter(Boolean).includes(p.id) || p.id === value).map(p => (
-        <option key={p.id} value={p.id}>{p.nickname ?? p.full_name}</option>
-      ))}
-    </select>
-  )
-
-  const ScoreStepper = ({ value, onChange, color }: { value: number; onChange: (n: number) => void; color: string }) => {
-    const dec = () => { if (value > 0) onChange(value - 1) }
-    const inc = () => { if (value < 7) onChange(value + 1) }
-    return (
-      <div className="flex items-center justify-center gap-2" style={{ flex: 1, height: 84, borderRadius: 12, background: 'var(--bg-surface)', border: `1.5px solid ${color}` }}>
-        <button
-          type="button" onClick={dec} disabled={value <= 0}
-          className="flex items-center justify-center rounded-lg"
-          style={{ width: 36, height: 36, fontSize: 20, fontWeight: 700, color, border: `1px solid ${color}`, background: 'var(--bg-raised)', opacity: value <= 0 ? 0.35 : 1, cursor: value <= 0 ? 'not-allowed' : 'pointer' }}
-        >
-          −
-        </button>
-        <div style={{ width: 52, textAlign: 'center', fontSize: 40, fontWeight: 900, fontVariantNumeric: 'tabular-nums', color }}>{value}</div>
-        <button
-          type="button" onClick={inc} disabled={value >= 7}
-          className="flex items-center justify-center rounded-lg"
-          style={{ width: 36, height: 36, fontSize: 20, fontWeight: 700, color, border: `1px solid ${color}`, background: 'var(--bg-raised)', opacity: value >= 7 ? 0.35 : 1, cursor: value >= 7 ? 'not-allowed' : 'pointer' }}
-        >
-          +
-        </button>
-      </div>
-    )
-  }
 
   const draftValid = isValidSet(draftT1, draftT2)
 
@@ -209,6 +239,18 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
 
   return (
     <div className="max-w-lg mx-auto space-y-4">
+      {prefill && (
+        <div className="rounded-xl px-4 py-3 flex items-center gap-2.5"
+          style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', flexShrink: 0 }}><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+          <span className="min-w-0">
+            <span className="block text-xs font-bold truncate" style={{ color: 'var(--brand-primary-text)' }}>{prefill.label}</span>
+            <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              Players filled in from your booking — change any of them below.
+            </span>
+          </span>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-1.5">
         {([
           { value: 'doubles' as const, label: 'Doubles', desc: '2 vs 2', icon: <RacketPair /> },
@@ -232,18 +274,18 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary-text)' }}>Team 1</div>
           <div className="space-y-2">
-            <div><label className="label">Player 1 *</label><PlayerSelect value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
+            <div><label className="label">Player 1 *</label><PlayerSelect players={players} value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
             {format === 'doubles' && (
-              <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
+              <div><label className="label">Player 2</label><PlayerSelect players={players} value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
             )}
           </div>
         </div>
         <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-accent)' }}>Team 2</div>
           <div className="space-y-2">
-            <div><label className="label">Player 1 *</label><PlayerSelect value={team2p1} onChange={setTeam2p1} exclude={[team1p1, team1p2, team2p2]} /></div>
+            <div><label className="label">Player 1 *</label><PlayerSelect players={players} value={team2p1} onChange={setTeam2p1} exclude={[team1p1, team1p2, team2p2]} /></div>
             {format === 'doubles' && (
-              <div><label className="label">Player 2</label><PlayerSelect value={team2p2} onChange={setTeam2p2} exclude={[team1p1, team1p2, team2p1]} /></div>
+              <div><label className="label">Player 2</label><PlayerSelect players={players} value={team2p2} onChange={setTeam2p2} exclude={[team1p1, team1p2, team2p1]} /></div>
             )}
           </div>
         </div>

@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -179,7 +180,15 @@ export default function FindGameList({
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-subtle)' }}>
         <div className="text-3xl mb-3">🎾</div>
         <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>No open play right now</div>
-        <div className="text-xs">Book a court and make it public to be the first!</div>
+        {/* This told people exactly what to do and then left them to find it
+            themselves. The one moment someone wants to start a game is a poor
+            moment to hand them a dead end. */}
+        <div className="text-xs mb-4">Book a court, turn on Open play, and be the first.</div>
+        <Link href="/book"
+          className="inline-flex text-xs font-bold px-4 py-2 rounded-lg"
+          style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+          Book a court
+        </Link>
       </div>
     )
   }

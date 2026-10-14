@@ -175,6 +175,20 @@ const BookAgainButton = ({ courtId, durationMinutes }: { courtId: string; durati
   </Link>
 )
 
+// Recording a result used to mean going to Record a match and picking all four
+// players out of the member list, for a game whose players this booking
+// already knows. From here the form arrives with them filled in.
+const RecordResultButton = ({ bookingId }: { bookingId: string }) => (
+  <Link
+    href={`/record-match?bookingId=${bookingId}`}
+    className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+    style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+  >
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-yellow)' }}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M6 4h12v5a6 6 0 0 1-12 0z"/><path d="M12 15v4M8 21h8"/></svg>
+    Record result
+  </Link>
+)
+
 export default function MyBookingsList({
   bookings,
   profile,
@@ -523,6 +537,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           )}
         </div>
         <div className="flex items-start gap-2 ml-auto">
+          {past && b.status !== 'cancelled' && <RecordResultButton bookingId={b.id} />}
           {past && b.status !== 'cancelled' && <BookAgainButton courtId={b.court_id} durationMinutes={b.duration_minutes} />}
           {past && b.stripe_payment_id && (
             <a href={`${stripeDashboardBase}/${b.stripe_payment_id}`} target="_blank" rel="noopener noreferrer"
