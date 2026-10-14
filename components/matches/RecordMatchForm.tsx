@@ -24,6 +24,36 @@ function isValidSet(t1: number, t2: number): boolean {
 function setWinner(s: SetScore): 1 | 2 { return s.t1 > s.t2 ? 1 : 2 }
 function setsWon(sets: SetScore[], team: 1 | 2) { return sets.filter(s => setWinner(s) === team).length }
 
+// A padel racket, not a tennis one: solid perforated head, no strings, short
+// handle. Drawn rather than borrowed from an emoji because the closest ones
+// available are a tennis racket, a ping-pong bat and a badminton racket --
+// all of them the wrong sport on a padel app. Strokes use currentColor so the
+// icon follows the button's selected state like every other icon here.
+function Racket({ size = 22, style }: { size?: number; style?: React.CSSProperties }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden>
+      <ellipse cx="12" cy="8.4" rx="5.9" ry="6.6" />
+      <path d="M12 15v5.4" />
+      <path d="M10.4 20.8h3.2" />
+      <circle cx="9.7" cy="7" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="14.3" cy="7" r="0.85" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="10.6" r="0.85" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+// Two of them, leaning apart the way a pair sits on a bench. Offset as well as
+// rotated so the heads read as two separate rackets rather than one thick one.
+function RacketPair() {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'flex-end' }}>
+      <Racket size={22} style={{ transform: 'rotate(-20deg)', marginRight: -9 }} />
+      <Racket size={22} style={{ transform: 'rotate(20deg)' }} />
+    </span>
+  )
+}
+
 export default function RecordMatchForm({ players, currentUserId }: { players: Player[]; currentUserId: string }) {
   const supabase = createClient()
   const router = useRouter()
@@ -181,8 +211,8 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
     <div className="max-w-lg mx-auto space-y-4">
       <div className="grid grid-cols-2 gap-1.5">
         {([
-          { value: 'doubles' as const, label: 'Doubles', desc: '2 vs 2', icon: '👥' },
-          { value: 'singles' as const, label: 'Singles', desc: '1 vs 1', icon: '🧍' },
+          { value: 'doubles' as const, label: 'Doubles', desc: '2 vs 2', icon: <RacketPair /> },
+          { value: 'singles' as const, label: 'Singles', desc: '1 vs 1', icon: <Racket /> },
         ]).map(f => (
           <button key={f.value} type="button" onClick={() => changeFormat(f.value)}
             className="flex flex-col items-center justify-center text-center px-3 py-3 rounded-lg transition-all hover:scale-[1.02]"
@@ -191,11 +221,32 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
               border: `1px solid ${format === f.value ? 'var(--brand-primary)' : 'var(--border)'}`,
               boxShadow: format === f.value ? 'var(--glow-primary)' : 'none',
             }}>
-            <div className="text-lg leading-none mb-1">{f.icon}</div>
+            <div className="leading-none mb-1" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{f.icon}</div>
             <div className="text-base font-bold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{f.label}</div>
             <div className="text-xs mt-0.5 font-semibold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-muted)', opacity: format === f.value ? 0.85 : 1 }}>{f.desc}</div>
           </button>
         ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary-text)' }}>Team 1</div>
+          <div className="space-y-2">
+            <div><label className="label">Player 1 *</label><PlayerSelect value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
+            {format === 'doubles' && (
+              <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
+            )}
+          </div>
+        </div>
+        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-accent)' }}>Team 2</div>
+          <div className="space-y-2">
+            <div><label className="label">Player 1 *</label><PlayerSelect value={team2p1} onChange={setTeam2p1} exclude={[team1p1, team1p2, team2p2]} /></div>
+            {format === 'doubles' && (
+              <div><label className="label">Player 2</label><PlayerSelect value={team2p2} onChange={setTeam2p2} exclude={[team1p1, team1p2, team2p1]} /></div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(180deg, var(--bg-surface), var(--bg-raised))', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
@@ -260,27 +311,6 @@ export default function RecordMatchForm({ players, currentUserId }: { players: P
             🏆 Team {matchWinner} wins {sets.map(s => `${s.t1}–${s.t2}`).join(', ')}
           </div>
         )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-primary-text)' }}>Team 1</div>
-          <div className="space-y-2">
-            <div><label className="label">Player 1 *</label><PlayerSelect value={team1p1} onChange={setTeam1p1} exclude={[team1p2, team2p1, team2p2]} /></div>
-            {format === 'doubles' && (
-              <div><label className="label">Player 2</label><PlayerSelect value={team1p2} onChange={setTeam1p2} exclude={[team1p1, team2p1, team2p2]} /></div>
-            )}
-          </div>
-        </div>
-        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <div className="text-xs font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--brand-accent)' }}>Team 2</div>
-          <div className="space-y-2">
-            <div><label className="label">Player 1 *</label><PlayerSelect value={team2p1} onChange={setTeam2p1} exclude={[team1p1, team1p2, team2p2]} /></div>
-            {format === 'doubles' && (
-              <div><label className="label">Player 2</label><PlayerSelect value={team2p2} onChange={setTeam2p2} exclude={[team1p1, team1p2, team2p1]} /></div>
-            )}
-          </div>
-        </div>
       </div>
 
       <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
