@@ -42,8 +42,8 @@ function durationLabel(d: number) {
 // whose courts aren't all the same type. Everywhere else it asked someone to
 // choose between four identical things. 'when' now carries all of it, and the
 // court is assigned from whatever is actually free.
-type Step = 'country' | 'region' | 'venue' | 'when' | 'confirm'
-const STEPS: Step[] = ['country', 'region', 'venue', 'when', 'confirm']
+type Step = 'country' | 'region' | 'venue' | 'date' | 'duration' | 'time' | 'confirm'
+const STEPS: Step[] = ['country', 'region', 'venue', 'date', 'duration', 'time', 'confirm']
 
 function dateLabel(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -82,7 +82,7 @@ export default function BookingFlow({
     ? COUNTRIES.find(c => c.regions.includes(homeVenue.region))?.name ?? null
     : null
 
-  const [step, setStep] = useState<Step>(homeVenue ? 'when' : 'country')
+  const [step, setStep] = useState<Step>(homeVenue ? 'date' : 'country')
   const [country, setCountry] = useState<string | null>(homeCountry)
   const [region, setRegion] = useState<string | null>(homeVenue?.region ?? null)
   const [venue, setVenue] = useState<Venue | null>(homeVenue)
@@ -163,7 +163,7 @@ export default function BookingFlow({
     const durationParam = Number(searchParams.get('duration'))
     if (durationParam > 0) setDuration(durationParam / 60)
     setIsRebooking(true)
-    setStep('when')
+    setStep('date')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -395,19 +395,21 @@ export default function BookingFlow({
 
 
 
-  // A member who never saw the venue picker is on a two-step flow, so the
-  // progress bar and the back arrow should both reflect that rather than the
-  // full five-step path somebody choosing a new venue walks.
-  const skippedVenuePicker = step === 'when' || step === 'confirm'
+  // A member who never saw the venue picker walks four screens, not seven, so
+  // the progress bar and back arrow should show that rather than the full path
+  // somebody choosing a new venue takes.
+  const skippedVenuePicker = step !== 'country' && step !== 'region' && step !== 'venue'
   const visibleSteps: Step[] = skippedVenuePicker && venue === homeVenue && homeVenue !== null
-    ? ['when', 'confirm']
+    ? ['date', 'duration', 'time', 'confirm']
     : STEPS
 
   const stepMeta: Record<Step, { title: string; subtitle?: string }> = {
     country:  { title: 'Where are you based?' },
     region:   { title: 'Choose a city', subtitle: country ?? '' },
     venue:    { title: 'Choose a venue', subtitle: region ?? '' },
-    when:     { title: 'When do you want to play?' },
+    date:     { title: 'When?', subtitle: venue?.name ?? '' },
+    duration: { title: 'How long?', subtitle: date ? formatDate(date) : '' },
+    time:     { title: 'What time?', subtitle: duration ? durationLabel(duration) : '' },
     confirm:  { title: 'Confirm booking', subtitle: date ? formatDate(date) : '' },
   }
 
@@ -531,7 +533,7 @@ export default function BookingFlow({
                   toast.error(`${v.name} doesn't have any courts set up yet.`)
                   return
                 }
-                setVenue(v); setDate(null); setCourtTypeFilter(null); setTime(null); setStep('when'); playSelectionSound()
+                setVenue(v); setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); playSelectionSound()
               }}
               className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', opacity: realCourtCount === 0 ? 0.6 : 1 }}
@@ -564,12 +566,12 @@ export default function BookingFlow({
         </div>
       )}
 
-      {/* STEP: When — date, length and time on one screen */}
-      {step === 'when' && (
+      {/* STEP: Date. The venue rides along as a header you can change rather
+          than three screens of picking it again — onboarding already stored
+          it. Date, length and time stay separate screens: one question at a
+          time is what makes the flow feel like it's guiding you. */}
+      {step === 'date' && (
         <div className="animate-fade-in">
-
-          {/* The venue, as a fact you can change rather than a question you
-              answer every time. */}
           <button
             onClick={() => { setDate(null); setTime(null); setStep('country'); playBackSound() }}
             className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-5 text-left"
@@ -582,56 +584,59 @@ export default function BookingFlow({
             <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>Change</span>
           </button>
 
-          <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-subtle)' }}>Date</div>
-          <div className="grid grid-cols-4 gap-2 mb-5">
+          <div className="grid grid-cols-4 gap-2">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
               const busy = busynessLabel(dateBusyness[d])
-              const on = date === d
               return (
                 <button key={d}
-                  onClick={() => { setDate(d); setTime(null); playSelectionSound() }}
+                  onClick={() => { setDate(d); setTime(null); setStep('duration'); playSelectionSound() }}
                   className="rounded-xl p-3 text-center transition-all"
-                  style={{
-                    background: on ? 'var(--brand-primary)' : 'var(--bg-surface)',
-                    border: `1px solid ${on ? 'var(--brand-primary)' : 'var(--border)'}`,
-                  }}>
-                  <div className="text-[10px]" style={{ color: on ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>{day}</div>
-                  <div className="text-lg font-bold" style={{ color: on ? 'var(--brand-primary-on)' : 'var(--text-primary)' }}>{num}</div>
-                  <div className="text-[10px]" style={{ color: on ? 'var(--brand-primary-on)' : 'var(--text-muted)', opacity: on ? 0.7 : 1 }}>{month}</div>
+                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                >
+                  <div className="text-[10px] opacity-60">{day}</div>
+                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{num}</div>
+                  <div className="text-[10px] opacity-60">{month}</div>
                   {busy && (
                     <div className="flex items-center justify-center gap-1 mt-1.5">
-                      {!on && <span style={{ width: 5, height: 5, borderRadius: '50%', background: busy.color }} />}
-                      <span className="text-[9px] font-semibold" style={{ color: on ? 'var(--brand-primary-on)' : busy.color, opacity: on ? 0.7 : 1 }}>{busy.text}</span>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: busy.color }} />
+                      <span className="text-[9px] font-semibold" style={{ color: busy.color }}>{busy.text}</span>
                     </div>
                   )}
                 </button>
               )
             })}
           </div>
+        </div>
+      )}
 
-          <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-subtle)' }}>How long</div>
-          <div className="flex gap-1.5 rounded-xl p-1 mb-5" style={{ background: 'var(--bg-raised)' }}>
+      {/* STEP: Duration — and, where the venue's courts actually differ, which
+          kind. The court itself is still assigned from what's free. */}
+      {step === 'duration' && (
+        <div className="animate-fade-in">
+          <div className="space-y-2">
             {DURATIONS.map(d => (
               <button key={d.value}
-                onClick={() => { setDuration(d.value); setTime(null); playSelectionSound() }}
-                className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all"
+                onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
+                className="w-full rounded-xl p-4 text-left transition-all flex items-center justify-between"
                 style={{
-                  background: duration === d.value ? 'var(--brand-primary)' : 'transparent',
-                  color: duration === d.value ? 'var(--brand-primary-on)' : 'var(--text-muted)',
-                }}>
-                {d.label}
+                  background: duration === d.value ? 'var(--brand-primary-muted)' : 'var(--bg-surface)',
+                  border: `1px solid ${duration === d.value ? 'var(--brand-primary)' : 'var(--border)'}`,
+                }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = duration === d.value ? 'var(--brand-primary)' : 'var(--border)')}
+              >
+                <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{d.label}</span>
               </button>
             ))}
           </div>
 
-          {/* Only shown where the courts actually differ. At the 31 venues
-              whose courts are all one type this would be a choice between
-              identical things. */}
           {courtTypes.length > 1 && (
             <>
-              <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-subtle)' }}>Court type</div>
-              <div className="flex flex-wrap gap-1.5 mb-5">
+              <div className="text-[11px] font-bold uppercase tracking-wide mb-2 mt-5" style={{ color: 'var(--text-subtle)' }}>Court type</div>
+              <div className="flex flex-wrap gap-1.5">
                 {[null, ...courtTypes].map(t => (
                   <button key={t ?? 'any'}
                     onClick={() => { setCourtTypeFilter(t); setTime(null); playSelectionSound() }}
@@ -647,42 +652,52 @@ export default function BookingFlow({
               </div>
             </>
           )}
+        </div>
+      )}
 
-          <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-subtle)' }}>
-            {date ? 'Available times' : 'Pick a date to see times'}
-          </div>
-          {date && (
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_SLOTS.map(t => {
-                const available = isSlotAvailable(t)
-                const peak = isPeakTime(date, t)
-                return (
-                  <button key={t} disabled={!available}
-                    onClick={() => { setTime(t); setStep('confirm'); playSelectionSound() }}
-                    className="rounded-xl p-3 text-center transition-all"
-                    style={{
-                      background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
-                      border: available ? '1px solid var(--border)' : '1px solid transparent',
-                      color: !available ? 'var(--text-subtle)' : 'var(--text-primary)',
-                      cursor: !available ? 'not-allowed' : 'pointer',
-                      opacity: !available ? 0.4 : 1,
-                    }}
-                    onMouseEnter={e => { if (available) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
-                    onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
-                  >
-                    <div className="text-sm font-semibold">{t}</div>
-                    {available && (
-                      <div className="text-[10px] mt-0.5 font-medium"
-                        style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary-text)' }}>
-                        {peak ? '⚡ Peak' : '✓ Off-peak'}
-                      </div>
-                    )}
-                    {!available && <div className="text-[10px] mt-0.5">Taken</div>}
-                  </button>
-                )
-              })}
+      {/* STEP: Time */}
+      {step === 'time' && (
+        <div className="animate-fade-in">
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-accent)' }} />
+              <span style={{ color: 'var(--text-subtle)' }}>Peak (eve + weekends)</span>
             </div>
-          )}
+            <div className="flex items-center gap-1.5 text-xs">
+              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-primary)' }} />
+              <span style={{ color: 'var(--text-subtle)' }}>Off-peak</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {TIME_SLOTS.map(t => {
+              const available = isSlotAvailable(t)
+              const peak = isPeakTime(date, t)
+              return (
+                <button key={t} disabled={!available}
+                  onClick={() => { setTime(t); setStep('confirm'); playSelectionSound() }}
+                  className="rounded-xl p-3 text-center transition-all"
+                  style={{
+                    background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
+                    border: available ? '1px solid var(--border)' : '1px solid transparent',
+                    color: !available ? 'var(--text-subtle)' : 'var(--text-primary)',
+                    cursor: !available ? 'not-allowed' : 'pointer',
+                    opacity: !available ? 0.4 : 1,
+                  }}
+                  onMouseEnter={e => { if (available) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
+                  onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
+                >
+                  <div className="text-sm font-semibold">{t}</div>
+                  {available && (
+                    <div className="text-[10px] mt-0.5 font-medium"
+                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary-text)' }}>
+                      {peak ? '⚡ Peak' : '✓ Off-peak'}
+                    </div>
+                  )}
+                  {!available && <div className="text-[10px] mt-0.5">Taken</div>}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
