@@ -847,11 +847,15 @@ export default function BookingFlow({
               <span className="text-lg font-extrabold">Confirming…</span>
             ) : (
               <>
-                <span className="text-[30px] leading-none font-bold uppercase tracking-wide">Pay</span>
-                <span className="text-[30px] leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
+                {/* The amount is what someone is deciding on, so it leads: "Pay"
+                    steps back to a spaced-out label and the number carries the
+                    button. Manrope is loaded at 600/700/800 (app/layout.tsx), so
+                    800 is as heavy as this can go without adding a weight. */}
+                <span className="text-sm leading-none font-bold uppercase" style={{ letterSpacing: '0.14em', opacity: 0.72 }}>Pay</span>
+                <span className="text-[42px] leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.03em' }}>
                   {formatPrice(Math.round(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice), currency)}
                 </span>
-                <span className="text-xl font-bold">→</span>
+                <span className="text-[22px] leading-none font-extrabold">→</span>
               </>
             )}
           </button>
