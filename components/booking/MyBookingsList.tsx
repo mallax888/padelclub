@@ -411,7 +411,7 @@ export default function MyBookingsList({
              was on. The row's own badge says which is which. */
           <div className="space-y-2">
             {upcoming.map((b, i) => (
-              <BookingRow key={b.id} booking={b} isNext={i === 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} />
+              <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} />
             ))}
             {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
@@ -433,7 +433,7 @@ export default function MyBookingsList({
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [], bookingWindowDays = 14, stripeDashboardBase }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number; stripeDashboardBase: string }) {
+function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsible, splits = [], bookingWindowDays = 14, stripeDashboardBase }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; collapsible?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number; stripeDashboardBase: string }) {
   const router = useRouter()
   // The court's clock, matching the server -- otherwise the Reschedule
   // button offers itself on bookings the API will refuse, or hides on ones
@@ -452,6 +452,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
   const [showReschedule, setShowReschedule] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const muted = !isNext && !past
 
   // price_nzd is the whole court fee, but a booking with splits only ever
@@ -467,6 +468,62 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
     : null
   const bookingCurrency = currencyForRegion(venue?.region)
 
+  // Every upcoming booking used to be a full card with Directions, Add to
+  // calendar, Reschedule and Cancel on it, so three bookings filled the
+  // screen with four copies of the same four buttons. The next game stays
+  // open, because that is the one people come here to check; the rest are a
+  // line each until you ask for more.
+  if (collapsible && !expanded) {
+    const unpaidCount = splits.filter(s => s.status !== 'paid').length
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-colors"
+        style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+        <span className="text-xs font-bold shrink-0" style={{ color: 'var(--text-primary)', width: 52, fontVariantNumeric: 'tabular-nums' }}>
+          {dateParts(b.date).weekday} {dateParts(b.date).day}
+        </span>
+        <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)', width: 42, fontVariantNumeric: 'tabular-nums' }}>
+          {b.start_time.slice(0, 5)}
+        </span>
+        <span className="text-xs truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>
+          {b.courts?.name}{venue ? ` — ${venue.name.split(' ').slice(-2).join(' ')}` : ''}
+        </span>
+        {splits.length > 0 && (
+          <span className="flex shrink-0 items-center">
+            {splits.slice(0, 4).map((s, i) => {
+              const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
+              return (
+                <span key={s.id}
+                  title={`${name} — ${s.status === 'paid' ? 'paid' : 'not paid yet'}`}
+                  className="inline-flex items-center justify-center rounded-full text-[9px] font-bold"
+                  style={{
+                    width: 18, height: 18, marginLeft: i === 0 ? 0 : -5,
+                    background: avatarColor(name), color: '#fff',
+                    border: `1.5px solid ${s.status === 'paid' ? 'var(--brand-primary)' : 'var(--brand-yellow)'}`,
+                  }}>
+                  {getInitial(name)}
+                </span>
+              )
+            })}
+          </span>
+        )}
+        {/* The one thing worth saying out loud on a closed row: somebody still
+            owes you for this court. */}
+        {unpaidCount > 0 && (
+          <span className="text-[10px] font-bold shrink-0 px-2 py-0.5 rounded-full whitespace-nowrap"
+            style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)' }}>
+            {unpaidCount} to pay
+          </span>
+        )}
+        <span className="text-xs font-bold shrink-0 text-right" style={{ color: 'var(--text-primary)', width: 56, fontFamily: 'var(--font-display), Manrope, sans-serif' }}>
+          {formatPrice(Math.round(yourShare ?? b.price_nzd), bookingCurrency)}
+        </span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-subtle)', flexShrink: 0 }}><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    )
+  }
+
   return (
     <div className="rounded-2xl p-3.5" style={{
       background: isNext ? 'var(--bg-surface)' : 'var(--bg-raised)',
@@ -479,6 +536,14 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
           <span style={{ width: 5, height: 5, borderRadius: 999, background: 'var(--brand-primary)' }} />
           Up next
         </div>
+      )}
+      {collapsible && expanded && (
+        <button onClick={() => setExpanded(false)}
+          className="flex items-center gap-1.5 text-xs font-semibold mb-2.5"
+          style={{ color: 'var(--text-subtle)' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+          Close
+        </button>
       )}
       <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
@@ -527,7 +592,14 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, splits = [
         <div className="flex flex-wrap items-center gap-2">
           {splits.length > 0 && (
             <>
-              <span className="text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>With</span>
+              {/* "Has Jonesy paid me back yet" is the real question behind a
+                  split booking, and a chip's colour alone was answering it too
+                  quietly. Unpaid shares are now counted in words. */}
+              <span className="text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>
+                {!past && splits.some(s => s.status !== 'paid')
+                  ? `${splits.filter(s => s.status !== 'paid').length} of ${splits.length} still to pay`
+                  : 'With'}
+              </span>
               {splits.map(s => {
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               const paid = s.status === 'paid'

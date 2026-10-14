@@ -40,10 +40,13 @@ const ICONS: Record<string, JSX.Element> = {
   ),
 }
 
+// Ordered by how often a member opens them, not by the order the journey
+// happens in. "What have I got on this week" is the weekly habit; Open play
+// is occasional discovery, so My bookings sits above it.
 const NAV_ITEMS = [
   { href: '/book',        label: 'Book a court' },
-  { href: '/find-a-game', label: 'Open play' },
   { href: '/mybookings',  label: 'My bookings' },
+  { href: '/find-a-game', label: 'Open play' },
   { href: '/membership',  label: 'Membership' },
   { href: '/players',      label: 'Players' },
   { href: '/record-match', label: 'Record match' },
@@ -56,9 +59,9 @@ const NAV_ITEMS = [
 // sign out) lives behind "More", which opens the existing full menu panel.
 const TAB_BAR_ITEMS = [
   { href: '/book',        label: 'Book' },
-  { href: '/find-a-game', label: 'Open play' },
   { href: '/mybookings',  label: 'Bookings' },
-  { href: '/tournaments', label: 'Tournaments' },
+  { href: '/find-a-game', label: 'Open play' },
+  { href: '/players',     label: 'Players' },
 ]
 
 // Primary items get their own row at the top of the sidebar; the rest sit
