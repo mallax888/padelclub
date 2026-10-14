@@ -569,6 +569,27 @@ export default function BookingFlow({
               </button>
             )
           })}
+          {/* Not a spacer: it says the map is still growing, so a three-city
+              country doesn't read as a half-finished grid. Deliberately names
+              no city -- announcing one before there is a venue to book would
+              be a promise the app can't keep. Not a button, nothing happens
+              on tap. */}
+          <div className="rounded-xl p-5 text-left flex flex-col justify-between"
+            style={{ background: 'transparent', border: '1px dashed var(--border)', minHeight: 160 }}>
+            <div>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-subtle)', marginBottom: 12 }}>
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-muted)' }}>More cities</div>
+              <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>We&apos;re adding clubs</div>
+            </div>
+            <div className="flex gap-1 mt-3 flex-wrap">
+              <span className="text-[10px] px-2 py-0.5 rounded-full"
+                style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)', border: '1px dashed var(--border)' }}>
+                Coming soon
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -936,7 +957,7 @@ export default function BookingFlow({
                     steps back to a spaced-out label and the number carries the
                     button. Manrope is loaded at 600/700/800 (app/layout.tsx), so
                     800 is as heavy as this can go without adding a weight. */}
-                <span className="text-sm leading-none font-bold uppercase" style={{ letterSpacing: '0.14em', opacity: 0.72 }}>Pay</span>
+                <span className="text-[17px] leading-none font-bold uppercase" style={{ letterSpacing: '0.14em', opacity: 0.8 }}>Pay</span>
                 <span className="text-[42px] leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.03em' }}>
                   {formatPrice(Math.round(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice), currency)}
                 </span>
