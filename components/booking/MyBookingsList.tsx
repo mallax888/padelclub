@@ -86,6 +86,41 @@ const PlayerChip = ({ name, paid }: { name: string; paid: boolean }) => (
   </span>
 )
 
+// Opens the organiser's own WhatsApp with the reminder already written, and
+// sends nothing: they pick the recipient and press send themselves.
+//
+// Deliberately not the WhatsApp Business API, which would let the server
+// message a member directly -- that needs a Meta business account, templates
+// approved by Meta, a fee per conversation, and every member's phone number
+// held with their consent. A wa.me link needs none of those, because it is
+// one person messaging another in the app they already use for exactly this.
+//
+// No number is put in the link even where we hold one: WhatsApp then asks who
+// to send to, which keeps phone numbers out of the page's HTML.
+const RemindButton = ({ name, amount, court, venueName, when }: {
+  name: string
+  amount: string
+  court: string
+  venueName: string
+  when: string
+}) => {
+  const message = `Hey ${name.split(' ')[0]} — your share for ${court} at ${venueName}, ${when} is ${amount}.\n\nYou can pay it here: ${typeof window === 'undefined' ? '' : window.location.origin}/mybookings`
+  return (
+    <a
+      href={`https://wa.me/?text=${encodeURIComponent(message)}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      title={`Open WhatsApp with a reminder for ${name.split(' ')[0]} — nothing sends until you do`}
+      className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap"
+      style={{ background: '#25D36624', border: '1px solid #25D36680', color: '#25D366' }}
+    >
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.1-1.3A10 10 0 1 0 12 2zm5.2 14.1c-.2.6-1.2 1.2-1.7 1.2-.5.1-1 .1-1.6-.1-.4-.1-.9-.3-1.5-.6-2.6-1.1-4.3-3.8-4.4-4-.1-.2-1-1.4-1-2.6s.6-1.8.9-2.1c.2-.2.5-.3.7-.3h.5c.2 0 .4 0 .6.5s.8 1.9.8 2 .1.3 0 .4l-.3.5-.4.4c-.1.1-.3.3-.1.6s.6 1.1 1.4 1.8c1 .9 1.8 1.1 2 1.2s.4.1.6-.1.7-.8.9-1.1.4-.2.6-.1 1.5.7 1.8.8.4.2.5.3 0 .7-.3 1.3z"/></svg>
+      Remind
+    </a>
+  )
+}
+
 function paymentLabel(method: string, stripeId: string | null) {
   if (method === 'card' && stripeId) return { label: 'Paid', color: 'var(--brand-primary-text)' }
   if (method === 'card' && !stripeId) return { label: 'Payment pending', color: 'var(--text-muted)' }
@@ -603,7 +638,20 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
               {splits.map(s => {
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               const paid = s.status === 'paid'
-              return <PlayerChip key={s.id} name={name} paid={paid} />
+              return (
+                <span key={s.id} className="inline-flex items-center gap-1.5">
+                  <PlayerChip name={name} paid={paid} />
+                  {!paid && !past && (
+                    <RemindButton
+                      name={name}
+                      amount={formatPrice(Math.round(yourShare ?? b.price_nzd), bookingCurrency)}
+                      court={b.courts?.name ?? 'the court'}
+                      venueName={venue?.name ?? 'the club'}
+                      when={`${formatDate(b.date)} at ${b.start_time.slice(0, 5)}`}
+                    />
+                  )}
+                </span>
+              )
             })}
             </>
           )}
