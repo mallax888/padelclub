@@ -24,6 +24,15 @@ const DURATIONS = [
   { value: 2,   label: '120 min' },
 ]
 
+// The same length said in hours, for the second line of a duration tile --
+// plenty of people think in "an hour and a half" rather than "90 min".
+function hoursLabel(d: number) {
+  if (d === 0.5) return '\u00bd hr'
+  if (d === 1)   return '1 hr'
+  if (d === 1.5) return '1\u00bd hr'
+  return '2 hr'
+}
+
 function durationLabel(d: number) {
   if (d === 0.5) return '30 min'
   if (d === 1)   return '60 min'
@@ -616,11 +625,15 @@ export default function BookingFlow({
           kind. The court itself is still assigned from what's free. */}
       {step === 'duration' && (
         <div className="animate-fade-in">
-          <div className="space-y-2">
+          {/* Same four-across grid as the date tiles on the previous screen,
+              down to the three-line shape: the hour reading sits where a date
+              carries its Quiet/Busy line, so the two steps read as one
+              control rather than two different kinds of picker. */}
+          <div className="grid grid-cols-4 gap-2">
             {DURATIONS.map(d => (
               <button key={d.value}
                 onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
-                className="w-full rounded-xl p-4 text-left transition-all flex items-center justify-between"
+                className="rounded-xl p-3 text-center transition-all"
                 style={{
                   background: duration === d.value ? 'var(--brand-primary-muted)' : 'var(--bg-surface)',
                   border: `1px solid ${duration === d.value ? 'var(--brand-primary)' : 'var(--border)'}`,
@@ -628,7 +641,13 @@ export default function BookingFlow({
                 onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = duration === d.value ? 'var(--brand-primary)' : 'var(--border)')}
               >
-                <span className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{d.label}</span>
+                <div className="text-lg font-bold" style={{ color: duration === d.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>
+                  {d.value * 60}
+                </div>
+                <div className="text-[10px] opacity-60">min</div>
+                <div className="text-[9px] font-semibold mt-1.5" style={{ color: 'var(--brand-primary-text)' }}>
+                  {hoursLabel(d.value)}
+                </div>
               </button>
             ))}
           </div>
