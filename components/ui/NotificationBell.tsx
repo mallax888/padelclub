@@ -149,6 +149,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     if (type === 'join_declined') return '❌'
     if (type === 'match_full') return '🔥'
     if (type === 'booking_rescheduled') return '📅'
+    if (type === 'booking_released') return '💳'
     return '🔔'
   }
 
