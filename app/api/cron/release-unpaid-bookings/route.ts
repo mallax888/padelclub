@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { applyCancellationRefund } from '@/lib/cancellation'
+import { reportMoneyIssue } from '@/lib/report'
 
 const HOLD_MINUTES = 20
 
@@ -69,12 +70,17 @@ export async function GET(request: Request) {
       const result = await applyCancellationRefund(supabase, booking, { byStaff: true })
       sharesRefunded += result.splitsRefunded
       if (result.refundFailed) {
-        console.error('Refund failed while releasing stale booking', booking.id)
+        reportMoneyIssue('Refund failed while releasing an abandoned booking', { bookingId: booking.id })
       }
     } catch (err) {
       // One booking's refund blowing up shouldn't strand the rest -- the
-      // slots are already released, which is this cron's main job.
-      console.error('Could not unwind payments for released booking', booking.id, err)
+      // slots are already released, which is this cron's main job. It does
+      // mean somebody's share may not have come back though, and this runs
+      // unattended every 15 minutes, so it must not fail quietly.
+      reportMoneyIssue('Could not unwind payments for a released booking', {
+        bookingId: booking.id,
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
   }
   const { error: matchError } = await supabase.from('open_matches').update({ status: 'cancelled' }).in('booking_id', bookingIds).eq('status', 'open')

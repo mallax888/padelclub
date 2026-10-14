@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { stripe } from '@/lib/stripe'
 import { hoursUntilBooking } from '@/lib/timezone'
+import { reportMoneyIssue } from '@/lib/report'
 
 export type CancellableBooking = {
   id: string
@@ -35,7 +36,14 @@ export async function refundIntent(paymentIntentId: string, bookingId: string): 
     return true
   } catch (err: any) {
     if (err?.code === 'charge_already_refunded') return true
-    console.error('Stripe refund failed for booking', bookingId, paymentIntentId, err)
+    // Someone is owed money and hasn't got it. This is the single most
+    // expensive thing in the codebase to not notice.
+    reportMoneyIssue('Stripe refund failed', {
+      bookingId,
+      paymentIntentId,
+      stripeCode: err?.code,
+      stripeMessage: err?.message,
+    })
     return false
   }
 }
