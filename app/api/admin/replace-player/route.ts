@@ -7,6 +7,55 @@ import { createServerClient } from '@/lib/supabase-server'
 // charged again -- the two players settle up between themselves. The only
 // thing recorded is who previously held the seat, so the roster can still
 // show whose spot it was.
+
+// Postgres "column does not exist". The replaced_* columns come from
+// 019_seat_replacement_history.sql, and a deployment that hasn't run it yet
+// failed every swap with a generic "please try again". The seat history is a
+// nice-to-have; being unable to replace a player who pulled out is a real
+// problem on a Saturday morning, so the swap goes ahead without it.
+const UNDEFINED_COLUMN = '42703'
+
+type SeatTable = 'booking_splits' | 'open_match_players'
+
+// Applies the swap, dropping the history columns and carrying on if they
+// aren't there. Returns null on success, or a message explaining what
+// actually went wrong -- this is a staff-only route, so a precise answer is
+// more useful than a safe one. The previous code collapsed every failure,
+// including a missing column and an RLS refusal, into one dead end.
+async function applySwap(
+  supabase: ReturnType<typeof createServerClient>,
+  table: SeatTable,
+  rowId: string,
+  patch: Record<string, unknown>,
+  historyPatch: Record<string, unknown>,
+): Promise<string | null> {
+  const attempt = (body: Record<string, unknown>) =>
+    supabase.from(table).update(body as any).eq('id', rowId).select('id').maybeSingle()
+
+  let { data, error } = await attempt({ ...patch, ...historyPatch })
+
+  if (error?.code === UNDEFINED_COLUMN) {
+    console.error(
+      `${table}: seat-history columns missing, so this swap records no predecessor. ` +
+      'Run supabase/migrations/019_seat_replacement_history.sql.',
+      error.message,
+    )
+    ;({ data, error } = await attempt(patch))
+  }
+
+  if (error) {
+    console.error(`Could not replace seat ${rowId} on ${table}:`, error.code, error.message)
+    return `The database rejected that change: ${error.message}`
+  }
+  if (!data) {
+    // No error and no row means row-level security filtered the update out:
+    // the seat exists and was readable, but this account can't write to it.
+    console.error(`Replacing seat ${rowId} on ${table} matched no row — RLS or a stale id`)
+    return 'That seat could not be updated. It may belong to another venue, or this account may not have permission to change it.'
+  }
+  return null
+}
+
 export async function POST(request: Request) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -67,15 +116,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'They already have a spot on this booking.' }, { status: 400 })
     }
 
-    const { data: updated, error } = await supabase
-      .from('booking_splits')
-      .update({ user_id: newPlayerId, replaced_user_id: current.user_id, replaced_at: replacedAt } as any)
-      .eq('id', rowId)
-      .select('id')
-      .maybeSingle()
-    if (error || !updated) {
-      return NextResponse.json({ error: 'Could not replace that player — please try again.' }, { status: 500 })
-    }
+    const failure = await applySwap(
+      supabase,
+      'booking_splits',
+      rowId,
+      { user_id: newPlayerId },
+      { replaced_user_id: current.user_id, replaced_at: replacedAt },
+    )
+    if (failure) return NextResponse.json({ error: failure }, { status: 500 })
     return NextResponse.json({ success: true })
   }
 
@@ -113,15 +161,14 @@ export async function POST(request: Request) {
 
   // A replacement joining an open match takes the seat outright -- they're
   // not re-requesting a spot the organizer already approved.
-  const { data: updated, error } = await supabase
-    .from('open_match_players')
-    .update({ player_id: newPlayerId, status: 'accepted', replaced_player_id: current.player_id, replaced_at: replacedAt } as any)
-    .eq('id', rowId)
-    .select('id')
-    .maybeSingle()
-  if (error || !updated) {
-    return NextResponse.json({ error: 'Could not replace that player — please try again.' }, { status: 500 })
-  }
+  const failure = await applySwap(
+    supabase,
+    'open_match_players',
+    rowId,
+    { player_id: newPlayerId, status: 'accepted' },
+    { replaced_player_id: current.player_id, replaced_at: replacedAt },
+  )
+  if (failure) return NextResponse.json({ error: failure }, { status: 500 })
 
   return NextResponse.json({ success: true })
 }

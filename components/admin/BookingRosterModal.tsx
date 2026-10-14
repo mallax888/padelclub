@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
-import type { Profile } from '@/types/database'
 
 type RosterPlayer = {
   id: string
@@ -32,20 +31,20 @@ export default function BookingRosterModal({
   title,
   subtitle,
   currency,
-  members,
   onClose,
 }: {
   bookingId: string
   title: string
   subtitle: string
   currency: CurrencyCode
-  members: Profile[]
   onClose: () => void
 }) {
   const [data, setData] = useState<RosterResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [replacingRowId, setReplacingRowId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [results, setResults] = useState<{ id: string; full_name: string | null; nickname: string | null }[]>([])
+  const [searching, setSearching] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -60,6 +59,32 @@ export default function BookingRosterModal({
   }, [bookingId])
 
   useEffect(() => { load() }, [load])
+
+  // Searches every member rather than the admin page's own list. That list is
+  // loaded with .eq('role', 'member') and narrowed by the staff member's venue
+  // or country scope, so a profile whose role was never set to exactly
+  // 'member' could not be found here at all -- typing a letter turned up one
+  // name when it should have turned up a dozen. The seat is being handed to a
+  // person, not to a role, so this asks the same endpoint the booking flow's
+  // split picker uses.
+  useEffect(() => {
+    const term = search.trim()
+    if (term.length < 2) { setResults([]); return }
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      setSearching(true)
+      try {
+        const res = await fetch(`/api/players/search?q=${encodeURIComponent(term)}`, { signal: controller.signal })
+        const body = await res.json()
+        setResults(body.players ?? [])
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') setResults([])
+      } finally {
+        setSearching(false)
+      }
+    }, 250)
+    return () => { clearTimeout(timer); controller.abort() }
+  }, [search])
 
   const replacePlayer = async (rowId: string, newPlayerId: string) => {
     if (!data) return
@@ -84,19 +109,17 @@ export default function BookingRosterModal({
   // Anyone already on this booking is excluded: giving them a second seat
   // would list them twice and double-count them in the collected total.
   const alreadyOnBooking = new Set((data?.players ?? []).map(p => p.playerId).filter(Boolean) as string[])
-  const memberMatches = search.trim().length === 0 ? [] : members
-    .filter(m => !alreadyOnBooking.has(m.id))
-    .filter(m => {
-      const name = ((m as any).nickname ?? m.full_name ?? '').toLowerCase()
-      return name.includes(search.trim().toLowerCase())
-    })
-    .slice(0, 5)
+  const memberMatches = results.filter(m => !alreadyOnBooking.has(m.id))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: 'rgba(0,0,0,0.6)' }}
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="rounded-2xl w-full max-w-sm overflow-hidden max-h-[85vh] flex flex-col"
+    // Sat dead centre, over the board it describes -- so checking a booking
+    // meant covering the grid you were reading it against. On a wide screen it
+    // now sits against the right edge with a much lighter scrim, leaving the
+    // calendar visible behind it. On a phone there is no room to be out of the
+    // way, so it stays a sheet, anchored to the bottom where a thumb is.
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 md:items-center md:justify-end md:p-6">
+      <div className="absolute inset-0 bg-black/60 md:bg-black/20" onClick={onClose} aria-hidden />
+      <div className="relative rounded-2xl w-full max-w-sm overflow-hidden max-h-[85vh] flex flex-col"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="flex items-start justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
@@ -173,8 +196,13 @@ export default function BookingRosterModal({
                           <span className="text-xs truncate">{(m as any).nickname ?? m.full_name ?? '—'}</span>
                         </button>
                       ))}
-                      {search.trim().length > 0 && memberMatches.length === 0 && (
-                        <div className="text-xs mt-2" style={{ color: 'var(--text-subtle)' }}>No members match that name.</div>
+                      {search.trim().length === 1 && (
+                        <div className="text-xs mt-2" style={{ color: 'var(--text-subtle)' }}>Keep typing…</div>
+                      )}
+                      {search.trim().length >= 2 && memberMatches.length === 0 && (
+                        <div className="text-xs mt-2" style={{ color: 'var(--text-subtle)' }}>
+                          {searching ? 'Searching…' : 'No members match that name.'}
+                        </div>
                       )}
                       <div className="text-[11px] mt-2 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
                         The seat keeps its payment as-is — no refund is issued and the replacement isn&apos;t charged again.

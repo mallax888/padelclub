@@ -1420,7 +1420,6 @@ function BoardView({
           title={rosterBooking.title}
           subtitle={rosterBooking.subtitle}
           currency={venueCurrency}
-          members={members}
           onClose={() => setRosterBooking(null)}
         />
       )}
