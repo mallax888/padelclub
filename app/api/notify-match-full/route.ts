@@ -1,4 +1,4 @@
-import { resend } from '@/lib/resend'
+import { resend, emailFrom } from '@/lib/resend'
 import { renderEmailShell } from '@/lib/email-template'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     await Promise.all(
       recipients.map(player =>
         resend.emails.send({
-          from: 'PadelClub <onboarding@resend.dev>',
+          from: emailFrom(),
           to: player.email,
           subject: `Match is full — ${court}, ${date}`,
           html: renderEmailShell({

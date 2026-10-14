@@ -13,3 +13,25 @@ export const resend = new Proxy({} as Resend, {
     return Reflect.get(_resend, prop, receiver)
   },
 })
+
+// onboarding@resend.dev is Resend's sandbox sender. It only delivers to the
+// address that owns the Resend account, so in production every confirmation,
+// reminder and refund notice silently reaches nobody: Resend accepts the send
+// and returns success, the mail just never arrives.
+//
+// Going live is therefore an environment variable rather than a deploy --
+// verify a domain in Resend, add its DNS records, then set RESEND_FROM to
+// something like "PadelClub <bookings@padelclub.nz>".
+const SANDBOX_FROM = 'PadelClub <onboarding@resend.dev>'
+
+export function emailFrom(): string {
+  const configured = process.env.RESEND_FROM?.trim()
+  if (configured) return configured
+  if (process.env.VERCEL_ENV === 'production') {
+    console.error(
+      'RESEND_FROM is not set, so mail is going out from the Resend sandbox address and ' +
+      'members will not receive it. Verify a domain in Resend and set RESEND_FROM.',
+    )
+  }
+  return SANDBOX_FROM
+}
