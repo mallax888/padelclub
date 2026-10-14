@@ -1,4 +1,4 @@
-import { resend } from '@/lib/resend'
+import { resend, emailFrom } from '@/lib/resend'
 import type { Special } from '@/lib/specials'
 import { renderEmailShell, EMAIL_BRAND } from '@/lib/email-template'
 
@@ -34,7 +34,7 @@ export async function sendBookingConfirmationEmail({
             `).join('')}
           </div>`
   await resend.emails.send({
-    from: 'PadelClub <onboarding@resend.dev>',
+    from: emailFrom(),
     to,
     subject: `Booking confirmed — ${court}, ${date}`,
     html: renderEmailShell({
