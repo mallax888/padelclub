@@ -1,0 +1,26 @@
+name: Release unpaid bookings
+
+# A booking holds its slot the moment it's created, before payment, and
+# expires after HOLD_MINUTES = 20 (see app/api/cron/release-unpaid-bookings).
+# Vercel's Hobby plan only allows one cron run per day, so vercel.json could
+# only ever check for expired holds at 3am -- meaning an abandoned checkout
+# took a court off the board for up to 24 hours.
+#
+# This runs the same endpoint on GitHub's scheduler every 15 minutes, so an
+# abandoned hold is released within about 35 minutes at worst. The daily
+# Vercel cron stays in place as a backstop: GitHub disables scheduled
+# workflows on a repository with no activity for 60 days, and a quiet month
+# shouldn't silently turn court releases off.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call release-unpaid-bookings endpoint
+        run: |
+          curl -sS -f -X GET "${{ vars.APP_URL }}/api/cron/release-unpaid-bookings" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
