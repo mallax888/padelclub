@@ -54,6 +54,13 @@ function durationLabel(d: number) {
 type Step = 'country' | 'region' | 'venue' | 'date' | 'duration' | 'time' | 'confirm'
 const STEPS: Step[] = ['country', 'region', 'venue', 'date', 'duration', 'time', 'confirm']
 
+// A player in the split picker. splitCount is how many courts this member has
+// already shared with them (from booking_splits) and is absent on a search
+// result, which by definition is someone they may never have played with.
+type Player = { id: string; full_name: string | null; nickname: string | null; splitCount?: number }
+
+const playerName = (p: Player) => p.nickname ?? p.full_name ?? 'Player'
+
 function dateLabel(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
   return { day: DAYS[d.getDay()], num: d.getDate(), month: MONTHS[d.getMonth()] }
@@ -63,12 +70,12 @@ export default function BookingFlow({
     courts,
     profile,
     userId,
-    allPlayers = [],
+    recentPlayers = [],
   }: {
     courts: Court[]
     profile: Profile
     userId: string
-    allPlayers?: { id: string; full_name: string | null; nickname: string | null }[]
+    recentPlayers?: Player[]
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -110,6 +117,41 @@ export default function BookingFlow({
   const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
   const [splitEnabled, setSplitEnabled] = useState(false)
   const [splitPlayers, setSplitPlayers] = useState<string[]>([])
+  const [playerQuery, setPlayerQuery] = useState('')
+  const [playerResults, setPlayerResults] = useState<Player[]>([])
+  const [searchingPlayers, setSearchingPlayers] = useState(false)
+  // Everyone we've been able to name so far, so a player picked from a search
+  // result keeps their name on screen after the search box is cleared.
+  const [knownPlayers, setKnownPlayers] = useState<Record<string, Player>>(
+    () => Object.fromEntries(recentPlayers.map(p => [p.id, p])),
+  )
+
+  // Debounced name search. The page no longer ships the whole member directory,
+  // so anyone outside this member's split history is found by typing a name.
+  useEffect(() => {
+    const term = playerQuery.trim()
+    if (term.length < 2) {
+      setPlayerResults([])
+      setSearchingPlayers(false)
+      return
+    }
+    setSearchingPlayers(true)
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/players/search?q=${encodeURIComponent(term)}`, { signal: controller.signal })
+        const body = await res.json()
+        const found: Player[] = body.players ?? []
+        setPlayerResults(found)
+        setKnownPlayers(prev => ({ ...prev, ...Object.fromEntries(found.map(p => [p.id, p])) }))
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') setPlayerResults([])
+      } finally {
+        setSearchingPlayers(false)
+      }
+    }, 250)
+    return () => { clearTimeout(timer); controller.abort() }
+  }, [playerQuery])
   const [submitting, setSubmitting] = useState(false)
   const [dateBusyness, setDateBusyness] = useState<Record<string, number>>({})
 
@@ -817,21 +859,64 @@ export default function BookingFlow({
             {splitEnabled && (
               <div className="mt-3 space-y-2">
                 <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Select up to 3 players to split with</div>
-                {allPlayers.filter(p => p.id !== userId).map(p => {
-                  const selected = splitPlayers.includes(p.id)
+                {(() => {
+                  const searching = playerQuery.trim().length >= 2
+                  const listed = searching ? playerResults : recentPlayers
+                  // Whoever is already selected stays on screen even when the
+                  // current list doesn't contain them -- otherwise clearing the
+                  // search box would hide a pick without unmaking it.
+                  const pinned = splitPlayers
+                    .filter(id => !listed.some(p => p.id === id))
+                    .flatMap(id => knownPlayers[id] ? [knownPlayers[id]] : [])
+                  const rows = [...pinned, ...listed].filter(p => p.id !== userId)
                   return (
-                    <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all"
-                      style={{
-                        background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
-                        border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
-                        boxShadow: selected ? 'var(--glow-primary)' : 'none',
-                      }}>
-                      <span className="text-sm" style={{ color: selected ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{p.nickname ?? p.full_name}</span>
-                      {selected && <span className="text-xs font-semibold" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} each</span>}
-                    </button>
+                    <>
+                      {rows.map(p => {
+                        const selected = splitPlayers.includes(p.id)
+                        return (
+                          <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}
+                            className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl transition-all"
+                            style={{
+                              background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
+                              border: selected ? '1px solid var(--brand-primary)' : '1px solid var(--border)',
+                              boxShadow: selected ? 'var(--glow-primary)' : 'none',
+                            }}>
+                            <span className="min-w-0 text-left">
+                              <span className="block text-sm truncate" style={{ color: selected ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{playerName(p)}</span>
+                              {p.splitCount !== undefined && (
+                                <span className="block text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>
+                                  Split {p.splitCount} {p.splitCount === 1 ? 'court' : 'courts'} together
+                                </span>
+                              )}
+                            </span>
+                            {selected && <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} each</span>}
+                          </button>
+                        )
+                      })}
+                      {rows.length === 0 && (
+                        <div className="text-xs text-center py-3" style={{ color: 'var(--text-subtle)' }}>
+                          {searching
+                            ? (searchingPlayers ? 'Searching…' : `No players found for "${playerQuery.trim()}"`)
+                            : 'Search for the players you want to split with. Once you have shared a court with someone, they show up here automatically.'}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" style={{ color: 'var(--text-subtle)', flexShrink: 0 }}><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                        <input
+                          type="text"
+                          value={playerQuery}
+                          onChange={e => setPlayerQuery(e.target.value)}
+                          placeholder={recentPlayers.length ? 'Search for someone else' : 'Search by name'}
+                          className="w-full bg-transparent text-sm outline-none"
+                          style={{ color: 'var(--text-primary)' }}
+                        />
+                        {playerQuery && (
+                          <button onClick={() => setPlayerQuery('')} className="text-xs" style={{ color: 'var(--text-subtle)', flexShrink: 0 }}>Clear</button>
+                        )}
+                      </div>
+                    </>
                   )
-                })}
+                })()}
                 {splitPlayers.length > 0 && (
                   <div className="text-xs pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
                     You pay {formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} - others notified to pay their share
