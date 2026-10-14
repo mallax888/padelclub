@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 // Swapping a player who pulled out relabels their seat in place: the seat's
 // payment state (status, amount, stripe_payment_id for a split) is left
@@ -22,8 +23,19 @@ type SeatTable = 'booking_splits' | 'open_match_players'
 // actually went wrong -- this is a staff-only route, so a precise answer is
 // more useful than a safe one. The previous code collapsed every failure,
 // including a missing column and an RLS refusal, into one dead end.
+//
+// The write goes through the service-role client, unlike cancel-booking and
+// reschedule-booking which deliberately write as the caller so that "Staff
+// can manage all bookings" enforces venue scoping for them. That works on
+// `bookings`, which has that policy. booking_splits and open_match_players
+// were created outside the migrations with row-level security switched on and
+// no staff write policy at all, so the same approach silently matched zero
+// rows and every swap failed. Scoping is enforced before we get here instead:
+// the caller must be able to read the parent booking through their own
+// client, and `bookings` is the table whose staff policies are properly
+// venue- and country-scoped (017_country_scoped_staff.sql).
 async function applySwap(
-  supabase: ReturnType<typeof createServerClient>,
+  supabase: ReturnType<typeof createAdminClient>,
   table: SeatTable,
   rowId: string,
   patch: Record<string, unknown>,
@@ -48,10 +60,8 @@ async function applySwap(
     return `The database rejected that change: ${error.message}`
   }
   if (!data) {
-    // No error and no row means row-level security filtered the update out:
-    // the seat exists and was readable, but this account can't write to it.
-    console.error(`Replacing seat ${rowId} on ${table} matched no row — RLS or a stale id`)
-    return 'That seat could not be updated. It may belong to another venue, or this account may not have permission to change it.'
+    console.error(`Replacing seat ${rowId} on ${table} matched no row — the seat may have just been removed`)
+    return 'That seat no longer exists. Close the panel and reopen it to see the current roster.'
   }
   return null
 }
@@ -75,13 +85,18 @@ export async function POST(request: Request) {
 
   const replacedAt = new Date().toISOString()
 
-  // Same pattern as cancel-booking/reschedule-booking: the caller's own
-  // session client means existing RLS decides whether this seat is inside
-  // their venue/country, rather than re-deriving that scoping here.
+  // Every read below stays on the caller's own session client, so existing
+  // RLS decides what this staff member is allowed to see. The parent booking
+  // read in particular is the venue/country gate: `bookings` carries the
+  // properly scoped staff policies from 017_country_scoped_staff.sql, so a
+  // manager scoped to one venue simply cannot see a booking outside it, and
+  // this route refuses before writing anything.
   //
   // The replaced_* columns come from 019_seat_replacement_history.sql and
   // aren't in the generated types until those are regenerated against the
   // live database, hence the casts on the patch objects below.
+  const admin = createAdminClient()
+
   if (type === 'split') {
     const { data: current } = await supabase
       .from('booking_splits')
@@ -95,15 +110,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'That player already has this seat.' }, { status: 400 })
     }
 
-    // Without this, slotting in someone who already holds a seat on this
-    // booking (or is the organizer, whose share is the booking itself) would
-    // give them two seats and double-count them in the collected total.
+    // Doubles as the scope gate for the service-role write below: if this
+    // staff account can't read the parent booking, the booking is outside
+    // their venue or country and nothing further happens.
     const { data: booking } = await supabase
       .from('bookings')
       .select('user_id')
       .eq('id', current.booking_id)
       .maybeSingle()
-    if (booking?.user_id === newPlayerId) {
+    if (!booking) {
+      return NextResponse.json({ error: 'That booking is outside your venue.' }, { status: 403 })
+    }
+    // Without this, slotting in someone who already holds a seat on this
+    // booking (or is the organizer, whose share is the booking itself) would
+    // give them two seats and double-count them in the collected total.
+    if (booking.user_id === newPlayerId) {
       return NextResponse.json({ error: 'They booked this court — they already have a spot.' }, { status: 400 })
     }
     const { data: existingSeat } = await supabase
@@ -117,7 +138,7 @@ export async function POST(request: Request) {
     }
 
     const failure = await applySwap(
-      supabase,
+      admin,
       'booking_splits',
       rowId,
       { user_id: newPlayerId },
@@ -139,13 +160,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'That player already has this seat.' }, { status: 400 })
   }
 
-  // Same reason as the split branch: one player, one seat per match.
   const { data: match } = await supabase
     .from('open_matches')
-    .select('organizer_id')
+    .select('organizer_id, booking_id')
     .eq('id', current.match_id)
     .maybeSingle()
-  if (match?.organizer_id === newPlayerId) {
+  if (!match) {
+    return NextResponse.json({ error: 'That match is outside your venue.' }, { status: 403 })
+  }
+  // Same venue/country gate as the split branch: the parent booking has to be
+  // readable by this staff account before the service-role write happens.
+  if (match.booking_id) {
+    const { data: parentBooking } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('id', match.booking_id)
+      .maybeSingle()
+    if (!parentBooking) {
+      return NextResponse.json({ error: 'That booking is outside your venue.' }, { status: 403 })
+    }
+  }
+  // Same reason as the split branch: one player, one seat per match.
+  if (match.organizer_id === newPlayerId) {
     return NextResponse.json({ error: 'They organised this match — they already have a spot.' }, { status: 400 })
   }
   const { data: existingSeat } = await supabase
@@ -162,7 +198,7 @@ export async function POST(request: Request) {
   // A replacement joining an open match takes the seat outright -- they're
   // not re-requesting a spot the organizer already approved.
   const failure = await applySwap(
-    supabase,
+    admin,
     'open_match_players',
     rowId,
     { player_id: newPlayerId, status: 'accepted' },
