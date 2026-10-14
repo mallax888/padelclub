@@ -8,6 +8,7 @@ import { getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { getActiveSpecialsForVenueDate } from '@/lib/specials'
 import { syncReceiveMoneyToXero } from '@/lib/xero'
+import { refundIntent } from '@/lib/cancellation'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -135,16 +136,58 @@ export async function POST(request: Request) {
       // is for split_payment — stripe_payment_id starting out null is what
       // marks this as the first successful payment for this booking. A
       // retried event finds it already set and skips re-sending the email.
-      const { data: booking } = await supabase.from('bookings').update({
+      //
+      // The status guard below is a different thing: the booking must still
+      // be holding its slot for this payment to land. The release cron flips
+      // an unpaid hold to 'cancelled' after 20 minutes, while a Stripe
+      // Checkout Session stays payable for 24 hours — so a member can return
+      // to an abandoned tab long after their court was released and pay for
+      // it. Without the guard that silently resurrected the booking; and
+      // where someone else had taken the slot meanwhile, no_double_booking
+      // (migration 016) rejected the update, which went unnoticed because the
+      // error was never read. Either way the member was charged.
+      const { data: booking, error: bookingError } = await supabase.from('bookings').update({
         status: 'confirmed',
         payment_method: 'card',
         stripe_payment_id: session.payment_intent,
       }).eq('id', bookingId)
         .is('stripe_payment_id', null)
+        .eq('status', 'confirmed')
         .select('date, start_time, end_time, duration_minutes, price_nzd, user_id, courts(name, type, venue_slug)')
         .maybeSingle()
 
-      if (booking?.user_id) {
+      if (!booking) {
+        // Three ways to get here and only one of them is fine: a retried
+        // delivery for a booking already paid (stripe_payment_id set —
+        // nothing to do), the hold having been released before the payment
+        // landed, or the slot having been retaken so the constraints rejected
+        // the update. In the last two the member has paid for a court they
+        // don't have, so give the money back rather than leave them to
+        // discover it on their statement.
+        const { data: current } = await supabase
+          .from('bookings')
+          .select('user_id, stripe_payment_id')
+          .eq('id', bookingId)
+          .maybeSingle()
+
+        if (!current?.stripe_payment_id && session.payment_intent) {
+          console.error(
+            'Payment landed for a booking that no longer holds its slot — refunding',
+            bookingId,
+            bookingError ?? '(hold already released)',
+          )
+          const refunded = await refundIntent(session.payment_intent, bookingId)
+          if (current?.user_id) {
+            await supabase.from('notifications').insert({
+              user_id: current.user_id,
+              type: 'booking_released',
+              message: refunded
+                ? 'That court was released before your payment went through, so we have refunded you in full. Refunds take a few days to appear on your statement.'
+                : 'That court was released before your payment went through, and we could not refund you automatically. Please get in touch and we will sort it out.',
+            })
+          }
+        }
+      } else if (booking.user_id) {
         const { data: recipient } = await supabase
           .from('profiles')
           .select('email, full_name, nickname')

@@ -29,7 +29,7 @@ export type CancellationResult = {
 // a status guard upstream) errors exactly like a genuine problem would, but
 // the money is already back where it belongs. Returns whether the payer has
 // been made whole.
-async function refundIntent(paymentIntentId: string, bookingId: string): Promise<boolean> {
+export async function refundIntent(paymentIntentId: string, bookingId: string): Promise<boolean> {
   try {
     await stripe.refunds.create({ payment_intent: paymentIntentId })
     return true
