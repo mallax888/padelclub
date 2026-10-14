@@ -9,6 +9,7 @@ import { getAppUrl } from '@/lib/env'
 import { getActiveSpecialsForVenueDate } from '@/lib/specials'
 import { syncReceiveMoneyToXero } from '@/lib/xero'
 import { refundIntent } from '@/lib/cancellation'
+import { reportMoneyIssue } from '@/lib/report'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -171,12 +172,13 @@ export async function POST(request: Request) {
           .maybeSingle()
 
         if (!current?.stripe_payment_id && session.payment_intent) {
-          console.error(
-            'Payment landed for a booking that no longer holds its slot — refunding',
-            bookingId,
-            bookingError ?? '(hold already released)',
-          )
           const refunded = await refundIntent(session.payment_intent, bookingId)
+          reportMoneyIssue('Payment landed for a booking that no longer holds its slot', {
+            bookingId,
+            paymentIntent: session.payment_intent,
+            refunded,
+            reason: bookingError?.message ?? 'hold already released',
+          })
           if (current?.user_id) {
             await supabase.from('notifications').insert({
               user_id: current.user_id,
