@@ -1,12 +1,16 @@
 'use client'
 
 export default function BoardFooterStrip({
+  rangeLabel = 'This week',
   thisWeekCount,
   thisWeekTrend,
   peakTime,
   mostPopularCourtName,
   avgDurationLabel,
 }: {
+  // "This week" was hardcoded while the figures could describe a day or a
+  // month, depending on the board's view.
+  rangeLabel?: string
   thisWeekCount: number
   thisWeekTrend: number | null
   peakTime: string | null
@@ -14,7 +18,7 @@ export default function BoardFooterStrip({
   avgDurationLabel: string | null
 }) {
   const items = [
-    { label: 'This week', value: `${thisWeekCount} bookings`, trend: thisWeekTrend },
+    { label: rangeLabel, value: `${thisWeekCount} bookings`, trend: thisWeekTrend },
     { label: 'Peak time', value: peakTime ?? '—', trend: null },
     { label: 'Most popular court', value: mostPopularCourtName ?? '—', trend: null },
     { label: 'Avg booking duration', value: avgDurationLabel ?? '—', trend: null },

@@ -32,12 +32,17 @@ export default function BookingRosterModal({
   subtitle,
   currency,
   onClose,
+  inline = false,
 }: {
   bookingId: string
   title: string
   subtitle: string
   currency: CurrencyCode
   onClose: () => void
+  // Rendered in the page's own flow, beside the board, rather than as an
+  // overlay on top of it. No backdrop and no fixed positioning, so the
+  // dashboard can make room for it instead of being covered by it.
+  inline?: boolean
 }) {
   const [data, setData] = useState<RosterResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -117,10 +122,7 @@ export default function BookingRosterModal({
     // now sits against the right edge with a much lighter scrim, leaving the
     // calendar visible behind it. On a phone there is no room to be out of the
     // way, so it stays a sheet, anchored to the bottom where a thumb is.
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 md:items-start md:justify-end md:p-6 md:pt-[22rem]">
-      <div className="absolute inset-0 bg-black/60 md:bg-black/20" onClick={onClose} aria-hidden />
-      <div className="relative rounded-2xl w-full max-w-sm overflow-hidden max-h-[85vh] flex flex-col"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+    <Shell inline={inline} onClose={onClose}>
         <div className="flex items-start justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
           {/* A heading of its own, so the panel reads as a section of the page
               rather than a card that appeared. "Booking details" rather than
@@ -230,7 +232,30 @@ export default function BookingRosterModal({
             </span>
           </div>
         )}
-      </div>
+    </Shell>
+  )
+}
+
+// Docked, the panel is just a card in the layout. As an overlay it needs the
+// fixed wrapper and a backdrop to dismiss it, which on a phone is a sheet
+// anchored to the bottom where a thumb is.
+function Shell({ inline, onClose, children }: { inline: boolean; onClose: () => void; children: React.ReactNode }) {
+  const card = (
+    <div className="relative rounded-2xl w-full overflow-hidden flex flex-col"
+      style={{
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow-float)',
+        maxHeight: inline ? undefined : '85vh',
+      }}>
+      {children}
+    </div>
+  )
+  if (inline) return card
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
+      <div className="relative w-full max-w-sm">{card}</div>
     </div>
   )
 }
