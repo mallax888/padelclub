@@ -117,14 +117,21 @@ export default function BookingRosterModal({
     // now sits against the right edge with a much lighter scrim, leaving the
     // calendar visible behind it. On a phone there is no room to be out of the
     // way, so it stays a sheet, anchored to the bottom where a thumb is.
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 md:items-center md:justify-end md:p-6">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 md:items-start md:justify-end md:p-6 md:pt-[22rem]">
       <div className="absolute inset-0 bg-black/60 md:bg-black/20" onClick={onClose} aria-hidden />
       <div className="relative rounded-2xl w-full max-w-sm overflow-hidden max-h-[85vh] flex flex-col"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="flex items-start justify-between px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <div>
-            <div className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>{title}</div>
-            <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>{subtitle}</div>
+          {/* A heading of its own, so the panel reads as a section of the page
+              rather than a card that appeared. "Booking details" rather than
+              "Who's playing" because it already carries payment status and the
+              total collected, and will likely grow further. */}
+          <div className="min-w-0">
+            <div className="font-bold text-sm" style={{ color: 'var(--text-primary)', borderLeft: '3px solid var(--brand-primary)', paddingLeft: 8 }}>
+              Booking details
+            </div>
+            <div className="text-xs mt-1" style={{ color: 'var(--text-primary)', paddingLeft: 11 }}>{title}</div>
+            <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)', paddingLeft: 11 }}>{subtitle}</div>
           </div>
           <button onClick={onClose} className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>✕</button>
