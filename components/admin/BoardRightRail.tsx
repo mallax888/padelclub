@@ -48,11 +48,15 @@ export type RailBooking = {
 }
 
 export default function BoardRightRail({
+  overviewLabel = "Today's Bookings",
   todayCounts,
   upcomingBookings,
   onBlockCourt,
   onAddCourt,
 }: {
+  // The donut counts whatever range the board is showing, so its title
+  // has to follow the same selector rather than always saying "Today's".
+  overviewLabel?: string
   todayCounts: { regular: number; openPlay: number; blocked: number }
   upcomingBookings: RailBooking[]
   onBlockCourt: () => void
@@ -68,7 +72,7 @@ export default function BoardRightRail({
   return (
     <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <div className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Today's Bookings Overview</div>
+        <div className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{overviewLabel} Overview</div>
         <div className="flex items-center gap-4">
           <Donut slices={slices} total={total} />
           <div className="space-y-2 flex-1 min-w-0">
