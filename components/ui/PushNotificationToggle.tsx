@@ -1,93 +1,48 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { Smartphone } from 'lucide-react'
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4)
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
-  const rawData = atob(base64)
-  const outputArray = new Uint8Array(rawData.length)
-  for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i)
-  return outputArray
-}
+import { readPushSupport, subscribeToPush, unsubscribeFromPush } from '@/lib/push-client'
 
 export default function PushNotificationToggle() {
-  const supabase = createClient()
   const [supported, setSupported] = useState(false)
   const [enabled, setEnabled] = useState(false)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const check = async () => {
-      if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return
-      setSupported(true)
-      try {
-        const reg = await navigator.serviceWorker.register('/sw.js')
-        const sub = await reg.pushManager.getSubscription()
-        setEnabled(!!sub)
-      } catch {
-        setSupported(false)
-      }
-    }
-    check()
+    readPushSupport().then(support => {
+      setSupported(support.state === 'available' || support.state === 'subscribed')
+      setEnabled(support.state === 'subscribed')
+    })
   }, [])
 
   const enable = async () => {
-    const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
-    if (!publicKey) {
-      toast.error('Push notifications are not set up for this deployment yet')
-      return
-    }
     setLoading(true)
-    try {
-      const permission = await Notification.requestPermission()
-      if (permission !== 'granted') {
-        toast.error('Notifications permission denied')
-        setLoading(false)
-        return
-      }
-      const reg = await navigator.serviceWorker.ready
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      })
-      const json = sub.toJSON()
-      const res = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
-      })
-      if (!res.ok) throw new Error('Failed to save subscription')
+    const result = await subscribeToPush()
+    setLoading(false)
+    if (result === 'subscribed') {
       setEnabled(true)
       toast.success('Push notifications enabled!')
-    } catch {
+    } else if (result === 'unconfigured') {
+      toast.error('Push notifications are not set up for this deployment yet')
+    } else if (result === 'denied') {
+      toast.error('Notifications permission denied')
+    } else {
       toast.error('Could not enable push notifications')
     }
-    setLoading(false)
   }
 
   const disable = async () => {
     setLoading(true)
-    try {
-      const reg = await navigator.serviceWorker.ready
-      const sub = await reg.pushManager.getSubscription()
-      if (sub) {
-        await fetch('/api/push/unsubscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: sub.endpoint }),
-        })
-        await sub.unsubscribe()
-      }
+    const ok = await unsubscribeFromPush()
+    setLoading(false)
+    if (ok) {
       setEnabled(false)
       toast.success('Push notifications turned off')
-    } catch {
+    } else {
       toast.error('Could not turn off push notifications')
     }
-    setLoading(false)
   }
 
   if (!supported) return null

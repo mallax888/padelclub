@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatDate } from '@/lib/utils'
 import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { VENUES } from '@/lib/venues'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import RescheduleModal from '@/components/booking/RescheduleModal'
+import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
 
 interface BookingWithCourt {
   id: string
@@ -210,6 +211,46 @@ const BookAgainButton = ({ courtId, durationMinutes }: { courtId: string; durati
   </Link>
 )
 
+// "Book again" only ever appeared on a past booking, which lives behind the
+// Past tab -- so the one moment a player is most likely to book, having just
+// finished a game and having nothing else in the diary, was a dead end
+// reading "No upcoming bookings". This is that moment, with their last court
+// already in hand.
+//
+// It deliberately doesn't claim to re-book the same time: the flow can carry
+// a court and a duration through, but the date and time still have to be
+// picked, and promising otherwise would make the next screen feel broken.
+const PlayAgainCard = ({ booking }: { booking: BookingWithCourt }) => {
+  const court = booking.courts?.name ?? 'your court'
+  const { weekday } = dateParts(booking.date)
+  return (
+    <div className="rounded-2xl px-5 py-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)' }}>
+      <div className="flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-base"
+          style={{ background: 'var(--brand-primary-muted)' }}>
+          🎾
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
+            Same again?
+          </div>
+          <div className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            You last played {court} on {weekday} at {booking.start_time.slice(0, 5)}. Pick a date and we&apos;ll keep the court and the {booking.duration_minutes} minutes.
+          </div>
+          <Link
+            href={`/book?courtId=${booking.court_id}&duration=${booking.duration_minutes}`}
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl mt-3"
+            style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}
+          >
+            Book {court} again
+            <span style={{ fontSize: 13 }}>→</span>
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Recording a result used to mean going to Record a match and picking all four
 // players out of the member list, for a game whose players this booking
 // already knows. From here the form arrives with them filled in.
@@ -245,6 +286,11 @@ export default function MyBookingsList({
   stripeDashboardBase: string
 }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  // Stripe sends the booker back here with ?payment=success. That is the one
+  // moment a reminder is obviously worth having, so the permission ask leans
+  // on it rather than waiting to be found in the navbar.
+  const justPaid = searchParams?.get('payment') === 'success' || searchParams?.get('split') === 'paid'
   const [cancelling, setCancelling] = useState<string | null>(null)
   const [payingSplit, setPayingSplit] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
@@ -255,6 +301,12 @@ export default function MyBookingsList({
   const upcoming = bookings.filter(b => b.status !== 'cancelled' && !hasEnded(b.date, b.end_time))
   const past = bookings.filter(b => b.status === 'cancelled' || hasEnded(b.date, b.end_time))
   const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time))
+  const hasUpcoming = upcoming.length > 0 || upcomingJoined.length > 0
+  // The most recent game actually played, for the "Same again?" card. A
+  // cancelled booking was never a game, so it isn't a court to offer back.
+  const lastPlayed = past
+    .filter(b => b.status !== 'cancelled')
+    .sort((a, b) => (b.date + b.start_time).localeCompare(a.date + a.start_time))[0] ?? null
 
   const handleCancel = async (id: string) => {
     const booking = bookings.find(b => b.id === id)
@@ -419,6 +471,10 @@ export default function MyBookingsList({
         <div className="shrink-0" style={{ fontSize: '1.7rem' }}>🎾</div>
       </Link>
 
+      {/* Only worth asking once there's actually something to be reminded
+          about -- a court in the diary, or a share someone has just paid. */}
+      {hasUpcoming && <PushRemindersPrompt highlight={justPaid} />}
+
       {/* One tab bar that actually switches. "Upcoming" used to appear twice
           on this screen: as the heading of a list that never hid, and again
           on a pill below it that only revealed past bookings — so tapping
@@ -435,10 +491,14 @@ export default function MyBookingsList({
       </div>
 
       {!showHistory && (
-        upcoming.length === 0 && upcomingJoined.length === 0 ? (
-          <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary-text)' }}>book a court</Link>
-          </div>
+        !hasUpcoming ? (
+          lastPlayed ? (
+            <PlayAgainCard booking={lastPlayed} />
+          ) : (
+            <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              No upcoming bookings — <Link href="/book" style={{ color: 'var(--brand-primary-text)' }}>book a court</Link>
+            </div>
+          )
         ) : (
           /* Courts you booked and games you joined, in one list. From the
              member's side they're the same thing — somewhere to be this week
