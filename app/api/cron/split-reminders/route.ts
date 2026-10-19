@@ -19,17 +19,27 @@ import { getAppUrl } from '@/lib/env'
 //
 // Three nudges, then it stops. Anything more and the player turns
 // notifications off, which is permanent -- the browser never asks twice.
+//
+// Each stage has two gates. minAgeMinutes is how old the share must be, and
+// minGapMinutes is how long since this player was last nudged. The age alone
+// was not enough: a share that was already days old when a stage became due
+// cleared every age threshold at once, so the first and second nudges landed
+// a quarter of an hour apart instead of a day. Spacing them by the last
+// nudge is what the player actually experiences, and it is why
+// reminder_sent_at is stored.
 const STAGES = [
   // Not instant: the invite itself already went out when the booking was
   // made, and a second buzz inside the same minute reads as a glitch. Ten
   // minutes is still inside the window where they're holding their phone.
-  { stage: 1, minAgeMinutes: 10 },
+  { stage: 1, minAgeMinutes: 10, minGapMinutes: 0 },
   // A day later, if it's still outstanding.
-  { stage: 2, minAgeMinutes: 60 * 24 },
+  { stage: 2, minAgeMinutes: 60 * 24, minGapMinutes: 60 * 20 },
   // Last call, and only once the game is close enough to be the reason they
-  // care. Handled separately below -- this one is driven by the booking's
-  // start time rather than the share's age.
-  { stage: 3, minAgeMinutes: 60 * 24 * 2 },
+  // care -- that extra condition is in nextStage, since it is driven by the
+  // booking's start time rather than the share's age. The gap is shorter
+  // than stage 2's because by here the game is hours away: insisting on a
+  // full day of silence would mean the last call never came at all.
+  { stage: 3, minAgeMinutes: 60 * 24 * 2, minGapMinutes: 60 * 6 },
 ] as const
 
 const FINAL_STAGE = 3
@@ -52,6 +62,7 @@ type SplitRow = {
   amount_nzd: number
   created_at: string
   reminder_count?: number | null
+  reminder_sent_at?: string | null
   bookings: {
     id: string
     date: string
@@ -79,11 +90,12 @@ export async function GET(request: Request) {
   const appUrl = getAppUrl(request)
   const now = new Date()
 
-  // reminder_count is selected optimistically: on a deployment whose database
-  // hasn't had 022 applied the whole query fails with 42703, and the retry
-  // below drops the column rather than the feature.
+  // The tracking columns are selected optimistically: on a deployment whose
+  // database hasn't had 022 applied the whole query fails with 42703, and the
+  // retry below drops them rather than the feature.
+  const TRACKING_COLUMNS = 'reminder_count, reminder_sent_at,'
   const columns = `
-    id, user_id, invited_by, amount_nzd, created_at, reminder_count,
+    id, user_id, invited_by, amount_nzd, created_at, ${TRACKING_COLUMNS}
     bookings!booking_splits_booking_id_fkey ( id, date, start_time, status, courts ( name, venue_slug ) ),
     profiles!booking_splits_user_id_fkey ( email, full_name, nickname ),
     inviter:profiles!booking_splits_invited_by_fkey ( full_name, nickname )
@@ -102,7 +114,7 @@ export async function GET(request: Request) {
   let { data, error } = await pendingShares(columns)
   if (error?.code === UNDEFINED_COLUMN) {
     tracked = false
-    ;({ data, error } = await pendingShares(columns.replace('reminder_count,', '')))
+    ;({ data, error } = await pendingShares(columns.replace(TRACKING_COLUMNS, '')))
   }
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -125,8 +137,13 @@ export async function GET(request: Request) {
     const ageMinutes = (now.getTime() - new Date(split.created_at).getTime()) / 60000
     const hoursToStart = (startsAt.getTime() - now.getTime()) / 3600000
     const alreadySent = split.reminder_count ?? 0
+    // A share chased for the first time has no gap to measure, and nothing
+    // should hold its next nudge back on that account.
+    const gapMinutes = split.reminder_sent_at
+      ? (now.getTime() - new Date(split.reminder_sent_at).getTime()) / 60000
+      : Infinity
 
-    const stage = nextStage({ tracked, alreadySent, ageMinutes, hoursToStart })
+    const stage = nextStage({ tracked, alreadySent, ageMinutes, gapMinutes, hoursToStart })
     if (stage === null) continue
 
     const claimed = await claimStage(admin, split.id, alreadySent, tracked)
@@ -140,10 +157,11 @@ export async function GET(request: Request) {
 }
 
 // Which nudge, if any, this share is due for right now.
-function nextStage({ tracked, alreadySent, ageMinutes, hoursToStart }: {
+function nextStage({ tracked, alreadySent, ageMinutes, gapMinutes, hoursToStart }: {
   tracked: boolean
   alreadySent: number
   ageMinutes: number
+  gapMinutes: number
   hoursToStart: number
 }): number | null {
   if (!tracked) {
@@ -157,6 +175,10 @@ function nextStage({ tracked, alreadySent, ageMinutes, hoursToStart }: {
   if (alreadySent >= FINAL_STAGE) return null
   const due = STAGES[alreadySent]
   if (!due || ageMinutes < due.minAgeMinutes) return null
+  // However old the share is, this player was buzzed recently enough that
+  // another one now would read as the app malfunctioning rather than as a
+  // reminder.
+  if (gapMinutes < due.minGapMinutes) return null
   // Last call is about the game, not the invoice: hold it until the match is
   // near, and skip it entirely for a booking made so far ahead that stage 2
   // only just went out.
