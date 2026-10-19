@@ -533,8 +533,18 @@ export default function BookingFlow({
                 <img src={c.flag} alt={c.name} style={{ width: 80, height: 53, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
               </div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
+              {/* A country whose clubs are listed but whose courts aren't in
+                  the database yet counted them honestly and read "0 courts",
+                  which lands as an error rather than as a club still being
+                  set up. The venue step already phrases that case as "Courts
+                  coming soon"; these two now agree with it. */}
               <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
-                {c.regions.filter(r => REGIONS.includes(r)).length} cities · {LIVE_VENUES.filter(v => c.regions.includes(v.region)).length} venues · {courts.filter(ct => LIVE_VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length} courts
+                {(() => {
+                  const cities = c.regions.filter(r => REGIONS.includes(r)).length
+                  const venueCount = LIVE_VENUES.filter(v => c.regions.includes(v.region)).length
+                  const courtCount = courts.filter(ct => LIVE_VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length
+                  return `${cities} cities · ${venueCount} venues · ${courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}`
+                })()}
               </div>
             </button>
           ))}
@@ -566,7 +576,9 @@ export default function BookingFlow({
                   </svg>
                   <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r}</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{totalCourts}</span> courts
+                    <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · {totalCourts > 0
+                      ? <><span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{totalCourts}</span> courts</>
+                      : 'courts coming soon'}
                   </div>
                 </div>
                 <div className="flex gap-1 mt-3 flex-wrap">

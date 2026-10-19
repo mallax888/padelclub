@@ -147,13 +147,24 @@ export const VENUES: Venue[] = [
     ],
   },
 
+  // ── SOUTH AFRICA ────────────────────────────────────────
+  // isLive is what the booking flow filters on, and its Country step only
+  // appears while more than one country has a live venue -- so these sixteen
+  // being live is also what puts South Africa in front of a player at all.
+  // Turning them back off (isLive: false) collapses the flow to New Zealand
+  // and takes the Country step away again on its own; nothing else to change.
+  //
+  // A venue with no courts rows in the database isn't a dead end here: the
+  // venue step reads "Courts coming soon" and refuses the tap rather than
+  // dropping the player into an empty calendar.
+
   // ── SOUTH AFRICA — NELSPRUIT ────────────────────────────
   {
     slug: 'nelspruit-play360',
     name: 'Play 360 Nelspruit',
     region: 'Nelspruit',
     address: '1692 Hermansburg Rd, Stonehenge, Mbombela 1211',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'p360-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'p360-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -169,7 +180,7 @@ export const VENUES: Venue[] = [
     name: 'Padel 24 Nelspruit',
     region: 'Nelspruit',
     address: 'LVCC, 1 Aurora Drive, Mbombela',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'p24-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'p24-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -188,7 +199,7 @@ export const VENUES: Venue[] = [
     name: 'Africa Padel Sandton',
     region: 'Johannesburg',
     address: '181 Empire Place, Wierda Rd W, Sandhurst, Sandton',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'aps-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'aps-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -209,7 +220,7 @@ export const VENUES: Venue[] = [
     name: 'RB Club Johannesburg',
     region: 'Johannesburg',
     address: '5 Sunnyside Road, Birnam, Melrose Arch, Johannesburg',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'rb-1', name: 'Court 1', type: 'Outdoor', isIndoor: false, x: 0, y: 0 },
       { id: 'rb-2', name: 'Court 2', type: 'Outdoor', isIndoor: false, x: 1, y: 0 },
@@ -233,7 +244,7 @@ export const VENUES: Venue[] = [
     name: 'ClubPadel Pirates',
     region: 'Johannesburg',
     address: '4 Cruden Bay Road, Greenside, Johannesburg',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'cp-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'cp-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -252,7 +263,7 @@ export const VENUES: Venue[] = [
     name: 'Africa Padel Dunkeld',
     region: 'Johannesburg',
     address: 'Dunkeld, Johannesburg',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'apd-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'apd-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -273,7 +284,7 @@ export const VENUES: Venue[] = [
     name: 'Africa Padel Camps Bay',
     region: 'Cape Town',
     address: 'The Rotunda, AF Keen Drive, Camps Bay, Cape Town',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'apcb-1', name: 'Court 1', type: 'Indoor (Victorian dome)', isIndoor: true, x: 0, y: 0 },
       { id: 'apcb-2', name: 'Court 2', type: 'Outdoor (ocean view)', isIndoor: false, x: 1, y: 0 },
@@ -293,7 +304,7 @@ export const VENUES: Venue[] = [
     name: 'Africa Padel Claremont',
     region: 'Cape Town',
     address: 'Herschel Close, Claremont, Cape Town',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'apcl-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'apcl-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -316,7 +327,7 @@ export const VENUES: Venue[] = [
     name: 'Atlantic Padel',
     region: 'Cape Town',
     address: '1 Donkin Avenue, Table View, Cape Town',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'ap-1', name: 'Court 1', type: 'Crystal (panoramic)', isIndoor: false, x: 0, y: 0 },
       { id: 'ap-2', name: 'Court 2', type: 'Crystal (panoramic)', isIndoor: false, x: 1, y: 0 },
@@ -335,7 +346,7 @@ export const VENUES: Venue[] = [
     name: 'RB Club Cape Town',
     region: 'Cape Town',
     address: 'Cape Town',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'rbct-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'rbct-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -355,7 +366,7 @@ export const VENUES: Venue[] = [
     name: 'Africa Padel Ballito',
     region: 'Durban',
     address: 'Ballito, KwaZulu-Natal',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'apb-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'apb-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -372,7 +383,7 @@ export const VENUES: Venue[] = [
     name: 'Padel Nation Umhlanga',
     region: 'Durban',
     address: 'Umhlanga, Durban, KwaZulu-Natal',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'pn-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'pn-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -389,7 +400,7 @@ export const VENUES: Venue[] = [
     name: 'Gayle Padel Hillcrest',
     region: 'Durban',
     address: 'Hillcrest, Durban, KwaZulu-Natal',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'gph-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'gph-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -409,7 +420,7 @@ export const VENUES: Venue[] = [
     name: 'Africa Padel Olympus',
     region: 'Pretoria',
     address: 'Olympus, Pretoria, Gauteng',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'apo-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'apo-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -429,7 +440,7 @@ export const VENUES: Venue[] = [
     name: 'Africa Padel Brooklyn',
     region: 'Pretoria',
     address: 'Brooklyn, Pretoria, Gauteng',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'apbk-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'apbk-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -449,7 +460,7 @@ export const VENUES: Venue[] = [
     name: 'Balwin Padel Waterfall City',
     region: 'Pretoria',
     address: 'Munyaka Drive, Munyaka Waterfall City, Johannesburg 3610',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'bpw-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'bpw-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
