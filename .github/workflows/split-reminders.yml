@@ -1,0 +1,18 @@
+name: Unpaid share reminders
+
+# Same reason as booking-reminders.yml: Vercel Hobby only runs cron daily, and
+# the first nudge is meant to land ten minutes after the invite rather than
+# the next morning.
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call split-reminders endpoint
+        run: |
+          curl -sS -f -X GET "${{ vars.APP_URL }}/api/cron/split-reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
