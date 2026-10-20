@@ -984,6 +984,11 @@ function BoardView({
   // growing just because one of its slots filled up, which would shift every
   // row below it as you page through dates.
   const MONTH_CELL_HEIGHT = 76
+  // Day view runs the other way round -- courts across, hours down -- so its
+  // rows don't need Month's height. Sixteen of them at 76px made a 1200px
+  // table; this keeps the whole trading day on one screen while giving each
+  // cell several times the width it had when the hours were columns.
+  const DAY_ROW_HEIGHT = 50
 
   const title = viewMode === 'month'
     ? new Date(boardDate + 'T00:00:00').toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' })
@@ -1312,107 +1317,131 @@ function BoardView({
           </div>
         ) : (
           <div>
-            <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-            <table className="w-full table-fixed text-sm border-collapse">
+            {/* Courts across the top, hours down the side. The other way round
+                -- sixteen hourly columns sharing the width -- gave every
+                booking about sixty pixels to say who was playing, which is
+                why a single first name looked squashed and four of them were
+                never going to fit. A court column is now several hundred
+                pixels wide, and a two-hour booking is one tall block rather
+                than a sliver. */}
+            <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'auto', maxHeight: '72vh' }}>
+            <table className="w-full text-sm border-collapse" style={{ minWidth: 68 + venueCourts.length * 150 }}>
               <thead>
                 <tr>
-                  <th className="px-3 py-2 text-left" style={{ width: 100, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
-                  {TIME_ROWS.map((t, idx) => (
-                    <th key={t} className="px-1 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)' }}>{t}</th>
+                  <th className="px-2 py-2 text-left" style={{ width: 68, position: 'sticky', top: 0, zIndex: 2, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Time</th>
+                  {venueCourts.map((court: any, idx: number) => (
+                    <th key={court.id} className="px-2 py-2 text-center" style={{ position: 'sticky', top: 0, zIndex: 2, fontSize: 12, fontWeight: 700, letterSpacing: 0.2, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}>{court.name}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {(() => {
                   const isPastDay = boardDate < today
-                  return venueCourts.map((court: any) => {
-                    const cells: JSX.Element[] = []
-                    let i = 0
-                    // Walk the hourly columns left to right, merging every column a
-                    // single booking covers (its duration may span several hours)
-                    // into one cell instead of repeating the same label in each --
-                    // that repetition was also why a short name like "Malcolm"
-                    // looked cramped: it was only ever getting one hour's width
-                    // even when the booking itself ran for two.
-                    while (i < TIME_ROWS.length) {
-                      const t = TIME_ROWS[i]
-                      const b = bookings.find((b: any) => b.court_id === court.id && b.date === boardDate && b.status !== 'cancelled' && b.start_time.slice(0,5) <= t && b.end_time.slice(0,5) > t)
-                      const cellKey = `${court.id}-${t}`
-                      const isDragOver = dragOverCell === cellKey && !isPastDay
+                  // One plan per court: for each hour, either the start of a
+                  // booking and how many rows it covers, a row already covered
+                  // by the booking above, or an empty slot. A booking's span is
+                  // vertical now, and rowSpan needs it worked out before the
+                  // rows are rendered rather than while walking one.
+                  const plans: ({ kind: 'empty' } | { kind: 'covered' } | { kind: 'start'; b: any; span: number })[][] =
+                    venueCourts.map((court: any) => {
+                      const plan: any[] = []
+                      let i = 0
+                      while (i < TIME_ROWS.length) {
+                        const t = TIME_ROWS[i]
+                        const b = bookings.find((b: any) => b.court_id === court.id && b.date === boardDate && b.status !== 'cancelled' && b.start_time.slice(0, 5) <= t && b.end_time.slice(0, 5) > t)
+                        if (!b) { plan[i] = { kind: 'empty' }; i += 1; continue }
+                        let span = 1
+                        while (i + span < TIME_ROWS.length && TIME_ROWS[i + span] < b.end_time.slice(0, 5)) span++
+                        plan[i] = { kind: 'start', b, span }
+                        for (let k = 1; k < span; k++) plan[i + k] = { kind: 'covered' }
+                        i += span
+                      }
+                      return plan
+                    })
 
-                      if (!b) {
-                        cells.push(
-                          <td key={t} className="align-top"
-                            onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
-                            onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
+                  return TIME_ROWS.map((t, rowIdx) => (
+                    <tr key={t}>
+                      <td className="px-2 font-medium whitespace-nowrap align-top" style={{ paddingTop: 6, height: DAY_ROW_HEIGHT, fontSize: 11, background: 'var(--bg-surface)', color: 'var(--text-muted)', borderBottom: rowIdx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                        {t}
+                      </td>
+                      {venueCourts.map((court: any, colIdx: number) => {
+                        const slot = plans[colIdx][rowIdx]
+                        // Swallowed by the rowSpan of the booking above it.
+                        if (slot?.kind === 'covered') return null
+
+                        const cellKey = `${court.id}-${t}`
+                        const isDragOver = dragOverCell === cellKey && !isPastDay
+                        const edge = {
+                          borderBottom: '1px solid var(--border)',
+                          borderRight: colIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)',
+                        }
+                        const dropHandlers = {
+                          onDragOver: (e: any) => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } },
+                          onDragLeave: () => setDragOverCell(prev => (prev === cellKey ? null : prev)),
+                        }
+
+                        if (slot?.kind !== 'start') {
+                          return (
+                            <td key={court.id} className="align-top" {...dropHandlers}
+                              onDrop={e => {
+                                e.preventDefault()
+                                setDragOverCell(null)
+                                const id = e.dataTransfer.getData('text/booking-id') || draggedId
+                                setDraggedId(null)
+                                if (!id || isPastDay) return
+                                moveBooking(id, { newCourtId: court.id, newStartTime: t })
+                              }}
+                              style={{ height: DAY_ROW_HEIGHT, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', ...edge, boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }} />
+                          )
+                        }
+
+                        const b = slot.b
+                        const appearance = cellAppearance(b)
+                        return (
+                          <td key={court.id} rowSpan={slot.span} className="align-top" {...dropHandlers}
                             onDrop={e => {
                               e.preventDefault()
                               setDragOverCell(null)
                               const id = e.dataTransfer.getData('text/booking-id') || draggedId
                               setDraggedId(null)
-                              if (!id || isPastDay) return
+                              if (!id || isPastDay || id === b.id) return
                               moveBooking(id, { newCourtId: court.id, newStartTime: t })
                             }}
-                            style={{ height: MONTH_CELL_HEIGHT, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', transition: 'background 0.1s' }} />
+                            style={{ padding: 4, background: 'var(--bg-surface)', ...edge }}>
+                            <div
+                              draggable={!isPastDay && !moving}
+                              onDragStart={e => {
+                                e.dataTransfer.setData('text/booking-id', b.id)
+                                e.dataTransfer.effectAllowed = 'move'
+                                setDraggedId(b.id)
+                              }}
+                              onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
+                              onClick={() => {
+                                if (b.status === 'blocked') return
+                                setRosterBooking({
+                                  id: b.id,
+                                  title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                                  subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
+                                })
+                              }}
+                              title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to reschedule'}
+                              className="flex flex-col items-center justify-center gap-0.5 px-2"
+                              // The block owns its slot outright, so it fills
+                              // the cell with the name centred. There is room
+                              // for the times underneath now, which saves
+                              // opening the panel to answer "when does this
+                              // one finish?".
+                              style={{ height: DAY_ROW_HEIGHT * slot.span - 8, fontSize: 12, fontWeight: 600, borderRadius: 6, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                              <span className="truncate max-w-full">{appearance.label}</span>
+                              <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.72 }}>
+                                {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)}
+                              </span>
+                            </div>
+                          </td>
                         )
-                        i += 1
-                        continue
-                      }
-
-                      let span = 1
-                      while (i + span < TIME_ROWS.length && TIME_ROWS[i + span] < b.end_time.slice(0, 5)) span++
-                      const appearance = cellAppearance(b)
-                      cells.push(
-                        <td key={t} colSpan={span} className="align-top"
-                          onDragOver={e => { if (!isPastDay) { e.preventDefault(); setDragOverCell(cellKey) } }}
-                          onDragLeave={() => setDragOverCell(prev => (prev === cellKey ? null : prev))}
-                          onDrop={e => {
-                            e.preventDefault()
-                            setDragOverCell(null)
-                            const id = e.dataTransfer.getData('text/booking-id') || draggedId
-                            setDraggedId(null)
-                            if (!id || isPastDay || id === b.id) return
-                            moveBooking(id, { newCourtId: court.id, newStartTime: t })
-                          }}
-                          style={{ height: MONTH_CELL_HEIGHT, padding: 4, background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                          <div
-                            draggable={!isPastDay && !moving}
-                            onDragStart={e => {
-                              e.dataTransfer.setData('text/booking-id', b.id)
-                              e.dataTransfer.effectAllowed = 'move'
-                              setDraggedId(b.id)
-                            }}
-                            onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
-                            onClick={() => {
-                              if (b.status === 'blocked') return
-                              setRosterBooking({
-                                id: b.id,
-                                title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
-                                subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
-                              })
-                            }}
-                            title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to reschedule'}
-                            className="truncate flex items-center justify-center"
-                            // A day-grid booking owns its cell outright (one
-                            // booking per slot), so it fills the box with the
-                            // name centred, rather than sitting as a small card
-                            // in the top corner the way a week cell's stack does.
-                            style={{ height: MONTH_CELL_HEIGHT - 8, fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 4, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
-                            {appearance.label}
-                          </div>
-                        </td>
-                      )
-                      i += span
-                    }
-                    return (
-                      <tr key={court.id}>
-                        <td className="px-3 font-medium whitespace-nowrap align-top" style={{ paddingTop: 6, height: MONTH_CELL_HEIGHT, fontSize: 12, background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                          {court.name}
-                        </td>
-                        {cells}
-                      </tr>
-                    )
-                  })
+                      })}
+                    </tr>
+                  ))
                 })()}
               </tbody>
             </table>
