@@ -1,9 +1,10 @@
 ﻿'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
+import { nextQuery } from '@/lib/return-to'
 
 export default function SignupPage() {
   const supabase = createClient()
@@ -13,6 +14,10 @@ export default function SignupPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  // See the login page: read after mount so the link renders the same on the
+  // server and in the browser.
+  const [loginQuery, setLoginQuery] = useState('')
+  useEffect(() => { setLoginQuery(nextQuery()) }, [])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,7 +34,9 @@ export default function SignupPage() {
       toast.error(error.message)
     } else {
       toast.success('Account created! Check your email to confirm.')
-      router.push('/auth/login')
+      // Straight on to login with the destination still attached: an invited
+      // friend confirms their email and signs in, and lands back on the invite.
+      router.push(`/auth/login${nextQuery()}`)
     }
     setLoading(false)
   }
@@ -142,7 +149,7 @@ export default function SignupPage() {
 
         <p className="text-center text-sm mt-4" style={{ color: 'var(--text-muted)' }}>
           Already have an account?{' '}
-          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary-text)' }}>
+          <Link href={`/auth/login${loginQuery}`} className="font-semibold hover:underline" style={{ color: 'var(--brand-primary-text)' }}>
             Sign in
           </Link>
         </p>

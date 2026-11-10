@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { SKILL_LEVELS, type SkillLevel } from '@/lib/skill-levels'
 import { VENUES } from '@/lib/venues'
+import { returnTarget } from '@/lib/return-to'
 
 type Step = 'nickname' | 'skill' | 'venue'
 const STEPS: Step[] = ['nickname', 'skill', 'venue']
@@ -58,7 +59,9 @@ export default function OnboardingFlow({
       setSaving(false)
       return
     }
-    router.push('/book')
+    // An invited friend finishes setting up and goes straight back to the game
+    // they were asked to join, not to the booking page.
+    router.push(returnTarget())
     router.refresh()
   }
 
