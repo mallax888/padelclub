@@ -31,11 +31,13 @@ const REGION_TIMEZONES: Record<string, string> = {
   'Cape Town': 'Africa/Johannesburg',
   Durban: 'Africa/Johannesburg',
   Pretoria: 'Africa/Johannesburg',
-  // Australia -- four distinct zones; Brisbane and Perth don't observe DST
+  // Australia -- five distinct zones; Brisbane and Perth don't observe DST,
+  // and Adelaide sits half an hour off its neighbours (UTC+9:30, +10:30 in summer)
   Sydney: 'Australia/Sydney',
   Melbourne: 'Australia/Melbourne',
   Brisbane: 'Australia/Brisbane',
   Perth: 'Australia/Perth',
+  Adelaide: 'Australia/Adelaide',
 }
 
 // Falls back to Auckland rather than to the server's zone: a new region added

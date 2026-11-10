@@ -630,10 +630,15 @@ export default function BookingFlow({
                   </div>
                 </div>
                 <div className="flex gap-1 mt-3 flex-wrap">
+                  {/* The whole name, cut with an ellipsis if the tile is too
+                      narrow. It used to keep only the last two words, which is
+                      fine for "Pacific Padel Albany" and turns "Tribe Padel &
+                      Wellness" into "& Wellness" and "Padel Fit Thebarton" into
+                      "Fit Thebarton". */}
                   {venues.slice(0,2).map(v => (
-                    <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full"
+                    <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full min-w-0 max-w-full truncate"
                       style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary-muted)' }}>
-                      {v.name.split(' ').slice(-2).join(' ')}
+                      {v.name}
                     </span>
                   ))}
                   {venues.length > 2 && (

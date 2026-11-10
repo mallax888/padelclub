@@ -3,7 +3,7 @@
 export type CurrencyCode = 'nzd' | 'aud' | 'zar'
 
 const NZ_REGIONS = ['Auckland', 'Wellington', 'Christchurch']
-const AU_REGIONS = ['Sydney', 'Melbourne', 'Brisbane', 'Perth']
+const AU_REGIONS = ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide']
 const ZA_REGIONS = ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria']
 
 export function currencyForRegion(region: string | undefined | null): CurrencyCode {
