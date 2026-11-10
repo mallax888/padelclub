@@ -34,7 +34,7 @@ export type Country = {
 export const COUNTRIES: Country[] = [
   { name: 'New Zealand', flag: 'https://flagcdn.com/w80/nz.png', regions: ['Auckland', 'Wellington', 'Christchurch'] },
   { name: 'South Africa', flag: 'https://flagcdn.com/w80/za.png', regions: ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'] },
-  { name: 'Australia', flag: 'https://flagcdn.com/w80/au.png', regions: ['Sydney', 'Melbourne', 'Brisbane', 'Perth'] },
+  { name: 'Australia', flag: 'https://flagcdn.com/w80/au.png', regions: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'] },
 ]
 
 export const VENUES: Venue[] = [
@@ -475,13 +475,22 @@ export const VENUES: Venue[] = [
     ],
   },
 
+  // ── AUSTRALIA ────────────────────────────────────────────
+  // Live for the same reason South Africa is: isLive is what puts a country in
+  // front of a player, and the Country step needs more than one. These are
+  // real clubs, listed with a street address and a court count that each have a
+  // source -- where sources disagreed on a count or on indoor/outdoor, the venue
+  // is left out rather than guessed at. None of them is bookable until its
+  // courts exist in the Courts tab; until then the venue step says "Courts
+  // coming soon" and refuses the tap.
+
   // ── AUSTRALIA — SYDNEY ──────────────────────────────────
   {
     slug: 'syd-racquet-club',
     name: 'Sydney Racquet Club',
     region: 'Sydney',
     address: '17 Park Road North, Moore Park, Sydney NSW 2021',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'src-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'src-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -498,7 +507,7 @@ export const VENUES: Venue[] = [
     name: 'Tribe Padel & Wellness',
     region: 'Sydney',
     address: '16/18 Epping Road, North Ryde, Sydney NSW 2113',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'tpw-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'tpw-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -516,7 +525,7 @@ export const VENUES: Venue[] = [
     name: 'Indoor Padel Australia Alexandria',
     region: 'Sydney',
     address: "85 O'Riordan Street, Alexandria, Sydney NSW 2015",
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'ipa-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'ipa-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -535,13 +544,138 @@ export const VENUES: Venue[] = [
     ],
   },
 
+  {
+    slug: 'syd-indoor-padel-cromer',
+    name: 'Indoor Padel Cromer',
+    region: 'Sydney',
+    address: 'Warehouse 2, 4 Inman Rd, Cromer NSW',
+    isLive: true,
+    courts: [
+      { id: 'crm-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'crm-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'crm-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'crm-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+    ],
+  },
+  {
+    slug: 'syd-padel-club-aus',
+    name: 'Padel Club Aus North Rocks',
+    region: 'Sydney',
+    address: 'Unit D, 21 Loyalty Road, North Rocks NSW 2151',
+    isLive: true,
+    courts: [
+      { id: 'nrk-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'nrk-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'nrk-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'nrk-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+      { id: 'nrk-5', name: 'Court 5', type: 'Indoor', isIndoor: true, x: 1, y: 1 },
+      { id: 'nrk-6', name: 'Court 6', type: 'Indoor', isIndoor: true, x: 2, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+    ],
+  },
+  {
+    slug: 'syd-play-nation',
+    name: 'Play Nation Smeaton Grange',
+    region: 'Sydney',
+    address: '72 Topham Road, Smeaton Grange NSW 2567',
+    isLive: true,
+    courts: [
+      { id: 'smg-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'smg-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'smg-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'smg-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+      { id: 'smg-5', name: 'Court 5', type: 'Indoor', isIndoor: true, x: 1, y: 1 },
+      { id: 'smg-6', name: 'Court 6', type: 'Indoor', isIndoor: true, x: 2, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+    ],
+  },
+  {
+    slug: 'syd-racqueteer',
+    name: 'Racqueteer Lidcombe',
+    region: 'Sydney',
+    address: '10 Carter Street, Lidcombe NSW 2141',
+    isLive: true,
+    courts: [
+      { id: 'lid-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'lid-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'lid-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'lid-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+      { id: 'lid-5', name: 'Court 5', type: 'Indoor', isIndoor: true, x: 1, y: 1 },
+      { id: 'lid-6', name: 'Court 6', type: 'Indoor', isIndoor: true, x: 2, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+    ],
+  },
+  {
+    slug: 'syd-padel-spot-minto',
+    name: 'Padel Spot Minto',
+    region: 'Sydney',
+    address: '5 Saggart Field Road, Minto NSW 2566',
+    isLive: true,
+    courts: [
+      { id: 'mnt-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'mnt-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'mnt-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'mnt-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+      { id: 'mnt-5', name: 'Court 5', type: 'Indoor singles', isIndoor: true, x: 1, y: 1 },
+      { id: 'mnt-6', name: 'Court 6', type: 'Indoor singles', isIndoor: true, x: 2, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+      { label: '4 doubles and 2 singles courts', icon: 'ti-bulb' },
+    ],
+  },
+  {
+    slug: 'syd-sidewall-social',
+    name: 'Sidewall Social',
+    region: 'Sydney',
+    address: 'Unit B2, 20-28 Carrington Road, Marrickville NSW 2204',
+    isLive: true,
+    courts: [
+      { id: 'swm-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'swm-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'swm-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'swm-4', name: 'Court 4', type: 'Indoor singles', isIndoor: true, x: 0, y: 1 },
+      { id: 'swm-5', name: 'Court 5', type: 'Indoor singles', isIndoor: true, x: 1, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+      { label: '3 doubles and 2 singles courts', icon: 'ti-bulb' },
+      { label: 'Coaching, competitions and social play', icon: 'ti-bulb' },
+    ],
+  },
+  {
+    slug: 'syd-padel-point-bankstown',
+    name: 'Padel Point Bankstown',
+    region: 'Sydney',
+    address: 'Starkie Drive, Bankstown Aerodrome NSW 2200',
+    isLive: true,
+    courts: [
+      { id: 'bnk-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'bnk-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'bnk-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'bnk-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+    ],
+  },
+
   // ── AUSTRALIA — MELBOURNE ────────────────────────────────
   {
     slug: 'mel-recess-padel',
     name: 'Recess Padel Club',
     region: 'Melbourne',
     address: '17 Rocklea Drive, Port Melbourne, VIC 3207',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'rpc-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'rpc-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -561,7 +695,7 @@ export const VENUES: Venue[] = [
     name: 'G4P Docklands',
     region: 'Melbourne',
     address: '194-206 Lorimer Street, Docklands, VIC 3008',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'g4d-1', name: 'Court 1', type: 'Covered outdoor', isIndoor: false, x: 0, y: 0 },
       { id: 'g4d-2', name: 'Court 2', type: 'Covered outdoor', isIndoor: false, x: 1, y: 0 },
@@ -581,7 +715,7 @@ export const VENUES: Venue[] = [
     name: 'Crown Racquet Club',
     region: 'Melbourne',
     address: '8 Whiteman Street, Southbank, VIC 3006',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'crc-1', name: 'Court 1', type: 'Panoramic outdoor', isIndoor: false, x: 0, y: 0 },
       { id: 'crc-2', name: 'Court 2', type: 'Panoramic outdoor', isIndoor: false, x: 1, y: 0 },
@@ -596,7 +730,7 @@ export const VENUES: Venue[] = [
     name: 'iPadel Melbourne',
     region: 'Melbourne',
     address: '38 Newlands Road, Reservoir, VIC 3073',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'ipm-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'ipm-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -609,13 +743,53 @@ export const VENUES: Venue[] = [
     ],
   },
 
+  {
+    slug: 'mel-g4p-port-melbourne',
+    name: 'G4P Port Melbourne',
+    region: 'Melbourne',
+    address: '437 Plummer Street, Port Melbourne VIC 3207',
+    isLive: true,
+    courts: [
+      { id: 'g4pp-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'g4pp-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'g4pp-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'g4pp-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+      { id: 'g4pp-5', name: 'Court 5', type: 'Indoor', isIndoor: true, x: 1, y: 1 },
+      { id: 'g4pp-6', name: 'Court 6', type: 'Indoor', isIndoor: true, x: 2, y: 1 },
+      { id: 'g4pp-7', name: 'Court 7', type: 'Indoor', isIndoor: true, x: 0, y: 2 },
+      { id: 'g4pp-8', name: 'Court 8', type: 'Indoor', isIndoor: true, x: 1, y: 2 },
+      { id: 'g4pp-9', name: 'Court 9', type: 'Indoor', isIndoor: true, x: 2, y: 2 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+    ],
+  },
+  {
+    slug: 'mel-nordic-padel',
+    name: 'Nordic Padel Tullamarine',
+    region: 'Melbourne',
+    address: '2/10-12 Carrick Drive, Tullamarine VIC 3043',
+    isLive: true,
+    courts: [
+      { id: 'ndc-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'ndc-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'ndc-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'ndc-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+      { id: 'ndc-5', name: 'Court 5', type: 'Indoor singles', isIndoor: true, x: 1, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+      { label: '4 doubles and 1 singles court', icon: 'ti-bulb' },
+    ],
+  },
+
   // ── AUSTRALIA — BRISBANE ─────────────────────────────────
   {
     slug: 'bri-padel-the-gap',
     name: 'Padel Brisbane The Gap',
     region: 'Brisbane',
     address: '200 Settlement Road, The Gap, QLD 4061',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'pbg-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'pbg-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -634,7 +808,7 @@ export const VENUES: Venue[] = [
     name: 'Padel Perth Reabold',
     region: 'Perth',
     address: 'Reabold, Perth WA',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'ppr-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'ppr-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -649,7 +823,7 @@ export const VENUES: Venue[] = [
     name: 'Padelwest',
     region: 'Perth',
     address: 'Canning Highway & Stock Road, Perth WA',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'pwt-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'pwt-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -663,7 +837,7 @@ export const VENUES: Venue[] = [
     name: 'West Coast Padel',
     region: 'Perth',
     address: 'Perth WA',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'wcp-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'wcp-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -678,7 +852,7 @@ export const VENUES: Venue[] = [
     name: 'Padel Crush',
     region: 'Perth',
     address: 'Perth WA',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'pcu-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'pcu-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -694,7 +868,7 @@ export const VENUES: Venue[] = [
     name: 'Padel360',
     region: 'Perth',
     address: 'Perth WA',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'p360p-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'p360p-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -710,7 +884,7 @@ export const VENUES: Venue[] = [
     name: 'Padel Kennedy Bay',
     region: 'Perth',
     address: 'Kennedy Bay, Perth WA',
-    isLive: false,
+    isLive: true,
     courts: [
       { id: 'pkb-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'pkb-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -719,6 +893,26 @@ export const VENUES: Venue[] = [
     ],
     amenities: [
       { label: 'Waterfront location', icon: 'ti-bulb' },
+    ],
+  },
+
+  // ── AUSTRALIA — ADELAIDE ─────────────────────────────────
+  {
+    slug: 'adl-padel-fit',
+    name: 'Padel Fit Thebarton',
+    region: 'Adelaide',
+    address: '8 Light Terrace, Thebarton SA 5031',
+    isLive: true,
+    courts: [
+      { id: 'pft-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
+      { id: 'pft-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
+      { id: 'pft-3', name: 'Court 3', type: 'Indoor', isIndoor: true, x: 2, y: 0 },
+      { id: 'pft-4', name: 'Court 4', type: 'Indoor', isIndoor: true, x: 0, y: 1 },
+    ],
+    amenities: [
+      { label: 'Indoor courts', icon: 'ti-calendar' },
+      { label: 'Coaching', icon: 'ti-bulb' },
+      { label: 'Pro shop and demo rackets', icon: 'ti-shopping-bag' },
     ],
   },
 ]
