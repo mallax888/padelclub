@@ -13,6 +13,7 @@ import { VENUES } from '@/lib/venues'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import RescheduleModal from '@/components/booking/RescheduleModal'
 import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
+import InviteShare from '@/components/invites/InviteShare'
 
 interface BookingWithCourt {
   id: string
@@ -31,6 +32,10 @@ interface BookingWithCourt {
 interface OutgoingSplit {
   id: string
   booking_id: string
+  // Null on an invite seat: a share held open for a friend who has no account
+  // yet, until they open the link and take it (see 023_invite_seats.sql).
+  user_id: string | null
+  invite_token?: string | null
   amount_nzd: number
   status: string
   profiles: { nickname: string | null; full_name: string | null } | null
@@ -59,7 +64,7 @@ interface JoinedGame {
     end_time: string
     duration_minutes: number
     courts: { name: string; type: string; venue_slug: string } | null
-    booking_splits?: { user_id: string; status: string; profiles: { nickname: string | null; full_name: string | null } | null }[]
+    booking_splits?: { user_id: string | null; status: string; profiles: { nickname: string | null; full_name: string | null } | null }[]
   } | null
   profiles: { nickname: string | null; full_name: string | null } | null
 }
@@ -547,7 +552,11 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
   const [showReschedule, setShowReschedule] = useState(false)
-  const [expanded, setExpanded] = useState(false)
+  // A booking with a spot waiting for a friend opens on the share buttons,
+  // rather than behind a tap: sending the link is the next thing to do.
+  const [expanded, setExpanded] = useState(
+    !past && splits.some(s => !s.user_id && s.status === 'pending' && !!s.invite_token),
+  )
   const muted = !isNext && !past
 
   // price_nzd is the whole court fee, but a booking with splits only ever
@@ -558,6 +567,11 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   // Rounded in cents the same way create-checkout works out the charge, so
   // this figure always matches the Stripe receipt the link goes to.
   const shareCount = splits.length + 1
+  // A share held open for a friend who hasn't joined yet still counts in the
+  // split above -- the court fee is divided by every row -- but it has no name
+  // to show and no payment to chase, so it is kept apart from the people.
+  const members = splits.filter(s => s.user_id)
+  const openSeats = past ? [] : splits.filter(s => !s.user_id && s.status === 'pending' && s.invite_token)
   const yourShare = splits.length > 0
     ? Math.round((b.price_nzd / shareCount) * 100) / 100
     : null
@@ -586,7 +600,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
         </span>
         {splits.length > 0 && (
           <span className="flex shrink-0 items-center">
-            {splits.slice(0, 4).map((s, i) => {
+            {members.slice(0, 4).map((s, i) => {
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               return (
                 <span key={s.id}
@@ -601,6 +615,17 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
                 </span>
               )
             })}
+            {openSeats.slice(0, Math.max(0, 4 - members.length)).map((s, i) => (
+              <span key={s.id} title="Spot waiting for a friend to join"
+                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
+                style={{
+                  width: 18, height: 18, marginLeft: members.length + i === 0 ? 0 : -5,
+                  background: 'var(--bg-raised)', color: 'var(--text-subtle)',
+                  border: '1.5px dashed var(--text-subtle)',
+                }}>
+                +
+              </span>
+            ))}
           </span>
         )}
         {/* The one thing worth saying out loud on a closed row: somebody still
@@ -695,7 +720,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
                   ? `${splits.filter(s => s.status !== 'paid').length} of ${splits.length} still to pay`
                   : 'With'}
               </span>
-              {splits.map(s => {
+              {members.map(s => {
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               const paid = s.status === 'paid'
               return (
@@ -748,6 +773,25 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
           )}
         </div>
       </div>
+      {openSeats.length > 0 && (
+        <div className="mt-2.5 pt-2.5 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
+          {openSeats.map((seat, i) => (
+            <div key={seat.id}>
+              <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
+                {openSeats.length > 1 ? `Spot ${i + 1} is waiting for a friend` : 'A spot is waiting for a friend'}
+                <span style={{ color: 'var(--text-subtle)' }}> · send them the link</span>
+              </div>
+              <InviteShare
+                token={seat.invite_token as string}
+                court={b.courts?.name ?? 'the court'}
+                venueName={venue?.name ?? 'the club'}
+                when={`${formatDate(b.date)} at ${b.start_time.slice(0, 5)}`}
+                amount={formatPrice(Math.round((b.price_nzd / shareCount) * 100) / 100, bookingCurrency)}
+              />
+            </div>
+          ))}
+        </div>
+      )}
       {showReschedule && venue && (
         <RescheduleModal
           bookingId={b.id}
@@ -770,7 +814,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   if (!b) return null
   const venue = VENUES.find(v => v.slug === b.courts?.venue_slug)
   const organizerName = j.profiles?.nickname ?? j.profiles?.full_name ?? 'Someone'
-  const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id !== currentUserId)
+  const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id && s.user_id !== currentUserId)
 
   return (
     <div className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>

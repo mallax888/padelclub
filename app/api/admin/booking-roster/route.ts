@@ -116,7 +116,10 @@ export async function GET(request: Request) {
       id: s.id,
       playerId: s.user_id,
       rowId: s.id,
-      name: s.profiles?.nickname ?? s.profiles?.full_name ?? '—',
+      // A seat with no member yet is an invite link that hasn't been opened
+      // and accepted -- worth saying so, rather than showing a bare dash that
+      // reads like missing data.
+      name: s.profiles?.nickname ?? s.profiles?.full_name ?? (s.user_id ? '—' : 'Invite link, not joined yet'),
       role: 'invited',
       paymentStatus: s.status as string,
       amount: Number(s.amount_nzd),

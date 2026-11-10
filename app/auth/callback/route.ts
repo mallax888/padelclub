@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { INVITE_COOKIE, joinPathFor, safeNext } from '@/lib/return-to'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -29,5 +30,13 @@ export async function GET(request: NextRequest) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(new URL('/book', request.url))
+  // Back to wherever they were going: an explicit ?next=, or the invite they
+  // had open when they signed up (the confirmation email lands here with
+  // neither a ?next= nor any memory of the page, but the cookie is still in the
+  // browser), or the booking page as before.
+  const destination =
+    safeNext(requestUrl.searchParams.get('next'))
+    ?? joinPathFor(request.cookies.get(INVITE_COOKIE)?.value)
+    ?? '/book'
+  return NextResponse.redirect(new URL(destination, request.url))
 }

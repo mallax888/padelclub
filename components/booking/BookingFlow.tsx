@@ -134,6 +134,14 @@ export default function BookingFlow({
   const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
   const [splitEnabled, setSplitEnabled] = useState(false)
   const [splitPlayers, setSplitPlayers] = useState<string[]>([])
+  // Seats held open for friends who have no account yet. Each becomes a share
+  // of the court with a link on it (see /api/invites/create); the friend takes
+  // it by opening the link and signing up.
+  const [inviteSeats, setInviteSeats] = useState(0)
+  // Whether the database has what invite links need. The control only appears
+  // once this is known to be true -- offering it and failing after the court is
+  // held would be worse than not offering it.
+  const [invitesAvailable, setInvitesAvailable] = useState(false)
   const [playerQuery, setPlayerQuery] = useState('')
   const [playerResults, setPlayerResults] = useState<Player[]>([])
   const [searchingPlayers, setSearchingPlayers] = useState(false)
@@ -295,6 +303,22 @@ export default function BookingFlow({
   const isPeak = isPeakTime(date, time)
   const courtPrice = assignedCourt && date && time && duration ? computeCourtPrice(assignedCourt, date, time, duration, discount) : 0
 
+  // Everyone the court is split with besides the booker: people picked from the
+  // member list plus seats held open by link. Every price on this screen, and
+  // the share each person is charged, is the court fee over this plus one.
+  const seatCount = splitEnabled ? splitPlayers.length + inviteSeats : 0
+  const seatsFull = splitPlayers.length + inviteSeats >= 3
+
+  useEffect(() => {
+    if (!splitEnabled || invitesAvailable) return
+    let cancelled = false
+    fetch('/api/invites/available')
+      .then(r => r.json())
+      .then(body => { if (!cancelled && body?.available) setInvitesAvailable(true) })
+      .catch(() => { /* stays hidden: the safe way for this to fail */ })
+    return () => { cancelled = true }
+  }, [splitEnabled, invitesAvailable])
+
   const goBack = () => {
     const idx = STEPS.indexOf(step)
     if (idx > 0) setStep(STEPS[idx - 1])
@@ -375,6 +399,30 @@ export default function BookingFlow({
       return
     }
 
+    // Invite seats first, and before anything is announced. If they can't be
+    // saved the booking is released on the spot, with nobody notified and no
+    // open match published -- the alternative is a booker charged a bigger share
+    // than they were shown, for seats that don't exist.
+    const inviteCount = splitEnabled ? inviteSeats : 0
+    if (inviteCount > 0) {
+      const inviteRes = await fetch('/api/invites/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: bookingData.id, count: inviteCount, totalSeats: splitPlayers.length + inviteCount + 1 }),
+      }).catch(() => null)
+      if (!inviteRes || !inviteRes.ok) {
+        const failure = inviteRes ? await inviteRes.json().catch(() => ({})) : {}
+        await fetch('/api/cancel-booking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId: bookingData.id }),
+        }).catch(() => null)
+        toast.error(failure?.error ?? 'Could not create your invite links, so nothing was booked. Please try again.')
+        setSubmitting(false)
+        return
+      }
+    }
+
     if (makePublic && bookingData) {
       const skillRanges = {
         all: { min: 0, max: 7 },
@@ -409,7 +457,7 @@ export default function BookingFlow({
     }
 
     if (splitEnabled && splitPlayers.length > 0 && bookingData) {
-      const splitAmount = parseFloat((courtPrice / (splitPlayers.length + 1)).toFixed(2))
+      const splitAmount = parseFloat((courtPrice / (splitPlayers.length + inviteCount + 1)).toFixed(2))
       for (const pid of splitPlayers) {
         const { error: splitError } = await sb.from('booking_splits').insert({
           booking_id: bookingData.id,
@@ -924,7 +972,7 @@ export default function BookingFlow({
                       {rows.map(p => {
                         const selected = splitPlayers.includes(p.id)
                         return (
-                          <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length < 3 ? [...prev, p.id] : prev)}
+                          <button key={p.id} onClick={() => setSplitPlayers(prev => selected ? prev.filter(id => id !== p.id) : prev.length + inviteSeats < 3 ? [...prev, p.id] : prev)}
                             className="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-xl transition-all"
                             style={{
                               background: selected ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
@@ -939,7 +987,7 @@ export default function BookingFlow({
                                 </span>
                               )}
                             </span>
-                            {selected && <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} each</span>}
+                            {selected && <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(Math.round(courtPrice / (seatCount + 1)), currency)} each</span>}
                           </button>
                         )
                       })}
@@ -967,9 +1015,45 @@ export default function BookingFlow({
                     </>
                   )
                 })()}
-                {splitPlayers.length > 0 && (
+                {invitesAvailable && (
+                  <div className="rounded-xl px-3 py-2.5" style={{ background: 'var(--bg-raised)', border: '1px dashed var(--border)' }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className="block text-sm" style={{ color: 'var(--text-primary)' }}>Mate not on PadelClub yet?</span>
+                        <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>
+                          Send them a link on WhatsApp or email. They join when they sign up.
+                        </span>
+                      </span>
+                      <button type="button" disabled={seatsFull} onClick={() => setInviteSeats(n => n + 1)}
+                        className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold whitespace-nowrap disabled:opacity-40"
+                        style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
+                        + Invite
+                      </button>
+                    </div>
+                    {Array.from({ length: inviteSeats }, (_, i) => (
+                      <div key={i} className="flex items-center justify-between gap-3 mt-2 px-3 py-2 rounded-xl"
+                        style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }}>
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="inline-flex items-center justify-center rounded-full text-[11px] font-bold shrink-0"
+                            style={{ width: 22, height: 22, border: '1.5px dashed var(--brand-primary-text)', color: 'var(--brand-primary-text)' }}>+</span>
+                          <span className="text-sm truncate" style={{ color: 'var(--brand-primary-text)' }}>Invite link {i + 1}</span>
+                        </span>
+                        <span className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>
+                            {formatPrice(Math.round(courtPrice / (seatCount + 1)), currency)} each
+                          </span>
+                          <button type="button" onClick={() => setInviteSeats(n => Math.max(0, n - 1))}
+                            className="text-xs" style={{ color: 'var(--text-subtle)' }}>Remove</button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {seatCount > 0 && (
                   <div className="text-xs pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
-                    You pay {formatPrice(Math.round(courtPrice / (splitPlayers.length + 1)), currency)} - others notified to pay their share
+                    You pay {formatPrice(Math.round(courtPrice / (seatCount + 1)), currency)}
+                    {splitPlayers.length > 0 && ' - others notified to pay their share'}
+                    {inviteSeats > 0 && (splitPlayers.length > 0 ? '. ' : ' - ') + 'Invite links are ready on My Bookings once you\'ve paid'}
                   </div>
                 )}
               </div>
@@ -988,7 +1072,7 @@ export default function BookingFlow({
                     800 is as heavy as this can go without adding a weight. */}
                 <span className="text-[17px] leading-none font-bold uppercase" style={{ letterSpacing: '0.14em', opacity: 0.8 }}>Pay</span>
                 <span className="text-[42px] leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.03em' }}>
-                  {formatPrice(Math.round(splitEnabled && splitPlayers.length > 0 ? courtPrice / (splitPlayers.length + 1) : courtPrice), currency)}
+                  {formatPrice(Math.round(seatCount > 0 ? courtPrice / (seatCount + 1) : courtPrice), currency)}
                 </span>
                 <span className="text-[22px] leading-none font-extrabold">→</span>
               </>

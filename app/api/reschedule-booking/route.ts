@@ -75,11 +75,16 @@ export async function POST(request: Request) {
     .eq('booking_id', bookingId)
     .in('status', ['pending', 'paid'])
 
-  if (splits && splits.length > 0) {
+  // An invite seat is a share nobody has taken yet (user_id is null), so there
+  // is no one to tell. Left in, it put a row with no recipient into the same
+  // insert as everyone else's, and a database that refuses one such row refuses
+  // the whole batch -- nobody on a real seat would have been told the court moved.
+  const notifiable = (splits ?? []).filter(s => s.user_id)
+  if (notifiable.length > 0) {
     const court = booking.courts as any
     const message = `Your padel booking (${court?.name ?? 'court'}) moved to ${newDate} at ${newStartTime}`
     await admin.from('notifications').insert(
-      splits.map(s => ({ user_id: s.user_id, type: 'booking_rescheduled', message }))
+      notifiable.map(s => ({ user_id: s.user_id, type: 'booking_rescheduled', message }))
     )
   }
 

@@ -1,10 +1,11 @@
 ﻿'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { Fingerprint } from 'lucide-react'
+import { nextQuery, returnTarget } from '@/lib/return-to'
 
 export default function LoginPage() {
   const supabase = createClient()
@@ -15,6 +16,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [passkeyLoading, setPasskeyLoading] = useState(false)
   const passkeySupported = typeof window !== 'undefined' && !!window.PublicKeyCredential
+  // Carried onto the sign-up link so someone who came here from an invite
+  // doesn't lose it by choosing to make an account instead. Read after mount:
+  // the server render has no window, and a link whose href differs between
+  // server and browser is a hydration warning.
+  const [signupQuery, setSignupQuery] = useState('')
+  useEffect(() => { setSignupQuery(nextQuery()) }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,7 +31,7 @@ export default function LoginPage() {
       toast.error(error.message)
     } else {
       toast.success('Welcome back!')
-      router.push('/book')
+      router.push(returnTarget())
       router.refresh()
     }
     setLoading(false)
@@ -44,7 +51,7 @@ export default function LoginPage() {
       }
       if (data.session) {
         toast.success('Welcome back!')
-        router.push('/book')
+        router.push(returnTarget())
         router.refresh()
       }
     } catch (e: any) {
@@ -179,7 +186,7 @@ export default function LoginPage() {
           </p>
           <p style={{ color: 'var(--text-muted)' }}>
             No account?{' '}
-            <Link href="/auth/signup" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary-text)' }}>
+            <Link href={`/auth/signup${signupQuery}`} className="font-semibold hover:underline" style={{ color: 'var(--brand-primary-text)' }}>
               Create one
             </Link>
           </p>

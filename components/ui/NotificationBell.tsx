@@ -150,6 +150,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     if (type === 'match_full') return '🔥'
     if (type === 'booking_rescheduled') return '📅'
     if (type === 'booking_released') return '💳'
+    if (type === 'invite_joined') return '🤝'
     return '🔔'
   }
 

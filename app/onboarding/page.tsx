@@ -1,8 +1,10 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase-server'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
+import { INVITE_COOKIE, joinPathFor, safeNext } from '@/lib/return-to'
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams: { next?: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) {
@@ -16,7 +18,7 @@ export default async function OnboardingPage() {
     .single()
 
   if (profile?.onboarding_completed) {
-    redirect('/book')
+    redirect(safeNext(searchParams?.next) ?? joinPathFor(cookies().get(INVITE_COOKIE)?.value) ?? '/book')
   }
 
   return <OnboardingFlow userId={session!.user.id} defaultName={profile?.full_name ?? ''} />
