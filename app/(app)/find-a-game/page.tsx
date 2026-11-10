@@ -25,15 +25,30 @@ export default async function FindGamePage() {
     .order('date', { ascending: true })
     .order('start_time', { ascending: true })
 
+  // The viewer's own rating and home club, so the list can say which games suit
+  // them. Either can be null (never rated, no home club), and then the matching
+  // controls aren't offered.
+  const { data: me } = session
+    ? await supabase.from('profiles').select('skill_rating, home_venue_slug').eq('id', session.user.id).maybeSingle()
+    : { data: null }
+  const viewerRating = me?.skill_rating !== null && me?.skill_rating !== undefined && Number.isFinite(Number(me.skill_rating))
+    ? Number(me.skill_rating)
+    : null
+
   return (
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Open play</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          Join a game someone has opened up, or open one of your own when you book
+          Games you can join, soonest first — or open one of your own when you book
         </p>
       </div>
-      <FindGameList matches={matches ?? []} currentUserId={session?.user?.id ?? ''} />
+      <FindGameList
+        matches={matches ?? []}
+        currentUserId={session?.user?.id ?? ''}
+        viewerRating={viewerRating}
+        homeVenueSlug={me?.home_venue_slug ?? null}
+      />
     </div>
   )
 }
