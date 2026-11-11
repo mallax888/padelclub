@@ -43,6 +43,9 @@ const ICONS: Record<string, JSX.Element> = {
   '/admin?tab=bookings': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
   ),
+  '/admin/setup': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+  ),
   '/admin/team': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
   ),
@@ -106,6 +109,7 @@ const OWNER_MORE_ITEMS = [
   { href: '/admin?tab=courts',   label: 'Courts',   tab: 'courts' },
   { href: '/admin?tab=xero',     label: 'Xero',     tab: 'xero' },
   { href: '/admin/team',         label: 'Team',     tab: null },
+  { href: '/admin/setup',        label: 'Club setup', tab: null },
 ]
 const MANAGER_CLUB_ITEMS = NAV_ITEMS.filter(i => ['/players', '/record-match', '/tournaments', '/ladders'].includes(i.href))
 
@@ -270,6 +274,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
                 <SidebarLink href="/admin/today" label="Today" active={pathname === '/admin/today'} />
                 <SidebarLink href="/admin" label="Dashboard" active={pathname === '/admin'} />
                 {isOwner && <SidebarLink href="/admin/team" label="Team" active={pathname === '/admin/team'} />}
+                {isOwner && <SidebarLink href="/admin/setup" label="Club setup" active={pathname === '/admin/setup'} />}
               </div>
               <SidebarGroupLabel>Club</SidebarGroupLabel>
               <div className="flex flex-col gap-0.5">

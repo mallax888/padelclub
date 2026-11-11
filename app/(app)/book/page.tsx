@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase-server'
 import BookingFlow from '@/components/booking/BookingFlow'
+import { loadVenueSettings } from '@/lib/venue-settings'
 
 // How many past split partners to hand the booking flow. The picker shows the
 // first few and everyone else is reachable through search, so this only needs
@@ -8,9 +9,10 @@ const RECENT_PARTNER_LIMIT = 12
 
 export default async function BookPage() {
   const supabase = createServerClient()
-  const [{ data: courts }, { data: { session } }] = await Promise.all([
+  const [{ data: courts }, { data: { session } }, venueSettings] = await Promise.all([
     supabase.from('courts').select('*').eq('is_active', true),
     supabase.auth.getSession(),
+    loadVenueSettings(supabase),
   ])
   const userId = session!.user.id
   const { data: profile } = await supabase
@@ -60,7 +62,7 @@ export default async function BookPage() {
         <h1 className="text-2xl font-semibold">Book a court</h1>
         <p className="text-sm text-gray-500 mt-1">Select a date, court and time to make your booking</p>
       </div>
-      <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} />
+      <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings} />
     </div>
   )
 }

@@ -4,10 +4,10 @@
 // so the cases that matter can be tested without a browser or a database.
 import { isPeakTime } from '@/lib/pricing'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
+import { dayHours, toMinutes, type WeekHours } from '@/lib/venue-hours'
 
-// The same selling window the booking flow and the Board use
-// (generateTimeSlots(7, 22, 60) -- 15 one-hour slots a day). Venues don't store
-// opening hours, so "empty" is measured against this assumed window.
+// The selling window used when a club hasn't set its opening hours -- what the
+// whole app assumed before hours existed. Clubs that have set hours pass them in.
 export const OPEN_HOUR = 7
 export const CLOSE_HOUR = 22
 
@@ -97,7 +97,7 @@ const todayIn = (tz: string, nowMs: number) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(nowMs))
 const pct = (booked: number, sellable: number) => (sellable > 0 ? Math.round((booked / sellable) * 100) : null)
 
-export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite[], venueSlug: string, nowMs: number, spanDays = 7): EmptyTime {
+export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite[], venueSlug: string, nowMs: number, spanDays = 7, week?: WeekHours | null): EmptyTime {
   const active = courts.filter(c => c.is_active !== false)
   const tz = timezoneForVenueSlug(venueSlug)
   const today = todayIn(tz, nowMs)
@@ -105,14 +105,18 @@ export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite
   const peak = { sellable: 0, empty: 0 }
   const quiet = { sellable: 0, empty: 0 }
   const days: DayDemand[] = []
-  const emptyByHour = new Map<string, number[]>() // date -> courts empty at each hour (-1 = hour not on sale)
+  const emptyByHour = new Map<string, { base: number; hourly: number[] }>() // date -> first hour, then courts empty at each hour (-1 = hour not on sale)
   let potential = 0
 
   for (let i = 0; i < spanDays; i++) {
     const date = addDaysStr(today, i)
     const day: DayDemand = { date, label: weekdayOf(date), sellable: 0, booked: 0, empty: 0, fillPct: null }
     const hourly: number[] = []
-    for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
+    // Whole hours inside the club's opening hours that day (none if it is closed).
+    const dh = dayHours(week, date)
+    const baseHour = dh ? Math.ceil(toMinutes(dh.open) / 60) : OPEN_HOUR
+    const endHour = dh ? Math.floor(toMinutes(dh.close) / 60) : OPEN_HOUR
+    for (let h = baseHour; h < endHour; h++) {
       // An hour that has started can't be sold any more.
       if (venueInstant(date, `${pad(h)}:00:00`, tz).getTime() < nowMs) { hourly.push(-1); continue }
       const peakHour = isPeakTime(date, `${pad(h)}:00`)
@@ -138,7 +142,7 @@ export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite
     }
     day.fillPct = pct(day.booked, day.sellable)
     days.push(day)
-    emptyByHour.set(date, hourly)
+    emptyByHour.set(date, { base: baseHour, hourly })
   }
 
   // Biggest gaps: runs of two or more consecutive hours with plenty of courts
@@ -146,12 +150,12 @@ export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite
   const threshold = active.length >= 2 ? Math.max(2, Math.ceil(active.length / 2)) : 1
   const gaps: DemandGap[] = []
   for (const date of Array.from(emptyByHour.keys())) {
-    const hourly = emptyByHour.get(date)!
+    const { base, hourly } = emptyByHour.get(date)!
     let start = -1
     const close = (endIdx: number) => {
       if (start < 0 || endIdx - start < 2) { start = -1; return }
       const run = hourly.slice(start, endIdx)
-      const hours = run.map((_, k) => OPEN_HOUR + start + k)
+      const hours = run.map((_, k) => base + start + k)
       const peaks = hours.filter(h => isPeakTime(date, `${pad(h)}:00`)).length
       gaps.push({
         date,

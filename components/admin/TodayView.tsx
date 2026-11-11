@@ -21,6 +21,8 @@ export type TodayViewProps = {
   unpaid: { count: number; total: number | null; oldestDays: number | null }
   openSeats: { count: number; soonest: string | null }
   emptyHoursToday: number
+  closeToday: string | null // when the club closes today (null = closed all day)
+  notOpenYet: boolean // owners only: the club has courts but isn't open for booking
   showMoney: boolean // owners see money; front desk does not
   roleLabel: string | null
 }
@@ -68,11 +70,18 @@ export default function TodayView(p: TodayViewProps) {
         text={openSeats.soonest ? `Soonest: ${openSeats.soonest}` : 'Games starting in the next 24 hours'} />,
     )
   }
+  if (p.notOpenYet) {
+    attention.unshift(
+      <AttentionRow key="notopen" href={`/admin/setup?${q}`} tone="yellow" mark="!"
+        title="This club isn't open for booking yet"
+        text="Players see Courts coming soon. Open it when you're ready." />,
+    )
+  }
   if (p.showMoney && p.emptyHoursToday > 0) {
     attention.push(
       <AttentionRow key="empty" href={`/admin?tab=analytics&${q}`} tone="blue" mark="◔"
         title={`${p.emptyHoursToday} court-${p.emptyHoursToday === 1 ? 'hour' : 'hours'} still empty today`}
-        text="Between now and 22:00" />,
+        text={`Between now and ${p.closeToday ?? '22:00'}`} />,
     )
   }
 
@@ -114,7 +123,7 @@ export default function TodayView(p: TodayViewProps) {
       <div className="text-[11px] font-extrabold uppercase mt-5 mb-2 px-0.5" style={sectionLabel}>Courts right now</div>
       {noCourts ? (
         <div className="rounded-[18px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
-          This club has no courts set up yet.{p.showMoney ? <> Add them in the Courts tab of the <Link href={`/admin?tab=courts&${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>dashboard</Link>.</> : ' Ask the owner to add them.'}
+          This club has no courts set up yet.{p.showMoney ? <> <Link href={`/admin/setup?${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up this club</Link>.</> : ' Ask the owner to add them.'}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2.5">

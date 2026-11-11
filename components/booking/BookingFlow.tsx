@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { formatDate, generateTimeSlots, addHours, localDateStr } from '@/lib/utils'
+import { formatDate, addHours, localDateStr } from '@/lib/utils'
+import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes } from '@/lib/venue-hours'
+import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice } from '@/lib/pricing'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
@@ -12,7 +14,6 @@ import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
 
-const TIME_SLOTS = generateTimeSlots(7, 22, 30)
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 // Everything the booking flow offers comes from this list, never VENUES
@@ -88,11 +89,15 @@ export default function BookingFlow({
     profile,
     userId,
     recentPlayers = [],
+    venueSettings = {},
   }: {
     courts: Court[]
     profile: Profile
     userId: string
     recentPlayers?: Player[]
+    // Opening hours and whether each club is open for booking. A club with no
+    // entry is open 07:00-22:00, as every club was before hours existed.
+    venueSettings?: VenueSettingsMap
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -273,6 +278,12 @@ export default function BookingFlow({
   // more than one (Wellington's singles/doubles, Camps Bay's indoor/outdoor).
   const venueCourts = venue ? courts.filter(c => (c as any).venue_slug === venue.slug) : []
   const courtTypes = Array.from(new Set(venueCourts.map(c => c.type))).sort()
+
+  // Start times on offer: the club's own opening hours for the chosen day (07:00
+  // to 22:00 until a club sets its own), and nothing at all on a day it is closed.
+  const openingDay = venue && date ? dayHours(weekFor(venueSettings, venue.slug), date) : null
+  const timeSlots = slotTimes(openingDay, 30)
+  const closedOnDate = !!venue && !!date && !openingDay
   const selectableCourts = courtTypeFilter
     ? venueCourts.filter(c => c.type === courtTypeFilter)
     : venueCourts
@@ -679,7 +690,11 @@ export default function BookingFlow({
       {step === 'venue' && (
         <div className="space-y-2 animate-fade-in">
           {regionVenues.map(v => {
-            const realCourtCount = courts.filter(c => (c as any).venue_slug === v.slug).length
+            // A club that has courts but isn't open for booking yet looks the
+            // same to players as one with no courts: "coming soon".
+            const realCourtCount = isOpenForBooking(venueSettings, v.slug)
+              ? courts.filter(c => (c as any).venue_slug === v.slug).length
+              : 0
             return (
             <button key={v.slug}
               onClick={() => {
@@ -832,8 +847,13 @@ export default function BookingFlow({
               <span style={{ color: 'var(--text-subtle)' }}>Off-peak</span>
             </div>
           </div>
+          {closedOnDate && (
+            <div className="rounded-xl px-4 py-5 text-center text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              {venue!.name} is closed on {DAY_PLURALS[dayKeyOfDate(date!)]}. Pick another day.
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-2">
-            {TIME_SLOTS.map(t => {
+            {timeSlots.map(t => {
               const available = isSlotAvailable(t)
               const peak = isPeakTime(date, t)
               return (

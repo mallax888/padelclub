@@ -7,6 +7,7 @@ import {
   computeEmptyCourtTime, summariseUnpaidShares,
   type BookingLite, type CourtLite, type UnpaidShareRow,
 } from '@/lib/money-demand'
+import type { WeekHours } from '@/lib/venue-hours'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
 const MAX_ROWS = 6
@@ -25,8 +26,9 @@ const KIND_LABEL = { peak: 'Peak hours', quiet: 'Quiet hours', mixed: 'Peak and 
 
 const ageLabel = (d: number) => (d === 0 ? 'Today' : d === 1 ? '1 day' : `${d} days`)
 
-export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares }: {
+export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares, week }: {
   venueSlug: string
+  week?: WeekHours | null
   courts: CourtLite[]
   bookings: BookingLite[]
   unpaidShares: UnpaidShareRow[]
@@ -53,7 +55,7 @@ export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares 
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <UnpaidCard venueSlug={venueSlug} rows={unpaidShares} now={now} currency={currency} />
-          <EmptyTimeCard venueSlug={venueSlug} courts={courts} bookings={bookings} now={now} currency={currency} />
+          <EmptyTimeCard venueSlug={venueSlug} courts={courts} bookings={bookings} now={now} currency={currency} week={week} />
         </div>
       )}
     </section>
@@ -119,8 +121,8 @@ function UnpaidCard({ venueSlug, rows, now, currency }: { venueSlug: string; row
   )
 }
 
-function EmptyTimeCard({ venueSlug, courts, bookings, now, currency }: { venueSlug: string; courts: CourtLite[]; bookings: BookingLite[]; now: number; currency: ReturnType<typeof currencyForVenueSlug> }) {
-  const e = computeEmptyCourtTime(courts, bookings, venueSlug, now)
+function EmptyTimeCard({ venueSlug, courts, bookings, now, currency, week }: { venueSlug: string; courts: CourtLite[]; bookings: BookingLite[]; now: number; currency: ReturnType<typeof currencyForVenueSlug>; week?: WeekHours | null }) {
+  const e = computeEmptyCourtTime(courts, bookings, venueSlug, now, 7, week)
   if (e.courtCount === 0) {
     return (
       <div className="rounded-2xl p-5" style={card}>
@@ -182,7 +184,7 @@ function EmptyTimeCard({ venueSlug, courts, bookings, now, currency }: { venueSl
         ))}
       </div>
       <p className="text-[11.5px] mt-3" style={{ color: 'var(--text-subtle)' }}>
-        Counted between 07:00 and 22:00. Hours already started and courts you&apos;ve blocked aren&apos;t counted. The emptiest days are highlighted.
+        Counted within your opening hours{week ? '' : ' (07:00 to 22:00 until you set them)'}. Hours already started and courts you&apos;ve blocked aren&apos;t counted. The emptiest days are highlighted.
       </p>
     </div>
   )

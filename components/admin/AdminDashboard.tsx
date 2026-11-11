@@ -14,6 +14,8 @@ import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import MoneyDemand from '@/components/admin/MoneyDemand'
 import { ADMIN_TABS, FRONT_DESK_TABS } from '@/lib/view-mode'
+import { weekBounds, type WeekHours } from '@/lib/venue-hours'
+import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import type { UnpaidShareRow } from '@/lib/money-demand'
 import FinancialReports from '@/components/admin/FinancialReports'
 import AdminSidebar from '@/components/admin/AdminSidebar'
@@ -22,7 +24,6 @@ import BoardFooterStrip from '@/components/admin/BoardFooterStrip'
 import BookingRosterModal from '@/components/admin/BookingRosterModal'
 import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking, FinancialCreditTx } from '@/lib/analytics'
 
-const TIME_SLOTS = generateTimeSlots(7, 22, 60)
 
 // Trailing-7-day mini trend line for a stat card -- no charting library
 // needed for a single series this small.
@@ -98,6 +99,7 @@ export default function AdminDashboard({
   unpaidShares = [],
   initialTab,
   initialVenue,
+  venueSettings = {},
   staffName,
 }: {
   bookings: AdminBooking[]
@@ -115,6 +117,8 @@ export default function AdminDashboard({
   // Where to open (from the manager navigation and the Today screen's links).
   initialTab?: AdminTab
   initialVenue?: string
+  // Each club's opening hours (default 07:00-22:00 when a club hasn't set any).
+  venueSettings?: VenueSettingsMap
   staffName: string | null
 }) {
   const router = useRouter()
@@ -269,6 +273,10 @@ export default function AdminDashboard({
     : managedVenueSlug || venuesInCity[0]?.slug || ''
 
   const venueCourts = courts.filter((c: any) => c.venue_slug === activeVenue)
+  const activeWeek = weekFor(venueSettings, activeVenue)
+  // Times offered when blocking a court: the club's own hours, hour by hour.
+  const blockBounds = weekBounds(activeWeek)
+  const blockSlots = generateTimeSlots(blockBounds.firstHour, Math.min(blockBounds.lastHour, 24), 60)
   const venueCourtIds = new Set(venueCourts.map(c => c.id))
 
   const bookingsForVenue = bookings.filter((b: any) => venueCourtIds.has(b.court_id))
@@ -619,7 +627,7 @@ export default function AdminDashboard({
 {/* Board tab */}
       {tab === 'board' && (
         <div className="flex flex-col gap-4">
-          <BoardView bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
+          <BoardView week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
           <BoardFooterStrip
             rangeLabel={boardRange.label}
             thisWeekCount={thisWeekVenueBookings.length}
@@ -639,7 +647,7 @@ export default function AdminDashboard({
       )}
 
       {tab === 'analytics' && canSeeMoney && activeVenue && (
-        <MoneyDemand venueSlug={activeVenue} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares} />
+        <MoneyDemand venueSlug={activeVenue} week={activeWeek} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares} />
       )}
 
       {tab === 'analytics' && canSeeMoney && analytics && (
@@ -836,7 +844,7 @@ export default function AdminDashboard({
                   <label className="label">Time</label>
                   <select className="input" value={blockForm.time}
                     onChange={e => setBlockForm(f => ({...f, time: e.target.value}))}>
-                    {TIME_SLOTS.map(t => <option key={t}>{t}</option>)}
+                    {blockSlots.map(t => <option key={t}>{t}</option>)}
                   </select>
                 </div>
               </div>
@@ -927,8 +935,9 @@ export default function AdminDashboard({
 
 
 function BoardView({
-  bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members,
+  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members,
 }: {
+  week: WeekHours
   bookings: any[]
   venueCourts: Court[]
   viewMode: 'day' | 'week' | 'month'
@@ -1004,7 +1013,17 @@ function BoardView({
     })
   }
 
-  const TIME_ROWS = Array.from({ length: 16 }, (_, i) => String(7 + i).padStart(2, '0') + ':00')
+  // Rows run from the club's earliest opening to its latest closing (07:00 to
+  // 22:00 until it sets hours), stretched to include any booking that falls
+  // outside them so nothing ever disappears off the grid.
+  const { firstHour, lastHour } = weekBounds(week)
+  let rowFrom = firstHour, rowTo = lastHour
+  for (const b of bookings) {
+    if (b.status === 'cancelled' || !venueCourts.some((c: any) => c.id === b.court_id)) continue
+    rowFrom = Math.min(rowFrom, parseInt(b.start_time.slice(0, 2), 10))
+    rowTo = Math.max(rowTo, Math.ceil((parseInt(b.end_time.slice(0, 2), 10) * 60 + parseInt(b.end_time.slice(3, 5), 10)) / 60))
+  }
+  const TIME_ROWS = Array.from({ length: Math.min(rowTo, 24) - rowFrom + 1 }, (_, i) => String(rowFrom + i).padStart(2, '0') + ':00')
   const weekDates = getWeekDates()
   const today = localDateStr()
   const courtColors = ['var(--brand-primary)', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#10B981']
