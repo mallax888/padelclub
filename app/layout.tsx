@@ -35,8 +35,8 @@ export const metadata: Metadata = {
 // --bg-base in each theme (app/globals.css).
 export const viewport: Viewport = {
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F2F4EE' },
-    { media: '(prefers-color-scheme: dark)', color: '#09140F' },
+    { media: '(prefers-color-scheme: light)', color: '#F1F3F6' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F1318' },
   ],
 }
 

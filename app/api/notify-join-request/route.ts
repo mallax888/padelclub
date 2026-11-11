@@ -77,7 +77,7 @@ export async function POST(request: Request) {
           { label: 'Date', value: date },
           { label: 'Time', value: time },
         ],
-        extraHtml: `<p style="color:#A3B5A9;font-size:13px;margin:16px 0 0">Log in to accept or decline this request.</p>`,
+        extraHtml: `<p style="color:#A4AEB8;font-size:13px;margin:16px 0 0">Log in to accept or decline this request.</p>`,
         ctaText: 'View match',
         ctaUrl: matchUrl,
         footer: `PadelClub · ${venue.name}, ${venue.region}`,

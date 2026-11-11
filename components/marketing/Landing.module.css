@@ -1,12 +1,13 @@
 .field {
-  --bg-1: #102A20;
-  --bg-2: #0A1B14;
-  --bg-3: #06120C;
-  --ink: #F0F3EC;
-  --ink-muted: rgba(240, 243, 236, 0.62);
-  --ink-subtle: rgba(240, 243, 236, 0.4);
-  --lime: #D0995A;
-  --lime-ink: #1C1006;
+  --bg-1: #17212C;
+  --bg-2: #0F171F;
+  --bg-3: #0A1016;
+  --ink: #F1F4F7;
+  --ink-muted: rgba(241, 244, 247, 0.62);
+  --ink-subtle: rgba(241, 244, 247, 0.4);
+  --lime: #1F5FB5;
+  --lime-text: #6AAAF0;
+  --lime-ink: #FFFFFF;
   --line: rgba(255, 255, 255, 0.10);
   --panel: rgba(255, 255, 255, 0.045);
   --panel-hi: rgba(255, 255, 255, 0.08);
@@ -16,8 +17,8 @@
   --coral: #FF8B6B;
 
   background:
-    radial-gradient(900px 500px at 12% -10%, rgba(208, 153, 90, 0.10), transparent 60%),
-    radial-gradient(1000px 700px at 90% 10%, rgba(62, 155, 106, 0.12), transparent 55%),
+    radial-gradient(900px 500px at 12% -10%, rgba(61, 139, 224, 0.10), transparent 60%),
+    radial-gradient(1000px 700px at 90% 10%, rgba(106, 170, 240, 0.08), transparent 55%),
     linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
   color: var(--ink);
   font-feature-settings: 'tnum' 1;
@@ -64,16 +65,16 @@
 
 .eyebrow {
   display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700;
-  color: var(--lime); background: rgba(208, 153, 90, 0.10); border: 1px solid rgba(208, 153, 90, 0.25);
+  color: var(--lime-text); background: rgba(61, 139, 224, 0.10); border: 1px solid rgba(61, 139, 224, 0.25);
   padding: 6px 13px; border-radius: 999px; margin-bottom: 20px;
 }
-.eyebrow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--lime); }
+.eyebrow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--lime-text); }
 
 .heroTitle {
   font-size: 54px; font-weight: 800; line-height: 1.03; letter-spacing: -0.03em;
   text-wrap: balance;
 }
-.heroTitle .accent { color: var(--lime); }
+.heroTitle .accent { color: var(--lime-text); }
 .heroSub {
   font-size: 16px; color: var(--ink-muted); font-weight: 500; line-height: 1.55;
   max-width: 420px; margin: 20px 0 30px;
@@ -96,12 +97,12 @@
 .phones { position: relative; height: 560px; }
 .phone {
   position: absolute; width: 232px; height: 480px; border-radius: 34px; padding: 10px;
-  background: linear-gradient(160deg, #14251E, #08110C);
+  background: linear-gradient(160deg, #1A222C, #0B1016);
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .phoneScreen {
   width: 100%; height: 100%; border-radius: 26px; overflow: hidden; position: relative;
-  background: linear-gradient(180deg, #0B1A13, #050D09);
+  background: linear-gradient(180deg, #0F161D, #06090D);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 .phoneA { left: 4%; top: 0; z-index: 2; transform: rotate(-2deg); }
@@ -111,7 +112,7 @@
 .psGreet { font-size: 10px; color: var(--ink-subtle); font-weight: 600; }
 .psName { font-size: 16px; font-weight: 800; margin-top: 2px; }
 .psCard { margin-top: 16px; background: var(--panel-hi); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
-.cardLabel { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--lime); }
+.cardLabel { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--lime-text); }
 .cardCourt { font-size: 13px; font-weight: 700; margin-top: 4px; }
 .cardWhen { font-size: 11px; color: var(--ink-subtle); margin-top: 1px; }
 .psCta {
@@ -129,10 +130,10 @@
   display: flex; align-items: center; justify-content: space-between; margin: 8px 16px;
   background: var(--panel-hi); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px;
 }
-.psCourtRowSel { background: rgba(208, 153, 90, 0.12); border-color: rgba(208, 153, 90, 0.4); }
+.psCourtRowSel { background: rgba(61, 139, 224, 0.12); border-color: rgba(61, 139, 224, 0.4); }
 .courtName { font-size: 11px; font-weight: 700; }
 .courtType { font-size: 9px; color: var(--ink-subtle); }
-.courtPrice { font-size: 10.5px; font-weight: 800; color: var(--lime); }
+.courtPrice { font-size: 10.5px; font-weight: 800; color: var(--lime-text); }
 
 /* ---- Showcase section ---- */
 .showcase { padding: 60px 0 80px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
@@ -141,7 +142,7 @@
 .checklist { display: flex; flex-direction: column; gap: 16px; }
 .checkItem { display: flex; gap: 12px; align-items: flex-start; }
 .checkMark {
-  width: 22px; height: 22px; border-radius: 999px; background: rgba(208, 153, 90, 0.14); color: var(--lime);
+  width: 22px; height: 22px; border-radius: 999px; background: rgba(61, 139, 224, 0.14); color: var(--lime-text);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
 }
 .checkItem b { font-size: 13.5px; font-weight: 700; }
@@ -153,17 +154,17 @@
 
 .msHead { display: flex; align-items: center; justify-content: space-between; padding: 16px 16px 0; }
 .msTab { font-size: 10px; font-weight: 700; color: var(--ink-subtle); }
-.msTabOn { color: var(--lime); }
+.msTabOn { color: var(--lime-text); }
 .msList { padding: 12px 12px 0; }
 .msRow { display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-top: 1px solid var(--line); font-size: 10.5px; }
 .msRow:first-child { border-top: none; }
 .bookingDate { width: 26px; text-align: center; font-weight: 800; color: var(--ink-subtle); font-size: 9px; }
 .bookingCourt { flex: 1; font-weight: 600; }
-.bookingAmount { font-weight: 800; color: var(--lime); }
+.bookingAmount { font-weight: 800; color: var(--lime-text); }
 
 .mstatPad { padding: 22px 18px; text-align: center; }
 .statRound { font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-subtle); }
-.statWon { font-size: 12px; font-weight: 800; color: var(--lime); margin-top: 6px; }
+.statWon { font-size: 12px; font-weight: 800; color: var(--lime-text); margin-top: 6px; }
 .mstatScore { font-size: 46px; font-weight: 800; margin: 10px 0; letter-spacing: -0.02em; }
 .scoreSep { color: var(--ink-subtle); font-weight: 500; margin: 0 6px; }
 .mstatSets { display: flex; justify-content: center; gap: 6px; margin-top: 4px; }
@@ -177,7 +178,7 @@
 .commGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
 @media (max-width: 800px) { .commGrid { grid-template-columns: 1fr; } }
 .commCard { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px; text-align: left; }
-.cardTag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--lime); }
+.cardTag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--lime-text); }
 .cardTitle { font-size: 14px; font-weight: 700; margin-top: 6px; }
 .cardDesc { font-size: 11.5px; color: var(--ink-subtle); margin-top: 4px; }
 .commThumb { height: 74px; border-radius: 12px; margin-top: 12px; background: linear-gradient(135deg, var(--violet), #2C2560); }
@@ -190,4 +191,4 @@
   display: flex; align-items: center; justify-content: center; gap: 28px; flex-wrap: wrap;
 }
 .trustItem { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--ink-subtle); }
-.trustItem svg { color: var(--lime); }
+.trustItem svg { color: var(--lime-text); }

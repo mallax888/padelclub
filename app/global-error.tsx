@@ -17,9 +17,9 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     <html lang="en">
       <body style={{ margin: 0, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <style>{`
-          :root { color-scheme: light dark; --bg: #F2F4EE; --fg: #0F1F18; --muted: #4B5E54; --accent: #7A4E22; --on-accent: #FFFFFF; }
+          :root { color-scheme: light dark; --bg: #F1F3F6; --fg: #0F151C; --muted: #4A5663; --accent: #1B57A6; --on-accent: #FFFFFF; }
           @media (prefers-color-scheme: dark) {
-            :root { --bg: #09140F; --fg: #F0F3EC; --muted: #A3B5A9; --accent: #DEAB70; --on-accent: #1C1006; }
+            :root { --bg: #0F1318; --fg: #F1F4F7; --muted: #A4AEB8; --accent: #6AAAF0; --on-accent: #021226; }
           }
           body { background: var(--bg); color: var(--fg); }
         `}</style>
