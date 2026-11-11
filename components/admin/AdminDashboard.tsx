@@ -13,6 +13,7 @@ const currencyForVenueSlug = (venueSlug: string | null | undefined) =>
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import MoneyDemand from '@/components/admin/MoneyDemand'
+import RegularsSummaryCard from '@/components/admin/RegularsSummaryCard'
 import { ADMIN_TABS, FRONT_DESK_TABS } from '@/lib/view-mode'
 import { weekBounds, type WeekHours } from '@/lib/venue-hours'
 import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
@@ -647,6 +648,7 @@ export default function AdminDashboard({
             onBlockCourt={() => setShowBlock(true)}
             onAddCourt={openAddCourt}
           />
+          {activeVenue && <RegularsSummaryCard venueSlug={activeVenue} bookings={bookingsForVenue as any} courtCount={venueCourts.length} />}
         </div>
       )}
 
@@ -969,14 +971,16 @@ function BoardView({
   // name there is more confusing than useful); a public find-a-game match
   // gets its own colour so staff can spot an open-to-anyone slot at a
   // glance, distinct from an ordinary private booking.
+  // A week of someone's weekly regular is marked on the Board.
+  const regularMark = (b: any) => (b.regular_id ? '🔁 ' : '')
   const cellAppearance = (b: any): { background: string; color: string; label: string } => {
     if (b.status === 'blocked') {
       return { background: 'var(--brand-crimson-muted)', color: 'var(--brand-crimson)', label: 'Blocked' }
     }
     if (publicBookingIdSet.has(b.id)) {
-      return { background: '#10B98133', color: '#10B981', label: b.profiles?.full_name?.split(' ')[0] ?? 'Open play' }
+      return { background: '#10B98133', color: '#10B981', label: regularMark(b) + (b.profiles?.full_name?.split(' ')[0] ?? 'Open play') }
     }
-    return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', label: b.profiles?.full_name?.split(' ')[0] ?? '—' }
+    return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', label: regularMark(b) + (b.profiles?.full_name?.split(' ')[0] ?? '—') }
   }
 
   const moveBooking = async (bookingId: string, changes: { newDate?: string; newCourtId?: string; newStartTime?: string }) => {

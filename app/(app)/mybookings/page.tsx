@@ -41,6 +41,14 @@ export default async function MyBookingsPage() {
     .gte('date', localDateStr(new Date(Date.now() - 24 * 3600 * 1000)))
     .order('date', { ascending: true })
     .order('start_time', { ascending: true })
+  // Active weekly regulars. Empty (and the card never shows) if the table isn't there yet.
+  const regRes: any = await (supabase as any)
+    .from('regulars')
+    .select('id, venue_slug, start_time, duration_minutes, start_date, weeks, clash_dates, status')
+    .eq('user_id', session!.user.id)
+    .eq('status', 'active')
+    .order('start_date', { ascending: true })
+  const regulars = regRes.error ? [] : (regRes.data ?? [])
   const nowMs = Date.now()
   const waits = ((waitRes.error ? [] : waitRes.data ?? []) as any[])
     .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
@@ -50,7 +58,7 @@ export default async function MyBookingsPage() {
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} />
     </div>
   )
 }

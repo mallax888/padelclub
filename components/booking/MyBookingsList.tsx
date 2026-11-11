@@ -13,6 +13,7 @@ import { VENUES } from '@/lib/venues'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import RescheduleModal from '@/components/booking/RescheduleModal'
 import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
+import { canSkipWeek, weekRows, upcomingWeeks, bookedWeekCount, weekdayPlural, seriesDates, type WeekRow } from '@/lib/regulars-rules'
 import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
 import InviteShare from '@/components/invites/InviteShare'
 
@@ -27,6 +28,9 @@ interface BookingWithCourt {
   duration_minutes: number
   payment_method: string
   stripe_payment_id: string | null
+  // Set when this booking is one week of a weekly regular; pay_by is when an unpaid held week is released.
+  regular_id?: string | null
+  pay_by?: string | null
   courts: { name: string; type: string; is_indoor: boolean } | null
 }
 
@@ -271,6 +275,132 @@ const RecordResultButton = ({ bookingId }: { bookingId: string }) => (
   </Link>
 )
 
+export type RegularSeries = { id: string; venue_slug: string; start_time: string; duration_minutes: number; start_date: string; weeks: number; clash_dates: string[] | null; status: string }
+
+// Open Stripe checkout for a booking that is held but not yet paid.
+async function startCheckout(b: BookingWithCourt): Promise<void> {
+  try {
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: b.id, courtName: `${b.courts?.name ?? 'Court'} — ${b.courts?.type ?? ''}`, date: formatDate(b.date), time: `${b.start_time.slice(0, 5)} — ${b.end_time.slice(0, 5)}` }),
+    })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok || body.error || !body.url) { toast.error(body.error ?? 'Could not open payment. Please try again.'); return }
+    window.location.href = body.url
+  } catch {
+    toast.error('Could not open payment. Please try again.')
+  }
+}
+
+const fmtShort = (date: string) => new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(date + 'T12:00:00Z'))
+const fmtPayBy = (iso: string, tz: string) => new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(iso))
+
+// One card per weekly regular: the slot, how much of it is booked, each week to
+// come, and the two things a player does with it -- skip a week, or stop.
+function RegularCard({ series: r, bookings, onSkip }: { series: RegularSeries; bookings: BookingWithCourt[]; onSkip: (bookingId: string) => void }) {
+  const router = useRouter()
+  const [sheet, setSheet] = useState(false)
+  const [stopping, setStopping] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+  const tz = timezoneForVenueSlug(r.venue_slug)
+  const nowMs = Date.now()
+  const rows = weekRows(r, bookings.filter(b => b.regular_id === r.id) as any, tz, nowMs)
+  const coming = upcomingWeeks(rows)
+  const shown = showAll ? coming : coming.slice(0, 4)
+  const skippable = coming.filter(w => w.bookingId && (w.kind === 'paid' || w.kind === 'due') && canSkipWeek(w.date, r.start_time, tz, nowMs))
+  const club = VENUES.find(v => v.slug === r.venue_slug)?.name ?? r.venue_slug
+  const startLabel = r.start_time.slice(0, 5)
+  const endMin = Number(startLabel.slice(0, 2)) * 60 + Number(startLabel.slice(3, 5)) + r.duration_minutes
+  const endLabel = `${String(Math.floor(endMin / 60)).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`
+  const lastDate = seriesDates(r.start_date, r.weeks)[r.weeks - 1]
+
+  const stop = async () => {
+    if (!confirm('Stop this regular?\n\nWeeks you have not paid for yet will be let go. Weeks you have already paid for stay booked.')) return
+    setStopping(true)
+    try {
+      const res = await fetch('/api/regulars/stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id }) })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) { toast.error(body.error ?? 'Could not stop your regular. Please try again.'); return }
+      toast.success(body.keptPaid > 0 ? `Regular stopped. Your ${body.keptPaid === 1 ? 'paid week stays' : 'paid weeks stay'} booked.` : 'Regular stopped.')
+      router.refresh()
+    } catch {
+      toast.error('Could not stop your regular. Please try again.')
+    } finally {
+      setStopping(false)
+    }
+  }
+
+  const pill = (w: WeekRow) => w.kind === 'paid' ? { t: 'Paid', bg: 'var(--brand-primary-muted)', c: 'var(--brand-primary-text)' }
+    : w.kind === 'due' ? { t: w.payBy ? `Pay by ${fmtPayBy(w.payBy, tz)}` : 'Pay now', bg: 'var(--brand-yellow-muted)', c: 'var(--brand-yellow)' }
+    : w.kind === 'taken' ? { t: 'Taken', bg: 'var(--bg-raised)', c: 'var(--text-muted)' }
+    : { t: 'Skipped', bg: 'var(--bg-raised)', c: 'var(--text-muted)' }
+
+  return (
+    <div className="rounded-2xl p-4" data-testid="regular-series" style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: 'var(--shadow-float)' }}>
+      <span className="inline-block text-[10px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', letterSpacing: '0.06em' }}>🔁 REGULAR</span>
+      <div className="text-lg mt-2" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
+        Every {weekdayPlural(r.start_date).slice(0, -1)} · {startLabel}–{endLabel}
+      </div>
+      <div className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        {club}<br />Held until {fmtShort(lastDate)} · {bookedWeekCount(rows)} of {r.weeks} weeks booked
+      </div>
+      {shown.length > 0 && (
+        <div className="mt-3">
+          {shown.map(w => {
+            const p = pill(w)
+            const booking = w.kind === 'due' ? bookings.find(b => b.id === w.bookingId) : null
+            return (
+              <div key={w.date} className="flex items-center justify-between gap-2 py-2 text-sm" style={{ borderTop: '1px solid var(--border)', opacity: w.kind === 'skipped' || w.kind === 'taken' ? 0.65 : 1 }}>
+                <span style={{ color: 'var(--text-primary)' }}>{fmtShort(w.date)}</span>
+                {booking ? (
+                  <button onClick={() => startCheckout(booking)} aria-label={`Pay for ${fmtShort(w.date)}`} className="text-[11px] font-bold rounded-full px-2.5 py-1 whitespace-nowrap" style={{ background: p.bg, color: p.c }}>{p.t} · Pay</button>
+                ) : (
+                  <span className="text-[11px] font-bold rounded-full px-2.5 py-1 whitespace-nowrap" style={{ background: p.bg, color: p.c }}>{p.t}</span>
+                )}
+              </div>
+            )
+          })}
+          {coming.length > 4 && (
+            <button onClick={() => setShowAll(a => !a)} className="text-xs font-semibold pt-1" style={{ color: 'var(--brand-primary-text)' }}>
+              {showAll ? 'Show fewer weeks' : `Show all ${coming.length} weeks`}
+            </button>
+          )}
+        </div>
+      )}
+      <div className="flex gap-2 mt-3">
+        <button onClick={() => setSheet(true)} disabled={skippable.length === 0}
+          className="flex-1 rounded-xl text-sm font-bold disabled:opacity-40" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+          Skip a week
+        </button>
+        <button onClick={stop} disabled={stopping}
+          className="flex-1 rounded-xl text-sm font-bold disabled:opacity-40" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+          {stopping ? 'Stopping…' : 'Stop regular'}
+        </button>
+      </div>
+      {sheet && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="Skip a week" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setSheet(false)}>
+          <div className="w-full max-w-lg rounded-t-3xl p-5 pb-7" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ background: 'var(--border)' }} />
+            <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Skip a week</div>
+            <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>The court goes back on sale and anyone waiting for it is told. You keep your regular.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {skippable.map(w => (
+                <button key={w.date} onClick={() => { setSheet(false); onSkip(w.bookingId!) }}
+                  className="rounded-xl py-3 text-sm font-bold" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  {fmtShort(w.date)}
+                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{w.kind === 'paid' ? 'Paid · refunded' : 'Not paid yet'}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-subtle)' }}>You can skip a week up to 24 hours before it starts, the same as cancelling.</p>
+            <button onClick={() => setSheet(false)} className="w-full mt-2 py-2.5 text-sm" style={{ color: 'var(--text-subtle)' }}>Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export type WaitingFor = { id: string; venue_slug: string; date: string; start_time: string; duration_minutes: number; status: string }
 
 // Full times the player asked to be told about. "Notified" ones lead with a
@@ -335,6 +465,7 @@ export default function MyBookingsList({
   stripeDashboardBase,
   venueSettings = {},
   waits = [],
+  regulars = [],
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
@@ -350,6 +481,8 @@ export default function MyBookingsList({
   venueSettings?: VenueSettingsMap
   // Times the player is waiting on (full times they asked to be told about).
   waits?: WaitingFor[]
+  // The player's active weekly regulars.
+  regulars?: RegularSeries[]
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -556,6 +689,12 @@ export default function MyBookingsList({
         </button>
       </div>
 
+      {!showHistory && regulars.length > 0 && (
+        <div className="space-y-3 mb-3" data-testid="regulars">
+          {regulars.map(r => <RegularCard key={r.id} series={r} bookings={bookings} onSkip={handleCancel} />)}
+        </div>
+      )}
+
       {!showHistory && (
         !hasUpcoming ? (
           lastPlayed ? (
@@ -621,6 +760,8 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
     !past && splits.some(s => !s.user_id && s.status === 'pending' && !!s.invite_token),
   )
   const muted = !isNext && !past
+  const [paying, setPaying] = useState(false)
+  const payNow = async () => { setPaying(true); try { await startCheckout(b) } finally { setPaying(false) } }
 
   // price_nzd is the whole court fee, but a booking with splits only ever
   // charged the booker their own share of it -- see create-checkout, which
@@ -734,6 +875,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
           <div className="min-w-0">
             <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
               {b.courts?.name} — {b.courts?.type}
+              {b.regular_id && <span className="ml-2 align-middle text-[10px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>🔁 Regular</span>}
             </div>
             {venue && (
               <div className={muted ? 'text-xs font-semibold mt-0.5 flex items-center gap-1.5' : 'text-xs font-bold mt-0.5 flex items-center gap-1.5'} style={{ color: muted ? 'var(--text-muted)' : 'var(--brand-primary-text)' }}>
@@ -762,6 +904,15 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
             </a>
           ) : (
             <div className="text-[10px] font-medium -mt-1" style={{ color: payment.color }}>{payment.label}</div>
+          )}
+          {/* A held week of a regular: say when it must be paid by, and let them pay now. */}
+          {!past && b.status === 'confirmed' && !b.stripe_payment_id && b.pay_by && (
+            <>
+              <div className="text-[10px] font-bold" style={{ color: 'var(--brand-yellow)' }}>Pay by {fmtPayBy(b.pay_by, timezoneForVenueSlug((b.courts as any)?.venue_slug))}</div>
+              <button onClick={payNow} disabled={paying} className="rounded-full px-3 text-xs font-bold disabled:opacity-50" style={{ minHeight: 36, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+                {paying ? 'Opening…' : 'Pay now'}
+              </button>
+            </>
           )}
         </div>
       </div>

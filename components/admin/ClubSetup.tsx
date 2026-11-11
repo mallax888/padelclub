@@ -56,7 +56,7 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   )
 }
 
-export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts }: {
+export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars }: {
   clubs: SetupClub[]
   venue: { slug: string; name: string; address: string; region: string }
   listed: Listed[]
@@ -64,10 +64,13 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   hours: WeekHours | null
   isOpen: boolean
   courts: CourtRow[]
+  // This club's rules for weekly regulars. Null when the regulars database change hasn't been run.
+  regulars: { enabled: boolean; peakCap: number | null } | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('home')
   const [busy, setBusy] = useState(false)
+  const [capText, setCapText] = useState(regulars?.peakCap != null ? String(regulars.peakCap) : '')
   const [week, setWeek] = useState<WeekHours>(savedHours ?? defaultWeek())
   const [price, setPrice] = useState(courts[0] ? String(courts[0].pricePerHour) : '')
   const [peak, setPeak] = useState(courts[0]?.pricePerHourPeak != null ? String(courts[0].pricePerHourPeak) : '')
@@ -299,6 +302,34 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
             onClick={() => { void run('/api/admin/venue-settings', { venueSlug: venue.slug, isOpen: !isOpen }, !isOpen ? `${venue.name} is open for booking` : 'Closed to players') }} />
         </span>
       </div>
+      {regulars && (
+        <div className="rounded-2xl mt-3.5 px-3.5 py-3.5" style={card} data-testid="regulars-rules">
+          <div className="flex items-center gap-3">
+            <span className="min-w-0">
+              <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🔁 Weekly regulars</span>
+              <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{regulars.enabled ? 'Players can book the same time every week' : 'Players can only book one court at a time'}</span>
+            </span>
+            <span className="ml-auto">
+              <Switch on={regulars.enabled} label="Weekly regulars" disabled={busy}
+                onClick={() => { void run('/api/admin/regulars-settings', { venueSlug: venue.slug, enabled: !regulars.enabled }, !regulars.enabled ? 'Regulars are on' : 'Regulars are off') }} />
+            </span>
+          </div>
+          {regulars.enabled && (
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+              <label className="block text-xs font-bold" htmlFor="regular-cap" style={{ color: 'var(--text-muted)' }}>Most courts regulars can hold at one peak time</label>
+              <div className="flex gap-2 mt-2">
+                <input id="regular-cap" inputMode="numeric" value={capText} onChange={e => setCapText(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No limit"
+                  className="flex-1 rounded-xl px-3 text-sm" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+                <button type="button" disabled={busy} className="rounded-xl px-4 text-sm font-bold disabled:opacity-50" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  onClick={() => { void run('/api/admin/regulars-settings', { venueSlug: venue.slug, peakCap: capText === '' ? null : Number(capText) }, capText === '' ? 'No limit on regulars at peak' : `Regulars can hold up to ${capText} ${capText === '1' ? 'court' : 'courts'} at peak`) }}>
+                  Save
+                </button>
+              </div>
+              <p className="text-[11px] mt-2 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Peak is weekday evenings (5 to 9pm) and weekends. Leave it blank for no limit, so regulars could hold every court. Walk-ins always have what is left.</p>
+            </div>
+          )}
+        </div>
+      )}
       <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
         {isOpen ? 'Done' : 'Save for later'}
       </Primary>

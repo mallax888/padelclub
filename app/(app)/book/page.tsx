@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase-server'
 import BookingFlow from '@/components/booking/BookingFlow'
 import { loadVenueSettings } from '@/lib/venue-settings'
+import { loadRegularRules } from '@/lib/regulars'
 import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { localDateStr } from '@/lib/utils'
 
@@ -67,6 +68,11 @@ export default async function BookPage() {
     .in('status', ['waiting', 'notified'])
     .gte('date', localDateStr(new Date(Date.now() - 24 * 3600 * 1000)))
   const waitlistOn = !waitRes.error
+
+  // Weekly regulars: on once their tables exist, with each club's own rules.
+  const regularsProbe: any = await (supabase as any).from('regulars').select('id').limit(1)
+  const regularsOn = !regularsProbe.error
+  const regularRules = regularsOn ? await loadRegularRules(supabase) : {}
   const nowMs = Date.now()
   const waits = ((waitRes.data ?? []) as any[])
     .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
@@ -81,7 +87,8 @@ export default async function BookPage() {
         <p className="text-sm text-gray-500 mt-1">Select a date, court and time to make your booking</p>
       </div>
       <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings}
-        waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill} />
+        waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill}
+        regularsOn={regularsOn} regularRules={regularRules} />
     </div>
   )
 }
