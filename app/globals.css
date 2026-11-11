@@ -40,23 +40,23 @@
 
 .dark {
   color-scheme: dark;
-  --bg-base:            #0F1318;
-  --bg-surface:         #171C22;
-  --bg-raised:          #212830;
-  --text-primary:       #F1F4F7;
-  --text-muted:         #A4AEB8;
-  --text-subtle:        #8A95A0;
+  --bg-base:            #262B31;
+  --bg-surface:         #30363D;
+  --bg-raised:          #3B424B;
+  --text-primary:       #F7F8FA;
+  --text-muted:         #BBC3CC;
+  --text-subtle:        #A2ABB5;
   --border:             rgba(255, 255, 255, 0.12);
   --shadow-float:       0 30px 60px -30px rgba(0, 0, 0, 0.65);
-  --ring-primary:       rgba(106, 170, 240, 0.45);
-  --brand-primary:      #1F5FB5;
+  --ring-primary:       rgba(134, 187, 247, 0.45);
+  --brand-primary:      #2F70CC;
   --brand-primary-on:   #FFFFFF;
-  --brand-primary-text: #6AAAF0;
+  --brand-primary-text: #86BBF7;
   --brand-accent:       #FF5233;
   --brand-accent-on:    #2B0800;
-  --brand-primary-muted:#6AAAF026;
+  --brand-primary-muted:#86BBF726;
   --brand-accent-muted: #FF52331F;
-  --glow-primary:       0 0 20px 0 #1F5FB559;
+  --glow-primary:       0 0 20px 0 #2F70CC59;
   --glow-accent:        0 0 16px 0 #FF52334D;
   --brand-blue:         #5FA0FF;
   --brand-blue-muted:   #5FA0FF1A;
@@ -83,7 +83,7 @@
   }
   .dark body {
     background-image:
-      radial-gradient(820px 460px at 8% -10%, rgba(31, 95, 181, 0.20), transparent 60%),
+      radial-gradient(820px 460px at 8% -10%, rgba(47, 112, 204, 0.18), transparent 60%),
       radial-gradient(860px 600px at 98% 4%, rgba(106, 170, 240, 0.06), transparent 55%);
     background-repeat: no-repeat;
     background-attachment: fixed;

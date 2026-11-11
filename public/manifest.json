@@ -4,8 +4,8 @@
   "description": "Book padel courts and find a game",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F1318",
-  "theme_color": "#0F1318",
+  "background_color": "#262B31",
+  "theme_color": "#262B31",
   "orientation": "portrait",
   "icons": [
     {

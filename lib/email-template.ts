@@ -5,12 +5,12 @@
 // app's actual court-blue-on-slate brand (--brand-primary in app/globals.css; a lighter blue here because the email is dark).
 // One shell now, matching the real brand, used everywhere.
 const BRAND = {
-  bg: '#0F1318',
-  surface: '#171C22',
-  border: '#2a323b',
-  text: '#F1F4F7',
-  textMuted: '#A4AEB8',
-  textSubtle: '#8A95A0',
+  bg: '#262B31',
+  surface: '#30363D',
+  border: '#454C55',
+  text: '#F7F8FA',
+  textMuted: '#BBC3CC',
+  textSubtle: '#A2ABB5',
   primary: '#3D8BE0',
   primaryOn: '#021226',
   crimson: '#FF4D6D',

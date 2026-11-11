@@ -19,7 +19,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
         <style>{`
           :root { color-scheme: light dark; --bg: #F1F3F6; --fg: #0F151C; --muted: #4A5663; --accent: #1B57A6; --on-accent: #FFFFFF; }
           @media (prefers-color-scheme: dark) {
-            :root { --bg: #0F1318; --fg: #F1F4F7; --muted: #A4AEB8; --accent: #6AAAF0; --on-accent: #021226; }
+            :root { --bg: #262B31; --fg: #F7F8FA; --muted: #BBC3CC; --accent: #86BBF7; --on-accent: #021226; }
           }
           body { background: var(--bg); color: var(--fg); }
         `}</style>

@@ -1,12 +1,12 @@
 .field {
-  --bg-1: #17212C;
-  --bg-2: #0F171F;
-  --bg-3: #0A1016;
-  --ink: #F1F4F7;
-  --ink-muted: rgba(241, 244, 247, 0.62);
-  --ink-subtle: rgba(241, 244, 247, 0.4);
-  --lime: #1F5FB5;
-  --lime-text: #6AAAF0;
+  --bg-1: #343B43;
+  --bg-2: #2A3037;
+  --bg-3: #22272D;
+  --ink: #F7F8FA;
+  --ink-muted: rgba(247, 248, 250, 0.68);
+  --ink-subtle: rgba(247, 248, 250, 0.48);
+  --lime: #2F70CC;
+  --lime-text: #86BBF7;
   --lime-ink: #FFFFFF;
   --line: rgba(255, 255, 255, 0.10);
   --panel: rgba(255, 255, 255, 0.045);
@@ -97,12 +97,12 @@
 .phones { position: relative; height: 560px; }
 .phone {
   position: absolute; width: 232px; height: 480px; border-radius: 34px; padding: 10px;
-  background: linear-gradient(160deg, #1A222C, #0B1016);
+  background: linear-gradient(160deg, #2D333A, #1D2227);
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .phoneScreen {
   width: 100%; height: 100%; border-radius: 26px; overflow: hidden; position: relative;
-  background: linear-gradient(180deg, #0F161D, #06090D);
+  background: linear-gradient(180deg, #22272D, #181C20);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 .phoneA { left: 4%; top: 0; z-index: 2; transform: rotate(-2deg); }
