@@ -183,7 +183,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
         <div style={{ maxHeight: 360, overflowY: 'auto' }}>
           {notifications.map(n => (
             <div key={n.id}
-              onClick={() => { markRead(n.id); router.push('/find-a-game') }}
+              onClick={() => { markRead(n.id); router.push(n.type === 'waitlist_open' ? '/book?wl=1' : '/find-a-game') }}
               className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
               style={{
                 borderBottom: '1px solid var(--border)',
@@ -226,6 +226,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   return (
     <div className="relative" ref={ref}>
       <button
+        aria-label="Notifications"
         onClick={() => { setOpen(!open); if (!open && unread > 0) markAllRead() }}
         className="relative w-9 h-9 rounded-full flex items-center justify-center transition-all"
         style={{

@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase-browser'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatDate, addHours, localDateStr } from '@/lib/utils'
-import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes } from '@/lib/venue-hours'
+import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes, toMinutes } from '@/lib/venue-hours'
+import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice } from '@/lib/pricing'
@@ -77,6 +78,8 @@ const STEPS: Step[] = [
 // result, which by definition is someone they may never have played with.
 type Player = { id: string; full_name: string | null; nickname: string | null; splitCount?: number }
 
+export type MyWait = { id: string; venue_slug: string; date: string; start_time: string; duration_minutes: number; status: string }
+
 const playerName = (p: Player) => p.nickname ?? p.full_name ?? 'Player'
 
 function dateLabel(dateStr: string) {
@@ -90,6 +93,9 @@ export default function BookingFlow({
     userId,
     recentPlayers = [],
     venueSettings = {},
+    waits = [],
+    waitlistOn = false,
+    waitPrefill = null,
   }: {
     courts: Court[]
     profile: Profile
@@ -98,6 +104,12 @@ export default function BookingFlow({
     // Opening hours and whether each club is open for booking. A club with no
     // entry is open 07:00-22:00, as every club was before hours existed.
     venueSettings?: VenueSettingsMap
+    // The player's own active waits, whether the waitlist is switched on in the
+    // database, and (when they tapped "a court opened" in a notification) the
+    // time to open straight onto.
+    waits?: MyWait[]
+    waitlistOn?: boolean
+    waitPrefill?: { venueSlug: string; date: string; durationMinutes: number } | null
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -223,6 +235,86 @@ export default function BookingFlow({
 
   const [isRebooking, setIsRebooking] = useState(false)
 
+  // Waitlist: the player's active waits (kept locally so a tile flips the moment
+  // they join or stop), and the "Notify me" sheet for one start time.
+  const [myWaits, setMyWaits] = useState<MyWait[]>(waits)
+  const [waitSheet, setWaitSheet] = useState<string | null>(null)
+  const [waitBusy, setWaitBusy] = useState(false)
+  const waitFor = (t: string) => venue && date
+    ? myWaits.find(w => w.venue_slug === venue.slug && w.date === date && w.start_time.slice(0, 5) === t && w.status !== 'cancelled') ?? null
+    : null
+
+  // Arriving from a "a court just opened" notification: open on that club, day
+  // and length so the time they wanted is a tap away.
+  // Runs again when the link changes while this screen is already open (tapping
+  // the notification from the book page), but not on a plain refresh of the same data.
+  const wlParam = searchParams.get('wl')
+  const appliedPrefill = useRef<string | null>(null)
+  useEffect(() => {
+    if (wlParam !== '1' || !waitPrefill) return
+    const key = `${waitPrefill.venueSlug}|${waitPrefill.date}|${waitPrefill.durationMinutes}`
+    if (appliedPrefill.current === key) return
+    const v = LIVE_VENUES.find(x => x.slug === waitPrefill.venueSlug)
+    if (!v) return
+    appliedPrefill.current = key
+    setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null)
+    setRegion(v.region)
+    setVenue(v)
+    setDate(waitPrefill.date)
+    if (waitPrefill.durationMinutes > 0) setDuration(waitPrefill.durationMinutes / 60)
+    setTime(null)
+    setStep('time')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wlParam, waitPrefill?.venueSlug, waitPrefill?.date, waitPrefill?.durationMinutes])
+
+  const joinWait = async (t: string) => {
+    if (!venue || !date || !duration) return
+    setWaitBusy(true)
+    try {
+      const res = await fetch('/api/waitlist', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ venueSlug: venue.slug, date, time: t, durationMinutes: Math.round(duration * 60) }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) { toast.error(body.error ?? 'Could not save. Please try again.'); return }
+      setMyWaits(prev => prev.some(w => w.venue_slug === venue.slug && w.date === date && w.start_time.slice(0, 5) === t) ? prev : [...prev, {
+        id: `new-${venue.slug}-${date}-${t}`, venue_slug: venue.slug, date, start_time: `${t}:00`, duration_minutes: Math.round(duration * 60), status: 'waiting',
+      }])
+      toast.success(`We'll tell you if ${t} opens up.`)
+      setWaitSheet(null)
+      router.refresh()
+    } catch {
+      toast.error('Could not save. Please try again.')
+    } finally {
+      setWaitBusy(false)
+    }
+  }
+
+  const stopWait = async (t: string) => {
+    const w = waitFor(t)
+    if (!w) return
+    setWaitBusy(true)
+    try {
+      // A wait just added in this session has a placeholder id until the page reloads.
+      let id = w.id
+      if (id.startsWith('new-')) {
+        const { data } = await supabase.from('waitlist' as any).select('id').eq('venue_slug', w.venue_slug).eq('date', w.date).eq('start_time', w.start_time).in('status', ['waiting', 'notified']).maybeSingle()
+        id = (data as any)?.id ?? ''
+      }
+      if (!id) { setMyWaits(prev => prev.filter(x => x !== w)); setWaitSheet(null); return }
+      const res = await fetch('/api/waitlist/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+      if (!res.ok) { toast.error('Could not stop waiting. Please try again.'); return }
+      setMyWaits(prev => prev.filter(x => x.id !== w.id))
+      toast.success('You are no longer waiting for that time.')
+      setWaitSheet(null)
+      router.refresh()
+    } catch {
+      toast.error('Could not stop waiting. Please try again.')
+    } finally {
+      setWaitBusy(false)
+    }
+  }
+
   // "Book again" from My Bookings links here with the same court + duration
   // as a past booking, skipping straight to picking a new date instead of
   // re-walking country -> region -> venue -> court -> duration.
@@ -295,7 +387,8 @@ export default function BookingFlow({
     if (!forDuration) return []
     const [h, m] = t.split(':').map(Number)
     const start = h * 60 + m
-    if ((start + forDuration * 60) > 22 * 60) return []
+    // The club's own closing time that day (22:00 for a club that has set no hours).
+    if ((start + forDuration * 60) > (openingDay ? toMinutes(openingDay.close) : 22 * 60)) return []
     return selectableCourts.filter(c => {
       const busy = busyByCourt[c.id]
       if (!busy) return true
@@ -307,6 +400,21 @@ export default function BookingFlow({
   }
 
   const isSlotAvailable = (t: string) => freeCourtsAt(t).length > 0
+
+  // A start time someone can queue for: the club is open and has courts, the
+  // whole booking fits inside opening hours, it hasn't started, and every court
+  // at the club (any type) is taken -- so the only way in is a cancellation.
+  const canWaitFor = (t: string): boolean => {
+    if (!waitlistOn || !venue || !date || !duration || !openingDay || venueCourts.length === 0) return false
+    if (!venueCourts.every(c => busyByCourt[c.id])) return false // availability not loaded yet
+    const start = toMinutes(t)
+    if (start < toMinutes(openingDay.open) || start + duration * 60 > toMinutes(openingDay.close)) return false
+    if (venueInstant(date, `${t}:00`, timezoneForVenueSlug(venue.slug)).getTime() <= Date.now()) return false
+    return venueCourts.every(c => {
+      for (let off = 0; off < duration * 60; off += 30) if (busyByCourt[c.id].has(start + off)) return true
+      return false
+    })
+  }
 
   // What the confirm screen names, and what the insert attempts first.
   const assignedCourt = time ? (freeCourtsAt(time)[0] ?? null) : null
@@ -856,6 +964,26 @@ export default function BookingFlow({
             {timeSlots.map(t => {
               const available = isSlotAvailable(t)
               const peak = isPeakTime(date, t)
+              const waiting = !available && !!waitFor(t)
+              const waitable = !available && (waiting || canWaitFor(t))
+              const beyondClose = !available && !waitable && !!openingDay && !!duration && toMinutes(t) + duration * 60 > toMinutes(openingDay.close)
+              if (waitable) {
+                return (
+                  <button key={t} onClick={() => { setWaitSheet(t); playSelectionSound() }}
+                    aria-label={waiting ? `${t}, you are waiting for this time` : `${t} is full. Notify me if it opens up`}
+                    className="rounded-xl p-3 text-center transition-all"
+                    style={{
+                      background: waiting ? 'var(--brand-primary-muted)' : 'transparent',
+                      border: `1.5px dashed ${waiting ? 'var(--brand-primary)' : 'var(--border-strong, var(--border))'}`,
+                      color: 'var(--text-primary)', cursor: 'pointer',
+                    }}>
+                    <div className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t}</div>
+                    <div className="text-[10px] mt-0.5 font-bold" style={{ color: 'var(--brand-primary-text)' }}>
+                      {waiting ? '🔔 Waiting' : '🔔 Notify me'}
+                    </div>
+                  </button>
+                )
+              }
               return (
                 <button key={t} disabled={!available}
                   onClick={() => { setTime(t); setStep('confirm'); playSelectionSound() }}
@@ -877,11 +1005,60 @@ export default function BookingFlow({
                       {peak ? '⚡ Peak' : '✓ Off-peak'}
                     </div>
                   )}
-                  {!available && <div className="text-[10px] mt-0.5">Taken</div>}
+                  {!available && <div className="text-[10px] mt-0.5">{beyondClose ? 'Closed' : 'Taken'}</div>}
                 </button>
               )
             })}
           </div>
+          {waitlistOn && myWaits.length >= 5 && (
+            <p className="text-xs mt-3" style={{ color: 'var(--text-subtle)' }}>You can wait for up to 5 times at once.</p>
+          )}
+
+          {/* The "Notify me" sheet for one full start time. */}
+          {waitSheet && venue && date && duration && (
+            <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="Wait for this time"
+              style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => !waitBusy && setWaitSheet(null)}>
+              <div className="w-full max-w-lg rounded-t-3xl p-5 pb-7" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
+                <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ background: 'var(--border)' }} />
+                {waitFor(waitSheet) ? (
+                  <>
+                    <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>You&apos;re on the list</div>
+                    <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>We&apos;ll tell you the moment a court at {waitSheet} opens up. First to book it gets it.</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Tell me if {waitSheet} opens up</div>
+                    <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>If someone cancels, we&apos;ll tell you straight away. First to book it gets it.</p>
+                  </>
+                )}
+                <div className="rounded-xl mb-4" style={{ background: 'var(--bg-raised)' }}>
+                  {[
+                    ['Club', venue.name],
+                    ['When', `${formatDate(date)}, ${waitSheet}–${addHoursDecimal(waitSheet, (waitFor(waitSheet)?.duration_minutes ?? duration * 60) / 60)}`],
+                    ['Court', 'Any court'],
+                    ['Tell me by', 'Notification + bell'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between px-3.5 py-2.5 text-sm" style={{ borderBottom: '1px solid var(--border)' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>{k}</span>
+                      <span className="font-medium text-right ml-4" style={{ color: 'var(--text-primary)' }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+                {waitFor(waitSheet) ? (
+                  <button disabled={waitBusy} onClick={() => stopWait(waitSheet)} className="w-full rounded-xl py-3 text-sm font-bold"
+                    style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)', minHeight: 48 }}>
+                    {waitBusy ? 'Stopping…' : 'Stop waiting'}
+                  </button>
+                ) : (
+                  <button disabled={waitBusy} onClick={() => joinWait(waitSheet)} className="w-full rounded-xl py-3 text-sm font-bold"
+                    style={{ background: 'var(--brand-primary)', color: '#fff', minHeight: 48 }}>
+                    {waitBusy ? 'Saving…' : '🔔 Notify me'}
+                  </button>
+                )}
+                <button disabled={waitBusy} onClick={() => setWaitSheet(null)} className="w-full mt-2 py-2.5 text-sm" style={{ color: 'var(--text-subtle)' }}>Close</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

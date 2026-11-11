@@ -8,6 +8,7 @@ import {
   type BookingLite, type CourtLite, type UnpaidShareRow,
 } from '@/lib/money-demand'
 import type { WeekHours } from '@/lib/venue-hours'
+import type { WaitDemand } from '@/lib/waitlist-rules'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
 const MAX_ROWS = 6
@@ -26,12 +27,13 @@ const KIND_LABEL = { peak: 'Peak hours', quiet: 'Quiet hours', mixed: 'Peak and 
 
 const ageLabel = (d: number) => (d === 0 ? 'Today' : d === 1 ? '1 day' : `${d} days`)
 
-export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares, week }: {
+export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares, week, waitDemand = null }: {
   venueSlug: string
   week?: WeekHours | null
   courts: CourtLite[]
   bookings: BookingLite[]
   unpaidShares: UnpaidShareRow[]
+  waitDemand?: WaitDemand | null
 }) {
   // "Now" only exists in the browser: reading the clock while rendering on the
   // server would give a different answer from the client and trip hydration.
@@ -56,6 +58,7 @@ export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares,
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <UnpaidCard venueSlug={venueSlug} rows={unpaidShares} now={now} currency={currency} />
           <EmptyTimeCard venueSlug={venueSlug} courts={courts} bookings={bookings} now={now} currency={currency} week={week} />
+          {waitDemand && <WaitlistCard demand={waitDemand} />}
         </div>
       )}
     </section>
@@ -115,6 +118,47 @@ function UnpaidCard({ venueSlug, rows, now, currency }: { venueSlug: string; row
             {s.count > shown.length ? `Showing the ${shown.length} oldest of ${s.count}. ` : 'Oldest first. '}
             Reminders already go out automatically; this shows what is still outstanding.
           </p>
+        </>
+      )}
+    </div>
+  )
+}
+
+const WEEKDAY_NAMES = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays']
+
+// People who asked to be told when a full time opened: the clearest sign a club
+// could sell more of that time.
+function WaitlistCard({ demand }: { demand: WaitDemand }) {
+  const max = Math.max(1, ...demand.slots.map(s => s.waits))
+  return (
+    <div className="rounded-2xl p-5 lg:col-span-2" style={card} data-testid="waitlist-demand">
+      <div className="text-[11px] font-extrabold uppercase" style={eyebrow}>Waitlist demand · last 14 days</div>
+      {demand.total === 0 ? (
+        <p className="text-sm py-6" style={{ color: 'var(--text-muted)' }}>Nobody has waited for a full time yet. When your busy times fill up, the times people can&apos;t get will show here.</p>
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-x-8 gap-y-2 mt-2">
+            <div>
+              <div className="text-3xl font-bold" style={{ ...display, color: 'var(--text-primary)' }}>{demand.total}</div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{demand.total === 1 ? 'wait joined' : 'waits joined'}</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold" style={{ ...display, color: 'var(--brand-primary-text)' }}>{demand.bookedAfter}</div>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>booked after being told</div>
+            </div>
+          </div>
+          <div className="text-[11px] font-bold uppercase tracking-wide mt-5 mb-2" style={{ color: 'var(--text-subtle)' }}>Times people can&apos;t get</div>
+          <ul className="space-y-2">
+            {demand.slots.map(s => (
+              <li key={`${s.weekday}-${s.time}`} className="flex items-center gap-3 text-sm">
+                <span className="w-40 shrink-0" style={{ color: 'var(--text-primary)' }}>{WEEKDAY_NAMES[s.weekday]} {s.time}</span>
+                <span className="h-2 rounded-full flex-1" style={{ background: 'var(--bg-raised)' }}>
+                  <span className="block h-2 rounded-full" style={{ width: `${Math.round((s.waits / max) * 100)}%`, background: 'var(--brand-primary)' }} />
+                </span>
+                <span className="w-16 text-right tabular-nums" style={{ color: 'var(--text-muted)' }}>{s.waits} {s.waits === 1 ? 'person' : 'people'}</span>
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </div>

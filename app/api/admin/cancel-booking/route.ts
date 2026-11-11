@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { applyCancellationRefund } from '@/lib/cancellation'
+import { notifyWaitlistForBookings } from '@/lib/waitlist'
 
 export async function POST(request: Request) {
   const supabase = createServerClient()
@@ -43,5 +44,7 @@ export async function POST(request: Request) {
   // byStaff: the club is cancelling, for the club's own reasons, so nobody
   // pays the late-notice penalty -- see the policy in lib/cancellation.ts.
   const result = await applyCancellationRefund(admin, booking, { byStaff: true })
+  // The court is free again: tell anyone waiting for that time. Best effort.
+  await notifyWaitlistForBookings(admin, [booking.id])
   return NextResponse.json({ success: true, ...result })
 }

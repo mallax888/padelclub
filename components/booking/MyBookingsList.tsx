@@ -271,6 +271,60 @@ const RecordResultButton = ({ bookingId }: { bookingId: string }) => (
   </Link>
 )
 
+export type WaitingFor = { id: string; venue_slug: string; date: string; start_time: string; duration_minutes: number; status: string }
+
+// Full times the player asked to be told about. "Notified" ones lead with a
+// book-it button: a court has opened and nobody is holding it.
+function WaitingCard({ waits }: { waits: WaitingFor[] }) {
+  const router = useRouter()
+  const [stopping, setStopping] = useState<string | null>(null)
+  const [hidden, setHidden] = useState<string[]>([])
+  const rows = waits.filter(w => !hidden.includes(w.id))
+  if (rows.length === 0) return null
+  const stop = async (id: string) => {
+    setStopping(id)
+    try {
+      const res = await fetch('/api/waitlist/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+      if (!res.ok) { toast.error('Could not stop waiting. Please try again.'); return }
+      setHidden(h => [...h, id])
+      toast.success('You are no longer waiting for that time.')
+      router.refresh()
+    } catch {
+      toast.error('Could not stop waiting. Please try again.')
+    } finally {
+      setStopping(null)
+    }
+  }
+  const clubName = (slug: string) => VENUES.find(v => v.slug === slug)?.name ?? slug
+  return (
+    <div className="mt-4" data-testid="waiting-card">
+      <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-subtle)' }}>🔔 Waiting for</div>
+      <div className="space-y-2">
+        {rows.map(w => {
+          const [h, m] = w.start_time.slice(0, 5).split(':').map(Number)
+          const end = h * 60 + m + w.duration_minutes
+          const endLabel = `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`
+          const opened = w.status === 'notified'
+          return (
+            <div key={w.id} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: 'var(--bg-surface)', border: `1px ${opened ? 'solid' : 'dashed'} ${opened ? 'var(--brand-primary)' : 'var(--border)'}` }}>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{clubName(w.venue_slug)}</div>
+                <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  {formatDate(w.date)}, {w.start_time.slice(0, 5)}–{endLabel} · {opened ? 'A court opened. Book it now.' : 'We will tell you if it opens'}
+                </div>
+              </div>
+              {opened && <Link href="/book?wl=1" className="rounded-full px-3 text-xs font-bold flex items-center" style={{ minHeight: 40, background: 'var(--brand-primary)', color: '#fff' }}>Book</Link>}
+              <button onClick={() => stop(w.id)} disabled={stopping === w.id} className="rounded-full px-3 text-xs font-bold" style={{ minHeight: 40, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                {stopping === w.id ? 'Stopping…' : 'Stop'}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function MyBookingsList({
   bookings,
   profile,
@@ -280,6 +334,7 @@ export default function MyBookingsList({
   currentUserId,
   stripeDashboardBase,
   venueSettings = {},
+  waits = [],
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
@@ -293,6 +348,8 @@ export default function MyBookingsList({
   stripeDashboardBase: string
   // Each club's opening hours, for rescheduling.
   venueSettings?: VenueSettingsMap
+  // Times the player is waiting on (full times they asked to be told about).
+  waits?: WaitingFor[]
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -521,6 +578,8 @@ export default function MyBookingsList({
           </div>
         )
       )}
+
+      {!showHistory && waits.length > 0 && <WaitingCard waits={waits} />}
 
       {showHistory && (
         past.length === 0 ? (
