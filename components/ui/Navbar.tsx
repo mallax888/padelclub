@@ -299,14 +299,6 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
                 <SpecialsMenu />
               </div>
 
-              {isStaff && (
-                <>
-                  <SidebarGroupLabel>Staff</SidebarGroupLabel>
-                  <div className="flex flex-col gap-0.5">
-                    <SidebarLink href="/admin" label="Admin" active={pathname.startsWith('/admin')} />
-                  </div>
-                </>
-              )}
             </>
           )}
 
@@ -387,13 +379,6 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
                   </Link>
                 )
               })}
-              {isStaff && !manager && (
-                <Link href="/admin" onClick={() => setMenuOpen(false)}
-                  className="flex items-center px-3 py-3 rounded-lg text-base"
-                  style={{ color: 'var(--text-primary)' }}>
-                  Admin
-                </Link>
-              )}
               {isStaff && (
                 <div className="pt-2">
                   <ViewSwitch mode={viewMode} variant="row" onNavigate={() => setMenuOpen(false)} />
