@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
-import { generateTimeSlots, localDateStr } from '@/lib/utils'
-
-const TIME_SLOTS = generateTimeSlots(7, 22, 30)
+import { localDateStr } from '@/lib/utils'
+import { dayHours, slotTimes, toMinutes, type WeekHours } from '@/lib/venue-hours'
 
 export default function RescheduleModal({
   bookingId,
@@ -14,6 +13,7 @@ export default function RescheduleModal({
   venueName,
   durationMinutes,
   bookingWindowDays,
+  hours,
   onClose,
   onRescheduled,
 }: {
@@ -23,6 +23,8 @@ export default function RescheduleModal({
   venueName: string
   durationMinutes: number
   bookingWindowDays: number
+  // The club's opening hours (default 07:00-22:00 when it hasn't set any).
+  hours?: WeekHours | null
   onClose: () => void
   onRescheduled: () => void
 }) {
@@ -60,12 +62,18 @@ export default function RescheduleModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, courtId])
 
+  // Times on offer for the chosen day, and where the day ends: a booking has to
+  // finish by closing time, and a closed day offers nothing.
+  const openingDay = dayHours(hours, date)
+  const timeSlots = slotTimes(openingDay, 30)
+  const closeMinutes = openingDay ? toMinutes(openingDay.close) : 0
+
   const isSlotAvailable = (t: string) => {
     const [h, m] = t.split(':').map(Number)
     const startTotal = h * 60 + m
     for (let offset = 0; offset < durationMinutes; offset += 30) {
       const cur = startTotal + offset
-      if (Math.floor(cur / 60) >= 22) return false
+      if (cur >= closeMinutes) return false
       const curT = `${String(Math.floor(cur / 60)).padStart(2, '0')}:${String(cur % 60).padStart(2, '0')}`
       if (takenSlots.includes(curT)) return false
     }
@@ -117,7 +125,10 @@ export default function RescheduleModal({
 
         <label className="block text-xs font-bold mt-4 mb-1.5" style={{ color: 'var(--text-muted)' }}>New time</label>
         <div className="grid grid-cols-4 gap-1.5 max-h-40 overflow-y-auto">
-          {TIME_SLOTS.map(t => {
+          {timeSlots.length === 0 && (
+            <div className="col-span-4 text-xs py-2" style={{ color: 'var(--text-muted)' }}>{venueName} is closed that day. Pick another date.</div>
+          )}
+          {timeSlots.map(t => {
             const available = isSlotAvailable(t)
             const selected = t === time
             return (

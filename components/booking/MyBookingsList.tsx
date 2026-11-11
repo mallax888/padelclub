@@ -12,6 +12,7 @@ import Link from 'next/link'
 import { VENUES } from '@/lib/venues'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import RescheduleModal from '@/components/booking/RescheduleModal'
+import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
 import InviteShare from '@/components/invites/InviteShare'
 
@@ -278,6 +279,7 @@ export default function MyBookingsList({
   joinedGames = [],
   currentUserId,
   stripeDashboardBase,
+  venueSettings = {},
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
@@ -289,6 +291,8 @@ export default function MyBookingsList({
   // live dashboard depends on which secret key the deployment holds, and that
   // key must never reach the browser.
   stripeDashboardBase: string
+  // Each club's opening hours, for rescheduling.
+  venueSettings?: VenueSettingsMap
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -511,7 +515,7 @@ export default function MyBookingsList({
              was on. The row's own badge says which is which. */
           <div className="space-y-2">
             {upcoming.map((b, i) => (
-              <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} />
+              <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} />
             ))}
             {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
@@ -533,7 +537,7 @@ export default function MyBookingsList({
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsible, splits = [], bookingWindowDays = 14, stripeDashboardBase }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; collapsible?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number; stripeDashboardBase: string }) {
+function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsible, splits = [], bookingWindowDays = 14, stripeDashboardBase, venueSettings = {} }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; collapsible?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number; stripeDashboardBase: string; venueSettings?: VenueSettingsMap }) {
   const router = useRouter()
   // The court's clock, matching the server -- otherwise the Reschedule
   // button offers itself on bookings the API will refuse, or hides on ones
@@ -800,6 +804,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
           venueName={venue.name}
           durationMinutes={b.duration_minutes}
           bookingWindowDays={bookingWindowDays}
+          hours={weekFor(venueSettings, (b.courts as any)?.venue_slug ?? '')}
           onClose={() => setShowReschedule(false)}
           onRescheduled={() => { setShowReschedule(false); router.refresh() }}
         />

@@ -8,6 +8,9 @@ import { addDaysStr, computeToday, greetingFor, venueClock, type TodayBooking } 
 import { computeEmptyCourtTime, summariseUnpaidShares } from '@/lib/money-demand'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
 import TodayView from '@/components/admin/TodayView'
+import Link from 'next/link'
+import { loadVenueSettings, weekFor } from '@/lib/venue-settings'
+import { dayHours } from '@/lib/venue-hours'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,6 +38,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       : managedCountry ? !!COUNTRIES.find(c => c.name === managedCountry)?.regions.includes(getVenue(slug).region)
       : true
 
+  const venueSettings = await loadVenueSettings(supabase)
   const { data: courtRows } = await supabase.from('courts').select('id, name, venue_slug, is_active, price_per_hour, price_per_hour_peak').eq('is_active', true)
   const withCourts = new Set((courtRows ?? []).map((c: any) => c.venue_slug as string))
   const venues = VENUES.filter(v => withCourts.has(v.slug) && inScope(v.slug)).map(v => ({ slug: v.slug, name: v.name }))
@@ -45,7 +49,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-extrabold">Today</h1>
         <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
-          None of your clubs have courts set up yet. Add them in the Courts tab of the dashboard and today&apos;s bookings will show here.
+          None of your clubs have courts set up yet.{isOwnerRole((profile as any).role) ? <> <Link href="/admin/setup" style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up your club</Link> and today&apos;s bookings will show here.</> : ' Ask the owner to set up the club.'}
         </p>
       </div>
     )
@@ -92,7 +96,9 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   // Front desk never receives the takings: zeroed here, not just hidden on screen.
   const summary = isOwner ? computed : { ...computed, revenue: { today: 0, lastWeek: 0 } }
   const unpaid = summariseUnpaidShares(mapUnpaidShares(unpaidRows), venueSlug, nowMs)
-  const empty = computeEmptyCourtTime(courts as any, bookings.filter(b => b.date === clock.date), venueSlug, nowMs, 1)
+  const week = weekFor(venueSettings, venueSlug)
+  const empty = computeEmptyCourtTime(courts as any, bookings.filter(b => b.date === clock.date), venueSlug, nowMs, 1, week)
+  const closeToday = dayHours(week, clock.date)?.close ?? null
 
   // Open invite spots in games that start within the next 24 hours.
   const tz = timezoneForVenueSlug(venueSlug)
@@ -118,6 +124,8 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       unpaid={{ count: unpaid.count, total: isOwner ? unpaid.total : null, oldestDays: unpaid.rows[0]?.ageDays ?? null }}
       openSeats={{ count: seats.length, soonest: soonestLabel }}
       emptyHoursToday={empty.days[0]?.empty ?? 0}
+      closeToday={closeToday}
+      notOpenYet={isOwner && venueSettings[venueSlug]?.isOpen === false}
       showMoney={isOwner}
       roleLabel={roleLabel((profile as any).role)}
     />

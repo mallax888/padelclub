@@ -7,6 +7,7 @@ import { addDays, format } from 'date-fns'
 import { VENUES, COUNTRIES } from '@/lib/venues'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
 import { ADMIN_TABS, canOpenTab, isOwnerRole } from '@/lib/view-mode'
+import { loadVenueSettings } from '@/lib/venue-settings'
 
 export default async function AdminPage({ searchParams }: { searchParams?: { tab?: string; venue?: string } }) {
   const supabase = createServerClient()
@@ -146,6 +147,8 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
 
   const unpaidShares = isOwner ? mapUnpaidShares(unpaidShareRows) : []
 
+  const venueSettings = await loadVenueSettings(supabase)
+
   const publicBookingIds = (openMatchRows ?? []).map((m: any) => m.booking_id as string)
 
   const creditTransactions = (isOwner ? (creditTxRows ?? []) : []).map((t: any) => ({
@@ -178,6 +181,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   }))
 
   return (
-    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
+    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }
