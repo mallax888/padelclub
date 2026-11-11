@@ -33,10 +33,10 @@ export async function GET(request: NextRequest) {
   // Back to wherever they were going: an explicit ?next=, or the invite they
   // had open when they signed up (the confirmation email lands here with
   // neither a ?next= nor any memory of the page, but the cookie is still in the
-  // browser), or the booking page as before.
+  // browser), or their own home screen.
   const destination =
     safeNext(requestUrl.searchParams.get('next'))
     ?? joinPathFor(request.cookies.get(INVITE_COOKIE)?.value)
-    ?? '/book'
+    ?? '/' // the front door sends each person to their own home: players to /book, managers to Today
   return NextResponse.redirect(new URL(destination, request.url))
 }

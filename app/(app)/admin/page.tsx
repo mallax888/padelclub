@@ -5,8 +5,11 @@ import { computeClubAnalytics } from '@/lib/analytics'
 import { localDateStr } from '@/lib/utils'
 import { addDays, format } from 'date-fns'
 import { VENUES, COUNTRIES } from '@/lib/venues'
+import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
 
-export default async function AdminPage() {
+const ADMIN_TABS = ['board', 'analytics', 'reports', 'bookings', 'members', 'courts', 'xero'] as const
+
+export default async function AdminPage({ searchParams }: { searchParams?: { tab?: string; venue?: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
 
@@ -98,18 +101,10 @@ export default async function AdminPage() {
     .gte('date', ninetyDaysAgo)
     .not('booking_id', 'is', null)
 
-  // Shares a friend has joined but not paid for (invite seats nobody has taken
-  // yet have no person on them and aren't owed by anyone, so they're left out).
-  // Scoped through the booking's court like everything else here.
-  let unpaidSharesQuery = (supabase.from('booking_splits') as any)
-    .select('id, amount_nzd, created_at, bookings!inner(date, start_time, status, courts!inner(name, venue_slug)), debtor:profiles!booking_splits_user_id_fkey(full_name, nickname), organiser:profiles!booking_splits_invited_by_fkey(full_name, nickname)')
-    .eq('status', 'pending')
-    .not('user_id', 'is', null)
-    .order('created_at', { ascending: true })
-    .limit(500)
+  // Scoped like the other admin queries (see lib/unpaid-shares.ts).
+  const unpaidSharesQ = unpaidSharesQuery(supabase, { venueSlug: managedVenueSlug, venueSlugs: managedCountryVenueSlugs })
 
   if (managedVenueSlug) {
-    unpaidSharesQuery = unpaidSharesQuery.eq('bookings.courts.venue_slug', managedVenueSlug)
     bookingsQuery = bookingsQuery.eq('courts.venue_slug', managedVenueSlug)
     courtsQuery = courtsQuery.eq('venue_slug', managedVenueSlug)
     membersQuery = membersQuery.eq('home_venue_slug', managedVenueSlug)
@@ -118,7 +113,6 @@ export default async function AdminPage() {
     creditTxQuery = creditTxQuery.eq('profiles.home_venue_slug', managedVenueSlug)
     openMatchesQuery = openMatchesQuery.eq('venue_slug', managedVenueSlug)
   } else if (managedCountryVenueSlugs) {
-    unpaidSharesQuery = unpaidSharesQuery.in('bookings.courts.venue_slug', managedCountryVenueSlugs)
     bookingsQuery = bookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     courtsQuery = courtsQuery.in('venue_slug', managedCountryVenueSlugs)
     membersQuery = membersQuery.in('home_venue_slug', managedCountryVenueSlugs)
@@ -136,23 +130,10 @@ export default async function AdminPage() {
     courtPerfQuery,
     creditTxQuery,
     openMatchesQuery,
-    unpaidSharesQuery,
+    unpaidSharesQ,
   ])
 
-  // A failed or empty lookup just shows "nothing outstanding": this panel is
-  // extra information, never a reason to break the page.
-  const unpaidShares = ((unpaidShareRows ?? []) as any[]).map((s: any) => ({
-    id: s.id as string,
-    amount: Number(s.amount_nzd) || 0,
-    createdAt: s.created_at as string,
-    date: s.bookings?.date as string,
-    startTime: s.bookings?.start_time as string,
-    courtName: (s.bookings?.courts?.name ?? 'Court') as string,
-    venueSlug: (s.bookings?.courts?.venue_slug ?? '') as string,
-    bookingStatus: (s.bookings?.status ?? '') as string,
-    playerName: (s.debtor?.nickname ?? s.debtor?.full_name ?? 'A player') as string,
-    organiserName: (s.organiser?.nickname ?? s.organiser?.full_name ?? null) as string | null,
-  })).filter(s => s.date && s.venueSlug)
+  const unpaidShares = mapUnpaidShares(unpaidShareRows)
 
   const publicBookingIds = (openMatchRows ?? []).map((m: any) => m.booking_id as string)
 
@@ -186,6 +167,6 @@ export default async function AdminPage() {
   }))
 
   return (
-    <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
+    <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }

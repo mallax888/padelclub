@@ -56,7 +56,9 @@ function readInviteCookie(): string | null {
 
 // For the pages that send someone onward after signing in: an explicit ?next=
 // wins, then a remembered invite, then the default.
-export function returnTarget(fallback = '/book'): string {
+// The fallback is the front door ('/'), which sends each person to their own
+// home: players to /book, managers to the Today screen.
+export function returnTarget(fallback = '/'): string {
   if (typeof window === 'undefined') return fallback
   const explicit = safeNext(new URLSearchParams(window.location.search).get('next'))
   return explicit ?? joinPathFor(readInviteCookie()) ?? fallback
