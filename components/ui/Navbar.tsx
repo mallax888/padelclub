@@ -111,7 +111,7 @@ const OWNER_MORE_ITEMS = [
   { href: '/admin/team',         label: 'Team',     tab: null },
   { href: '/admin/setup',        label: 'Club setup', tab: null },
 ]
-const MANAGER_CLUB_ITEMS = NAV_ITEMS.filter(i => ['/players', '/record-match', '/tournaments', '/ladders'].includes(i.href))
+const MANAGER_CLUB_ITEMS = NAV_ITEMS.filter(i => ['/players', '/tournaments', '/ladders'].includes(i.href))
 
 // Primary items get their own row at the top of the sidebar; the rest sit
 // under a "Club" group label. A sidebar has room to show everything at
