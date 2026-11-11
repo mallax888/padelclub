@@ -2,7 +2,7 @@
   "name": "PadelClub",
   "short_name": "PadelClub",
   "description": "Book padel courts and find a game",
-  "start_url": "/book",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#09140F",
   "theme_color": "#09140F",
