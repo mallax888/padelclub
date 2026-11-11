@@ -12,6 +12,8 @@ const currencyForVenueSlug = (venueSlug: string | null | undefined) =>
   currencyForRegion(venueSlug ? getVenue(venueSlug).region : undefined)
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
+import MoneyDemand from '@/components/admin/MoneyDemand'
+import type { UnpaidShareRow } from '@/lib/money-demand'
 import FinancialReports from '@/components/admin/FinancialReports'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import BoardRightRail from '@/components/admin/BoardRightRail'
@@ -89,6 +91,7 @@ export default function AdminDashboard({
   courtPerfBookings,
   creditTransactions,
   publicBookingIds,
+  unpaidShares = [],
   staffName,
 }: {
   bookings: AdminBooking[]
@@ -100,6 +103,7 @@ export default function AdminDashboard({
   courtPerfBookings: CourtPerformanceBooking[]
   creditTransactions: FinancialCreditTx[]
   publicBookingIds: string[]
+  unpaidShares?: UnpaidShareRow[]
   staffName: string | null
 }) {
   const router = useRouter()
@@ -608,6 +612,10 @@ export default function AdminDashboard({
             onAddCourt={openAddCourt}
           />
         </div>
+      )}
+
+      {tab === 'analytics' && activeVenue && (
+        <MoneyDemand venueSlug={activeVenue} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares} />
       )}
 
       {tab === 'analytics' && (
