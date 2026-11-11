@@ -48,6 +48,22 @@ export async function refundIntent(paymentIntentId: string, bookingId: string): 
   }
 }
 
+// A refund of part of a payment (or all of it, with cents null), safe to retry:
+// the idempotency key makes a repeated call a no-op rather than a second refund.
+export async function refundPartial(paymentIntentId: string, cents: number | null, idempotencyKey: string): Promise<boolean> {
+  try {
+    await stripe.refunds.create(
+      { payment_intent: paymentIntentId, ...(cents ? { amount: Math.round(cents) } : {}) },
+      { idempotencyKey },
+    )
+    return true
+  } catch (err: any) {
+    if (err?.code === 'charge_already_refunded') return true
+    reportMoneyIssue('Stripe refund failed', { paymentIntentId, cents, stripeCode: err?.code, stripeMessage: err?.message })
+    return false
+  }
+}
+
 // What this person's card was actually charged, in cents. Asking Stripe
 // beats recomputing price_nzd / shares: the booker is charged their share as
 // the split stood at checkout, so a split added afterwards would make the

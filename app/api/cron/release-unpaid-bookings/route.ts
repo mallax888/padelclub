@@ -4,6 +4,7 @@ import { applyCancellationRefund } from '@/lib/cancellation'
 import { reportMoneyIssue } from '@/lib/report'
 import { notifyWaitlistForBookings } from '@/lib/waitlist'
 import { columnMissing, releaseOverdueRegularWeeks, sendRegularReminders } from '@/lib/regulars'
+import { processShareDeadlines } from '@/lib/shares'
 
 const HOLD_MINUTES = 20
 
@@ -59,8 +60,17 @@ export async function GET(request: Request) {
     console.error('Regular weeks step failed:', err)
   }
 
+  // Unpaid shares: ask the booker to cover once the deadline passes, and release
+  // the court if they don't in time.
+  let shares = { asked: 0, released: 0 }
+  try {
+    shares = await processShareDeadlines(supabase)
+  } catch (err) {
+    console.error('Share deadline step failed:', err)
+  }
+
   if (!staleBookings || staleBookings.length === 0) {
-    return NextResponse.json({ released: 0, regulars })
+    return NextResponse.json({ released: 0, regulars, shares })
   }
 
   const bookingIds = staleBookings.map(b => b.id)
@@ -116,6 +126,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     released: cancelled?.length ?? 0,
     regulars,
+    shares,
     sharesRefunded,
     bookingIds: (cancelled ?? []).map(b => b.id),
   })

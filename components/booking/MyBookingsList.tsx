@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatDate } from '@/lib/utils'
@@ -13,6 +13,7 @@ import { VENUES } from '@/lib/venues'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import RescheduleModal from '@/components/booking/RescheduleModal'
 import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
+import { shareSchedule, shareStage, coverCents } from '@/lib/share-rules'
 import { canSkipWeek, weekRows, upcomingWeeks, bookedWeekCount, weekdayPlural, seriesDates, type WeekRow } from '@/lib/regulars-rules'
 import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
 import InviteShare from '@/components/invites/InviteShare'
@@ -31,6 +32,8 @@ interface BookingWithCourt {
   // Set when this booking is one week of a weekly regular; pay_by is when an unpaid held week is released.
   regular_id?: string | null
   pay_by?: string | null
+  created_at?: string
+  share_deadline_exempt?: boolean
   courts: { name: string; type: string; is_indoor: boolean } | null
 }
 
@@ -55,6 +58,8 @@ interface SplitRequest {
     date: string
     start_time: string
     end_time: string
+    created_at?: string
+    share_deadline_exempt?: boolean
     courts: { name: string; type: string; venue_slug?: string } | null
   } | null
   profiles: { nickname: string | null; full_name: string | null } | null
@@ -277,6 +282,79 @@ const RecordResultButton = ({ bookingId }: { bookingId: string }) => (
 
 export type RegularSeries = { id: string; venue_slug: string; start_time: string; duration_minutes: number; start_date: string; weeks: number; clash_dates: string[] | null; status: string }
 
+const fmtWhen = (ms: number, tz: string) =>
+  new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms))
+
+// "Now" only exists in the browser, so these render nothing until the page has loaded.
+function useNow(): number | null {
+  const [now, setNow] = useState<number | null>(null)
+  useEffect(() => { setNow(Date.now()) }, [])
+  return now
+}
+
+// What a friend sees on a share they owe: pay by when, or that it is overdue.
+function ShareDeadlineHint({ date, startTime, createdAt, venueSlug }: { date: string; startTime: string; createdAt?: string; venueSlug?: string }) {
+  const now = useNow()
+  if (now === null || !createdAt) return null
+  const tz = timezoneForVenueSlug(venueSlug)
+  const startMs = venueInstant(date, `${startTime.slice(0, 5)}:00`, tz).getTime()
+  const sched = shareSchedule(startMs, Date.parse(createdAt))
+  if (!sched || startMs <= now) return null
+  const late = shareStage(sched, now) !== 'before'
+  return (
+    <div className="text-[11px] font-bold mt-1" data-testid="share-hint" style={{ color: late ? 'var(--brand-crimson)' : 'var(--brand-yellow)' }}>
+      {late ? 'Overdue. The person who booked has been asked to cover it.' : `Pay by ${fmtWhen(sched.deadline, tz)}, or they will be asked to cover it.`}
+    </div>
+  )
+}
+
+// What the booker sees when friends still owe: the deadline, and a button to
+// cover the rest so the court is safe. After the deadline it is the main thing on the row.
+function ShareDeadlineBox({ booking, shares }: { booking: BookingWithCourt; shares: OutgoingSplit[] }) {
+  const now = useNow()
+  const [busy, setBusy] = useState(false)
+  const pending = shares.filter(s => s.status === 'pending')
+  if (now === null || pending.length === 0) return null
+  const slug = (booking.courts as any)?.venue_slug
+  const tz = timezoneForVenueSlug(slug)
+  const startMs = venueInstant(booking.date, `${booking.start_time.slice(0, 5)}:00`, tz).getTime()
+  if (startMs <= now) return null
+  const sched = booking.created_at && !booking.share_deadline_exempt ? shareSchedule(startMs, Date.parse(booking.created_at)) : null
+  const stage = sched ? shareStage(sched, now) : 'before'
+  const currency = currencyForRegion(VENUES.find(v => v.slug === slug)?.region)
+  const amount = formatPrice(coverCents(booking.price_nzd, shares.length, pending.length) / 100, currency)
+  const cover = async () => {
+    setBusy(true)
+    try {
+      const res = await fetch('/api/split-cover', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId: booking.id }) })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok || !body.url) { toast.error(body.error ?? 'Could not open payment. Please try again.'); return }
+      window.location.href = body.url
+    } catch {
+      toast.error('Could not open payment. Please try again.')
+    } finally {
+      setBusy(false)
+    }
+  }
+  const urgent = stage !== 'before'
+  return (
+    <div className="rounded-xl mt-2.5 p-3 flex flex-wrap items-center justify-between gap-2.5" data-testid="share-deadline"
+      style={{ background: urgent ? 'var(--brand-yellow-muted)' : 'var(--bg-raised)', border: `1px solid ${urgent ? 'var(--brand-yellow)' : 'var(--border)'}` }}>
+      <div className="min-w-0 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        {urgent && sched
+          ? <><b style={{ color: 'var(--brand-yellow)' }}>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid.</b> {stage === 'cover' ? <>Cover {amount} by {fmtWhen(sched.coverUntil, tz)} or</> : <>Cover {amount} now or</>} the court is released and everyone is refunded.</>
+          : sched
+          ? <>Friends pay by <b style={{ color: 'var(--text-primary)' }}>{fmtWhen(sched.deadline, tz)}</b>. After that you can cover what is left ({amount}), or the court is released.</>
+          : <>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid. You can cover {pending.length === 1 ? 'it' : 'them'} ({amount}).</>}
+      </div>
+      <button onClick={cover} disabled={busy} className="rounded-full px-3.5 text-xs font-bold disabled:opacity-50 shrink-0"
+        style={{ minHeight: 40, background: urgent ? 'var(--brand-primary)' : 'var(--bg-surface)', color: urgent ? 'var(--brand-primary-on)' : 'var(--text-primary)', border: urgent ? 'none' : '1px solid var(--border)' }}>
+        {busy ? 'Opening…' : `Cover ${amount}`}
+      </button>
+    </div>
+  )
+}
+
 // Open Stripe checkout for a booking that is held but not yet paid.
 async function startCheckout(b: BookingWithCourt): Promise<void> {
   try {
@@ -467,6 +545,7 @@ export default function MyBookingsList({
   venueSettings = {},
   waits = [],
   regulars = [],
+  sharesOn = false,
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
@@ -484,6 +563,8 @@ export default function MyBookingsList({
   waits?: WaitingFor[]
   // The player's active weekly regulars.
   regulars?: RegularSeries[]
+  // Whether unpaid shares have a deadline (the share-deadline database change has been run).
+  sharesOn?: boolean
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -605,6 +686,7 @@ export default function MyBookingsList({
                   <div>
                     <div className="text-sm font-medium" style={{ color: 'var(--brand-crimson)' }}>You owe {who} {formatPrice(s.amount_nzd, splitCurrency)}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{court} · {date} · {time}</div>
+                    {sharesOn && !s.bookings?.share_deadline_exempt && s.bookings?.date && s.bookings.start_time && <ShareDeadlineHint date={s.bookings.date} startTime={s.bookings.start_time} createdAt={s.bookings.created_at} venueSlug={s.bookings.courts?.venue_slug} />}
                   </div>
                   <button
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0"
@@ -712,7 +794,7 @@ export default function MyBookingsList({
              was on. The row's own badge says which is which. */
           <div className="space-y-2">
             {upcoming.map((b, i) => (
-              <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} />
+              <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
             ))}
             {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
           </div>
@@ -736,7 +818,7 @@ export default function MyBookingsList({
   )
 }
 
-function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsible, splits = [], bookingWindowDays = 14, stripeDashboardBase, venueSettings = {} }: { booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; collapsible?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number; stripeDashboardBase: string; venueSettings?: VenueSettingsMap }) {
+function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsible, splits = [], bookingWindowDays = 14, stripeDashboardBase, venueSettings = {}, sharesOn = false }: { sharesOn?: boolean; booking: BookingWithCourt; onCancel?: () => void; cancelling?: boolean; past?: boolean; isNext?: boolean; collapsible?: boolean; splits?: OutgoingSplit[]; bookingWindowDays?: number; stripeDashboardBase: string; venueSettings?: VenueSettingsMap }) {
   const router = useRouter()
   // The court's clock, matching the server -- otherwise the Reschedule
   // button offers itself on bookings the API will refuse, or hides on ones
@@ -917,6 +999,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
           )}
         </div>
       </div>
+      {!past && sharesOn && b.status === 'confirmed' && <ShareDeadlineBox booking={b} shares={splits} />}
       {!past && venue && (
         <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
           <DirectionsButton address={venue.address} />
