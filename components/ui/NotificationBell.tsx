@@ -147,7 +147,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   // needing payment (or released) opens My bookings, everything else the game finder.
   const destinationFor = (type: string) =>
     type === 'waitlist_open' ? '/book?wl=1'
-    : type === 'regular_created' || type === 'regular_payment' || type === 'booking_released' ? '/mybookings'
+    : type === 'regular_created' || type === 'regular_payment' || type === 'booking_released' || type === 'share_cover_due' || type === 'share_covered' ? '/mybookings'
     : '/find-a-game'
 
   const iconForType = (type: string) => {
@@ -159,6 +159,8 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     if (type === 'booking_released') return '💳'
     if (type === 'invite_joined') return '🤝'
     if (type === 'regular_created' || type === 'regular_payment') return '🔁'
+    if (type === 'share_cover_due') return '💳'
+    if (type === 'share_covered') return '🤝'
     return '🔔'
   }
 

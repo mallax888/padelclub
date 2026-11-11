@@ -17,7 +17,7 @@ export default async function MyBookingsPage() {
     supabase.from('profiles').select('*').eq('id', session!.user.id).single(),
     supabase
       .from('booking_splits')
-      .select('*, bookings(date, start_time, end_time, courts(name, type, venue_slug)), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
+      .select('*, bookings(date, start_time, end_time, created_at, courts(name, type, venue_slug)), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
       .eq('user_id', session!.user.id)
       .eq('status', 'pending'),
     supabase
@@ -49,6 +49,9 @@ export default async function MyBookingsPage() {
     .eq('status', 'active')
     .order('start_date', { ascending: true })
   const regulars = regRes.error ? [] : (regRes.data ?? [])
+  // Unpaid shares have a deadline once the share-deadline database change is run.
+  const sharesProbe: any = await (supabase as any).from('booking_splits').select('covered_by').limit(1)
+  const sharesOn = !sharesProbe.error
   const nowMs = Date.now()
   const waits = ((waitRes.error ? [] : waitRes.data ?? []) as any[])
     .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
@@ -58,7 +61,7 @@ export default async function MyBookingsPage() {
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} />
     </div>
   )
 }

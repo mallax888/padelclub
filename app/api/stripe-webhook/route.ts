@@ -8,7 +8,8 @@ import { getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { getActiveSpecialsForVenueDate } from '@/lib/specials'
 import { syncReceiveMoneyToXero } from '@/lib/xero'
-import { refundIntent } from '@/lib/cancellation'
+import { refundIntent, refundPartial } from '@/lib/cancellation'
+import { applyCoverPayment } from '@/lib/shares'
 import { reportMoneyIssue } from '@/lib/report'
 
 export async function POST(request: Request) {
@@ -129,6 +130,35 @@ export async function POST(request: Request) {
           reference: `Split payment ${session.id}`,
           contactName: payerName,
           idempotencyKey: session.id,
+        })
+      }
+    } else if (type === 'cover_shares' && bookingId && userId) {
+      // The booker paying for shares their friends didn't (see lib/shares.ts).
+      // Retried deliveries and a friend paying in the meantime are handled there.
+      const perShareCents = Number(session.metadata.perShareCents) || 0
+      const result = await applyCoverPayment(supabase, {
+        bookingId, userId,
+        splitIds: String(session.metadata.splitIds ?? '').split(',').filter(Boolean),
+        paymentIntent: session.payment_intent, sessionId: session.id, perShareCents,
+      }, refundPartial)
+      if (result.covered.length > 0) {
+        const { data: booker } = await supabase.from('profiles').select('full_name, nickname').eq('id', userId).maybeSingle()
+        const bookerName = booker?.nickname ?? booker?.full_name ?? 'Someone'
+        const keptAmount = perShareCents > 0 ? (result.covered.length * perShareCents) / 100 : amountPaid
+        try {
+          await supabase.from('notifications').insert({
+            user_id: userId, type: 'share_covered',
+            message: `You covered ${result.covered.length === 1 ? 'a share' : `${result.covered.length} shares`} (${formatPrice(keptAmount, paidCurrency)}). The court is yours.`,
+          })
+          const { data: friends } = await supabase.from('booking_splits').select('user_id').in('id', result.covered)
+          const friendRows = ((friends ?? []) as any[]).filter(f => f.user_id).map(f => ({ user_id: f.user_id, type: 'share_covered', message: `${bookerName} covered your share of the court, so you're all set.` }))
+          if (friendRows.length > 0) await supabase.from('notifications').insert(friendRows)
+        } catch (err) {
+          console.error('Failed to notify of covered shares:', err)
+        }
+        await syncReceiveMoneyToXero(supabase, appUrl, {
+          amount: keptAmount, currency: paidCurrency, description: 'Booking split payment (covered by booker)',
+          reference: `Cover payment ${session.id}`, contactName: bookerName, idempotencyKey: session.id,
         })
       }
     } else if (bookingId) {
