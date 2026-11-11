@@ -1239,7 +1239,7 @@ function BoardView({
           </div>
         ) : viewMode === 'week' ? (
           <div>
-            <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+            <div className="hidden md:block" style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
               <table className="w-full table-fixed text-sm border-collapse">
                 <thead>
                   <tr>
@@ -1326,6 +1326,73 @@ function BoardView({
                       })}
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Phones: courts across the top, the week's dates down the side. The
+                desktop grid above has a column per day, which on a phone leaves
+                each date about forty pixels and the labels run into each other.
+                A club has a handful of courts but seven days, so the long
+                direction goes down the page, where scrolling is natural. Tap a
+                booking to see its players; "+N more" opens that day. */}
+            <div className="md:hidden" data-testid="week-grid-phone" style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+              <table className="w-full table-fixed text-sm border-collapse">
+                <thead>
+                  <tr>
+                    <th style={{ width: 62, background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }} />
+                    {venueCourts.map((court: any, idx: number) => (
+                      <th key={court.id} className="px-1 py-2 text-center truncate" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.2, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}>
+                        {court.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {weekDates.map((d, rowIdx) => {
+                    const isToday = d === today
+                    const last = rowIdx === weekDates.length - 1
+                    return (
+                      <tr key={d}>
+                        <td className="px-2 align-top whitespace-nowrap" style={{ paddingTop: 8, fontSize: 11, fontWeight: 700, color: isToday ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: isToday ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', borderBottom: last ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                          {formatDateCompact(d)}
+                        </td>
+                        {venueCourts.map((court: any, colIdx: number) => {
+                          const dayBookings = bookings
+                            .filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
+                            .sort((x: any, y: any) => x.start_time.localeCompare(y.start_time))
+                          const show = dayBookings.slice(0, 3)
+                          const extra = dayBookings.length - show.length
+                          return (
+                            <td key={court.id} className="align-top" style={{ minHeight: 56, height: 56, padding: 3, background: isToday ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', borderBottom: last ? 'none' : '1px solid var(--border)', borderRight: colIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}>
+                              {show.map((b: any) => {
+                                const appearance = cellAppearance(b)
+                                return (
+                                  <div key={b.id} className="truncate"
+                                    style={{ fontSize: 10, fontWeight: 600, padding: '3px 4px', borderRadius: 4, marginBottom: 2, background: appearance.background, color: appearance.color, cursor: b.status === 'blocked' ? 'default' : 'pointer' }}
+                                    onClick={() => {
+                                      if (b.status === 'blocked') return
+                                      setRosterBooking({
+                                        id: b.id,
+                                        title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                                        subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
+                                      })
+                                    }}>
+                                    {b.start_time.slice(0, 5)} · {appearance.label}
+                                  </div>
+                                )
+                              })}
+                              {extra > 0 && (
+                                <div onClick={() => setDayDetail(d)} style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand-primary-text)', padding: '0 3px', cursor: 'pointer' }}>
+                                  +{extra} more
+                                </div>
+                              )}
+                            </td>
+                          )
+                        })}
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
