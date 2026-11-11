@@ -330,7 +330,7 @@ function RegularCard({ series: r, bookings, onSkip }: { series: RegularSeries; b
     }
   }
 
-  const pill = (w: WeekRow) => w.kind === 'paid' ? { t: 'Paid', bg: 'var(--brand-primary-muted)', c: 'var(--brand-primary-text)' }
+  const pill = (w: WeekRow) => w.kind === 'paid' ? { t: '✓ Paid', bg: 'var(--brand-green-muted)', c: 'var(--brand-green)' }
     : w.kind === 'due' ? { t: w.payBy ? `Pay by ${fmtPayBy(w.payBy, tz)}` : 'Pay now', bg: 'var(--brand-yellow-muted)', c: 'var(--brand-yellow)' }
     : w.kind === 'taken' ? { t: 'Taken', bg: 'var(--bg-raised)', c: 'var(--text-muted)' }
     : { t: 'Skipped', bg: 'var(--bg-raised)', c: 'var(--text-muted)' }
@@ -378,17 +378,18 @@ function RegularCard({ series: r, bookings, onSkip }: { series: RegularSeries; b
         </button>
       </div>
       {sheet && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label="Skip a week" style={{ background: 'rgba(0,0,0,0.5)' }} onClick={() => setSheet(false)}>
-          <div className="w-full max-w-lg rounded-t-3xl p-5 pb-7" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full" style={{ background: 'var(--border)' }} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Skip a week" style={{ background: 'rgba(0,0,0,0.55)' }} onClick={() => setSheet(false)}>
+          <div className="w-full max-w-md rounded-3xl p-5 overflow-y-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 2rem)', boxShadow: '0 30px 80px -10px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
             <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Skip a week</div>
             <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>The court goes back on sale and anyone waiting for it is told. You keep your regular.</p>
             <div className="grid grid-cols-2 gap-2">
               {skippable.map(w => (
                 <button key={w.date} onClick={() => { setSheet(false); onSkip(w.bookingId!) }}
-                  className="rounded-xl py-3 text-sm font-bold" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                  data-kind={w.kind}
+                  className="rounded-xl py-3 text-sm font-bold"
+                  style={{ background: w.kind === 'paid' ? 'var(--brand-green-muted)' : 'var(--brand-yellow-muted)', border: `1.5px solid ${w.kind === 'paid' ? 'var(--brand-green)' : 'var(--brand-yellow)'}`, color: 'var(--text-primary)' }}>
                   {fmtShort(w.date)}
-                  <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{w.kind === 'paid' ? 'Paid · refunded' : 'Not paid yet'}</div>
+                  <div className="text-[10px] font-bold" style={{ color: w.kind === 'paid' ? 'var(--brand-green)' : 'var(--brand-yellow)' }}>{w.kind === 'paid' ? '✓ Paid · refunded' : 'Not paid yet'}</div>
                 </button>
               ))}
             </div>
