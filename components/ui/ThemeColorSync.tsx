@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useTheme } from 'next-themes'
 
-const THEME_COLORS = { light: '#EEF3F1', dark: '#050C11' }
+const THEME_COLORS = { light: '#F2F4EE', dark: '#09140F' }
 
 // The static media-matched theme-color tags in layout.tsx only track the
 // device's OS-level light/dark setting -- if someone manually overrides the

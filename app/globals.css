@@ -6,25 +6,25 @@
   /* Tells the browser this page fully themes itself for both color
      schemes -- without it, Android Chrome's "Force Dark" auto-darkens
      the page on top of our own dark theme, which is what was skewing
-     bright colors like --brand-primary's lime-yellow toward brown. */
+     bright colors like --brand-primary's bronze. */
   color-scheme: light;
-  --bg-base:            #EEF3F1;
+  --bg-base:            #F2F4EE;
   --bg-surface:         #FFFFFF;
-  --bg-raised:          #F3F7F5;
-  --text-primary:       #0B1F17;
-  --text-muted:         #3F5850;
-  --text-subtle:        #6B8078;
-  --border:             rgba(11, 31, 23, 0.10);
-  --shadow-float:       0 20px 40px -24px rgba(11, 31, 23, 0.18);
-  --ring-primary:       rgba(0, 229, 255, 0.35);
-  --brand-primary:      #00E5FF;
-  --brand-primary-on:   #00232B;
-  --brand-primary-text: #008A99;
+  --bg-raised:          #E5EAE2;
+  --text-primary:       #0F1F18;
+  --text-muted:         #4B5E54;
+  --text-subtle:        #64766C;
+  --border:             rgba(15, 31, 24, 0.10);
+  --shadow-float:       0 20px 40px -24px rgba(15, 31, 24, 0.18);
+  --ring-primary:       rgba(138, 90, 43, 0.35);
+  --brand-primary:      #8A5A2B;
+  --brand-primary-on:   #FFFFFF;
+  --brand-primary-text: #7A4E22;
   --brand-accent:       #D8380F;
   --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#00E5FF26;
+  --brand-primary-muted:#8A5A2B26;
   --brand-accent-muted: #D8380F1A;
-  --glow-primary:       0 0 16px 0 #00E5FF4D;
+  --glow-primary:       0 0 16px 0 #8A5A2B33;
   --glow-accent:        0 0 16px 0 #D8380F3D;
   --brand-blue:         #2563EB;
   --brand-blue-muted:   #2563EB1A;
@@ -40,23 +40,23 @@
 
 .dark {
   color-scheme: dark;
-  --bg-base:            #050C11;
-  --bg-surface:         #0A1620;
-  --bg-raised:          #102131;
-  --text-primary:       #F5FAF8;
-  --text-muted:         #9BB0BC;
-  --text-subtle:        #63798A;
+  --bg-base:            #09140F;
+  --bg-surface:         #10201A;
+  --bg-raised:          #183027;
+  --text-primary:       #F0F3EC;
+  --text-muted:         #A3B5A9;
+  --text-subtle:        #8A9E92;
   --border:             rgba(255, 255, 255, 0.12);
   --shadow-float:       0 30px 60px -30px rgba(0, 0, 0, 0.65);
-  --ring-primary:       rgba(212, 255, 61, 0.35);
-  --brand-primary:      #D4FF3D;
-  --brand-primary-on:   #10230A;
-  --brand-primary-text: #D4FF3D;
+  --ring-primary:       rgba(208, 153, 90, 0.35);
+  --brand-primary:      #D0995A;
+  --brand-primary-on:   #1C1006;
+  --brand-primary-text: #DEAB70;
   --brand-accent:       #FF5233;
   --brand-accent-on:    #2B0800;
-  --brand-primary-muted:#D4FF3D1F;
+  --brand-primary-muted:#D0995A22;
   --brand-accent-muted: #FF52331F;
-  --glow-primary:       0 0 20px 0 #D4FF3D40;
+  --glow-primary:       0 0 20px 0 #D0995A33;
   --glow-accent:        0 0 16px 0 #FF52334D;
   --brand-blue:         #5FA0FF;
   --brand-blue-muted:   #5FA0FF1A;
@@ -83,8 +83,8 @@
   }
   .dark body {
     background-image:
-      radial-gradient(820px 460px at 8% -10%, rgba(212, 255, 61, 0.13), transparent 60%),
-      radial-gradient(860px 600px at 98% 4%, rgba(95, 160, 255, 0.10), transparent 55%);
+      radial-gradient(820px 460px at 8% -10%, rgba(208, 153, 90, 0.07), transparent 60%),
+      radial-gradient(860px 600px at 98% 4%, rgba(62, 155, 106, 0.10), transparent 55%);
     background-repeat: no-repeat;
     background-attachment: fixed;
   }

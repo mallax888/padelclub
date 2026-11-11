@@ -76,9 +76,9 @@ export default function LoginPage() {
             <svg width="56" height="56" viewBox="0 0 100 100" style={{ colorScheme: 'light' }}>
               <defs>
                 <radialGradient id="ball" cx="35%" cy="28%" r="75%">
-                  <stop offset="0%" stopColor="#F7FFD6"/>
-                  <stop offset="40%" stopColor="#D4FF3D"/>
-                  <stop offset="100%" stopColor="#8FAE1E"/>
+                  <stop offset="0%" stopColor="#F6DDB8"/>
+                  <stop offset="40%" stopColor="#D0995A"/>
+                  <stop offset="100%" stopColor="#8A5A2B"/>
                 </radialGradient>
                 <clipPath id="ballClip">
                   <circle cx="50" cy="50" r="46"/>

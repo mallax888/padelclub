@@ -2,17 +2,17 @@
 // confirmation vs. the four find-a-game notifications) hand-rolled its own
 // HTML with a different accent color and background -- an emerald-green
 // light-mode design, a cyan/teal dark-mode design, and neither matched the
-// app's actual lime-green brand (--brand-primary: #D4FF3D in app/globals.css).
+// app's actual bronze-on-forest brand (--brand-primary: #D0995A in app/globals.css).
 // One shell now, matching the real brand, used everywhere.
 const BRAND = {
-  bg: '#050C11',
-  surface: '#0A1620',
-  border: '#1c2a30',
-  text: '#F5FAF8',
-  textMuted: '#9BB0BC',
-  textSubtle: '#6b7d87',
-  primary: '#D4FF3D',
-  primaryOn: '#10230A',
+  bg: '#09140F',
+  surface: '#10201A',
+  border: '#223a2f',
+  text: '#F0F3EC',
+  textMuted: '#A3B5A9',
+  textSubtle: '#8A9E92',
+  primary: '#D0995A',
+  primaryOn: '#1C1006',
   crimson: '#FF4D6D',
 }
 
