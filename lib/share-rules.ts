@@ -16,6 +16,11 @@ export const FULL_RULE_NOTICE_HOURS = 30
 // How long the booker has to cover once the deadline passes.
 export const COVER_WINDOW_HOURS = 6
 export const SHORT_NOTICE_COVER_HOURS = 2
+// The booker is always asked first, and a court is only released at least this
+// long after they were asked -- so a late cron run, or a booking already past its
+// window, still gives them a real chance to cover. Never released in the last hour.
+export const RELEASE_GRACE_HOURS = 2
+export const NO_RELEASE_LAST_HOURS = 1
 
 export type ShareSchedule = { deadline: number; coverUntil: number }
 export type ShareStage = 'before' | 'cover' | 'release'
@@ -51,3 +56,10 @@ export const coverCents = (courtPrice: number, totalShareRows: number, unpaidCou
 
 export type ShareLite = { status: string }
 export const unpaidShares = <T extends ShareLite>(shares: T[]): T[] => shares.filter(s => s.status === 'pending')
+
+// May the court be released now? Only after the booker was asked and given the
+// grace period, and not in the hour before play.
+export function releaseAllowed(nowMs: number, startMs: number, notifiedAtMs: number | null): boolean {
+  if (notifiedAtMs === null || !Number.isFinite(notifiedAtMs)) return false
+  return nowMs >= notifiedAtMs + RELEASE_GRACE_HOURS * HOUR && nowMs <= startMs - NO_RELEASE_LAST_HOURS * HOUR
+}

@@ -52,6 +52,15 @@ export default async function MyBookingsPage() {
   // Unpaid shares have a deadline once the share-deadline database change is run.
   const sharesProbe: any = await (supabase as any).from('booking_splits').select('covered_by').limit(1)
   const sharesOn = !sharesProbe.error
+  // Bookings made before the share deadline existed are exempt from it. That flag is
+  // read separately (not in the main query above) so a database without the column
+  // can't break the list of shares you owe.
+  let splitReqs: any[] = splitRequests ?? []
+  if (sharesOn && splitReqs.length > 0) {
+    const { data: flags } = await (supabase as any).from('bookings').select('id, share_deadline_exempt').in('id', splitReqs.map((s: any) => s.booking_id))
+    const exempt = new Set(((flags ?? []) as any[]).filter(f => f.share_deadline_exempt).map(f => f.id))
+    splitReqs = splitReqs.map((s: any) => (exempt.has(s.booking_id) && s.bookings ? { ...s, bookings: { ...s.bookings, share_deadline_exempt: true } } : s))
+  }
   const nowMs = Date.now()
   const waits = ((waitRes.error ? [] : waitRes.data ?? []) as any[])
     .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
@@ -61,7 +70,7 @@ export default async function MyBookingsPage() {
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} />
     </div>
   )
 }

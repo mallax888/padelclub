@@ -33,6 +33,7 @@ interface BookingWithCourt {
   regular_id?: string | null
   pay_by?: string | null
   created_at?: string
+  share_deadline_exempt?: boolean
   courts: { name: string; type: string; is_indoor: boolean } | null
 }
 
@@ -58,6 +59,7 @@ interface SplitRequest {
     start_time: string
     end_time: string
     created_at?: string
+    share_deadline_exempt?: boolean
     courts: { name: string; type: string; venue_slug?: string } | null
   } | null
   profiles: { nickname: string | null; full_name: string | null } | null
@@ -317,7 +319,7 @@ function ShareDeadlineBox({ booking, shares }: { booking: BookingWithCourt; shar
   const tz = timezoneForVenueSlug(slug)
   const startMs = venueInstant(booking.date, `${booking.start_time.slice(0, 5)}:00`, tz).getTime()
   if (startMs <= now) return null
-  const sched = booking.created_at ? shareSchedule(startMs, Date.parse(booking.created_at)) : null
+  const sched = booking.created_at && !booking.share_deadline_exempt ? shareSchedule(startMs, Date.parse(booking.created_at)) : null
   const stage = sched ? shareStage(sched, now) : 'before'
   const currency = currencyForRegion(VENUES.find(v => v.slug === slug)?.region)
   const amount = formatPrice(coverCents(booking.price_nzd, shares.length, pending.length) / 100, currency)
@@ -334,13 +336,13 @@ function ShareDeadlineBox({ booking, shares }: { booking: BookingWithCourt; shar
       setBusy(false)
     }
   }
-  const urgent = stage === 'cover'
+  const urgent = stage !== 'before'
   return (
     <div className="rounded-xl mt-2.5 p-3 flex flex-wrap items-center justify-between gap-2.5" data-testid="share-deadline"
       style={{ background: urgent ? 'var(--brand-yellow-muted)' : 'var(--bg-raised)', border: `1px solid ${urgent ? 'var(--brand-yellow)' : 'var(--border)'}` }}>
       <div className="min-w-0 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
         {urgent && sched
-          ? <><b style={{ color: 'var(--brand-yellow)' }}>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid.</b> Cover {amount} by {fmtWhen(sched.coverUntil, tz)} or the court is released and everyone is refunded.</>
+          ? <><b style={{ color: 'var(--brand-yellow)' }}>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid.</b> {stage === 'cover' ? <>Cover {amount} by {fmtWhen(sched.coverUntil, tz)} or</> : <>Cover {amount} now or</>} the court is released and everyone is refunded.</>
           : sched
           ? <>Friends pay by <b style={{ color: 'var(--text-primary)' }}>{fmtWhen(sched.deadline, tz)}</b>. After that you can cover what is left ({amount}), or the court is released.</>
           : <>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid. You can cover {pending.length === 1 ? 'it' : 'them'} ({amount}).</>}
@@ -684,7 +686,7 @@ export default function MyBookingsList({
                   <div>
                     <div className="text-sm font-medium" style={{ color: 'var(--brand-crimson)' }}>You owe {who} {formatPrice(s.amount_nzd, splitCurrency)}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{court} · {date} · {time}</div>
-                    {sharesOn && s.bookings?.date && s.bookings.start_time && <ShareDeadlineHint date={s.bookings.date} startTime={s.bookings.start_time} createdAt={s.bookings.created_at} venueSlug={s.bookings.courts?.venue_slug} />}
+                    {sharesOn && !s.bookings?.share_deadline_exempt && s.bookings?.date && s.bookings.start_time && <ShareDeadlineHint date={s.bookings.date} startTime={s.bookings.start_time} createdAt={s.bookings.created_at} venueSlug={s.bookings.courts?.venue_slug} />}
                   </div>
                   <button
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0"

@@ -12,7 +12,7 @@ import { applyCancellationRefund } from '@/lib/cancellation'
 import { notifyWaitlistForBookings } from '@/lib/waitlist'
 import { reportMoneyIssue } from '@/lib/report'
 import { hhmm } from '@/lib/waitlist-rules'
-import { coverCents, shareSchedule, shareStage, unpaidShares } from '@/lib/share-rules'
+import { coverCents, releaseAllowed, RELEASE_GRACE_HOURS, shareSchedule, shareStage, unpaidShares } from '@/lib/share-rules'
 
 type Admin = SupabaseClient<any>
 const firstName = (p: any) => p?.nickname ?? p?.full_name?.split(' ')[0] ?? null
@@ -61,14 +61,14 @@ export async function processShareDeadlines(admin: Admin, nowMs: number = Date.n
   const db: any = admin
   const out = { asked: 0, released: 0 }
   const { data, error } = await db.from('booking_splits')
-    .select('id, booking_id, user_id, amount_nzd, bookings!inner(id, user_id, court_id, date, start_time, created_at, status, price_nzd, stripe_payment_id, payment_method, share_cover_notified_at, courts(venue_slug, name))')
+    .select('id, booking_id, user_id, amount_nzd, bookings!inner(id, user_id, court_id, date, start_time, created_at, status, price_nzd, stripe_payment_id, payment_method, share_cover_notified_at, share_deadline_exempt, courts(venue_slug, name))')
     .eq('status', 'pending')
   if (missingColumn(error) || error || !data) return out
 
   const byBooking = new Map<string, { booking: any; shares: any[] }>()
   for (const row of data as any[]) {
     const b = row.bookings
-    if (!b || b.status !== 'confirmed') continue
+    if (!b || b.status !== 'confirmed' || b.share_deadline_exempt) continue
     const entry = byBooking.get(b.id) ?? { booking: b, shares: [] }
     entry.shares.push(row)
     byBooking.set(b.id, entry)
@@ -85,21 +85,27 @@ export async function processShareDeadlines(admin: Admin, nowMs: number = Date.n
       const stage = shareStage(sched, nowMs)
       if (stage === 'before') continue
 
-      if (stage === 'release') {
-        if (await releaseForUnpaidShares(admin, booking, shares.length)) out.released++
+      // The booker is always asked first. A court is only released once they have
+      // had RELEASE_GRACE_HOURS since being asked, so a late cron run or a booking
+      // already past its window still gives them a real chance to cover it.
+      const notifiedAt = booking.share_cover_notified_at ? Date.parse(booking.share_cover_notified_at) : null
+      if (notifiedAt !== null) {
+        if (stage === 'release' && releaseAllowed(nowMs, startMs, notifiedAt)) {
+          if (await releaseForUnpaidShares(admin, booking, shares.length)) out.released++
+        }
         continue
       }
-      if (booking.share_cover_notified_at) continue
       // Claim it first so two overlapping runs can't both ask.
       const { data: claimed } = await db.from('bookings').update({ share_cover_notified_at: new Date(nowMs).toISOString() }).eq('id', booking.id).is('share_cover_notified_at', null).select('id').maybeSingle()
       if (!claimed) continue
+      const coverBy = stage === 'cover' ? sched.coverUntil : nowMs + RELEASE_GRACE_HOURS * 3600 * 1000
 
       const ids = shares.map(s => s.user_id).filter(Boolean)
       const { data: profs } = ids.length ? await db.from('profiles').select('id, nickname, full_name').in('id', ids) : { data: [] }
       const names = shares.map(s => (s.user_id ? firstName((profs ?? []).find((p: any) => p.id === s.user_id)) : null) ?? 'A friend you invited')
       const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
       const owed = shares.reduce((sum, s) => sum + (Number(s.amount_nzd) || 0), 0)
-      const message = `${list} ${names.length === 1 ? "hasn't" : "haven't"} paid their share (${formatPrice(owed, currencyForVenueSlug(slug))}). Cover it by ${fmtWhen(sched.coverUntil, tz)} or the ${formatDate(booking.date)}, ${hhmm(booking.start_time)} court is released and everyone is refunded. Tap to cover it.`
+      const message = `${list} ${names.length === 1 ? "hasn't" : "haven't"} paid their share (${formatPrice(owed, currencyForVenueSlug(slug))}). Cover it by ${fmtWhen(coverBy, tz)} or the ${formatDate(booking.date)}, ${hhmm(booking.start_time)} court is released and everyone is refunded. Tap to cover it.`
       await db.from('notifications').insert({ user_id: booking.user_id, type: 'share_cover_due', message })
       try { await sendPushToUser(admin as any, booking.user_id, { title: 'Cover the unpaid share?', body: message, url: '/mybookings' }) } catch { /* best effort */ }
       out.asked++
