@@ -9,6 +9,19 @@ export type ViewMode = 'manager' | 'player'
 
 export const isManagerRole = (role: string | null | undefined): boolean => role === 'staff' || role === 'admin'
 
+// Two levels of manager. An Owner (role 'admin') sees everything. Front desk
+// (role 'staff') runs the day -- Today, Board, Bookings, Members, competitions --
+// but sees no money (revenue, reports, prices) and none of the club's settings.
+export const isOwnerRole = (role: string | null | undefined): boolean => role === 'admin'
+export const roleLabel = (role: string | null | undefined): string | null =>
+  role === 'admin' ? 'Owner' : role === 'staff' ? 'Front desk' : null
+
+export const ADMIN_TABS = ['board', 'analytics', 'reports', 'bookings', 'members', 'courts', 'xero'] as const
+export type AdminTab = typeof ADMIN_TABS[number]
+export const FRONT_DESK_TABS: readonly AdminTab[] = ['board', 'bookings', 'members']
+export const canOpenTab = (role: string | null | undefined, tab: string): boolean =>
+  isOwnerRole(role) || (FRONT_DESK_TABS as readonly string[]).includes(tab)
+
 // A manager is in manager mode unless they have chosen player mode.
 export function resolveViewMode(role: string | null | undefined, cookieValue: string | null | undefined): ViewMode {
   if (!isManagerRole(role)) return 'player'

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
-  if (!profile || !['staff', 'admin'].includes(profile.role)) {
+  if (!profile || profile.role !== 'admin') {
     return NextResponse.json({ error: 'Not authorised' }, { status: 403 })
   }
 

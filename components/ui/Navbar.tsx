@@ -43,6 +43,9 @@ const ICONS: Record<string, JSX.Element> = {
   '/admin?tab=bookings': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
   ),
+  '/admin?tab=members': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+  ),
   '/admin?tab=analytics': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-7"/></svg>
   ),
@@ -80,13 +83,21 @@ const TAB_BAR_ITEMS = [
 
 // The manager side: Today first, then the dashboard's busiest tabs. Everything
 // else the dashboard has (Members, Reports, Courts, Xero) sits behind More.
-const MANAGER_TAB_ITEMS = [
+// Owners get Analytics in the bar and the money/settings tabs under More. Front
+// desk gets Members in the bar and nothing under More but the club competitions.
+const OWNER_TAB_ITEMS = [
   { href: '/admin/today',          label: 'Today',     tab: null },
   { href: '/admin?tab=board',      label: 'Board',     tab: 'board' },
   { href: '/admin?tab=bookings',   label: 'Bookings',  tab: 'bookings' },
   { href: '/admin?tab=analytics',  label: 'Analytics', tab: 'analytics' },
 ]
-const MANAGER_MORE_ITEMS = [
+const DESK_TAB_ITEMS = [
+  { href: '/admin/today',          label: 'Today',     tab: null },
+  { href: '/admin?tab=board',      label: 'Board',     tab: 'board' },
+  { href: '/admin?tab=bookings',   label: 'Bookings',  tab: 'bookings' },
+  { href: '/admin?tab=members',    label: 'Members',   tab: 'members' },
+]
+const OWNER_MORE_ITEMS = [
   { href: '/admin?tab=members',  label: 'Members',  tab: 'members' },
   { href: '/admin?tab=reports',  label: 'Reports',  tab: 'reports' },
   { href: '/admin?tab=courts',   label: 'Courts',   tab: 'courts' },
@@ -149,7 +160,7 @@ function SidebarGroupLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function Navbar({ viewMode = 'player' }: { viewMode?: ViewMode }) {
+export default function Navbar({ viewMode = 'player', isOwner = false }: { viewMode?: ViewMode; isOwner?: boolean }) {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
   const tabParam = useSearchParams()?.get('tab') ?? 'board'
@@ -216,7 +227,7 @@ export default function Navbar({ viewMode = 'player' }: { viewMode?: ViewMode })
           boxShadow: '0 16px 36px -10px rgba(0,0,0,0.55)',
         }}>
         {manager
-          ? MANAGER_TAB_ITEMS.map(item => (
+          ? (isOwner ? OWNER_TAB_ITEMS : DESK_TAB_ITEMS).map(item => (
               <TabBarLink key={item.href} href={item.href} label={item.label} active={managerTabActive(item)} icon={ICONS[item.href]} />
             ))
           : TAB_BAR_ITEMS.map(item => (
@@ -351,7 +362,7 @@ export default function Navbar({ viewMode = 'player' }: { viewMode?: ViewMode })
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}>
             <div className="px-4 py-3 space-y-1">
-              {(manager ? [...MANAGER_MORE_ITEMS, ...MANAGER_CLUB_ITEMS.map(i => ({ ...i, tab: null as string | null }))] : NAV_ITEMS).map((item: { href: string; label: string; tab?: string | null }) => {
+              {(manager ? [...(isOwner ? OWNER_MORE_ITEMS : []), ...MANAGER_CLUB_ITEMS.map(i => ({ ...i, tab: null as string | null }))] : NAV_ITEMS).map((item: { href: string; label: string; tab?: string | null }) => {
                 const active = manager && item.tab ? pathname === '/admin' && tabParam === item.tab : pathname.startsWith(item.href)
                 return (
                   <Link key={item.href} href={item.href}

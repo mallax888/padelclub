@@ -13,6 +13,7 @@ const currencyForVenueSlug = (venueSlug: string | null | undefined) =>
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import MoneyDemand from '@/components/admin/MoneyDemand'
+import { ADMIN_TABS, FRONT_DESK_TABS } from '@/lib/view-mode'
 import type { UnpaidShareRow } from '@/lib/money-demand'
 import FinancialReports from '@/components/admin/FinancialReports'
 import AdminSidebar from '@/components/admin/AdminSidebar'
@@ -90,6 +91,7 @@ export default function AdminDashboard({
   managedVenueSlug,
   managedCountry,
   analytics,
+  canSeeMoney = true,
   courtPerfBookings,
   creditTransactions,
   publicBookingIds,
@@ -103,7 +105,9 @@ export default function AdminDashboard({
   courts: Court[]
   managedVenueSlug?: string | null
   managedCountry?: string | null
-  analytics: ClubAnalyticsData
+  analytics: ClubAnalyticsData | null
+  // Owners see money and settings; front desk does not (see lib/view-mode.ts).
+  canSeeMoney?: boolean
   courtPerfBookings: CourtPerformanceBooking[]
   creditTransactions: FinancialCreditTx[]
   publicBookingIds: string[]
@@ -117,7 +121,9 @@ export default function AdminDashboard({
   const [tab, setTabState] = useState<AdminTab>(initialTab ?? 'board')
   // Keep the address in step with the tab so the manager navigation can show
   // which one is open (history.replaceState is understood by the Next.js router).
+  const allowedTabs: readonly AdminTab[] = canSeeMoney ? ADMIN_TABS : FRONT_DESK_TABS
   const setTab = (t: AdminTab) => {
+    if (!allowedTabs.includes(t)) return
     setTabState(t)
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href)
@@ -502,7 +508,7 @@ export default function AdminDashboard({
 
   return (
     <div className="flex gap-6">
-      <AdminSidebar tab={tab} setTab={setTab} venueName={heroVenue?.name ?? 'Your club'} venueRegion={heroVenue?.region ?? ''} staffName={staffName} />
+      <AdminSidebar tab={tab} setTab={setTab} canSeeMoney={canSeeMoney} venueName={heroVenue?.name ?? 'Your club'} venueRegion={heroVenue?.region ?? ''} staffName={staffName} />
       <div className="flex-1 min-w-0">
       {/* Hero greeting */}
       <div className="rounded-2xl p-5 mb-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
@@ -521,7 +527,7 @@ export default function AdminDashboard({
           { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
           { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week', spark: revenueSpark },
           { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
-        ].map(({ label, value, color, trend, trendLabel, spark }) => (
+        ].filter(c => canSeeMoney || c.label !== 'Revenue today').map(({ label, value, color, trend, trendLabel, spark }) => (
           <div key={label} className="rounded-2xl p-4 flex items-center justify-between gap-3"
             style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="min-w-0">
@@ -543,7 +549,7 @@ export default function AdminDashboard({
 
       {/* Tabs -- mobile only; md+ uses the sidebar instead */}
       <div className="flex gap-1 mb-4 md:hidden overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
-        {(['board', 'analytics', 'reports', 'bookings', 'members', 'courts', 'xero'] as const).map(t => (
+        {ADMIN_TABS.filter(t => allowedTabs.includes(t)).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -632,11 +638,11 @@ export default function AdminDashboard({
         </div>
       )}
 
-      {tab === 'analytics' && activeVenue && (
+      {tab === 'analytics' && canSeeMoney && activeVenue && (
         <MoneyDemand venueSlug={activeVenue} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares} />
       )}
 
-      {tab === 'analytics' && (
+      {tab === 'analytics' && canSeeMoney && analytics && (
         <ClubAnalytics
           data={analytics}
           courtPerfBookings={courtPerfForVenue}
@@ -1512,7 +1518,7 @@ function BoardView({
                             </div>
                           </div>
                           <div className="text-sm shrink-0" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
-                            {formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug))}
+                            {b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug)) : '—'}
                           </div>
                         </div>
                         <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
