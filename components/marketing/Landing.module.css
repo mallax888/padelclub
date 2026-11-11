@@ -1,12 +1,12 @@
 .field {
-  --bg-1: #0A2233;
-  --bg-2: #061722;
-  --bg-3: #030D14;
-  --ink: #F3F7F8;
-  --ink-muted: rgba(243, 247, 248, 0.62);
-  --ink-subtle: rgba(243, 247, 248, 0.4);
-  --lime: #D7FA3D;
-  --lime-ink: #172400;
+  --bg-1: #102A20;
+  --bg-2: #0A1B14;
+  --bg-3: #06120C;
+  --ink: #F0F3EC;
+  --ink-muted: rgba(240, 243, 236, 0.62);
+  --ink-subtle: rgba(240, 243, 236, 0.4);
+  --lime: #D0995A;
+  --lime-ink: #1C1006;
   --line: rgba(255, 255, 255, 0.10);
   --panel: rgba(255, 255, 255, 0.045);
   --panel-hi: rgba(255, 255, 255, 0.08);
@@ -16,8 +16,8 @@
   --coral: #FF8B6B;
 
   background:
-    radial-gradient(900px 500px at 12% -10%, rgba(215, 250, 61, 0.10), transparent 60%),
-    radial-gradient(1000px 700px at 90% 10%, rgba(95, 160, 255, 0.10), transparent 55%),
+    radial-gradient(900px 500px at 12% -10%, rgba(208, 153, 90, 0.10), transparent 60%),
+    radial-gradient(1000px 700px at 90% 10%, rgba(62, 155, 106, 0.12), transparent 55%),
     linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
   color: var(--ink);
   font-feature-settings: 'tnum' 1;
@@ -64,7 +64,7 @@
 
 .eyebrow {
   display: inline-flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 700;
-  color: var(--lime); background: rgba(215, 250, 61, 0.10); border: 1px solid rgba(215, 250, 61, 0.25);
+  color: var(--lime); background: rgba(208, 153, 90, 0.10); border: 1px solid rgba(208, 153, 90, 0.25);
   padding: 6px 13px; border-radius: 999px; margin-bottom: 20px;
 }
 .eyebrow .dot { width: 6px; height: 6px; border-radius: 999px; background: var(--lime); }
@@ -96,12 +96,12 @@
 .phones { position: relative; height: 560px; }
 .phone {
   position: absolute; width: 232px; height: 480px; border-radius: 34px; padding: 10px;
-  background: linear-gradient(160deg, #1B222C, #0A0D12);
+  background: linear-gradient(160deg, #14251E, #08110C);
   box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .phoneScreen {
   width: 100%; height: 100%; border-radius: 26px; overflow: hidden; position: relative;
-  background: linear-gradient(180deg, #0C1A22, #060D12);
+  background: linear-gradient(180deg, #0B1A13, #050D09);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 .phoneA { left: 4%; top: 0; z-index: 2; transform: rotate(-2deg); }
@@ -129,7 +129,7 @@
   display: flex; align-items: center; justify-content: space-between; margin: 8px 16px;
   background: var(--panel-hi); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px;
 }
-.psCourtRowSel { background: rgba(215, 250, 61, 0.12); border-color: rgba(215, 250, 61, 0.4); }
+.psCourtRowSel { background: rgba(208, 153, 90, 0.12); border-color: rgba(208, 153, 90, 0.4); }
 .courtName { font-size: 11px; font-weight: 700; }
 .courtType { font-size: 9px; color: var(--ink-subtle); }
 .courtPrice { font-size: 10.5px; font-weight: 800; color: var(--lime); }
@@ -141,7 +141,7 @@
 .checklist { display: flex; flex-direction: column; gap: 16px; }
 .checkItem { display: flex; gap: 12px; align-items: flex-start; }
 .checkMark {
-  width: 22px; height: 22px; border-radius: 999px; background: rgba(215, 250, 61, 0.14); color: var(--lime);
+  width: 22px; height: 22px; border-radius: 999px; background: rgba(208, 153, 90, 0.14); color: var(--lime);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
 }
 .checkItem b { font-size: 13.5px; font-weight: 700; }
