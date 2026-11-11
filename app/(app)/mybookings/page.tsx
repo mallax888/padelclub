@@ -2,6 +2,8 @@
 import MyBookingsList from '@/components/booking/MyBookingsList'
 import { stripeDashboardBase } from '@/lib/stripe'
 import { loadVenueSettings } from '@/lib/venue-settings'
+import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
+import { localDateStr } from '@/lib/utils'
 export default async function MyBookingsPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -29,13 +31,26 @@ export default async function MyBookingsPage() {
       .eq('status', 'paid'),
     loadVenueSettings(supabase),
   ])
+  // Times the player is waiting on. If the waitlist table isn't there yet this is
+  // simply empty and the card never shows.
+  const waitRes: any = await (supabase as any)
+    .from('waitlist')
+    .select('id, venue_slug, date, start_time, duration_minutes, status')
+    .eq('user_id', session!.user.id)
+    .in('status', ['waiting', 'notified'])
+    .gte('date', localDateStr(new Date(Date.now() - 24 * 3600 * 1000)))
+    .order('date', { ascending: true })
+    .order('start_time', { ascending: true })
+  const nowMs = Date.now()
+  const waits = ((waitRes.error ? [] : waitRes.data ?? []) as any[])
+    .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
   return (
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitRequests ?? []} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} />
     </div>
   )
 }

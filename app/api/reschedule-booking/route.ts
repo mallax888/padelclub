@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { localDateStr } from '@/lib/utils'
 import { hoursUntilBooking } from '@/lib/timezone'
+import { notifyWaitlistForSlot } from '@/lib/waitlist'
 
 export async function POST(request: Request) {
   const supabase = createServerClient()
@@ -68,6 +69,11 @@ export async function POST(request: Request) {
   if (!updated) {
     return NextResponse.json({ error: 'Booking not found' }, { status: 404 })
   }
+
+  // The time they left is free again: tell anyone waiting for it.
+  await notifyWaitlistForSlot(admin, {
+    courtId: booking.court_id, date: booking.date, startTime: booking.start_time, durationMinutes: booking.duration_minutes,
+  })
 
   const { data: splits } = await admin
     .from('booking_splits')

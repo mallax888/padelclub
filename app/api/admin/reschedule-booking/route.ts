@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 import { localDateStr } from '@/lib/utils'
+import { notifyWaitlistForSlot } from '@/lib/waitlist'
 
 // Staff-side counterpart to /api/reschedule-booking: that route is
 // member-facing, locked to the booking's own owner and a 24-hour notice
@@ -70,6 +72,11 @@ export async function POST(request: Request) {
   if (!updated) {
     return NextResponse.json({ error: 'Booking not found, already cancelled, or outside your venue' }, { status: 400 })
   }
+
+  // The time the booking left is free again: tell anyone waiting for it.
+  await notifyWaitlistForSlot(createAdminClient(), {
+    courtId: current.court_id, date: current.date, startTime: current.start_time, durationMinutes: current.duration_minutes,
+  })
 
   return NextResponse.json({ success: true })
 }

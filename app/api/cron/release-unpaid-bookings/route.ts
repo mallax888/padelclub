@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { applyCancellationRefund } from '@/lib/cancellation'
 import { reportMoneyIssue } from '@/lib/report'
+import { notifyWaitlistForBookings } from '@/lib/waitlist'
 
 const HOLD_MINUTES = 20
 
@@ -87,6 +88,9 @@ export async function GET(request: Request) {
   if (matchError) {
     console.error('Failed to cancel open_matches for released bookings:', matchError)
   }
+
+  // The released courts are free again: tell anyone waiting for those times.
+  await notifyWaitlistForBookings(supabase, (cancelled ?? []).map(b => b.id))
 
   return NextResponse.json({
     released: cancelled?.length ?? 0,

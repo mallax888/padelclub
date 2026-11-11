@@ -1,6 +1,8 @@
 import { createServerClient } from '@/lib/supabase-server'
 import BookingFlow from '@/components/booking/BookingFlow'
 import { loadVenueSettings } from '@/lib/venue-settings'
+import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
+import { localDateStr } from '@/lib/utils'
 
 // How many past split partners to hand the booking flow. The picker shows the
 // first few and everyone else is reachable through search, so this only needs
@@ -56,13 +58,30 @@ export default async function BookPage() {
     return p ? [{ ...p, splitCount: tally.get(id)! }] : []
   })
 
+  // The player's own waits (RLS lets them read only theirs). If the table isn't
+  // there yet the waitlist simply stays off and full times read "Taken", as before.
+  const waitRes: any = await (supabase as any)
+    .from('waitlist')
+    .select('id, venue_slug, date, start_time, duration_minutes, status, notified_at')
+    .eq('user_id', userId)
+    .in('status', ['waiting', 'notified'])
+    .gte('date', localDateStr(new Date(Date.now() - 24 * 3600 * 1000)))
+  const waitlistOn = !waitRes.error
+  const nowMs = Date.now()
+  const waits = ((waitRes.data ?? []) as any[])
+    .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
+  // Tapping "a court just opened" opens on the most recent time they were told about.
+  const told = waits.filter(w => w.status === 'notified').sort((a, b) => String(b.notified_at ?? '').localeCompare(String(a.notified_at ?? '')))[0]
+  const waitPrefill = told ? { venueSlug: told.venue_slug as string, date: told.date as string, durationMinutes: told.duration_minutes as number } : null
+
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">Book a court</h1>
         <p className="text-sm text-gray-500 mt-1">Select a date, court and time to make your booking</p>
       </div>
-      <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings} />
+      <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings}
+        waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill} />
     </div>
   )
 }

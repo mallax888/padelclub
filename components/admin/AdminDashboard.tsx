@@ -17,6 +17,7 @@ import { ADMIN_TABS, FRONT_DESK_TABS } from '@/lib/view-mode'
 import { weekBounds, type WeekHours } from '@/lib/venue-hours'
 import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import type { UnpaidShareRow } from '@/lib/money-demand'
+import type { WaitDemand } from '@/lib/waitlist-rules'
 import FinancialReports from '@/components/admin/FinancialReports'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import BoardRightRail from '@/components/admin/BoardRightRail'
@@ -97,6 +98,7 @@ export default function AdminDashboard({
   creditTransactions,
   publicBookingIds,
   unpaidShares = [],
+  waitDemand = null,
   initialTab,
   initialVenue,
   venueSettings = {},
@@ -114,6 +116,8 @@ export default function AdminDashboard({
   creditTransactions: FinancialCreditTx[]
   publicBookingIds: string[]
   unpaidShares?: UnpaidShareRow[]
+  // Waitlist demand per club for owners; null when the waitlist isn't set up.
+  waitDemand?: Record<string, WaitDemand> | null
   // Where to open (from the manager navigation and the Today screen's links).
   initialTab?: AdminTab
   initialVenue?: string
@@ -647,7 +651,8 @@ export default function AdminDashboard({
       )}
 
       {tab === 'analytics' && canSeeMoney && activeVenue && (
-        <MoneyDemand venueSlug={activeVenue} week={activeWeek} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares} />
+        <MoneyDemand venueSlug={activeVenue} week={activeWeek} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares}
+          waitDemand={waitDemand ? (waitDemand[activeVenue] ?? { total: 0, bookedAfter: 0, slots: [] }) : null} />
       )}
 
       {tab === 'analytics' && canSeeMoney && analytics && (
