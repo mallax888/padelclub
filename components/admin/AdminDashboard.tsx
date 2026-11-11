@@ -1448,7 +1448,7 @@ function BoardView({
                 pixels wide, and a two-hour booking is one tall block rather
                 than a sliver. */}
             <div style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'auto', maxHeight: '72vh' }}>
-            <table className="w-full text-sm border-collapse" style={{ minWidth: 68 + venueCourts.length * 150 }}>
+            <table className="w-full table-fixed text-sm border-collapse" style={{ minWidth: 68 + venueCourts.length * 150 }}>
               <thead>
                 <tr>
                   <th className="px-2 py-2 text-left" style={{ width: 68, position: 'sticky', top: 0, zIndex: 2, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Time</th>
