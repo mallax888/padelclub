@@ -52,6 +52,9 @@ export default async function JoinPage({ params }: { params: { token: string } }
       signedIn={!!session}
       isOwnBooking={!!session && record.booking.user_id === session.user.id}
       alreadyJoined={!!session && record.claimedBy === session.user.id}
+      // Joined but not yet paid: the page offers to pay rather than just
+      // saying "you're in", which left a friend with no way to settle up.
+      unpaidSplitId={!!session && record.claimedBy === session.user.id && record.seatStatus === 'pending' ? record.splitId : null}
     />
   )
 }
