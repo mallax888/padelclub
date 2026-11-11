@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { formatDate, addHours, localDateStr } from '@/lib/utils'
 import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes, toMinutes } from '@/lib/venue-hours'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
+import { planWeeks, seriesDates, weekdayPlural, WEEK_OPTIONS, type DatedBusy } from '@/lib/regulars-rules'
 import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice } from '@/lib/pricing'
@@ -96,6 +97,8 @@ export default function BookingFlow({
     waits = [],
     waitlistOn = false,
     waitPrefill = null,
+    regularsOn = false,
+    regularRules = {},
   }: {
     courts: Court[]
     profile: Profile
@@ -110,6 +113,10 @@ export default function BookingFlow({
     waits?: MyWait[]
     waitlistOn?: boolean
     waitPrefill?: { venueSlug: string; date: string; durationMinutes: number } | null
+    // Whether weekly regulars are switched on in the database, and each club's own
+    // rules for them (a club can turn them off or cap how many courts they hold at peak).
+    regularsOn?: boolean
+    regularRules?: Record<string, { enabled: boolean; peakCap: number | null }>
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -419,6 +426,43 @@ export default function BookingFlow({
   // What the confirm screen names, and what the insert attempts first.
   const assignedCourt = time ? (freeCourtsAt(time)[0] ?? null) : null
 
+  // Weekly regular: "same time every <weekday>" for 4, 8 or 12 weeks. The first
+  // week is this booking; the later weeks are booked around it by the server.
+  const clubRegularRules = venue ? regularRules[venue.slug] : undefined
+  const regularAllowed = regularsOn && !!venue && clubRegularRules?.enabled !== false
+  const [regular, setRegular] = useState(false)
+  const [regularWeeks, setRegularWeeks] = useState<number>(8)
+  const [regularSkips, setRegularSkips] = useState<string[]>([])
+  const [futureBusy, setFutureBusy] = useState<DatedBusy[] | null>(null)
+  // A different slot or length is a different regular: forget the weeks skipped.
+  useEffect(() => { setRegularSkips([]) }, [date, time, duration, regularWeeks, venue?.slug])
+  useEffect(() => {
+    if (!regular || !regularAllowed || step !== 'confirm' || !venue || !date) return
+    const ids = venueCourts.map(c => c.id)
+    if (ids.length === 0) return
+    let cancelled = false
+    setFutureBusy(null)
+    supabase.from('bookings')
+      .select('court_id, date, start_time, duration_minutes, status, regular_id')
+      .in('court_id', ids).in('date', seriesDates(date, regularWeeks).slice(1)).in('status', ['confirmed', 'blocked'])
+      .then(({ data }: any) => {
+        if (cancelled) return
+        setFutureBusy(((data ?? []) as any[]).map(b => ({ court_id: b.court_id, date: b.date, start_time: b.start_time, duration_minutes: b.duration_minutes, regular: !!b.regular_id && b.status === 'confirmed' })))
+      })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [regular, regularAllowed, step, venue?.slug, date, regularWeeks])
+  const regularPlan = regular && regularAllowed && assignedCourt && date && time && duration && futureBusy && venue
+    ? planWeeks({
+        dates: seriesDates(date, regularWeeks).slice(1), startTime: time, durationMin: Math.round(duration * 60),
+        courts: venueCourts.filter(c => c.type === assignedCourt.type), busy: futureBusy,
+        hoursFor: d => dayHours(weekFor(venueSettings, venue.slug), d), peakCap: clubRegularRules?.peakCap ?? null,
+        startsInFuture: () => true,
+      })
+    : null
+  const regularBookable = regularPlan ? regularPlan.filter(p => p.court && !regularSkips.includes(p.date)) : []
+  const regularBlocked = regularPlan ? regularPlan.filter(p => !p.court) : []
+
   const isPeak = isPeakTime(date, time)
   const courtPrice = assignedCourt && date && time && duration ? computeCourtPrice(assignedCourt, date, time, duration, discount) : 0
 
@@ -597,6 +641,22 @@ export default function BookingFlow({
         if (notifyError) {
           console.error('Failed to notify', pid, 'of split request', notifyError)
         }
+      }
+    }
+
+    // Weekly regular: book the later weeks around this one. This week is already
+    // held, so if it can't be set up we still carry on to pay for this week.
+    if (regular && regularAllowed && regularPlan) {
+      try {
+        const regRes = await fetch('/api/regulars', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ firstBookingId: bookingData.id, weeks: regularWeeks, skipDates: regularSkips }),
+        })
+        const reg = await regRes.json().catch(() => ({}))
+        if (!regRes.ok) toast.error((reg.error ?? 'We could not set up your regular.') + ' This week is still booked.')
+        else if (!reg.regularId) toast.error('None of the later weeks could be booked, so this is a one-off booking.')
+      } catch {
+        toast.error('We could not set up your regular. This week is still booked.')
       }
     }
 
@@ -1261,6 +1321,68 @@ export default function BookingFlow({
               </div>
             )}
           </div>
+          {regularAllowed && assignedCourt && date && time && (
+            <div className="rounded-2xl p-4 mb-4" data-testid="regular-card" style={{ background: 'var(--bg-surface)', border: `1px solid ${regular ? 'var(--brand-primary)' : 'var(--border)'}`, boxShadow: 'var(--shadow-float)' }}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>🔁 Make it a regular</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>Same time every {weekdayPlural(date).slice(0, -1)}</div>
+                </div>
+                <button role="switch" aria-checked={regular} aria-label="Make it a regular" onClick={() => setRegular(r => !r)}
+                  style={{ width: 44, height: 24, borderRadius: 12, flexShrink: 0, background: regular ? 'var(--brand-primary)' : 'var(--bg-raised)', border: '1px solid var(--border)', position: 'relative', transition: 'background 0.15s' }}>
+                  <div style={{ position: 'absolute', top: 2, left: regular ? 22 : 2, width: 18, height: 18, borderRadius: 9, background: '#fff', transition: 'left 0.15s' }} />
+                </button>
+              </div>
+              {regular && (
+                <>
+                  <div className="flex gap-2 mt-3">
+                    {WEEK_OPTIONS.map(w => (
+                      <button key={w} onClick={() => setRegularWeeks(w)} aria-pressed={regularWeeks === w}
+                        className="flex-1 rounded-xl py-2.5 text-sm font-bold"
+                        style={{ background: regularWeeks === w ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: `1px solid ${regularWeeks === w ? 'var(--brand-primary)' : 'var(--border)'}`, color: regularWeeks === w ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                        {w} weeks
+                      </button>
+                    ))}
+                  </div>
+                  {!regularPlan ? (
+                    <div className="text-xs mt-3" style={{ color: 'var(--text-subtle)' }}>Checking the later weeks…</div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-4 gap-2 mt-3">
+                        <div className="rounded-xl py-2 text-center text-xs font-bold" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }}>
+                          {dateLabel(date).num} {dateLabel(date).month}<div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>This week</div>
+                        </div>
+                        {regularPlan.map(p => {
+                          const skipped = regularSkips.includes(p.date)
+                          const lab = dateLabel(p.date)
+                          if (!p.court) {
+                            return (
+                              <div key={p.date} className="rounded-xl py-2 text-center text-xs font-bold" style={{ background: 'var(--bg-raised)', border: '1px dashed var(--brand-yellow)', color: 'var(--text-muted)' }}>
+                                {lab.num} {lab.month}<div className="text-[10px] font-semibold" style={{ color: 'var(--brand-yellow)' }}>{p.reason === 'closed' ? 'Closed' : p.reason === 'peak_cap' ? 'Peak full' : 'Taken'}</div>
+                              </div>
+                            )
+                          }
+                          return (
+                            <button key={p.date} onClick={() => setRegularSkips(prev => skipped ? prev.filter(d => d !== p.date) : [...prev, p.date])}
+                              aria-pressed={!skipped} aria-label={`${lab.num} ${lab.month}, ${skipped ? 'skipped' : 'booked'}`}
+                              className="rounded-xl py-2 text-center text-xs font-bold"
+                              style={{ background: 'var(--bg-raised)', border: `1px ${skipped ? 'dashed' : 'solid'} var(--border)`, opacity: skipped ? 0.55 : 1, color: 'var(--text-primary)' }}>
+                              {lab.num} {lab.month}
+                              <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{skipped ? 'Skipped' : formatPrice(computeCourtPrice(p.court as any, p.date, time, duration!, discount), currency)}</div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <div className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                        {regularBlocked.length > 0 && <>{regularBlocked.length === 1 ? '1 week is' : `${regularBlocked.length} weeks are`} already taken, so we&apos;ll skip {regularBlocked.length === 1 ? 'it' : 'them'}. </>}
+                        Tap a week to skip it. You pay for this week now. {regularBookable.length} more {regularBookable.length === 1 ? 'week is' : 'weeks are'} held, each paid about a week before.
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <button className="w-full py-4 rounded-xl transition-all flex items-center justify-center gap-2"
             style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
             disabled={submitting} onClick={handleConfirm}>

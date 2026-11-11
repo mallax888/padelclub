@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { applyCancellationRefund } from '@/lib/cancellation'
 import { reportMoneyIssue } from '@/lib/report'
 import { notifyWaitlistForBookings } from '@/lib/waitlist'
+import { columnMissing, releaseOverdueRegularWeeks, sendRegularReminders } from '@/lib/regulars'
 
 const HOLD_MINUTES = 20
 
@@ -27,19 +28,39 @@ export async function GET(request: Request) {
   // holds the slot against double-booking while they pay. If stripe_payment_id
   // is still null this long after creation, they never completed checkout, so
   // release the slot rather than leave it permanently blocked and unpaid.
-  const { data: staleBookings, error: findError } = await supabase
-    .from('bookings')
-    .select('id, user_id, court_id, date, start_time, price_nzd, stripe_payment_id, payment_method')
-    .eq('status', 'confirmed')
-    .eq('payment_method', 'card')
-    .is('stripe_payment_id', null)
-    .lt('created_at', cutoff)
+  //
+  // Held weeks of a weekly regular have a pay_by instead (48 hours before play):
+  // they are reminded and released on that clock below, not this one.
+  const findStale = (skipHeldWeeks: boolean) => {
+    let q = supabase
+      .from('bookings')
+      .select('id, user_id, court_id, date, start_time, price_nzd, stripe_payment_id, payment_method')
+      .eq('status', 'confirmed')
+      .eq('payment_method', 'card')
+      .is('stripe_payment_id', null)
+      .lt('created_at', cutoff)
+    if (skipHeldWeeks) q = (q as any).is('pay_by', null)
+    return q
+  }
+  let { data: staleBookings, error: findError } = await findStale(true)
+  // A deployment that hasn't run the regulars database change has no pay_by column.
+  if (columnMissing(findError)) ({ data: staleBookings, error: findError } = await findStale(false))
 
   if (findError) {
     return NextResponse.json({ error: findError.message }, { status: 500 })
   }
+
+  // Weekly regulars: remind about weeks coming up, release the ones past their
+  // pay-by. Best effort and independent of the 20-minute rule above.
+  let regulars = { released: 0, reminded: 0 }
+  try {
+    regulars = { released: await releaseOverdueRegularWeeks(supabase), reminded: await sendRegularReminders(supabase) }
+  } catch (err) {
+    console.error('Regular weeks step failed:', err)
+  }
+
   if (!staleBookings || staleBookings.length === 0) {
-    return NextResponse.json({ released: 0 })
+    return NextResponse.json({ released: 0, regulars })
   }
 
   const bookingIds = staleBookings.map(b => b.id)
@@ -94,6 +115,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     released: cancelled?.length ?? 0,
+    regulars,
     sharesRefunded,
     bookingIds: (cancelled ?? []).map(b => b.id),
   })

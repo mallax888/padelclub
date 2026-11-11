@@ -143,6 +143,13 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     return 'just now'
   }
 
+  // Where a notification takes you: a free court opens the booking flow, a regular
+  // needing payment (or released) opens My bookings, everything else the game finder.
+  const destinationFor = (type: string) =>
+    type === 'waitlist_open' ? '/book?wl=1'
+    : type === 'regular_created' || type === 'regular_payment' || type === 'booking_released' ? '/mybookings'
+    : '/find-a-game'
+
   const iconForType = (type: string) => {
     if (type === 'join_request') return '🎾'
     if (type === 'join_accepted') return '✅'
@@ -151,6 +158,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     if (type === 'booking_rescheduled') return '📅'
     if (type === 'booking_released') return '💳'
     if (type === 'invite_joined') return '🤝'
+    if (type === 'regular_created' || type === 'regular_payment') return '🔁'
     return '🔔'
   }
 
@@ -183,7 +191,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
         <div style={{ maxHeight: 360, overflowY: 'auto' }}>
           {notifications.map(n => (
             <div key={n.id}
-              onClick={() => { markRead(n.id); router.push(n.type === 'waitlist_open' ? '/book?wl=1' : '/find-a-game') }}
+              onClick={() => { markRead(n.id); router.push(destinationFor(n.type)) }}
               className="flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors"
               style={{
                 borderBottom: '1px solid var(--border)',

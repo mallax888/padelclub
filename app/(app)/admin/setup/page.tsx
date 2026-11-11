@@ -6,6 +6,7 @@ import { currencyForVenueSlug } from '@/lib/currency'
 import { covers } from '@/lib/team'
 import { isManagerRole, isOwnerRole } from '@/lib/view-mode'
 import { loadVenueSettings } from '@/lib/venue-settings'
+import { loadRegularRules } from '@/lib/regulars'
 import ClubSetup, { type SetupClub } from '@/components/admin/ClubSetup'
 
 export const dynamic = 'force-dynamic'
@@ -49,6 +50,9 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
     pricePerHour: Number(c.price_per_hour) || 0, pricePerHourPeak: c.price_per_hour_peak != null ? Number(c.price_per_hour_peak) : null,
   }))
   const row = settings[slug]
+  // This club's rules for weekly regulars; null hides the section until the database change is run.
+  const regProbe: any = await (supabase as any).from('regular_settings').select('venue_slug').limit(1)
+  const regRules = regProbe.error ? null : ((await loadRegularRules(supabase))[slug] ?? { enabled: true, peakCap: null })
 
   return (
     <ClubSetup
@@ -60,6 +64,7 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       hours={row?.hours ?? null}
       isOpen={row ? row.isOpen : courts.length > 0}
       courts={courts}
+      regulars={regRules}
     />
   )
 }
