@@ -3,7 +3,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { COUNTRIES, VENUES, getVenue } from '@/lib/venues'
 import { currencyForVenueSlug } from '@/lib/currency'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
-import { isManagerRole } from '@/lib/view-mode'
+import { isManagerRole, isOwnerRole, roleLabel } from '@/lib/view-mode'
 import { addDaysStr, computeToday, greetingFor, venueClock, type TodayBooking } from '@/lib/today'
 import { computeEmptyCourtTime, summariseUnpaidShares } from '@/lib/money-demand'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
@@ -87,7 +87,10 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       .eq('bookings.courts.venue_slug', venueSlug).gte('bookings.date', clock.date).limit(200),
   ])
 
-  const summary = computeToday({ courts, bookings, splits: (splitRows ?? []) as any, today: clock.date, nowMinutes: clock.minutes })
+  const isOwner = isOwnerRole((profile as any).role)
+  const computed = computeToday({ courts, bookings, splits: (splitRows ?? []) as any, today: clock.date, nowMinutes: clock.minutes })
+  // Front desk never receives the takings: zeroed here, not just hidden on screen.
+  const summary = isOwner ? computed : { ...computed, revenue: { today: 0, lastWeek: 0 } }
   const unpaid = summariseUnpaidShares(mapUnpaidShares(unpaidRows), venueSlug, nowMs)
   const empty = computeEmptyCourtTime(courts as any, bookings.filter(b => b.date === clock.date), venueSlug, nowMs, 1)
 
@@ -112,9 +115,11 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       lastWeekLabel={shortWeekday(lastWeek)}
       currency={currencyForVenueSlug(venueSlug)}
       summary={summary}
-      unpaid={unpaid}
+      unpaid={{ count: unpaid.count, total: isOwner ? unpaid.total : null, oldestDays: unpaid.rows[0]?.ageDays ?? null }}
       openSeats={{ count: seats.length, soonest: soonestLabel }}
       emptyHoursToday={empty.days[0]?.empty ?? 0}
+      showMoney={isOwner}
+      roleLabel={roleLabel((profile as any).role)}
     />
   )
 }

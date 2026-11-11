@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/auth/login', request.url))
   }
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
-  if (!profile || !['staff', 'admin'].includes(profile.role)) {
+  if (!profile || profile.role !== 'admin') {
     return NextResponse.redirect(new URL('/admin', request.url))
   }
 

@@ -9,7 +9,7 @@ async function requireStaff(request: Request) {
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) return null
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
-  if (!profile || !['staff', 'admin'].includes(profile.role)) return null
+  if (!profile || profile.role !== 'admin') return null
   return session
 }
 

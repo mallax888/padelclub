@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import type { TodaySummary } from '@/lib/today'
-import type { UnpaidSummary } from '@/lib/money-demand'
 import ViewSwitch from '@/components/ui/ViewSwitch'
 import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
 
@@ -18,9 +17,12 @@ export type TodayViewProps = {
   lastWeekLabel: string // e.g. "Wed"
   currency: CurrencyCode
   summary: TodaySummary
-  unpaid: UnpaidSummary
+  // total is null for front desk, who see how many shares are owed but not how much
+  unpaid: { count: number; total: number | null; oldestDays: number | null }
   openSeats: { count: number; soonest: string | null }
   emptyHoursToday: number
+  showMoney: boolean // owners see money; front desk does not
+  roleLabel: string | null
 }
 
 function Stat({ label, value, note }: { label: string; value: string; note: string }) {
@@ -54,9 +56,9 @@ export default function TodayView(p: TodayViewProps) {
   const attention: React.ReactNode[] = []
   if (unpaid.count > 0) {
     attention.push(
-      <AttentionRow key="unpaid" href={`/admin?tab=analytics&${q}`} tone="red" mark="$"
-        title={`${unpaid.count} unpaid ${unpaid.count === 1 ? 'share' : 'shares'} · ${formatPrice(unpaid.total, p.currency)}`}
-        text={unpaid.rows[0] ? `Oldest is ${unpaid.rows[0].ageDays === 0 ? 'from today' : unpaid.rows[0].ageDays === 1 ? '1 day old' : `${unpaid.rows[0].ageDays} days old`}` : ''} />,
+      <AttentionRow key="unpaid" href={p.showMoney ? `/admin?tab=analytics&${q}` : `/admin?tab=bookings&${q}`} tone="red" mark="$"
+        title={`${unpaid.count} unpaid ${unpaid.count === 1 ? 'share' : 'shares'}${unpaid.total !== null ? ` · ${formatPrice(unpaid.total, p.currency)}` : ''}`}
+        text={unpaid.oldestDays !== null ? `Oldest is ${unpaid.oldestDays === 0 ? 'from today' : unpaid.oldestDays === 1 ? '1 day old' : `${unpaid.oldestDays} days old`}` : ''} />,
     )
   }
   if (openSeats.count > 0) {
@@ -66,7 +68,7 @@ export default function TodayView(p: TodayViewProps) {
         text={openSeats.soonest ? `Soonest: ${openSeats.soonest}` : 'Games starting in the next 24 hours'} />,
     )
   }
-  if (p.emptyHoursToday > 0) {
+  if (p.showMoney && p.emptyHoursToday > 0) {
     attention.push(
       <AttentionRow key="empty" href={`/admin?tab=analytics&${q}`} tone="blue" mark="◔"
         title={`${p.emptyHoursToday} court-${p.emptyHoursToday === 1 ? 'hour' : 'hours'} still empty today`}
@@ -85,13 +87,21 @@ export default function TodayView(p: TodayViewProps) {
 
       <h1 className="mt-4 text-2xl font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>
         {p.greeting}{p.staffName ? `, ${p.staffName}` : ''}
+        {p.roleLabel && (
+          <span className="ml-2.5 align-middle text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-full"
+            style={{ letterSpacing: '0.06em', fontFamily: 'Inter, sans-serif', ...(p.showMoney
+              ? { color: 'var(--brand-primary-text)', background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }
+              : { color: 'var(--text-muted)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }) }}>{p.roleLabel}</span>
+        )}
       </h1>
       <div className="text-[13px] mt-1 pl-[15px]" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
 
       <div className="grid grid-cols-3 gap-2.5 mt-4">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />
         <Stat label="Players" value={String(s.players.today)} note={`vs ${s.players.lastWeek} last ${p.lastWeekLabel}`} />
-        <Stat label="Revenue" value={formatPrice(Math.round(s.revenue.today), p.currency).replace(/\.00$/, '')} note={`vs ${formatPrice(Math.round(s.revenue.lastWeek), p.currency).replace(/\.00$/, '')}`} />
+        {p.showMoney
+          ? <Stat label="Revenue" value={formatPrice(Math.round(s.revenue.today), p.currency).replace(/\.00$/, '')} note={`vs ${formatPrice(Math.round(s.revenue.lastWeek), p.currency).replace(/\.00$/, '')}`} />
+          : <Stat label="Unpaid" value={String(unpaid.count)} note={unpaid.count === 1 ? 'share to chase' : 'shares to chase'} />}
       </div>
 
       <div className="text-[11px] font-extrabold uppercase mt-5 mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
@@ -104,7 +114,7 @@ export default function TodayView(p: TodayViewProps) {
       <div className="text-[11px] font-extrabold uppercase mt-5 mb-2 px-0.5" style={sectionLabel}>Courts right now</div>
       {noCourts ? (
         <div className="rounded-[18px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
-          This club has no courts set up yet. Add them in the Courts tab of the <Link href={`/admin?tab=courts&${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>dashboard</Link>.
+          This club has no courts set up yet.{p.showMoney ? <> Add them in the Courts tab of the <Link href={`/admin?tab=courts&${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>dashboard</Link>.</> : ' Ask the owner to add them.'}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2.5">

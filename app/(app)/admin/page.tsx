@@ -6,8 +6,7 @@ import { localDateStr } from '@/lib/utils'
 import { addDays, format } from 'date-fns'
 import { VENUES, COUNTRIES } from '@/lib/venues'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
-
-const ADMIN_TABS = ['board', 'analytics', 'reports', 'bookings', 'members', 'courts', 'xero'] as const
+import { ADMIN_TABS, canOpenTab, isOwnerRole } from '@/lib/view-mode'
 
 export default async function AdminPage({ searchParams }: { searchParams?: { tab?: string; venue?: string } }) {
   const supabase = createServerClient()
@@ -22,6 +21,18 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   if (!profile || !['staff','admin'].includes((profile as any).role)) {
     redirect('/book')
   }
+
+  // Front desk can open Board, Bookings and Members; the money and settings tabs
+  // send them back to Today.
+  const requestedTab = searchParams?.tab
+  if (requestedTab && (ADMIN_TABS as readonly string[]).includes(requestedTab) && !canOpenTab((profile as any).role, requestedTab)) {
+    redirect('/admin/today')
+  }
+
+  // Owner or front desk. Front desk never receives the money: the pages they
+  // can't open aren't just hidden, their data is never sent -- no revenue
+  // analytics, credit records, per-court takings, amounts owed, or booking prices.
+  const isOwner = isOwnerRole((profile as any).role)
 
   // A scoped club manager (managed_venue_slug set) only ever sees their own
   // venue's data here -- RLS backs this up for writes (see
@@ -133,17 +144,17 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     unpaidSharesQ,
   ])
 
-  const unpaidShares = mapUnpaidShares(unpaidShareRows)
+  const unpaidShares = isOwner ? mapUnpaidShares(unpaidShareRows) : []
 
   const publicBookingIds = (openMatchRows ?? []).map((m: any) => m.booking_id as string)
 
-  const creditTransactions = (creditTxRows ?? []).map((t: any) => ({
+  const creditTransactions = (isOwner ? (creditTxRows ?? []) : []).map((t: any) => ({
     created_at: t.created_at,
     amount: t.amount,
     type: t.type,
   }))
 
-  const analytics = computeClubAnalytics(
+  const analytics = !isOwner ? null : computeClubAnalytics(
     (analyticsBookings ?? []).map((b: any) => ({
       user_id: b.user_id,
       court_id: b.court_id,
@@ -157,7 +168,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     localDateStr()
   )
 
-  const courtPerfBookings = (courtPerfRows ?? []).map((b: any) => ({
+  const courtPerfBookings = (isOwner ? (courtPerfRows ?? []) : []).map((b: any) => ({
     court_id: b.court_id,
     court_name: b.courts?.name ?? 'Court',
     date: b.date,
@@ -167,6 +178,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   }))
 
   return (
-    <AdminDashboard bookings={bookings ?? []} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
+    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }

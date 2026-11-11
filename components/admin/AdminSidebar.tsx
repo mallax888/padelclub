@@ -33,12 +33,15 @@ const TAB_ITEMS_2: { tab: AdminTab; label: string }[] = [
 export default function AdminSidebar({
   tab,
   setTab,
+  canSeeMoney = true,
   venueName,
   venueRegion,
   staffName,
 }: {
   tab: AdminTab
   setTab: (t: AdminTab) => void
+  // Front desk gets the day-to-day tabs only; money and settings are for owners.
+  canSeeMoney?: boolean
   venueName: string
   venueRegion: string
   staffName: string | null
@@ -61,8 +64,12 @@ export default function AdminSidebar({
     <div className="hidden md:flex flex-col justify-between shrink-0" style={{ width: 200 }}>
       <div className="space-y-1">
         {TAB_ITEMS.map(item => <NavButton key={item.tab} item={item} />)}
-        <div className="my-2" style={{ borderTop: '1px solid var(--border)' }} />
-        {TAB_ITEMS_2.map(item => <NavButton key={item.tab} item={item} />)}
+        {canSeeMoney && (
+          <>
+            <div className="my-2" style={{ borderTop: '1px solid var(--border)' }} />
+            {TAB_ITEMS_2.map(item => <NavButton key={item.tab} item={item} />)}
+          </>
+        )}
       </div>
 
       <div className="rounded-xl p-3 mt-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
