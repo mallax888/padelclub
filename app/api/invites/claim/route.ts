@@ -41,5 +41,6 @@ export async function POST(request: Request) {
     await sendPushToUser(admin, record.organiserId, { title: `${name} joined your game`, body: message, url: '/mybookings' })
   }
 
-  return NextResponse.json({ ok: true, alreadyJoined, bookingId: record.bookingId })
+  // splitId so the join page can go straight to paying for the seat.
+  return NextResponse.json({ ok: true, alreadyJoined, bookingId: record.bookingId, splitId: record.splitId })
 }

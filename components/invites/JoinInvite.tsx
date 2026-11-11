@@ -12,16 +12,19 @@ export type JoinState = 'open' | 'claimed' | 'expired' | 'cancelled' | 'invalid'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
 
-export default function JoinInvite({ token, state, preview, signedIn, isOwnBooking, alreadyJoined }: {
+export default function JoinInvite({ token, state, preview, signedIn, isOwnBooking, alreadyJoined, unpaidSplitId = null }: {
   token: string
   state: JoinState
   preview: InvitePreview | null
   signedIn: boolean
   isOwnBooking: boolean
   alreadyJoined: boolean
+  // The seat is theirs but still unpaid.
+  unpaidSplitId?: string | null
 }) {
   const router = useRouter()
   const [joining, setJoining] = useState(false)
+  const [paying, setPaying] = useState(false)
 
   // Someone who isn't signed in has to leave this page to make an account, and
   // the confirmation email brings them back to a page that has never heard of
@@ -35,6 +38,35 @@ export default function JoinInvite({ token, state, preview, signedIn, isOwnBooki
   }, [state, signedIn, isOwnBooking, token])
 
   const next = encodeURIComponent(`/join/${token}`)
+
+  // Opens the card payment for the seat. Used straight after joining and again
+  // for someone who joined earlier and never paid.
+  const startPayment = async (splitId: string): Promise<boolean> => {
+    if (!preview) return false
+    try {
+      const res = await fetch('/api/pay-split', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          splitId,
+          courtName: preview.courtName,
+          date: preview.dateLabel,
+          time: preview.timeLabel.split('–')[0],
+          invitedByName: preview.organiserName,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok || !body.url) {
+        toast.error(body.error ?? 'Could not open the payment page.')
+        return false
+      }
+      window.location.href = body.url
+      return true
+    } catch {
+      toast.error('Could not open the payment page. Check your connection and try again.')
+      return false
+    }
+  }
 
   const join = async () => {
     setJoining(true)
@@ -54,13 +86,23 @@ export default function JoinInvite({ token, state, preview, signedIn, isOwnBooki
         return
       }
       forgetInvite()
-      toast.success("You're in! Pay your share to lock in your spot.")
+      // The seat is theirs now. Go straight on to paying for it; if the payment
+      // page can't be opened, My bookings has the same Pay button.
+      if (body.splitId && await startPayment(body.splitId)) return
+      toast("You're in! Pay your share from My bookings to lock in your spot.", { duration: 6000 })
       router.push('/mybookings')
       router.refresh()
     } catch {
       toast.error('Could not join the game. Check your connection and try again.')
       setJoining(false)
     }
+  }
+
+  const pay = async () => {
+    if (!unpaidSplitId) return
+    setPaying(true)
+    const started = await startPayment(unpaidSplitId)
+    if (!started) setPaying(false)
   }
 
   const organiser = preview?.organiserName ?? 'Your friend'
@@ -107,8 +149,15 @@ export default function JoinInvite({ token, state, preview, signedIn, isOwnBooki
               <div className="text-4xl mb-3">{message.emoji}</div>
               <div className="text-xl font-extrabold mb-1.5" style={{ ...display, color: 'var(--text-primary)' }}>{message.title}</div>
               <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{message.text}</p>
+              {unpaidSplitId && preview && (
+                <button type="button" onClick={pay} disabled={paying}
+                  className="mt-5 w-full rounded-xl py-3.5 text-base font-extrabold disabled:opacity-60"
+                  style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
+                  {paying ? 'Opening payment…' : `Pay ${formatPrice(preview.share, preview.currency)} to lock in your spot`}
+                </button>
+              )}
               <Link href={signedIn ? '/mybookings' : '/'}
-                className="mt-5 flex items-center justify-center rounded-xl py-3 text-sm font-bold"
+                className={`${unpaidSplitId ? 'mt-2' : 'mt-5'} flex items-center justify-center rounded-xl py-3 text-sm font-bold`}
                 style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
                 {signedIn ? 'My bookings' : 'Go to PadelClub'}
               </Link>
@@ -144,7 +193,7 @@ export default function JoinInvite({ token, state, preview, signedIn, isOwnBooki
                 <button type="button" onClick={join} disabled={joining}
                   className="mt-5 w-full rounded-xl py-3.5 text-base font-extrabold disabled:opacity-60"
                   style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
-                  {joining ? 'Joining…' : 'Join this game'}
+                  {joining ? 'Joining…' : `Join and pay ${formatPrice(preview.share, preview.currency)}`}
                 </button>
               ) : (
                 <div className="mt-5 space-y-2">
@@ -162,7 +211,7 @@ export default function JoinInvite({ token, state, preview, signedIn, isOwnBooki
               )}
               <p className="text-xs text-center mt-3" style={{ color: 'var(--text-subtle)' }}>
                 {signedIn
-                  ? 'Nothing is charged until you tap Pay on the next screen.'
+                  ? 'You join first, then pay by card on a secure page. Your spot is held once you pay.'
                   : 'Takes about a minute. Nothing is charged until you pay your share.'}
               </p>
             </>
