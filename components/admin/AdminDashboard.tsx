@@ -81,6 +81,8 @@ type AdminBooking = {
   courts: { name: string; type: string; venue_slug?: string | null } | null
 }
 
+export type AdminTab = 'board' | 'analytics' | 'reports' | 'bookings' | 'members' | 'courts' | 'xero'
+
 export default function AdminDashboard({
   bookings,
   members,
@@ -92,6 +94,8 @@ export default function AdminDashboard({
   creditTransactions,
   publicBookingIds,
   unpaidShares = [],
+  initialTab,
+  initialVenue,
   staffName,
 }: {
   bookings: AdminBooking[]
@@ -104,13 +108,27 @@ export default function AdminDashboard({
   creditTransactions: FinancialCreditTx[]
   publicBookingIds: string[]
   unpaidShares?: UnpaidShareRow[]
+  // Where to open (from the manager navigation and the Today screen's links).
+  initialTab?: AdminTab
+  initialVenue?: string
   staffName: string | null
 }) {
   const router = useRouter()
-  const [tab, setTab] = useState<'board' | 'analytics' | 'reports' | 'bookings' | 'members' | 'courts' | 'xero'>('board')
-  const [selectedVenueSlug, setSelectedVenueSlug] = useState<string>('')
-  const [selectedCountry, setSelectedCountry] = useState<string>('')
-  const [selectedCity, setSelectedCity] = useState<string>('')
+  const [tab, setTabState] = useState<AdminTab>(initialTab ?? 'board')
+  // Keep the address in step with the tab so the manager navigation can show
+  // which one is open (history.replaceState is understood by the Next.js router).
+  const setTab = (t: AdminTab) => {
+    setTabState(t)
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('tab', t)
+      window.history.replaceState(null, '', url.toString())
+    }
+  }
+  const initialRegion = initialVenue ? getVenue(initialVenue).region : ''
+  const [selectedVenueSlug, setSelectedVenueSlug] = useState<string>(initialVenue ?? '')
+  const [selectedCountry, setSelectedCountry] = useState<string>(initialRegion ? COUNTRIES.find(c => c.regions.includes(initialRegion))?.name ?? '' : '')
+  const [selectedCity, setSelectedCity] = useState<string>(initialRegion)
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
   const [boardDate, setBoardDate] = useState(localDateStr())
   const [showBlock, setShowBlock] = useState(false)

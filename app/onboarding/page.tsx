@@ -18,7 +18,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
     .single()
 
   if (profile?.onboarding_completed) {
-    redirect(safeNext(searchParams?.next) ?? joinPathFor(cookies().get(INVITE_COOKIE)?.value) ?? '/book')
+    redirect(safeNext(searchParams?.next) ?? joinPathFor(cookies().get(INVITE_COOKIE)?.value) ?? '/')
   }
 
   return <OnboardingFlow userId={session!.user.id} defaultName={profile?.full_name ?? ''} />

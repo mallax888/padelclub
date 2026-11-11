@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from './AuthProvider'
 import { getInitials, cn } from '@/lib/utils'
 import ThemeToggle from '@/components/ThemeToggle'
@@ -9,6 +9,8 @@ import NotificationBell from '@/components/ui/NotificationBell'
 import SpecialsMenu from '@/components/ui/SpecialsMenu'
 import { SPECIALS, cadencePill } from '@/lib/specials'
 import { useState } from 'react'
+import ViewSwitch from '@/components/ui/ViewSwitch'
+import { homePathFor, type ViewMode } from '@/lib/view-mode'
 
 const ICONS: Record<string, JSX.Element> = {
   '/book': (
@@ -31,6 +33,18 @@ const ICONS: Record<string, JSX.Element> = {
   ),
   '/admin': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2 4 6v6c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6l-8-4z"/></svg>
+  ),
+  '/admin/today': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+  ),
+  '/admin?tab=board': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
+  ),
+  '/admin?tab=bookings': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+  ),
+  '/admin?tab=analytics': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m7 15 4-5 3 3 5-7"/></svg>
   ),
   '/tournaments': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/><circle cx="12" cy="9" r="2.2"/></svg>
@@ -64,6 +78,22 @@ const TAB_BAR_ITEMS = [
   { href: '/players',     label: 'Players' },
 ]
 
+// The manager side: Today first, then the dashboard's busiest tabs. Everything
+// else the dashboard has (Members, Reports, Courts, Xero) sits behind More.
+const MANAGER_TAB_ITEMS = [
+  { href: '/admin/today',          label: 'Today',     tab: null },
+  { href: '/admin?tab=board',      label: 'Board',     tab: 'board' },
+  { href: '/admin?tab=bookings',   label: 'Bookings',  tab: 'bookings' },
+  { href: '/admin?tab=analytics',  label: 'Analytics', tab: 'analytics' },
+]
+const MANAGER_MORE_ITEMS = [
+  { href: '/admin?tab=members',  label: 'Members',  tab: 'members' },
+  { href: '/admin?tab=reports',  label: 'Reports',  tab: 'reports' },
+  { href: '/admin?tab=courts',   label: 'Courts',   tab: 'courts' },
+  { href: '/admin?tab=xero',     label: 'Xero',     tab: 'xero' },
+]
+const MANAGER_CLUB_ITEMS = NAV_ITEMS.filter(i => ['/players', '/record-match', '/tournaments', '/ladders'].includes(i.href))
+
 // Primary items get their own row at the top of the sidebar; the rest sit
 // under a "Club" group label. A sidebar has room to show everything at
 // once, unlike the old horizontal bar, so there's no overflow menu to manage.
@@ -91,7 +121,7 @@ function SidebarLink({ href, label, active }: { href: string; label: string; act
   )
 }
 
-function TabBarLink({ href, label, active }: { href: string; label: string; active: boolean }) {
+function TabBarLink({ href, label, active, icon }: { href: string; label: string; active: boolean; icon?: JSX.Element }) {
   return (
     <Link href={href} className="flex items-center justify-center transition-all" style={{
       flexDirection: active ? 'row' : 'column',
@@ -101,7 +131,7 @@ function TabBarLink({ href, label, active }: { href: string; label: string; acti
       background: active ? 'var(--brand-primary)' : 'transparent',
       boxShadow: active ? 'var(--glow-primary)' : 'none',
     }}>
-      <span style={{ width: 16, height: 16, flexShrink: 0, color: active ? 'var(--brand-primary-on)' : 'var(--text-subtle)' }}>{ICONS[href]}</span>
+      <span style={{ width: 16, height: 16, flexShrink: 0, color: active ? 'var(--brand-primary-on)' : 'var(--text-subtle)' }}>{icon ?? ICONS[href]}</span>
       <span className="whitespace-nowrap" style={{
         fontSize: active ? 11 : 9,
         fontWeight: 700,
@@ -119,9 +149,10 @@ function SidebarGroupLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function Navbar() {
+export default function Navbar({ viewMode = 'player' }: { viewMode?: ViewMode }) {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
+  const tabParam = useSearchParams()?.get('tab') ?? 'board'
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -131,7 +162,14 @@ export default function Navbar() {
     setMenuOpen(false)
   }
 
-  const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
+  // The server only ever sends 'manager' to staff and admins, so it is the
+  // reliable signal; the profile (loaded in the browser a moment later) only
+  // adds the switch for staff who are currently looking at the player side.
+  const manager = viewMode === 'manager'
+  const isStaff = manager || profile?.role === 'staff' || profile?.role === 'admin'
+  const homeHref = homePathFor(viewMode)
+  const managerTabActive = (item: { href: string; tab: string | null }) =>
+    item.tab === null ? pathname === '/admin/today' : pathname === '/admin' && tabParam === item.tab
 
   return (
     <>
@@ -139,7 +177,7 @@ export default function Navbar() {
       <nav className="sticky top-0 z-50 md:hidden"
         style={{ background: 'var(--bg-base)', borderBottom: '1px solid var(--border)' }}>
         <div className="px-4 h-14 flex items-center justify-between gap-4">
-          <Link href="/book" className="flex items-center gap-2 font-bold text-sm shrink-0"
+          <Link href={homeHref} className="flex items-center gap-2 font-bold text-sm shrink-0"
             onClick={() => setMenuOpen(false)}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
             <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
@@ -177,9 +215,13 @@ export default function Navbar() {
           border: '1px solid var(--border)',
           boxShadow: '0 16px 36px -10px rgba(0,0,0,0.55)',
         }}>
-        {TAB_BAR_ITEMS.map(item => (
-          <TabBarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
-        ))}
+        {manager
+          ? MANAGER_TAB_ITEMS.map(item => (
+              <TabBarLink key={item.href} href={item.href} label={item.label} active={managerTabActive(item)} icon={ICONS[item.href]} />
+            ))
+          : TAB_BAR_ITEMS.map(item => (
+              <TabBarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
+            ))}
         <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center justify-center transition-all" style={{
           flexDirection: menuOpen ? 'row' : 'column',
           gap: menuOpen ? 6 : 2,
@@ -200,37 +242,60 @@ export default function Navbar() {
       <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen z-40 w-[220px]"
         style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}>
         <div className="px-3 py-4 flex flex-col h-full overflow-y-auto">
-          <Link href="/book" className="flex items-center gap-2 font-bold text-sm px-1.5 mb-5">
+          <Link href={homeHref} className="flex items-center gap-2 font-bold text-sm px-1.5 mb-5">
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }} />
             <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
               PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
             </span>
           </Link>
 
-          <div className="flex flex-col gap-0.5">
-            {PRIMARY_NAV_ITEMS.map(item => (
-              <SidebarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
-            ))}
-          </div>
-
-          <SidebarGroupLabel>Club</SidebarGroupLabel>
-          <div className="flex flex-col gap-0.5">
-            {CLUB_NAV_ITEMS.map(item => (
-              <SidebarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
-            ))}
-            <SpecialsMenu />
-          </div>
-
-          {isStaff && (
+          {manager ? (
             <>
-              <SidebarGroupLabel>Staff</SidebarGroupLabel>
               <div className="flex flex-col gap-0.5">
-                <SidebarLink href="/admin" label="Admin" active={pathname.startsWith('/admin')} />
+                <SidebarLink href="/admin/today" label="Today" active={pathname === '/admin/today'} />
+                <SidebarLink href="/admin" label="Dashboard" active={pathname === '/admin'} />
               </div>
+              <SidebarGroupLabel>Club</SidebarGroupLabel>
+              <div className="flex flex-col gap-0.5">
+                {MANAGER_CLUB_ITEMS.map(item => (
+                  <SidebarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col gap-0.5">
+                {PRIMARY_NAV_ITEMS.map(item => (
+                  <SidebarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
+                ))}
+              </div>
+
+              <SidebarGroupLabel>Club</SidebarGroupLabel>
+              <div className="flex flex-col gap-0.5">
+                {CLUB_NAV_ITEMS.map(item => (
+                  <SidebarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
+                ))}
+                <SpecialsMenu />
+              </div>
+
+              {isStaff && (
+                <>
+                  <SidebarGroupLabel>Staff</SidebarGroupLabel>
+                  <div className="flex flex-col gap-0.5">
+                    <SidebarLink href="/admin" label="Admin" active={pathname.startsWith('/admin')} />
+                  </div>
+                </>
+              )}
             </>
           )}
 
           <div className="flex-1" />
+
+          {isStaff && (
+            <div className="pt-3">
+              <ViewSwitch mode={viewMode} variant="row" />
+            </div>
+          )}
 
           {profile && (
             <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
@@ -286,26 +351,34 @@ export default function Navbar() {
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}>
             <div className="px-4 py-3 space-y-1">
-              {NAV_ITEMS.map(item => (
-                <Link key={item.href} href={item.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center px-3 py-3 rounded-lg text-base transition-colors"
-                  style={{
-                    background: pathname.startsWith(item.href) ? 'var(--bg-raised)' : 'transparent',
-                    color: pathname.startsWith(item.href) ? 'var(--brand-primary-text)' : 'var(--text-primary)',
-                    fontWeight: pathname.startsWith(item.href) ? 500 : 400,
-                  }}>
-                  {item.label}
-                </Link>
-              ))}
-              {isStaff && (
+              {(manager ? [...MANAGER_MORE_ITEMS, ...MANAGER_CLUB_ITEMS.map(i => ({ ...i, tab: null as string | null }))] : NAV_ITEMS).map((item: { href: string; label: string; tab?: string | null }) => {
+                const active = manager && item.tab ? pathname === '/admin' && tabParam === item.tab : pathname.startsWith(item.href)
+                return (
+                  <Link key={item.href} href={item.href}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center px-3 py-3 rounded-lg text-base transition-colors"
+                    style={{
+                      background: active ? 'var(--bg-raised)' : 'transparent',
+                      color: active ? 'var(--brand-primary-text)' : 'var(--text-primary)',
+                      fontWeight: active ? 500 : 400,
+                    }}>
+                    {item.label}
+                  </Link>
+                )
+              })}
+              {isStaff && !manager && (
                 <Link href="/admin" onClick={() => setMenuOpen(false)}
                   className="flex items-center px-3 py-3 rounded-lg text-base"
                   style={{ color: 'var(--text-primary)' }}>
                   Admin
                 </Link>
               )}
-              {SPECIALS.length > 0 && (
+              {isStaff && (
+                <div className="pt-2">
+                  <ViewSwitch mode={viewMode} variant="row" onNavigate={() => setMenuOpen(false)} />
+                </div>
+              )}
+              {!manager && SPECIALS.length > 0 && (
                 <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
                   <div className="px-3 pb-2 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--brand-accent)' }}>
                     Specials
