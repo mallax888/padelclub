@@ -36,6 +36,9 @@
   --brand-crimson:      #DC2626;
   --brand-crimson-muted:#DC26261A;
   --glow-crimson:       0 0 16px 0 #DC26262E;
+  /* "Paid": green, so it reads differently from the blue used for everything selected. */
+  --brand-green:        #059669;
+  --brand-green-muted:  #05966922;
 }
 
 .dark {
@@ -68,6 +71,8 @@
   --brand-crimson:      #FF6B6B;
   --brand-crimson-muted:#FF6B6B1A;
   --glow-crimson:       0 0 16px 0 #FF6B6B2E;
+  --brand-green:        #34D399;
+  --brand-green-muted:  #34D39924;
 }
 
 @layer base {
