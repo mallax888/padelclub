@@ -6,25 +6,25 @@
   /* Tells the browser this page fully themes itself for both color
      schemes -- without it, Android Chrome's "Force Dark" auto-darkens
      the page on top of our own dark theme, which is what was skewing
-     bright colors like --brand-primary's bronze. */
+     bright colors like --brand-primary's blue. */
   color-scheme: light;
-  --bg-base:            #F2F4EE;
+  --bg-base:            #F1F3F6;
   --bg-surface:         #FFFFFF;
-  --bg-raised:          #E5EAE2;
-  --text-primary:       #0F1F18;
-  --text-muted:         #4B5E54;
-  --text-subtle:        #64766C;
-  --border:             rgba(15, 31, 24, 0.10);
-  --shadow-float:       0 20px 40px -24px rgba(15, 31, 24, 0.18);
-  --ring-primary:       rgba(138, 90, 43, 0.35);
-  --brand-primary:      #8A5A2B;
+  --bg-raised:          #E4E8ED;
+  --text-primary:       #0F151C;
+  --text-muted:         #4A5663;
+  --text-subtle:        #626E7B;
+  --border:             rgba(15, 21, 28, 0.10);
+  --shadow-float:       0 20px 40px -24px rgba(15, 21, 28, 0.18);
+  --ring-primary:       rgba(31, 95, 181, 0.35);
+  --brand-primary:      #1F5FB5;
   --brand-primary-on:   #FFFFFF;
-  --brand-primary-text: #7A4E22;
+  --brand-primary-text: #1B57A6;
   --brand-accent:       #D8380F;
   --brand-accent-on:    #FFFFFF;
-  --brand-primary-muted:#8A5A2B26;
+  --brand-primary-muted:#1F5FB526;
   --brand-accent-muted: #D8380F1A;
-  --glow-primary:       0 0 16px 0 #8A5A2B33;
+  --glow-primary:       0 0 16px 0 #1F5FB533;
   --glow-accent:        0 0 16px 0 #D8380F3D;
   --brand-blue:         #2563EB;
   --brand-blue-muted:   #2563EB1A;
@@ -40,23 +40,23 @@
 
 .dark {
   color-scheme: dark;
-  --bg-base:            #09140F;
-  --bg-surface:         #10201A;
-  --bg-raised:          #183027;
-  --text-primary:       #F0F3EC;
-  --text-muted:         #A3B5A9;
-  --text-subtle:        #8A9E92;
+  --bg-base:            #262B31;
+  --bg-surface:         #30363D;
+  --bg-raised:          #3B424B;
+  --text-primary:       #F7F8FA;
+  --text-muted:         #BBC3CC;
+  --text-subtle:        #A2ABB5;
   --border:             rgba(255, 255, 255, 0.12);
   --shadow-float:       0 30px 60px -30px rgba(0, 0, 0, 0.65);
-  --ring-primary:       rgba(208, 153, 90, 0.35);
-  --brand-primary:      #D0995A;
-  --brand-primary-on:   #1C1006;
-  --brand-primary-text: #DEAB70;
+  --ring-primary:       rgba(134, 187, 247, 0.45);
+  --brand-primary:      #2F70CC;
+  --brand-primary-on:   #FFFFFF;
+  --brand-primary-text: #86BBF7;
   --brand-accent:       #FF5233;
   --brand-accent-on:    #2B0800;
-  --brand-primary-muted:#D0995A22;
+  --brand-primary-muted:#86BBF726;
   --brand-accent-muted: #FF52331F;
-  --glow-primary:       0 0 20px 0 #D0995A33;
+  --glow-primary:       0 0 20px 0 #2F70CC59;
   --glow-accent:        0 0 16px 0 #FF52334D;
   --brand-blue:         #5FA0FF;
   --brand-blue-muted:   #5FA0FF1A;
@@ -83,8 +83,8 @@
   }
   .dark body {
     background-image:
-      radial-gradient(820px 460px at 8% -10%, rgba(208, 153, 90, 0.07), transparent 60%),
-      radial-gradient(860px 600px at 98% 4%, rgba(62, 155, 106, 0.10), transparent 55%);
+      radial-gradient(820px 460px at 8% -10%, rgba(47, 112, 204, 0.18), transparent 60%),
+      radial-gradient(860px 600px at 98% 4%, rgba(106, 170, 240, 0.06), transparent 55%);
     background-repeat: no-repeat;
     background-attachment: fixed;
   }
@@ -112,7 +112,7 @@
   }
   .btn:hover:not(:disabled) {
     border-color: var(--brand-primary);
-    color: var(--brand-primary);
+    color: var(--brand-primary-text);
   }
   .btn-primary {
     background: var(--brand-primary);
@@ -132,7 +132,7 @@
   }
   .btn-outline-primary {
     background: transparent;
-    color: var(--brand-primary);
+    color: var(--brand-primary-text);
     border-color: var(--brand-primary);
   }
   .btn-outline-primary:hover:not(:disabled) {
@@ -182,9 +182,9 @@
   }
   .badge-member {
     background: var(--brand-primary-muted);
-    color: var(--brand-primary);
+    color: var(--brand-primary-text);
   }
-  .status-confirmed  { background: var(--brand-primary-muted); color: var(--brand-primary); @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; }
+  .status-confirmed  { background: var(--brand-primary-muted); color: var(--brand-primary-text); @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; }
   .status-pending    { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none bg-amber-100 text-amber-700; }
   .status-cancelled  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none bg-red-100 text-red-600; }
   .status-completed  { @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium select-none; background: var(--bg-raised); color: var(--text-subtle); }
@@ -199,7 +199,7 @@
   }
   .nav-tab-active {
     background: var(--bg-raised);
-    color: var(--brand-primary);
+    color: var(--brand-primary-text);
     @apply font-medium;
   }
   .slot {
@@ -210,7 +210,7 @@
   }
   .slot:hover {
     border-color: var(--brand-primary);
-    color: var(--brand-primary);
+    color: var(--brand-primary-text);
   }
   .slot-selected {
     background: var(--brand-primary);

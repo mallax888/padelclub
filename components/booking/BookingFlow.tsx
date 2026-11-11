@@ -730,7 +730,7 @@ export default function BookingFlow({
             onClick={() => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }}
             className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-5 text-left"
             style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary)', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
             <span className="min-w-0">
               <span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{venue?.name}</span>
               <span className="block text-[11px]" style={{ color: 'var(--text-subtle)' }}>{venue?.region}</span>
