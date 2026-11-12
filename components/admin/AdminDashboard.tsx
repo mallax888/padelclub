@@ -110,6 +110,7 @@ export default function AdminDashboard({
   initialVenue,
   venueSettings = {},
   staffName,
+  todayStr,
 }: {
   bookings: AdminBooking[]
   members: Profile[]
@@ -134,6 +135,9 @@ export default function AdminDashboard({
   // Each club's opening hours (default 07:00-22:00 when a club hasn't set any).
   venueSettings?: VenueSettingsMap
   staffName: string | null
+  // "Today" as the server saw it. The first render uses this so the page matches the HTML the server sent; it is
+  // then replaced by the viewer's own date (the server and a viewer in another time zone can be on different days).
+  todayStr?: string
 }) {
   const router = useRouter()
   const [tab, setTabState] = useState<AdminTab>(initialTab ?? 'board')
@@ -154,7 +158,7 @@ export default function AdminDashboard({
   const [selectedCountry, setSelectedCountry] = useState<string>(initialRegion ? COUNTRIES.find(c => c.regions.includes(initialRegion))?.name ?? '' : '')
   const [selectedCity, setSelectedCity] = useState<string>(initialRegion)
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
-  const [boardDate, setBoardDate] = useState(localDateStr())
+  const [boardDate, setBoardDate] = useState(todayStr ?? localDateStr())
   const [showBlock, setShowBlock] = useState(false)
   const [showPastBookings, setShowPastBookings] = useState(false)
   const [memberSearch, setMemberSearch] = useState('')
@@ -178,7 +182,13 @@ export default function AdminDashboard({
   })
   const [savingCourt, setSavingCourt] = useState(false)
 
-  const today = localDateStr()
+  const [today, setToday] = useState(todayStr ?? localDateStr())
+  useEffect(() => {
+    const t = localDateStr()
+    setToday(t)
+    setBoardDate(d => (d === (todayStr ?? t) ? t : d))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const todayBookings = bookings.filter(b => b.date === today && b.status !== 'cancelled')
   const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
 
@@ -645,7 +655,7 @@ export default function AdminDashboard({
 {/* Board tab */}
       {tab === 'board' && (
         <div className="flex flex-col gap-4">
-          <BoardView setupHref={canSeeMoney && activeVenue ? `/admin/setup?venue=${encodeURIComponent(activeVenue)}` : null} week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
+          <BoardView today={today} setupHref={canSeeMoney && activeVenue ? `/admin/setup?venue=${encodeURIComponent(activeVenue)}` : null} week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
           <BoardFooterStrip
             rangeLabel={boardRange.label}
             thisWeekCount={thisWeekVenueBookings.length}
@@ -964,7 +974,7 @@ export default function AdminDashboard({
 
 
 function BoardView({
-  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members, setupHref = null,
+  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members, today, setupHref = null,
 }: {
   week: WeekHours
   bookings: any[]
@@ -975,6 +985,7 @@ function BoardView({
   setBoardDate: (d: string) => void
   publicBookingIds: string[]
   members: Profile[]
+  today: string
   // Where an owner finishes setting the club up (null for front desk).
   setupHref?: string | null
 }) {
@@ -1058,7 +1069,6 @@ function BoardView({
   }
   const TIME_ROWS = Array.from({ length: Math.min(rowTo, 24) - rowFrom + 1 }, (_, i) => String(rowFrom + i).padStart(2, '0') + ':00')
   const weekDates = getWeekDates()
-  const today = localDateStr()
   const courtColors = ['var(--brand-primary)', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#10B981']
   const colorMap: Record<string, string> = {}
   venueCourts.forEach((court: any, i: number) => { colorMap[court.id] = courtColors[i % courtColors.length] })

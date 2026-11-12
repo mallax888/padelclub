@@ -59,7 +59,7 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   )
 }
 
-export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null }: {
+export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null, location = null }: {
   clubs: SetupClub[]
   venue: { slug: string; name: string; address: string; region: string }
   listed: Listed[]
@@ -71,6 +71,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   regulars: { enabled: boolean; peakCap: number | null } | null
   // This club's membership plans and figures. Null when the club plans database change hasn't been run.
   memberships?: { plans: Plan[]; stats: PlanStats; examplePrice: number | null } | null
+  // Where this club is on the map for "clubs near me". Null when the 031 database change hasn't been run.
+  location?: { source: 'club' | 'listed'; approx: boolean } | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('home')
@@ -96,6 +98,17 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
     toast.success(ok)
     router.refresh()
     return true
+  }
+
+  // Put the club on the map where it really is: the owner uses their phone while at the club.
+  const useMyLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) { toast.error("This device can't share its location."); return }
+    setBusy(true)
+    navigator.geolocation.getCurrentPosition(
+      p => { setBusy(false); void run('/api/admin/venue-location', { venueSlug: venue.slug, lat: p.coords.latitude, lng: p.coords.longitude }, 'Club location saved') },
+      () => { setBusy(false); toast.error("We couldn't get your location. Allow it in your browser's settings and try again.") },
+      { timeout: 10000, maximumAge: 0, enableHighAccuracy: true },
+    )
   }
 
   const setDay = (d: DayKey, v: WeekHours[DayKey]) => setWeek(w => ({ ...w, [d]: v }))
@@ -346,6 +359,21 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
         </div>
       )}
       {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
+      {location && (
+        <div className="rounded-[18px] mt-3.5 px-3.5 py-3.5" style={card} data-testid="map-location">
+          <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>📍 Map location</span>
+          <span className="block text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            Used for &ldquo;clubs near me&rdquo; when players travel.{' '}
+            {location.source === 'club' ? 'Set from the club itself.' : location.approx ? 'Placed from your city only, so players see it as "in your city" until you set it.' : 'Placed from the address, to about the suburb.'}
+          </span>
+          <button type="button" disabled={busy} onClick={useMyLocation} className="w-full rounded-xl mt-3 text-sm font-bold disabled:opacity-50" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+            I&apos;m at the club: use this device&apos;s location
+          </button>
+          {location.source === 'club' && (
+            <button type="button" disabled={busy} onClick={() => { void run('/api/admin/venue-location', { venueSlug: venue.slug, clear: true }, 'Back to the address position') }} className="w-full py-2.5 mt-1 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Go back to the address position</button>
+          )}
+        </div>
+      )}
       <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
         {isOpen ? 'Done' : 'Save for later'}
       </Primary>
