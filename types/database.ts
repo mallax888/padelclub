@@ -641,7 +641,7 @@ export interface Database {
           name: string
           venue_slug: string
           date: string
-          format: 'americano' | 'mexicano'
+          format: 'americano' | 'mexicano' | 'team_americano' | 'king_of_court' | 'fixed_round_robin' | 'single_elim' | 'double_elim' | 'groups_knockout' | 'swiss'
           status: 'draft' | 'in_progress' | 'completed'
           court_ids: string[]
           points_to_win: number
@@ -649,6 +649,7 @@ export interface Database {
           current_round: number
           organizer_id: string | null
           notes: string | null
+          settings?: Json | null
         }
         Insert: {
           id?: string
@@ -656,7 +657,7 @@ export interface Database {
           name: string
           venue_slug: string
           date: string
-          format?: 'americano' | 'mexicano'
+          format?: 'americano' | 'mexicano' | 'team_americano' | 'king_of_court' | 'fixed_round_robin' | 'single_elim' | 'double_elim' | 'groups_knockout' | 'swiss'
           status?: 'draft' | 'in_progress' | 'completed'
           court_ids?: string[]
           points_to_win?: number
@@ -664,6 +665,7 @@ export interface Database {
           current_round?: number
           organizer_id?: string | null
           notes?: string | null
+          settings?: Json | null
         }
         Update: {
           id?: string
@@ -671,7 +673,7 @@ export interface Database {
           name?: string
           venue_slug?: string
           date?: string
-          format?: 'americano' | 'mexicano'
+          format?: 'americano' | 'mexicano' | 'team_americano' | 'king_of_court' | 'fixed_round_robin' | 'single_elim' | 'double_elim' | 'groups_knockout' | 'swiss'
           status?: 'draft' | 'in_progress' | 'completed'
           court_ids?: string[]
           points_to_win?: number
@@ -679,6 +681,7 @@ export interface Database {
           current_round?: number
           organizer_id?: string | null
           notes?: string | null
+          settings?: Json | null
         }
         Relationships: [
           {
@@ -700,6 +703,10 @@ export interface Database {
           total_points: number
           games_played: number
           games_won: number
+          pair_no?: number | null
+          team_name?: string | null
+          group_label?: string | null
+          seed?: number | null
         }
         Insert: {
           id?: string
@@ -710,6 +717,10 @@ export interface Database {
           total_points?: number
           games_played?: number
           games_won?: number
+          pair_no?: number | null
+          team_name?: string | null
+          group_label?: string | null
+          seed?: number | null
         }
         Update: {
           id?: string
@@ -720,6 +731,10 @@ export interface Database {
           total_points?: number
           games_played?: number
           games_won?: number
+          pair_no?: number | null
+          team_name?: string | null
+          group_label?: string | null
+          seed?: number | null
         }
         Relationships: [
           {
@@ -753,6 +768,11 @@ export interface Database {
           team2_score: number | null
           status: 'pending' | 'completed'
           completed_at: string | null
+          stage?: 'round' | 'group' | 'ko' | 'third_place'
+          label?: string | null
+          match_number?: number | null
+          group_label?: string | null
+          wave?: number
         }
         Insert: {
           id?: string
@@ -768,6 +788,11 @@ export interface Database {
           team2_score?: number | null
           status?: 'pending' | 'completed'
           completed_at?: string | null
+          stage?: 'round' | 'group' | 'ko' | 'third_place'
+          label?: string | null
+          match_number?: number | null
+          group_label?: string | null
+          wave?: number
         }
         Update: {
           id?: string
@@ -783,6 +808,11 @@ export interface Database {
           team2_score?: number | null
           status?: 'pending' | 'completed'
           completed_at?: string | null
+          stage?: 'round' | 'group' | 'ko' | 'third_place'
+          label?: string | null
+          match_number?: number | null
+          group_label?: string | null
+          wave?: number
         }
         Relationships: [
           {

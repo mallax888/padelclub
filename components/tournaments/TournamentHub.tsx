@@ -2,280 +2,263 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { VENUES } from '@/lib/venues'
 import { formatDate } from '@/lib/utils'
-import { pairAmericanoRound, pairMexicanoRound } from '@/lib/tournament'
-import type { Tournament, TournamentMatch } from '@/types/database'
+import { formatName, isPairFormat, isRotationFormat, normalizeSettings } from '@/lib/tournament-formats'
+import {
+  bracketRounds, champion, matchTeams, nextStep, pairTable, pairViews, playerName, progressLabel,
+  type VMatch, type VPlayer, type VTournament,
+} from '@/lib/tournament-view'
+import MatchCard, { type MatchCardData } from './MatchCard'
+import PairsEditor from './PairsEditor'
+import Bracket from './Bracket'
+import StandingsTable from './StandingsTable'
 
-type Player = { id: string; full_name: string | null; nickname: string | null }
-type TournamentPlayerRow = {
-  id: string
-  tournament_id: string
-  player_id: string | null
-  guest_name: string | null
-  total_points: number
-  games_played: number
-  games_won: number
-  profiles: { full_name: string | null; nickname: string | null } | null
-}
+type Person = { id: string; full_name: string | null; nickname: string | null }
+type Tournament = VTournament & { name: string; venue_slug: string; date: string }
+
+const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
+const h2 = 'text-sm font-extrabold uppercase tracking-wide'
 
 export default function TournamentHub({
-  tournament,
-  tournamentPlayers,
-  matches,
-  allPlayers,
-  isStaff,
-  currentUserId,
+  tournament, tournamentPlayers, matches, allPlayers, canManage, currentUserId,
 }: {
   tournament: Tournament
-  tournamentPlayers: TournamentPlayerRow[]
-  matches: TournamentMatch[]
-  allPlayers: Player[]
-  isStaff: boolean
+  tournamentPlayers: VPlayer[]
+  matches: VMatch[]
+  allPlayers: Person[]
+  canManage: boolean
   currentUserId: string
 }) {
-  const supabase = createClient()
   const router = useRouter()
-  const venue = VENUES.find(v => v.slug === tournament.venue_slug)
-  const [generating, setGenerating] = useState(false)
+  const t = tournament
+  const venue = VENUES.find(v => v.slug === t.venue_slug)
+  const pairFormat = isPairFormat(t.format)
+  const settings = normalizeSettings(t.format, t.settings)
+  const [busy, setBusy] = useState<'generate' | 'roster' | null>(null)
+  const [submitting, setSubmitting] = useState<string | null>(null)
   const [showRoster, setShowRoster] = useState(tournamentPlayers.length === 0)
-  const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null)
-  const [scoreDrafts, setScoreDrafts] = useState<Record<string, { t1: string; t2: string }>>({})
-  const [submittingMatch, setSubmittingMatch] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [guestText, setGuestText] = useState('')
 
-  const playerName = (rowId: string) => {
-    const p = tournamentPlayers.find(tp => tp.id === rowId)
-    if (!p) return 'Player'
-    return p.guest_name ?? p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'
+  const step = nextStep(t, tournamentPlayers, matches)
+  const progress = progressLabel(t, matches)
+  const courtName = (id: string) => venue?.courts.find(c => c.id === id)?.name ?? id
+  const stage = (m: VMatch) => m.stage ?? 'round'
+
+  const mineRows = useMemo(() => new Set(tournamentPlayers.filter(p => p.player_id === currentUserId).map(p => p.id)), [tournamentPlayers, currentUserId])
+  const canScore = (m: VMatch) => m.status === 'pending' && (canManage || [m.team1_player1_id, m.team1_player2_id, m.team2_player1_id, m.team2_player2_id].some(id => mineRows.has(id)))
+  const toCard = (m: VMatch): MatchCardData => {
+    const tm = matchTeams(m, tournamentPlayers, pairFormat)
+    return { id: m.id, heading: m.label ?? `Round ${m.round_number}`, court: courtName(m.court_id), later: (m.wave ?? 1) > 1, team1: tm.team1, team2: tm.team2, score1: m.team1_score, score2: m.team2_score, done: m.status === 'completed' }
   }
 
-  const courtName = (courtId: string) => venue?.courts.find(c => c.id === courtId)?.name ?? courtId
+  const pending = matches.filter(m => m.status !== 'completed')
+  const active = pending.length ? Math.min(...pending.map(m => m.round_number)) : 0
+  const toPlay = pending.filter(m => m.round_number === active)
+  const doneByRound = useMemo(() => {
+    const out = new Map<number, VMatch[]>()
+    for (const m of matches.filter(x => x.status === 'completed')) out.set(m.round_number, [...(out.get(m.round_number) ?? []), m])
+    return Array.from(out.entries()).sort((a, b) => b[0] - a[0])
+  }, [matches])
 
-  const currentRoundMatches = matches.filter(m => m.round_number === tournament.current_round)
-  const pastRounds = useMemo(() => {
-    const rounds: Record<number, TournamentMatch[]> = {}
-    matches.filter(m => m.round_number < tournament.current_round).forEach(m => {
-      rounds[m.round_number] = rounds[m.round_number] ?? []
-      rounds[m.round_number].push(m)
-    })
-    return rounds
-  }, [matches, tournament.current_round])
+  const inMatch = useMemo(() => new Set(matches.flatMap(m => [m.team1_player1_id, m.team1_player2_id, m.team2_player1_id, m.team2_player2_id])), [matches])
+  const locked = t.status === 'completed' || (!isRotationFormat(t.format) && t.status !== 'draft')
+  const rosterIds = new Set(tournamentPlayers.map(p => p.player_id).filter(Boolean))
+  const addable = allPlayers.filter(p => !rosterIds.has(p.id) && (!search || `${p.nickname ?? ''} ${p.full_name ?? ''}`.toLowerCase().includes(search.toLowerCase())))
 
-  const canGenerateNext =
-    isStaff &&
-    tournament.current_round < tournament.total_rounds &&
-    tournamentPlayers.length >= 4 &&
-    tournament.court_ids.length > 0 &&
-    (tournament.current_round === 0 || (currentRoundMatches.length > 0 && currentRoundMatches.every(m => m.status === 'completed')))
+  const post = async (url: string, body: Record<string, unknown>) => {
+    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    const data = await res.json().catch(() => ({}))
+    return { ok: res.ok, data }
+  }
+  const generate = async () => {
+    setBusy('generate')
+    const { ok, data } = await post('/api/tournaments/generate', { tournamentId: t.id })
+    setBusy(null)
+    if (!ok) { toast.error(data.error ?? 'Could not make the next matches'); return }
+    toast.success(data.message ?? 'Done')
+    router.refresh()
+  }
+  const roster = async (body: Record<string, unknown>) => {
+    setBusy('roster')
+    const { ok, data } = await post('/api/tournaments/roster', { tournamentId: t.id, ...body })
+    setBusy(null)
+    if (!ok) { toast.error(data.error ?? 'Could not change the players'); return false }
+    router.refresh()
+    return true
+  }
+  const submitScore = async (matchId: string, s1: number, s2: number) => {
+    setSubmitting(matchId)
+    const { ok, data } = await post('/api/tournament-match-score', { matchId, team1Score: s1, team2Score: s2 })
+    setSubmitting(null)
+    if (!ok) { toast.error(data.error ?? 'Could not save the score'); return }
+    toast.success(data.finished ? 'Score saved. The tournament is finished!' : 'Score saved')
+    router.refresh()
+  }
 
+  // ---- what to show
+  const pairs = pairViews(tournamentPlayers)
   const leaderboard = [...tournamentPlayers].sort((a, b) => b.total_points - a.total_points)
-
-  const handleGenerateRound = async () => {
-    setGenerating(true)
-    const nextRound = tournament.current_round + 1
-    const { pairings, sittingOut } = tournament.format === 'mexicano'
-      ? pairMexicanoRound(tournamentPlayers.map(p => ({ id: p.id, totalPoints: p.total_points })), tournament.court_ids)
-      : pairAmericanoRound(tournamentPlayers.map(p => p.id), tournament.court_ids)
-
-    if (pairings.length === 0) {
-      toast.error('Not enough players or courts to generate a round')
-      setGenerating(false)
-      return
-    }
-
-    const rows = pairings.map(p => ({
-      tournament_id: tournament.id,
-      round_number: nextRound,
-      court_id: p.courtId,
-      team1_player1_id: p.team1[0],
-      team1_player2_id: p.team1[1],
-      team2_player1_id: p.team2[0],
-      team2_player2_id: p.team2[1],
-    }))
-
-    const { error: insertError } = await supabase.from('tournament_matches').insert(rows)
-    if (insertError) {
-      toast.error('Could not generate the round — please try again')
-      setGenerating(false)
-      return
-    }
-    await supabase.from('tournaments').update({ current_round: nextRound, status: 'in_progress' }).eq('id', tournament.id)
-    toast.success(`Round ${nextRound} generated${sittingOut.length > 0 ? ` — ${sittingOut.length} sitting out` : ''}`)
-    router.refresh()
-    setGenerating(false)
-  }
-
-  const handleAddPlayer = async (playerId: string) => {
-    setAddingPlayerId(playerId)
-    const { error } = await supabase.from('tournament_players').insert({ tournament_id: tournament.id, player_id: playerId })
-    if (error) toast.error('Could not add player')
-    router.refresh()
-    setAddingPlayerId(null)
-  }
-
-  const handleRemovePlayer = async (rowId: string) => {
-    const { error } = await supabase.from('tournament_players').delete().eq('id', rowId)
-    if (error) toast.error('Could not remove player')
-    router.refresh()
-  }
-
-  const handleSubmitScore = async (matchId: string) => {
-    const draft = scoreDrafts[matchId]
-    const t1 = Number(draft?.t1)
-    const t2 = Number(draft?.t2)
-    if (!draft || draft.t1 === '' || draft.t2 === '' || Number.isNaN(t1) || Number.isNaN(t2)) {
-      toast.error('Enter both scores')
-      return
-    }
-    setSubmittingMatch(matchId)
-    const res = await fetch('/api/tournament-match-score', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matchId, team1Score: t1, team2Score: t2 }),
-    })
-    const data = await res.json()
-    if (!res.ok) {
-      toast.error(data.error ?? 'Could not save score')
-      setSubmittingMatch(null)
-      return
-    }
-    toast.success('Score saved')
-    router.refresh()
-    setSubmittingMatch(null)
-  }
-
-  const rosterPlayerIds = new Set(tournamentPlayers.map(p => p.player_id).filter(Boolean))
-  const addablePlayers = allPlayers.filter(p => !rosterPlayerIds.has(p.id))
-
-  const MatchCard = ({ m }: { m: TournamentMatch }) => {
-    const draft = scoreDrafts[m.id] ?? { t1: '', t2: '' }
-    const isParticipant = tournamentPlayers.some(
-      tp => [m.team1_player1_id, m.team1_player2_id, m.team2_player1_id, m.team2_player2_id].includes(tp.id) && tp.player_id === currentUserId
-    )
-    const canScore = m.status === 'pending' && (isStaff || isParticipant)
-
-    return (
-      <div className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <div className="text-[10px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>{courtName(m.court_id)}</div>
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-sm font-semibold min-w-0" style={{ color: 'var(--text-primary)' }}>
-            {playerName(m.team1_player1_id)} / {playerName(m.team1_player2_id)}
-          </div>
-          {m.status === 'completed' ? (
-            <div className="text-lg shrink-0" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{m.team1_score}</div>
-          ) : canScore ? (
-            <input type="number" min={0} className="input text-sm text-center" style={{ width: 56 }}
-              value={draft.t1} onChange={e => setScoreDrafts(prev => ({ ...prev, [m.id]: { t1: e.target.value, t2: prev[m.id]?.t2 ?? '' } }))} />
-          ) : null}
-        </div>
-        <div className="flex items-center justify-between gap-2 mt-1.5">
-          <div className="text-sm font-semibold min-w-0" style={{ color: 'var(--text-primary)' }}>
-            {playerName(m.team2_player1_id)} / {playerName(m.team2_player2_id)}
-          </div>
-          {m.status === 'completed' ? (
-            <div className="text-lg shrink-0" style={{ color: 'var(--brand-accent)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{m.team2_score}</div>
-          ) : canScore ? (
-            <input type="number" min={0} className="input text-sm text-center" style={{ width: 56 }}
-              value={draft.t2} onChange={e => setScoreDrafts(prev => ({ ...prev, [m.id]: { t1: prev[m.id]?.t1 ?? '', t2: e.target.value } }))} />
-          ) : null}
-        </div>
-        {canScore && (
-          <button className="btn btn-primary btn-sm w-full justify-center mt-2" disabled={submittingMatch === m.id} onClick={() => handleSubmitScore(m.id)}>
-            {submittingMatch === m.id ? 'Saving…' : 'Confirm score'}
-          </button>
-        )}
-      </div>
-    )
-  }
+  const rrTable = t.format === 'fixed_round_robin' && matches.length > 0 ? pairTable(tournamentPlayers, matches, null) : []
+  const groupLabels = Array.from(new Set(pairs.map(p => p.group).filter(Boolean) as string[])).sort()
+  const groupTables = t.format === 'groups_knockout' ? groupLabels.map(g => ({ g, rows: pairTable(tournamentPlayers, matches, g, settings.advance ?? 2) })) : []
+  const rounds = bracketRounds(matches, tournamentPlayers)
+  const byes = (() => {
+    if (t.format !== 'single_elim' || rounds.length === 0) return [] as string[]
+    const first = Math.min(...matches.filter(m => stage(m) === 'ko').map(m => m.round_number))
+    const inFirst = new Set(matches.filter(m => stage(m) === 'ko' && m.round_number === first).flatMap(m => { const tm = matchTeams(m, tournamentPlayers, true); return [tm.pair1, tm.pair2] }))
+    return pairs.filter(p => !inFirst.has(p.no)).map(p => p.name)
+  })()
+  const winner = (() => {
+    if (t.status !== 'completed') return null
+    if (t.format === 'single_elim' || t.format === 'groups_knockout') return champion(matches, tournamentPlayers)
+    if (t.format === 'fixed_round_robin') return rrTable[0] ? { name: rrTable[0].name, runnerUp: rrTable[1]?.name ?? '' } : null
+    return leaderboard[0] ? { name: playerName(leaderboard[0]), runnerUp: leaderboard[1] ? playerName(leaderboard[1]) : '' } : null
+  })()
+  const statusChip = t.status === 'in_progress' ? { label: 'Live', bg: 'var(--brand-primary-muted)', fg: 'var(--brand-primary-text)' }
+    : t.status === 'completed' ? { label: 'Finished', bg: 'var(--bg-raised)', fg: 'var(--text-muted)' } : { label: 'Draft', bg: 'var(--brand-yellow-muted)', fg: 'var(--text-primary)' }
+  const noTies = (m: VMatch) => stage(m) === 'ko' || stage(m) === 'third_place'
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
-        <h1 className="text-2xl font-semibold">{tournament.name}</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          {tournament.format === 'mexicano' ? 'Mexicano' : 'Americano'} · {venue?.name ?? tournament.venue_slug} · {formatDate(tournament.date)}
-          {tournament.current_round > 0 && ` · Round ${tournament.current_round} of ${tournament.total_rounds}`}
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-2xl font-semibold" data-testid="title">{t.name}</h1>
+          <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0 mt-1.5" style={{ background: statusChip.bg, color: statusChip.fg }} data-testid="status">{statusChip.label}</span>
+        </div>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }} data-testid="subtitle">
+          {formatName(t.format)} · {venue?.name ?? t.venue_slug} · {formatDate(t.date)}
         </p>
+        <p className="text-sm mt-0.5 font-semibold" style={{ color: 'var(--text-primary)' }} data-testid="progress">{progress}</p>
       </div>
 
-      {isStaff && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <button onClick={() => setShowRoster(!showRoster)} className="flex items-center gap-2 text-sm font-bold" style={{ color: 'var(--text-muted)' }}>
-            <span>{showRoster ? '▼' : '▶'}</span>
-            <span>Players ({tournamentPlayers.length})</span>
+      {winner && (
+        <div className="rounded-2xl p-4" data-testid="champion" style={{ background: 'var(--brand-yellow)', color: 'var(--brand-yellow-on)' }}>
+          <div className="text-[11px] font-bold uppercase tracking-wide opacity-80">{t.format === 'americano' || t.format === 'mexicano' ? 'Top of the leaderboard' : 'Champions'}</div>
+          <div className="text-xl mt-0.5" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 600 }}>{winner.name}</div>
+          {winner.runnerUp && <div className="text-sm mt-0.5 opacity-80">Runners-up: {winner.runnerUp}</div>}
+        </div>
+      )}
+
+      {canManage && t.status !== 'completed' && (
+        <div className="rounded-2xl p-4 space-y-2" style={card} data-testid="next-step">
+          {step.kind === 'generate' && (
+            <button className="btn btn-primary w-full justify-center py-3" disabled={busy === 'generate'} onClick={generate} data-testid="generate">
+              {busy === 'generate' ? 'Working…' : step.label}
+            </button>
+          )}
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }} data-testid="hint">{step.hint}</p>
+        </div>
+      )}
+
+      {canManage && pairFormat && t.status === 'draft' && matches.length === 0 && (
+        <PairsEditor tournamentId={t.id} players={tournamentPlayers} usesSeeds={t.format !== 'fixed_round_robin'} onChanged={() => router.refresh()} />
+      )}
+
+      {canManage && (
+        <div className="rounded-2xl p-4" style={card} data-testid="roster">
+          <button onClick={() => setShowRoster(!showRoster)} className="flex items-center gap-2 text-sm font-bold" style={{ color: 'var(--text-muted)' }} aria-expanded={showRoster}>
+            <span aria-hidden>{showRoster ? '▼' : '▶'}</span><span>Players ({tournamentPlayers.length})</span>
           </button>
           {showRoster && (
             <div className="mt-3 space-y-3">
+              {locked && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t.status === 'completed' ? 'This tournament is finished.' : 'The players are fixed once this format has started.'}</p>}
               {tournamentPlayers.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                   {tournamentPlayers.map(p => (
-                    <span key={p.id} className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full"
+                    <span key={p.id} className="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full" data-testid="roster-chip"
                       style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
-                      {p.guest_name ?? p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
-                      <button onClick={() => handleRemovePlayer(p.id)} style={{ color: 'var(--brand-crimson)' }}>×</button>
+                      {playerName(p)}
+                      {!locked && !inMatch.has(p.id) && <button aria-label={`Remove ${playerName(p)}`} disabled={busy === 'roster'} onClick={() => roster({ action: 'remove', rowId: p.id })} style={{ color: 'var(--brand-crimson)' }}>×</button>}
                     </span>
                   ))}
                 </div>
               )}
-              {addablePlayers.length > 0 && (
-                <div className="max-h-40 overflow-y-auto space-y-1">
-                  {addablePlayers.map(p => (
-                    <button key={p.id} onClick={() => handleAddPlayer(p.id)} disabled={addingPlayerId === p.id}
-                      className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-left text-sm"
-                      style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
-                      {p.nickname ?? p.full_name}
-                      <span style={{ color: 'var(--brand-primary-text)' }}>{addingPlayerId === p.id ? '…' : '+'}</span>
-                    </button>
-                  ))}
-                </div>
+              {!locked && (
+                <>
+                  <div className="flex gap-2">
+                    <input type="text" className="input text-sm flex-1" placeholder="Add a guest without an account" maxLength={40} value={guestText} onChange={e => setGuestText(e.target.value)}
+                      onKeyDown={async e => { if (e.key === 'Enter' && guestText.trim()) { e.preventDefault(); if (await roster({ action: 'add', guestName: guestText })) setGuestText('') } }} data-testid="roster-guest" />
+                    <button className="btn btn-sm" disabled={busy === 'roster' || !guestText.trim()} onClick={async () => { if (await roster({ action: 'add', guestName: guestText })) setGuestText('') }} data-testid="roster-add-guest">Add</button>
+                  </div>
+                  <input type="search" className="input text-sm" placeholder="Search club members" value={search} onChange={e => setSearch(e.target.value)} />
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {addable.map(p => (
+                      <button key={p.id} onClick={() => roster({ action: 'add', playerId: p.id })} disabled={busy === 'roster'}
+                        className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-left text-sm" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+                        {p.nickname ?? p.full_name}<span style={{ color: 'var(--brand-primary-text)' }}>+</span>
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}
         </div>
       )}
 
-      {isStaff && canGenerateNext && (
-        <button className="btn btn-primary w-full justify-center py-3" disabled={generating} onClick={handleGenerateRound}>
-          {generating ? 'Generating…' : `Generate round ${tournament.current_round + 1}`}
-        </button>
+      {/* the pairs, for everyone, once they exist and the pairs are not being edited */}
+      {pairFormat && pairs.length > 0 && !(canManage && t.status === 'draft' && matches.length === 0) && (
+        <details className="rounded-2xl p-4" style={card} data-testid="pairs-view">
+          <summary className="text-sm font-bold" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Pairs ({pairs.length})</summary>
+          <ol className="mt-3 space-y-1">
+            {pairs.map(p => <li key={p.no} className="text-sm flex gap-2" style={{ color: 'var(--text-primary)' }}><span className="w-5 font-bold" style={{ color: 'var(--brand-primary-text)' }}>{p.seed}</span>{p.name}</li>)}
+          </ol>
+        </details>
       )}
 
-      {currentRoundMatches.length > 0 && (
-        <div>
-          <h2 className="text-sm font-extrabold uppercase tracking-wide mb-2" style={{ color: 'var(--text-primary)' }}>Round {tournament.current_round}</h2>
+      {toPlay.length > 0 && (
+        <div data-testid="to-play">
+          <h2 className={`${h2} mb-2`} style={{ color: 'var(--text-primary)' }}>To play{isRotationFormat(t.format) ? `: round ${active}` : ''}</h2>
           <div className="space-y-2">
-            {currentRoundMatches.map(m => <MatchCard key={m.id} m={m} />)}
+            {toPlay.map(m => <MatchCard key={m.id} m={toCard(m)} canScore={canScore(m)} noTies={noTies(m)} submitting={submitting === m.id} onSubmit={submitScore} />)}
           </div>
         </div>
       )}
 
-      {leaderboard.length > 0 && (
-        <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <h2 className="text-sm font-extrabold uppercase tracking-wide mb-3" style={{ color: 'var(--text-primary)' }}>Leaderboard</h2>
+      {rrTable.length > 0 && <StandingsTable title="Standings" rows={rrTable} testId="rr-table" />}
+
+      {groupTables.length > 0 && (
+        <div className="space-y-3" data-testid="group-tables">
+          {groupTables.map(({ g, rows }) => <StandingsTable key={g} title={`Group ${g}`} rows={rows} testId={`group-${g}`} />)}
+        </div>
+      )}
+
+      {rounds.length > 0 && (
+        <div className="rounded-2xl p-4" style={card}>
+          <h2 className={`${h2} mb-3`} style={{ color: 'var(--text-primary)' }}>{t.format === 'groups_knockout' ? 'Knockout' : 'Bracket'}</h2>
+          <Bracket rounds={rounds} byes={byes} />
+        </div>
+      )}
+
+      {isRotationFormat(t.format) && leaderboard.length > 0 && matches.length > 0 && (
+        <div className="rounded-2xl p-4" style={card} data-testid="leaderboard">
+          <h2 className={`${h2} mb-3`} style={{ color: 'var(--text-primary)' }}>Leaderboard</h2>
           <div className="space-y-1.5">
             {leaderboard.map((p, i) => (
               <div key={p.id} className="flex items-center gap-3 text-sm">
                 <span className="w-5 text-center font-bold" style={{ color: i < 3 ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{i + 1}</span>
-                <span className="flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>{p.guest_name ?? p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}</span>
+                <span className="flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>{playerName(p)}</span>
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.games_won}/{p.games_played} won</span>
-                <span style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{p.total_points}</span>
+                <span className="tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{p.total_points}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {Object.keys(pastRounds).length > 0 && (
-        <div className="space-y-3">
-          {Object.entries(pastRounds).sort((a, b) => Number(b[0]) - Number(a[0])).map(([round, roundMatches]) => (
-            <div key={round}>
-              <h3 className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-muted)' }}>Round {round}</h3>
-              <div className="space-y-2">
-                {roundMatches.map(m => <MatchCard key={m.id} m={m} />)}
-              </div>
-            </div>
+      {doneByRound.length > 0 && (
+        <div className="space-y-2" data-testid="results">
+          <h2 className={h2} style={{ color: 'var(--text-primary)' }}>Results</h2>
+          {doneByRound.map(([round, ms], i) => (
+            <details key={round} open={i === 0} className="rounded-2xl p-3" style={card}>
+              <summary className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
+                {ms[0].stage === 'group' ? `Group stage, round ${round}` : ms.some(m => stage(m) === 'ko') ? ms.find(m => stage(m) === 'ko')?.label ?? `Round ${round}` : `Round ${round}`} ({ms.length})
+              </summary>
+              <div className="space-y-2 mt-2">{ms.map(m => <MatchCard key={m.id} m={toCard(m)} canScore={false} noTies={false} submitting={false} onSubmit={submitScore} />)}</div>
+            </details>
           ))}
         </div>
       )}

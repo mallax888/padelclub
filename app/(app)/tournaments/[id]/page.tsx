@@ -1,14 +1,14 @@
 import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
+import { loadTeamCaller } from '@/lib/team-server'
+import { canManage as canManageTournament } from '@/lib/tournament-server'
 import TournamentHub from '@/components/tournaments/TournamentHub'
 
 export const metadata = { title: 'Tournament' }
 
 export default async function TournamentPage({ params }: { params: { id: string } }) {
   const supabase = createServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', session!.user.id).single()
-  const isStaff = profile?.role === 'staff' || profile?.role === 'admin'
+  const caller = await loadTeamCaller()
 
   const { data: tournament } = await supabase.from('tournaments').select('*').eq('id', params.id).single()
   if (!tournament) notFound()
@@ -24,20 +24,20 @@ export default async function TournamentPage({ params }: { params: { id: string 
     .eq('tournament_id', params.id)
     .order('round_number', { ascending: true })
 
-  const { data: allPlayers } = await supabase
-    .from('profiles')
-    .select('id, full_name, nickname')
-    .not('role', 'eq', 'staff')
-    .order('full_name', { ascending: true })
+  // Staff can change a tournament only at the clubs they look after.
+  const canManage = !!caller && canManageTournament(caller, tournament)
+  const { data: allPlayers } = canManage
+    ? await supabase.from('profiles').select('id, full_name, nickname').not('role', 'eq', 'staff').order('full_name', { ascending: true })
+    : { data: [] as { id: string; full_name: string | null; nickname: string | null }[] }
 
   return (
     <TournamentHub
-      tournament={tournament}
-      tournamentPlayers={tournamentPlayers ?? []}
-      matches={matches ?? []}
+      tournament={tournament as any}
+      tournamentPlayers={(tournamentPlayers ?? []) as any}
+      matches={(matches ?? []) as any}
       allPlayers={allPlayers ?? []}
-      isStaff={isStaff}
-      currentUserId={session!.user.id}
+      canManage={canManage}
+      currentUserId={caller?.id ?? ''}
     />
   )
 }
