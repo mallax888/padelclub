@@ -814,7 +814,8 @@ export default function BookingFlow({
         ))}
       </div>
 
-      {(step === 'country' || step === 'region' || step === 'venue') && (
+      {/* once only: on the first club-picking screen (home-club members get the Travelling card on the date step instead) */}
+      {step === visibleSteps[0] && (step === 'country' || step === 'region' || step === 'venue') && (
         <button type="button" data-testid="near-me-button" onClick={() => setNearOpen(true)}
           className="w-full rounded-xl py-3 mb-4 text-sm font-bold flex items-center justify-center gap-2"
           style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary-text)' }}>
