@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase-server'
 import { VENUES } from '@/lib/venues'
 import { formatDate } from '@/lib/utils'
+import { formatName } from '@/lib/tournament-formats'
 
 export const metadata = { title: 'Tournaments' }
 
@@ -27,7 +28,7 @@ export default async function TournamentsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Tournaments</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Americano & Mexicano tournament days at your club</p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Tournament days at your club: Americano, round robin, groups and knockouts</p>
         </div>
         {isStaff && (
           <Link href="/tournaments/new" className="btn btn-primary">+ New tournament</Link>
@@ -50,7 +51,7 @@ export default async function TournamentsPage() {
                 <div className="min-w-0">
                   <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{t.name}</div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    {t.format === 'mexicano' ? 'Mexicano' : 'Americano'} · {venue?.name ?? t.venue_slug} · {formatDate(t.date)}
+                    {formatName(t.format)} · {venue?.name ?? t.venue_slug} · {formatDate(t.date)}
                   </div>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0" style={{ background: s.background, color: s.color }}>{s.label}</span>
