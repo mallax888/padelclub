@@ -467,11 +467,11 @@ function RegularCard({ series: r, bookings, onSkip }: { series: RegularSeries; b
                   className="rounded-xl py-3 text-sm font-bold"
                   style={{ background: w.kind === 'paid' ? 'var(--brand-green-muted)' : 'var(--brand-yellow-muted)', border: `1.5px solid ${w.kind === 'paid' ? 'var(--brand-green)' : 'var(--brand-yellow)'}`, color: 'var(--text-primary)' }}>
                   {fmtShort(w.date)}
-                  <div className="text-[10px] font-bold" style={{ color: w.kind === 'paid' ? 'var(--brand-green)' : 'var(--brand-yellow)' }}>{w.kind === 'paid' ? '✓ Paid · refunded' : 'Not paid yet'}</div>
+                  <div className="text-[10px] font-bold" style={{ color: w.kind === 'paid' ? 'var(--brand-green)' : 'var(--brand-yellow)' }}>{w.kind === 'paid' ? '✓ Paid' : 'Not paid yet'}</div>
                 </button>
               ))}
             </div>
-            <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-subtle)' }}>You can skip a week up to 24 hours before it starts, the same as cancelling.</p>
+            <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-subtle)' }}>You can skip a week up to 24 hours before it starts, the same as cancelling. A week you have already paid for is refunded.</p>
             <button onClick={() => setSheet(false)} className="w-full mt-2 py-2.5 text-sm" style={{ color: 'var(--text-subtle)' }}>Close</button>
           </div>
         </div>
