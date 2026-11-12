@@ -1,6 +1,7 @@
 ﻿'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatDate, formatDateCompact, formatDateWithYear, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
@@ -14,6 +15,8 @@ import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import MoneyDemand from '@/components/admin/MoneyDemand'
 import type { OfferRow } from '@/lib/offers'
+import MemberPlanDialog from '@/components/admin/MemberPlanDialog'
+import { effectivePlans, planOf, tierLabel, type PlanRow } from '@/lib/plan-rules'
 import RegularsSummaryCard from '@/components/admin/RegularsSummaryCard'
 import { ADMIN_TABS, FRONT_DESK_TABS } from '@/lib/view-mode'
 import { weekBounds, type WeekHours } from '@/lib/venue-hours'
@@ -102,6 +105,7 @@ export default function AdminDashboard({
   unpaidShares = [],
   waitDemand = null,
   offers = null,
+  plans = null,
   initialTab,
   initialVenue,
   venueSettings = {},
@@ -122,6 +126,8 @@ export default function AdminDashboard({
   // Waitlist demand per club for owners; null when the waitlist isn't set up.
   waitDemand?: Record<string, WaitDemand> | null
   offers?: OfferRow[] | null
+  // Membership plans for the clubs this person covers; null before the club plans database change.
+  plans?: PlanRow[] | null
   // Where to open (from the manager navigation and the Today screen's links).
   initialTab?: AdminTab
   initialVenue?: string
@@ -153,6 +159,7 @@ export default function AdminDashboard({
   const [showPastBookings, setShowPastBookings] = useState(false)
   const [memberSearch, setMemberSearch] = useState('')
   const [memberTierFilter, setMemberTierFilter] = useState<'all' | string>('all')
+  const [planFor, setPlanFor] = useState<{ id: string; name: string; tier: string; home: string } | null>(null)
   const [blockForm, setBlockForm] = useState({
     courtId: courts[0]?.id ?? '',
     date: getNextNDates(1)[0],
@@ -519,8 +526,11 @@ export default function AdminDashboard({
   }
 
   const heroVenue = activeVenue ? getVenue(activeVenue) : null
-  const heroHour = new Date().getHours()
-  const heroGreeting = heroHour < 12 ? 'Good morning' : heroHour < 18 ? 'Good afternoon' : 'Good evening'
+  // The greeting depends on the viewer's own clock, which the server doesn't know, so it is
+  // read after mount ("Hello" until then) instead of differing between server and browser.
+  const [heroHour, setHeroHour] = useState<number | null>(null)
+  useEffect(() => { setHeroHour(new Date().getHours()) }, [])
+  const heroGreeting = heroHour === null ? 'Hello' : heroHour < 12 ? 'Good morning' : heroHour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
     <div className="flex gap-6">
@@ -635,7 +645,7 @@ export default function AdminDashboard({
 {/* Board tab */}
       {tab === 'board' && (
         <div className="flex flex-col gap-4">
-          <BoardView week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
+          <BoardView setupHref={canSeeMoney && activeVenue ? `/admin/setup?venue=${encodeURIComponent(activeVenue)}` : null} week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
           <BoardFooterStrip
             rangeLabel={boardRange.label}
             thisWeekCount={thisWeekVenueBookings.length}
@@ -735,7 +745,7 @@ export default function AdminDashboard({
               value={memberSearch} onChange={e => setMemberSearch(e.target.value)} />
             <select className="input text-sm w-auto" value={memberTierFilter} onChange={e => setMemberTierFilter(e.target.value)}>
               <option value="all">All memberships</option>
-              {memberTiers.map(t => <option key={t} value={t} className="capitalize">{t}</option>)}
+              {memberTiers.map(t => <option key={t} value={t}>{tierLabel(t)}</option>)}
             </select>
             <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>
               {visibleMembers.length} of {members.length}
@@ -772,7 +782,11 @@ export default function AdminDashboard({
                       {(m as any).nickname ?? m.full_name ?? '—'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="badge badge-member capitalize">{m.membership_tier}</span>
+                      <span className="badge badge-member">{planOf(effectivePlans(plans, (m as any).home_venue_slug ?? null), m.membership_tier).name}</span>
+                      {plans && canSeeMoney && (m as any).home_venue_slug && m.role === 'member' && (
+                        <button type="button" onClick={() => setPlanFor({ id: m.id, name: (m as any).nickname ?? m.full_name ?? 'Member', tier: m.membership_tier, home: (m as any).home_venue_slug })}
+                          className="ml-2 text-xs font-bold underline" style={{ color: 'var(--brand-primary-text)' }}>Change</button>
+                      )}
                     </td>
                     <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits}</td>
                     <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
@@ -785,6 +799,10 @@ export default function AdminDashboard({
             </table>
           </div>
         </div>
+      )}
+
+      {planFor && plans && (
+        <MemberPlanDialog member={planFor} plans={effectivePlans(plans, planFor.home)} onClose={() => setPlanFor(null)} />
       )}
 
       {/* Courts tab */}
@@ -946,7 +964,7 @@ export default function AdminDashboard({
 
 
 function BoardView({
-  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members,
+  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members, setupHref = null,
 }: {
   week: WeekHours
   bookings: any[]
@@ -957,6 +975,8 @@ function BoardView({
   setBoardDate: (d: string) => void
   publicBookingIds: string[]
   members: Profile[]
+  // Where an owner finishes setting the club up (null for front desk).
+  setupHref?: string | null
 }) {
   const router = useRouter()
   const [dayDetail, setDayDetail] = useState<string | null>(null)
@@ -1164,7 +1184,10 @@ function BoardView({
         <div className="flex-1 min-w-0">
         {venueCourts.length === 0 ? (
           <div className="rounded-xl text-center py-12 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            No courts found for this venue.
+            No courts yet for this venue.{' '}
+            {setupHref
+              ? <Link href={setupHref} className="font-bold underline" style={{ color: 'var(--brand-primary-text)' }}>Set up your club</Link>
+              : 'Ask the club owner to finish setting up the club.'}
           </div>
         ) : viewMode === 'month' ? (
           <div>

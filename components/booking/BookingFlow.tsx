@@ -12,7 +12,7 @@ import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-se
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
 import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
-import { MEMBERSHIP_CONFIG } from '@/types/database'
+import { memberDiscount, memberWindowDays, type PlanRow } from '@/lib/plan-rules'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
@@ -104,6 +104,7 @@ export default function BookingFlow({
     regularRules = {},
     offers = [],
     offerPrefill = null,
+    plans = [],
   }: {
     courts: Court[]
     profile: Profile
@@ -126,19 +127,13 @@ export default function BookingFlow({
     // the club and day to open straight onto.
     offers?: OfferLite[]
     offerPrefill?: { venueSlug: string; date: string } | null
+    // Every club's membership plans (empty until clubs have set their own). A member's
+    // discount and how far ahead they can book come from their plan at their home club.
+    plans?: PlanRow[]
   }) {
   const supabase = createClient()
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  const tier = profile?.membership_tier ?? 'casual'
-  const memConfig = MEMBERSHIP_CONFIG[tier] ?? MEMBERSHIP_CONFIG['casual']
-  const discount = memConfig.discount
-  const dates = Array.from({ length: memConfig.bookingWindowDays }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() + i)
-    return localDateStr(d)
-  })
 
   // Onboarding asked where they play and saved it. Walking them through
   // country -> region -> venue again on every booking, to arrive at the club
@@ -153,6 +148,16 @@ export default function BookingFlow({
   const [region, setRegion] = useState<string | null>(homeVenue?.region ?? null)
   const [venue, setVenue] = useState<Venue | null>(homeVenue)
   const currency = currencyForRegion(venue?.region)
+  // The member's plan at their home club decides the discount and how many days
+  // ahead they can book there; at any other club they get that club's normal terms.
+  const tier = profile?.membership_tier ?? 'casual'
+  const homeSlug: string | null = (profile as any)?.home_venue_slug ?? null
+  const discount = memberDiscount(plans, { tier, homeSlug, bookingSlug: venue?.slug ?? homeSlug })
+  const dates = Array.from({ length: memberWindowDays(plans, { tier, homeSlug, venueSlug: venue?.slug ?? homeSlug }) }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() + i)
+    return localDateStr(d)
+  })
   const [date, setDate] = useState<string | null>(null)
   // Most people book an hour. Defaulting it means the time grid has something
   // to show the moment a date is picked, instead of an empty screen waiting
