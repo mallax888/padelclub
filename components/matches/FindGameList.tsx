@@ -7,6 +7,10 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatDate, getInitials, localDateStr } from '@/lib/utils'
 import { skillLabelForRating } from '@/lib/skill-levels'
+import {
+  joinWarning, levelFit, levelNumber, qualityOf, QUALITY_LABEL, rankForYou, reliabilityOf, spreadOf, suggestTeams,
+  RELIABLE_MATCHES, type GameLite, type JoinWarning, type Quality,
+} from '@/lib/matchmaking'
 import { getVenue } from '@/lib/venues'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 
@@ -46,17 +50,125 @@ function skillLabelForRange(min: number, max: number) {
   return lo === hi ? lo : `${lo} – ${hi}`
 }
 
-// Where this player sits against a game's level range. Null when they have no
-// rating yet (a profile that skipped the level question), in which case no
-// verdict is shown at all rather than a wrong one.
-type Fit = 'fits' | 'above' | 'below' | null
-function levelFit(rating: number | null, min: number, max: number): Fit {
-  if (rating === null || !Number.isFinite(rating)) return null
-  if (rating < min) return 'above'
-  if (rating > max) return 'below'
-  return 'fits'
-}
+type Fit = ReturnType<typeof levelFit>
 const FIT_LABEL = { fits: 'Fits your level', above: 'Above your level', below: 'Below your level' } as const
+
+const QUALITY_STYLE: Record<Quality, { bg: string; fg: string }> = {
+  even: { bg: 'var(--brand-green-muted)', fg: 'var(--brand-green)' },
+  mixed: { bg: 'var(--brand-yellow-muted)', fg: 'var(--brand-yellow)' },
+  uneven: { bg: 'var(--brand-crimson-muted)', fg: 'var(--brand-crimson)' },
+}
+function QualityChip({ quality, title }: { quality: Quality; title?: string }) {
+  return (
+    <span data-testid="quality" data-quality={quality} title={title} className="text-[11px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"
+      style={{ background: QUALITY_STYLE[quality].bg, color: QUALITY_STYLE[quality].fg }}>
+      {QUALITY_LABEL[quality]}
+    </span>
+  )
+}
+
+const matchesText = (n: number | undefined | null): string | null => {
+  if (n === undefined || n === null) return null
+  if (n >= RELIABLE_MATCHES) return `${n} matches`
+  return n === 0 ? 'New · no matches yet' : `New · ${n} ${n === 1 ? 'match' : 'matches'}`
+}
+
+// The viewer's own level: the number, the tier, how settled it is, and where it
+// sits on the scale. Nothing is claimed about reliability if the counts are unknown.
+function YourLevelCard({ rating, matches }: { rating: number; matches: number | null }) {
+  const reliability = reliabilityOf(matches)
+  const TIERS = ['Beginner', 'Improver', 'Intermediate', 'Advanced', 'Elite']
+  return (
+    <div className="rounded-2xl p-4 mb-4" data-testid="your-level" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+      <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Your level</div>
+      <div className="flex items-baseline gap-2.5 mt-1.5">
+        <span className="text-[38px] leading-none font-extrabold" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{levelNumber(rating)}</span>
+        <span className="text-sm font-bold" style={{ color: 'var(--brand-primary-text)' }}>{skillLabelForRating(rating)}</span>
+        {reliability && (
+          <span className="ml-auto text-[11px] font-extrabold px-2.5 py-1 rounded-full" data-testid="reliability"
+            style={reliability === 'reliable' ? { background: 'var(--brand-green-muted)', color: 'var(--brand-green)' } : { background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+            {reliability === 'reliable' ? 'Reliable' : 'New'}
+          </span>
+        )}
+      </div>
+      <div className="relative mt-3.5 h-2 rounded-full" style={{ background: 'var(--bg-raised)' }}>
+        <span className="absolute -top-1 rounded-full" style={{ left: `calc(${Math.min(Math.max(((rating - 0.5) / 6.5) * 100, 0), 100)}% - 8px)`, width: 16, height: 16, background: 'var(--brand-primary)', border: '3px solid var(--bg-surface)' }} />
+      </div>
+      <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--text-subtle)' }}>{TIERS.map(t => <span key={t}>{t}</span>)}</div>
+      <div className="text-xs mt-2.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        {matches === null ? 'Your level moves as you record matches.'
+          : matches >= RELIABLE_MATCHES ? `From your last ${matches} recorded matches. Win an even game and it moves up.`
+          : matches === 0 ? "You haven't recorded a match yet, so this is the level you chose. It moves as you play."
+          : `Based on ${matches} recorded ${matches === 1 ? 'match' : 'matches'} so far. It settles after ${RELIABLE_MATCHES}.`}
+        {' '}<Link href="/record-match" style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Record a match</Link>
+      </div>
+    </div>
+  )
+}
+
+type DetailPlayer = { id: string; name: string; rating: number | null }
+
+// Everyone in a game with their level and how settled it is, and the fairest way
+// to split four into teams, so it is clear whether the game will be a close one.
+function LevelDetails({ players, counts, youIfJoin }: { players: DetailPlayer[]; counts: Record<string, number> | null; youIfJoin: DetailPlayer | null }) {
+  const all = youIfJoin ? [...players, youIfJoin] : players
+  const rated = all.filter((p): p is DetailPlayer & { rating: number } => p.rating !== null && Number.isFinite(p.rating))
+  const quality = qualityOf(rated.map(p => p.rating))
+  const spread = spreadOf(rated.map(p => p.rating))
+  const teams = all.length === 4 && rated.length === 4 ? suggestTeams(rated) : null
+  return (
+    <div className="rounded-xl p-3 mt-3" data-testid="level-details" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+      {all.map(p => {
+        const note = p === youIfJoin ? null : matchesText(counts?.[p.id])
+        return (
+          <div key={p.id} className="flex items-center justify-between py-1.5 text-xs" style={{ borderTop: '1px solid var(--border)' }}>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{p === youIfJoin ? 'You, if you join' : p.name}{note && <span style={{ color: 'var(--text-subtle)', fontWeight: 400 }}> · {note}</span>}</span>
+            <span style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>{p.rating !== null && Number.isFinite(p.rating) ? `${levelNumber(p.rating)} · ${skillLabelForRating(p.rating)}` : 'Not rated'}</span>
+          </div>
+        )
+      })}
+      {teams && (
+        <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="text-[10px] font-extrabold uppercase mb-1.5" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Suggested teams</div>
+          <div className="grid grid-cols-2 gap-2">
+            {[teams.a, teams.b].map((team, i) => (
+              <div key={i} className="rounded-lg p-2.5 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <div className="text-[10px] font-extrabold uppercase" style={{ color: 'var(--text-subtle)', letterSpacing: '0.12em' }}>Team {i + 1}</div>
+                {team.map(p => <div key={p.id} className="flex justify-between mt-1"><span>{p.name}</span><b>{levelNumber(p.rating)}</b></div>)}
+                <div className="mt-1.5 pt-1.5 font-bold" style={{ borderTop: '1px solid var(--border)', color: 'var(--brand-primary-text)' }}>Average {(i === 0 ? teams.avgA : teams.avgB).toFixed(2).replace(/0$/, '')}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {quality && spread !== null && (
+        <div className="text-[11px] mt-2.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          {QUALITY_LABEL[quality]}. The gap between the strongest and weakest player is {spread.toFixed(1)}.{teams ? ' Pairing the strongest with the weakest keeps it close.' : ''}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// The heads-up before joining a game well outside your level. A warning, not a block.
+function JoinWarningDialog({ warning, rating, range, onCloser, onAnyway, onClose }: { warning: JoinWarning; rating: number; range: string; onCloser: () => void; onAnyway: () => void; onClose: () => void }) {
+  const above = warning.direction === 'above'
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={above ? 'This game is above your level' : 'This game is below your level'}
+      style={{ background: 'rgba(0,0,0,0.55)' }} onClick={onClose}>
+      <div className="w-full max-w-md rounded-3xl p-5 overflow-y-auto" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', maxHeight: 'calc(100dvh - 2rem)', boxShadow: '0 30px 80px -10px rgba(0,0,0,0.6)' }} onClick={e => e.stopPropagation()}>
+        <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{above ? 'This game is above your level' : 'This game is below your level'}</div>
+        <p className="text-sm mt-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          This one is for {range}. You&apos;re {skillLabelForRating(rating)} ({levelNumber(rating)}), {warning.gap.toFixed(1)} {above ? 'below' : 'above'} its range.{' '}
+          {above ? "It may be a tough game, and it can make it harder for the other players." : 'You may find it easy, and the others may find you hard to keep up with.'}
+        </p>
+        <button onClick={onCloser} className="w-full rounded-xl text-sm font-extrabold mt-4" style={{ minHeight: 48, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Show me games closer to my level</button>
+        <button onClick={onAnyway} className="w-full rounded-xl text-sm font-bold mt-2.5" style={{ minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Request to join anyway</button>
+        <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-subtle)' }}>A warning, not a block. You can always ask to join.</p>
+      </div>
+    </div>
+  )
+}
 
 // Module scope, not inside the list: a component defined in a render is a new
 // component every render, which remounts it and drops focus on every tap.
@@ -87,6 +199,7 @@ export default function FindGameList({
   currentUserId,
   viewerRating,
   homeVenueSlug,
+  matchCounts = null,
 }: {
   matches: OpenMatch[]
   currentUserId: string
@@ -95,6 +208,8 @@ export default function FindGameList({
   // then the matching controls simply aren't offered.
   viewerRating: number | null
   homeVenueSlug: string | null
+  // Recorded matches per player, to mark a rating Reliable or New. null = unknown.
+  matchCounts?: Record<string, number> | null
 }) {
   const supabase = createClient()
   const router = useRouter()
@@ -102,6 +217,9 @@ export default function FindGameList({
   const [fitsOnly, setFitsOnly] = useState(false)
   const [myClubOnly, setMyClubOnly] = useState(false)
   const [todayOnly, setTodayOnly] = useState(false)
+  // The game whose level details are open, and a join the player has been warned about.
+  const [openDetails, setOpenDetails] = useState<string | null>(null)
+  const [warned, setWarned] = useState<{ match: OpenMatch; warning: JoinWarning } | null>(null)
 
   // The viewer's clock and calendar, read after mount. This component is
   // rendered on the server first, and the server's idea of "today" is UTC's --
@@ -146,6 +264,13 @@ export default function FindGameList({
 
     router.refresh()
     setLoading(null)
+  }
+
+  // A game well outside your level gets a heads-up first. It is a warning, never a block.
+  const tryJoin = (match: OpenMatch) => {
+    const warning = joinWarning(viewerRating, Number(match.skill_min), Number(match.skill_max))
+    if (warning) setWarned({ match, warning })
+    else handleRequest(match)
   }
 
   const handleResponse = async (match: OpenMatch, playerId: string, accept: boolean) => {
@@ -298,10 +423,58 @@ export default function FindGameList({
   const dayLabel = (date: string) =>
     clock && date === clock.today ? 'Today' : clock && date === clock.tomorrow ? 'Tomorrow' : formatDate(date)
 
+  const ratingOf = (r: unknown): number | null => (r !== null && r !== undefined && Number.isFinite(Number(r)) ? Number(r) : null)
+  const detailPlayers = (m: OpenMatch): DetailPlayer[] => (m.open_match_players ?? [])
+    .filter(p => p.status === 'accepted')
+    .map(p => ({ id: p.player_id, name: p.profiles?.nickname ?? p.profiles?.full_name?.split(' ')[0] ?? 'Player', rating: ratingOf(p.profiles?.skill_rating) }))
+  // Games to suggest: ones that fit your level and have room, evenly matched first.
+  const forYou = rankForYou(ordered.map(m => {
+    const players = (m.open_match_players ?? [])
+    const spotsLeft = m.spots_total - players.filter(p => p.status === 'accepted').length
+    return {
+      id: m.id, date: m.date, start_time: m.start_time, venue_slug: m.venue_slug, skill_min: Number(m.skill_min), skill_max: Number(m.skill_max), spotsLeft,
+      ratings: detailPlayers(m).map(p => p.rating).filter((r): r is number => r !== null),
+      mine: m.organizer_id === currentUserId || players.some(p => p.player_id === currentUserId),
+      match: m,
+    } as GameLite & { match: OpenMatch }
+  }), viewerRating, homeVenueSlug)
+
   const clearFilters = () => { setFitsOnly(false); setMyClubOnly(false); setTodayOnly(false) }
 
   return (
     <div>
+      {viewerRating !== null && <YourLevelCard rating={viewerRating} matches={matchCounts ? (matchCounts[currentUserId] ?? 0) : null} />}
+
+      {forYou.length > 0 && (
+        <section className="mb-5" data-testid="for-you">
+          <div className="text-[11px] font-extrabold uppercase mb-2.5 px-0.5" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>For you</div>
+          <div className="space-y-2.5">
+            {forYou.map(g => {
+              const m = g.match
+              const q = qualityOf([...g.ratings, viewerRating as number])
+              return (
+                <div key={g.id} className="rounded-2xl p-3.5 flex items-center justify-between gap-3" data-testid="for-you-game"
+                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted), var(--shadow-float)' }}>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{dayLabel(m.date)} · {m.start_time.slice(0, 5)} · {getVenue(m.venue_slug).name}</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      {skillLabelForRange(m.skill_min, m.skill_max)}{m.venue_slug === homeVenueSlug ? ' · Your club' : ''} · {g.spotsLeft} {g.spotsLeft === 1 ? 'spot' : 'spots'} left
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    {q && <QualityChip quality={q} title="With you in it" />}
+                    <button type="button" onClick={() => tryJoin(m)} disabled={loading === m.id + '-request'}
+                      className="rounded-full px-3.5 text-xs font-extrabold disabled:opacity-60" style={{ minHeight: 40, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+                      Request to join
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
       <div className="flex flex-wrap gap-2 mb-5">
         {viewerRating !== null && <FilterChip on={fitsOnly} onClick={() => setFitsOnly(v => !v)}>Fits my level</FilterChip>}
         {homeVenueSlug && <FilterChip on={myClubOnly} onClick={() => setMyClubOnly(v => !v)}>My club</FilterChip>}
@@ -338,6 +511,10 @@ export default function FindGameList({
               const isFull = spotsLeft <= 0
               const fit = fitOf(match)
               const venue = getVenue(match.venue_slug)
+              const canJoinView = !myEntry && !isOrganizer && spotsLeft > 0
+              const youIfJoin: DetailPlayer | null = canJoinView && viewerRating !== null ? { id: currentUserId, name: 'You', rating: viewerRating } : null
+              const levelPlayers = detailPlayers(match)
+              const quality = qualityOf([...levelPlayers.map(p => p.rating).filter((r): r is number => r !== null), ...(youIfJoin ? [viewerRating as number] : [])])
 
               return (
                 <div key={match.id} className="rounded-2xl p-4"
@@ -381,6 +558,7 @@ export default function FindGameList({
                       }}>
                       {match.match_type}
                     </span>
+                    {quality && <QualityChip quality={quality} title={youIfJoin ? 'With you in it' : undefined} />}
                   </div>
 
                   {/* Who is in, and how many seats are left. */}
@@ -427,6 +605,16 @@ export default function FindGameList({
                           </span>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {levelPlayers.length > 0 && (
+                    <div>
+                      <button type="button" aria-expanded={openDetails === match.id} onClick={() => setOpenDetails(openDetails === match.id ? null : match.id)}
+                        className="text-xs font-bold mt-3" style={{ color: 'var(--brand-primary-text)' }}>
+                        {openDetails === match.id ? 'Hide level details' : 'Level details'}
+                      </button>
+                      {openDetails === match.id && <LevelDetails players={levelPlayers} counts={matchCounts} youIfJoin={youIfJoin} />}
                     </div>
                   )}
 
@@ -511,7 +699,7 @@ export default function FindGameList({
                           ? { minHeight: 44, background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }
                           : { minHeight: 44, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
                         disabled={isFull || loading === match.id + '-request'}
-                        onClick={() => handleRequest(match)}
+                        onClick={() => tryJoin(match)}
                       >
                         {loading === match.id + '-request' ? '…' : isFull ? 'Match full' : 'Request to join'}
                       </button>
@@ -523,6 +711,13 @@ export default function FindGameList({
           </div>
         </section>
       ))}
+
+      {warned && viewerRating !== null && (
+        <JoinWarningDialog warning={warned.warning} rating={viewerRating} range={skillLabelForRange(warned.match.skill_min, warned.match.skill_max)}
+          onClose={() => setWarned(null)}
+          onCloser={() => { setFitsOnly(true); setWarned(null) }}
+          onAnyway={() => { const m = warned.match; setWarned(null); void handleRequest(m) }} />
+      )}
     </div>
   )
 }

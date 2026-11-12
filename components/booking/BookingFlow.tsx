@@ -15,6 +15,8 @@ import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
+import { defaultRange } from '@/lib/matchmaking'
+import LevelRangePicker from '@/components/booking/LevelRangePicker'
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -155,7 +157,11 @@ export default function BookingFlow({
   const [makePublic, setMakePublic] = useState(false)
   const [matchType, setMatchType] = useState<'casual' | 'competitive'>('casual')
   const [matchNotes, setMatchNotes] = useState('')
-  const [skillFilter, setSkillFilter] = useState<'all' | 'beginner' | 'intermediate' | 'advanced'>('all')
+  // The level range for an open game: a step either side of the booker's own
+  // rating to start with, or every level for someone with no rating yet.
+  const myRating = (profile as any)?.skill_rating !== null && (profile as any)?.skill_rating !== undefined && Number.isFinite(Number((profile as any).skill_rating)) ? Number((profile as any).skill_rating) : null
+  const [levelRange, setLevelRange] = useState(() => defaultRange(myRating))
+  const [openToAll, setOpenToAll] = useState(myRating === null)
   const [splitEnabled, setSplitEnabled] = useState(false)
   const [splitPlayers, setSplitPlayers] = useState<string[]>([])
   // Seats held open for friends who have no account yet. Each becomes a share
@@ -587,13 +593,8 @@ export default function BookingFlow({
     }
 
     if (makePublic && bookingData) {
-      const skillRanges = {
-        all: { min: 0, max: 7 },
-        beginner: { min: 0, max: 2.5 },
-        intermediate: { min: 2.5, max: 4 },
-        advanced: { min: 4, max: 7 },
-      }
-      const { min, max } = skillRanges[skillFilter]
+      // Every level is stored as 0-7, as the "All levels" option always was.
+      const { min, max } = openToAll ? { min: 0, max: 7 } : levelRange
       const { data: newMatch } = await sb.from('open_matches').insert({
         booking_id: bookingData.id,
         organizer_id: userId,
@@ -1187,19 +1188,8 @@ export default function BookingFlow({
                     </button>
                   ))}
                 </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {(['all', 'beginner', 'intermediate', 'advanced'] as const).map(s => (
-                    <button key={s} onClick={() => setSkillFilter(s)}
-                      className="px-2.5 py-1 rounded-full text-[11px] font-medium capitalize"
-                      style={{
-                        background: skillFilter === s ? 'var(--brand-primary)' : 'var(--bg-raised)',
-                        color: skillFilter === s ? 'var(--brand-primary-on)' : 'var(--text-muted)',
-                        border: '1px solid var(--border)',
-                      }}>
-                      {s === 'all' ? 'All levels' : s}
-                    </button>
-                  ))}
-                </div>
+                <LevelRangePicker rating={myRating} min={levelRange.min} max={levelRange.max} openToAll={openToAll} venueSlug={venue?.slug ?? null}
+                  onRange={(min, max) => setLevelRange({ min, max })} onOpenToAll={setOpenToAll} />
                 <input type="text" className="input text-sm" placeholder="Add a note (optional)"
                   value={matchNotes} onChange={e => setMatchNotes(e.target.value)} maxLength={100} />
               </div>
