@@ -13,6 +13,8 @@ import { loadWaitlistDemand } from '@/lib/waitlist'
 import { loadOfferRows } from '@/lib/offers'
 import { loadPlanRows } from '@/lib/club-plans'
 
+export const metadata = { title: 'Club dashboard' }
+
 export default async function AdminPage({ searchParams }: { searchParams?: { tab?: string; venue?: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

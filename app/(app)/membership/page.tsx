@@ -4,6 +4,8 @@ import { effectivePlans } from '@/lib/plan-rules'
 import { loadPlanRows } from '@/lib/club-plans'
 import { getVenue, VENUES } from '@/lib/venues'
 
+export const metadata = { title: 'Membership' }
+
 export default async function MembershipPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

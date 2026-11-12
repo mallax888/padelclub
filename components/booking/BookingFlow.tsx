@@ -108,6 +108,7 @@ export default function BookingFlow({
     offerPrefill = null,
     plans = [],
     venueLocations = {},
+    todayStr,
   }: {
     courts: Court[]
     profile: Profile
@@ -135,6 +136,8 @@ export default function BookingFlow({
     plans?: PlanRow[]
     // Positions clubs' owners have set for themselves (otherwise the built-in ones are used).
     venueLocations?: Record<string, LatLng>
+    // "Today" as the server saw it, so the first render matches the server's HTML; replaced by the viewer's own date after load.
+    todayStr?: string
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -160,11 +163,10 @@ export default function BookingFlow({
   const tier = profile?.membership_tier ?? 'casual'
   const homeSlug: string | null = (profile as any)?.home_venue_slug ?? null
   const discount = memberDiscount(plans, { tier, homeSlug, bookingSlug: venue?.slug ?? homeSlug })
-  const dates = Array.from({ length: memberWindowDays(plans, { tier, homeSlug, venueSlug: venue?.slug ?? homeSlug }) }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() + i)
-    return localDateStr(d)
-  })
+  const [baseDay, setBaseDay] = useState(todayStr ?? localDateStr())
+  useEffect(() => { setBaseDay(localDateStr()) }, [])
+  const addDaysStr = (d: string, n: number) => { const t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10) }
+  const dates = Array.from({ length: memberWindowDays(plans, { tier, homeSlug, venueSlug: venue?.slug ?? homeSlug }) }, (_, i) => addDaysStr(baseDay, i))
   const [date, setDate] = useState<string | null>(null)
   // Most people book an hour. Defaulting it means the time grid has something
   // to show the moment a date is picked, instead of an empty screen waiting

@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { invitePreview, inviteState, loadInvite } from '@/lib/invites'
 import JoinInvite from '@/components/invites/JoinInvite'
 
+export const metadata = { title: 'Join a game' }
+
 // Outside the (app) group on purpose. That layout sends anyone without a
 // session to the login page, which is exactly wrong here: the person opening
 // this link is, by definition, somebody who may not have an account yet, and

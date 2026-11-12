@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import NewLadderForm from '@/components/ladders/NewLadderForm'
 
+export const metadata = { title: 'New ladder' }
+
 export default async function NewLadderPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

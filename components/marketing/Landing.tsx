@@ -23,9 +23,9 @@ export default function Landing() {
       <div className={styles.wrap}>
         <section className={styles.hero}>
           <div>
-            <div className={styles.eyebrow}><span className={styles.dot} /> New Zealand&apos;s home for padel</div>
+            <div className={styles.eyebrow}><span className={styles.dot} /> Padel booking, made simple</div>
             <h1 className={styles.heroTitle}>Book more.<br /><span className={styles.accent}>Wait less.</span></h1>
-            <p className={styles.heroSub}>Find a court, split the bill, and track every match — all in one app built for Kiwi padel clubs.</p>
+            <p className={styles.heroSub}>Find a court, split the bill, and track every match — all in one app built for padel clubs.</p>
             <div className={styles.heroCtas}>
               <Link href="/auth/signup" className={`${styles.btn} ${styles.btnLime} ${styles.btnLg}`}>Book a court</Link>
               <Link href="#everything" className={`${styles.btn} ${styles.btnGhost} ${styles.btnLg}`}>See how it works</Link>
@@ -143,28 +143,28 @@ export default function Landing() {
             <div className={styles.commCard}>
               <div className={styles.cardTag}>Local events</div>
               <div className={styles.cardTitle}>Sunday Americano</div>
-              <div className={styles.cardDesc}>Pacific Padel Takapuna · 12 players</div>
+              <div className={styles.cardDesc}>Americano and Mexicano days, run properly</div>
               <div className={styles.commThumb} />
             </div>
             <div className={styles.commCard}>
               <div className={styles.cardTag}>Find players</div>
               <div className={styles.cardTitle}>Open games near you</div>
-              <div className={styles.cardDesc}>4 games looking for a fourth this week</div>
+              <div className={styles.cardDesc}>Find a fourth, or join a game that fits your level</div>
               <div className={`${styles.commThumb} ${styles.thumbCoral}`} />
             </div>
             <div className={styles.commCard}>
               <div className={styles.cardTag}>Top clubs</div>
-              <div className={styles.cardTitle}>Pacific Padel Albany</div>
-              <div className={styles.cardDesc}>4 courts · rated 4.9 by members</div>
+              <div className={styles.cardTitle}>Clubs near you, even when you travel</div>
+              <div className={styles.cardDesc}>Across New Zealand, Australia and South Africa</div>
               <div className={`${styles.commThumb} ${styles.thumbTeal}`} />
             </div>
           </div>
         </section>
 
         <div className={styles.trust}>
-          <div className={styles.trustItem}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg> Trusted by players across NZ</div>
+          <div className={styles.trustItem}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z"/></svg> Clubs in New Zealand, Australia and South Africa</div>
           <div className={styles.trustItem}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0110 0v3"/></svg> Secure, encrypted payments</div>
-          <div className={styles.trustItem}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 24/7 support</div>
+          <div className={styles.trustItem}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Live chat support</div>
         </div>
       </div>
     </div>

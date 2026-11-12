@@ -7,6 +7,8 @@ import SkillEditor from '@/components/players/SkillEditor'
 import PasskeySetup from '@/components/players/PasskeySetup'
 import { skillLabelForRating } from '@/lib/skill-levels'
 
+export const metadata = { title: 'Player' }
+
 export default async function PlayerDetailPage({ params }: { params: { id: string } }) {
   const supabase = createServerClient()
 

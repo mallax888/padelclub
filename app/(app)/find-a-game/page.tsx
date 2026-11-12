@@ -2,6 +2,8 @@
 import FindGameList from '@/components/matches/FindGameList'
 import { loadMatchCounts } from '@/lib/matchmaking-server'
 
+export const metadata = { title: 'Open play' }
+
 export default async function FindGamePage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

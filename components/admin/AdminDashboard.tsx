@@ -692,7 +692,7 @@ export default function AdminDashboard({
       )}
 
       {tab === 'reports' && (
-        <FinancialReports bookings={financialReportBookings} creditTransactions={creditTransactions} />
+        <FinancialReports bookings={financialReportBookings} creditTransactions={creditTransactions} todayStr={today} />
       )}
 
       {/* Bookings tab */}

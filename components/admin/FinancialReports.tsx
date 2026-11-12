@@ -42,12 +42,15 @@ function toCsv(bookings: ReportBooking[]): string {
 export default function FinancialReports({
   bookings,
   creditTransactions,
+  todayStr,
 }: {
   bookings: ReportBooking[]
   creditTransactions: FinancialCreditTx[]
+  // "Today" as the page already has it (matches the server's first render; see AdminDashboard).
+  todayStr?: string
 }) {
   const [period, setPeriod] = useState<(typeof PERIODS)[number]['days']>(30)
-  const today = localDateStr()
+  const today = todayStr ?? localDateStr()
   const summary = computeFinancialSummary(bookings, creditTransactions, today, period)
 
   const since = new Date(today + 'T00:00:00')

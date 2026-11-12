@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import NewTournamentForm from '@/components/tournaments/NewTournamentForm'
 
+export const metadata = { title: 'New tournament' }
+
 export default async function NewTournamentPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

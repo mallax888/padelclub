@@ -3,6 +3,8 @@ import PlayersDirectory from '@/components/players/PlayersDirectory'
 import Link from 'next/link'
 import { getInitials } from '@/lib/utils'
 
+export const metadata = { title: 'Players' }
+
 export default async function PlayersPage() {
   const supabase = createServerClient()
 
