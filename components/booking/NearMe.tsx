@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Venue } from '@/lib/venues'
 import type { OfferLite } from '@/lib/offer-rules'
 import { isOpenForBooking, type VenueSettingsMap } from '@/lib/venue-settings'
-import { coordsFor, dealAt, dealLabel, formatKm, rankNearby, type LatLng } from '@/lib/nearby'
+import { dealAt, dealLabel, formatKm, rankNearby, type LatLng } from '@/lib/nearby'
 import { localDateStr } from '@/lib/utils'
 
 type Phase = 'ask' | 'locating' | 'list' | 'denied'
@@ -15,11 +15,10 @@ const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)
 
 // "Clubs near you". The phone's position is read once, here, and used only to sort the
 // list: it is held in this component's state and never sent anywhere or stored.
-export default function NearMe({ venues, courtCounts, settings, overrides, offers, homeSlug, onPick, onFallback, onClose }: {
+export default function NearMe({ venues, courtCounts, settings, offers, homeSlug, onPick, onFallback, onClose }: {
   venues: Venue[]
   courtCounts: Record<string, number>
   settings: VenueSettingsMap
-  overrides: Record<string, LatLng>
   offers: OfferLite[]
   homeSlug: string | null
   onPick: (v: Venue) => void
@@ -43,8 +42,7 @@ export default function NearMe({ venues, courtCounts, settings, overrides, offer
 
   const nowMs = Date.now(), today = localDateStr()
   const items = venues.map(v => {
-    const c = coordsFor(v, overrides)
-    return { v, slug: v.slug, lat: c?.lat, lng: c?.lng, approx: c?.approx, bookable: isOpenForBooking(settings, v.slug) && (courtCounts[v.slug] ?? 0) > 0 }
+    return { v, slug: v.slug, lat: v.lat, lng: v.lng, approx: v.approx, bookable: isOpenForBooking(settings, v.slug) && (courtCounts[v.slug] ?? 0) > 0 }
   })
   const ranked = pos ? rankNearby(items, pos).map(r => ({ ...r, deal: dealAt(offers, r.slug, nowMs) })) : []
   const rows = ranked.filter(r => filter === 'all' || (filter === 'deal' ? !!r.deal : r.bookable))

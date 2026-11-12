@@ -1,6 +1,6 @@
 import { createServerClient } from '@/lib/supabase-server'
 import BookingFlow from '@/components/booking/BookingFlow'
-import { loadVenueSettings, loadVenueLocations } from '@/lib/venue-settings'
+import { loadVenueSettings } from '@/lib/venue-settings'
 import { loadRegularRules } from '@/lib/regulars'
 import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { localDateStr } from '@/lib/utils'
@@ -88,7 +88,6 @@ export default async function BookPage() {
   // offer notification opens on the one at their home club, else the newest.
   const offers = await loadOpenOffers(supabase as any, nowMs)
   const plans = (await loadPlanRows(supabase as any)) ?? []
-  const venueLocations = await loadVenueLocations(supabase)
   const mine = offers.filter(o => o.venue_slug === (profile as any)?.home_venue_slug)
   const pick = (mine.length ? mine : offers).slice().sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))[0]
   const offerPrefill = pick ? { venueSlug: pick.venue_slug, date: pick.date } : null
@@ -101,7 +100,7 @@ export default async function BookPage() {
       </div>
       <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings}
         waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill}
-        regularsOn={regularsOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} venueLocations={venueLocations} todayStr={localDateStr()} />
+        regularsOn={regularsOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} todayStr={localDateStr()} />
     </div>
   )
 }

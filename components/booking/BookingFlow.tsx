@@ -14,7 +14,6 @@ import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
 import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
 import { memberDiscount, memberWindowDays, effectivePlans, planOf, type PlanRow } from '@/lib/plan-rules'
 import NearMe from '@/components/booking/NearMe'
-import type { LatLng } from '@/lib/nearby'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
@@ -107,7 +106,6 @@ export default function BookingFlow({
     offers = [],
     offerPrefill = null,
     plans = [],
-    venueLocations = {},
     todayStr,
   }: {
     courts: Court[]
@@ -135,7 +133,6 @@ export default function BookingFlow({
     // discount and how far ahead they can book come from their plan at their home club.
     plans?: PlanRow[]
     // Positions clubs' owners have set for themselves (otherwise the built-in ones are used).
-    venueLocations?: Record<string, LatLng>
     // "Today" as the server saw it, so the first render matches the server's HTML; replaced by the viewer's own date after load.
     todayStr?: string
   }) {
@@ -767,7 +764,7 @@ export default function BookingFlow({
     const courtCounts: Record<string, number> = {}
     for (const c of courts) { const slug = (c as any).venue_slug as string; courtCounts[slug] = (courtCounts[slug] ?? 0) + 1 }
     return (
-      <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} overrides={venueLocations} offers={offers} homeSlug={homeSlug}
+      <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} offers={offers} homeSlug={homeSlug}
         onClose={() => setNearOpen(false)}
         onFallback={() => { setNearOpen(false); setVenue(null); setDate(null); setTime(null); setStep(STEPS[0]) }}
         onPick={v => {
