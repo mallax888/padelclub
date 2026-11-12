@@ -146,6 +146,7 @@ export interface Database {
           notes: string | null
           stripe_payment_id: string | null
           reminder_sent_at: string | null
+          offer_id: string | null
         }
         Insert: {
           id?: string
@@ -163,6 +164,7 @@ export interface Database {
           notes?: string | null
           stripe_payment_id?: string | null
           reminder_sent_at?: string | null
+          offer_id?: string | null
         }
         Update: {
           id?: string
@@ -180,6 +182,7 @@ export interface Database {
           notes?: string | null
           stripe_payment_id?: string | null
           reminder_sent_at?: string | null
+          offer_id?: string | null
         }
         Relationships: [
           {

@@ -13,6 +13,7 @@ const currencyForVenueSlug = (venueSlug: string | null | undefined) =>
 import XeroSettingsPanel from '@/components/admin/XeroSettingsPanel'
 import ClubAnalytics from '@/components/admin/ClubAnalytics'
 import MoneyDemand from '@/components/admin/MoneyDemand'
+import type { OfferRow } from '@/lib/offers'
 import RegularsSummaryCard from '@/components/admin/RegularsSummaryCard'
 import { ADMIN_TABS, FRONT_DESK_TABS } from '@/lib/view-mode'
 import { weekBounds, type WeekHours } from '@/lib/venue-hours'
@@ -100,6 +101,7 @@ export default function AdminDashboard({
   publicBookingIds,
   unpaidShares = [],
   waitDemand = null,
+  offers = null,
   initialTab,
   initialVenue,
   venueSettings = {},
@@ -119,6 +121,7 @@ export default function AdminDashboard({
   unpaidShares?: UnpaidShareRow[]
   // Waitlist demand per club for owners; null when the waitlist isn't set up.
   waitDemand?: Record<string, WaitDemand> | null
+  offers?: OfferRow[] | null
   // Where to open (from the manager navigation and the Today screen's links).
   initialTab?: AdminTab
   initialVenue?: string
@@ -654,7 +657,8 @@ export default function AdminDashboard({
 
       {tab === 'analytics' && canSeeMoney && activeVenue && (
         <MoneyDemand venueSlug={activeVenue} week={activeWeek} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares}
-          waitDemand={waitDemand ? (waitDemand[activeVenue] ?? { total: 0, bookedAfter: 0, slots: [] }) : null} />
+          waitDemand={waitDemand ? (waitDemand[activeVenue] ?? { total: 0, bookedAfter: 0, slots: [] }) : null}
+          offers={offers ? offers.filter(o => o.venue_slug === activeVenue) : null} />
       )}
 
       {tab === 'analytics' && canSeeMoney && analytics && (

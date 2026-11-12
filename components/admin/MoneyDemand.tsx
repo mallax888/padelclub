@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import OfferSheet from '@/components/admin/OfferSheet'
+import type { OfferRow } from '@/lib/offers'
 import { formatDate } from '@/lib/utils'
 import { currencyForVenueSlug, formatPrice } from '@/lib/currency'
 import {
@@ -27,14 +30,18 @@ const KIND_LABEL = { peak: 'Peak hours', quiet: 'Quiet hours', mixed: 'Peak and 
 
 const ageLabel = (d: number) => (d === 0 ? 'Today' : d === 1 ? '1 day' : `${d} days`)
 
-export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares, week, waitDemand = null }: {
+export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares, week, waitDemand = null, offers = null }: {
   venueSlug: string
   week?: WeekHours | null
   courts: CourtLite[]
   bookings: BookingLite[]
   unpaidShares: UnpaidShareRow[]
   waitDemand?: WaitDemand | null
+  // null = offers aren't switched on yet (database change not run), so no Fill it buttons.
+  offers?: OfferRow[] | null
 }) {
+  const router = useRouter()
+  const [fill, setFill] = useState<{ date: string; from: string; to: string } | null>(null)
   // "Now" only exists in the browser: reading the clock while rendering on the
   // server would give a different answer from the client and trip hydration.
   const [now, setNow] = useState<number | null>(null)
@@ -57,9 +64,13 @@ export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares,
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <UnpaidCard venueSlug={venueSlug} rows={unpaidShares} now={now} currency={currency} />
-          <EmptyTimeCard venueSlug={venueSlug} courts={courts} bookings={bookings} now={now} currency={currency} week={week} />
+          <EmptyTimeCard venueSlug={venueSlug} courts={courts} bookings={bookings} now={now} currency={currency} week={week} onFill={offers ? setFill : undefined} />
+          {offers && offers.length > 0 && <OffersCard offers={offers} currency={currency} onChanged={() => router.refresh()} onFill={setFill} />}
           {waitDemand && <WaitlistCard demand={waitDemand} />}
         </div>
+      )}
+      {fill && (
+        <OfferSheet venueSlug={venueSlug} date={fill.date} from={fill.from} to={fill.to} onClose={() => setFill(null)} onSent={() => { setFill(null); router.refresh() }} />
       )}
     </section>
   )
@@ -165,7 +176,7 @@ function WaitlistCard({ demand }: { demand: WaitDemand }) {
   )
 }
 
-function EmptyTimeCard({ venueSlug, courts, bookings, now, currency, week }: { venueSlug: string; courts: CourtLite[]; bookings: BookingLite[]; now: number; currency: ReturnType<typeof currencyForVenueSlug>; week?: WeekHours | null }) {
+function EmptyTimeCard({ venueSlug, courts, bookings, now, currency, week, onFill }: { onFill?: (g: { date: string; from: string; to: string }) => void; venueSlug: string; courts: CourtLite[]; bookings: BookingLite[]; now: number; currency: ReturnType<typeof currencyForVenueSlug>; week?: WeekHours | null }) {
   const e = computeEmptyCourtTime(courts, bookings, venueSlug, now, 7, week)
   if (e.courtCount === 0) {
     return (
@@ -223,13 +234,61 @@ function EmptyTimeCard({ venueSlug, courts, bookings, now, currency, week }: { v
               <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)} · {g.from}–{g.to}</div>
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{KIND_LABEL[g.kind]}</div>
             </div>
-            <div className="text-xs font-extrabold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>{g.courts} {g.courts === 1 ? 'court' : 'courts'} free</div>
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="text-xs font-extrabold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>{g.courts} {g.courts === 1 ? 'court' : 'courts'} free</div>
+              {onFill && (
+                <button type="button" onClick={() => onFill({ date: g.date, from: g.from, to: g.to })}
+                  className="text-xs font-extrabold px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary)', color: '#fff' }}>Fill it</button>
+              )}
+            </div>
           </div>
         ))}
       </div>
       <p className="text-[11.5px] mt-3" style={{ color: 'var(--text-subtle)' }}>
         Counted within your opening hours{week ? '' : ' (07:00 to 22:00 until you set them)'}. Hours already started and courts you&apos;ve blocked aren&apos;t counted. The emptiest days are highlighted.
       </p>
+    </div>
+  )
+}
+
+// Offers the owner has sent, with what each one achieved.
+function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[]; currency: ReturnType<typeof currencyForVenueSlug>; onChanged: () => void; onFill: (g: { date: string; from: string; to: string }) => void }) {
+  const [busy, setBusy] = useState<string | null>(null)
+  async function end(id: string) {
+    setBusy(id)
+    try { await fetch('/api/admin/offers/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }) } finally { setBusy(null); onChanged() }
+  }
+  return (
+    <div className="rounded-2xl p-5 lg:col-span-2" style={card} data-testid="offers-card">
+      <div className="text-[11px] font-extrabold uppercase" style={eyebrow}>Offers you&apos;ve sent</div>
+      <div className="mt-2">
+        {offers.map(o => (
+          <div key={o.id} className="py-3" style={{ borderBottom: '1px solid var(--border)' }} data-testid="offer-row">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div>
+                <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{o.discount_percent}% off · {formatDate(o.date)} · {o.start_time.slice(0, 5)}–{o.end_time.slice(0, 5)}</div>
+                <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Told {o.told_count} {o.told_count === 1 ? 'player' : 'players'} · {o.status === 'cancelled' ? 'Ended early' : o.ended ? 'Closed' : 'Open now'}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {!o.ended && (
+                  <button type="button" disabled={busy === o.id} onClick={() => end(o.id)} className="text-xs font-bold px-3 py-1.5 rounded-full disabled:opacity-50" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>End offer</button>
+                )}
+                {o.ended && o.date >= new Date().toISOString().slice(0, 10) && (
+                  <button type="button" onClick={() => onFill({ date: o.date, from: o.start_time.slice(0, 5), to: o.end_time.slice(0, 5) })} className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>Run it again</button>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
+              <span><b style={{ color: 'var(--text-primary)' }}>{o.results.courtsBooked}</b> {o.results.courtsBooked === 1 ? 'court' : 'courts'} booked</span>
+              <span>Earned <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.earned, currency)}</b></span>
+              <span>Given away <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.givenAway, currency)}</b></span>
+              <span><b style={{ color: 'var(--text-primary)' }}>{o.results.newPlayers}</b> new · <b style={{ color: 'var(--text-primary)' }}>{o.results.returning}</b> returning</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

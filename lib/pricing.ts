@@ -13,6 +13,16 @@ export function isPeakTime(dateStr: string | null, timeStr: string | null): bool
   return isWeekend || isEvening
 }
 
+// The court's list price per hour at that start time (the peak rate in the evening
+// and at weekends where the court has one).
+export function basePricePerHour(
+  court: { price_per_hour: number; price_per_hour_peak: number | null },
+  dateStr: string,
+  timeStr: string,
+): number {
+  return isPeakTime(dateStr, timeStr) && court.price_per_hour_peak ? court.price_per_hour_peak : court.price_per_hour
+}
+
 export function computeCourtPrice(
   court: { price_per_hour: number; price_per_hour_peak: number | null },
   dateStr: string,
@@ -20,7 +30,5 @@ export function computeCourtPrice(
   durationHours: number,
   discount: number,
 ): number {
-  const peak = isPeakTime(dateStr, timeStr)
-  const basePrice = peak && court.price_per_hour_peak ? court.price_per_hour_peak : court.price_per_hour
-  return Math.round(basePrice * (1 - discount) * durationHours)
+  return Math.round(basePricePerHour(court, dateStr, timeStr) * (1 - discount) * durationHours)
 }
