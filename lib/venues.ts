@@ -18,9 +18,9 @@ export type Venue = {
   region: string
   address: string
   isLive: boolean
-  // Where the club is, for "clubs near me". Worked out from the street address to the
-  // suburb (a kilometre or two), or only to the city where the address is just a city
-  // (approx). An owner can correct it in Club setup (see lib/nearby.ts).
+  // Where the club is, for "clubs near me". Looked up from the street address, or only to the
+  // city where the address is just a city (approx,
+  // shown to players as "in your city" with no distance). See lib/nearby.ts.
   lat?: number
   lng?: number
   approx?: boolean
@@ -51,7 +51,7 @@ export const VENUES: Venue[] = [
     region: 'Auckland',
     address: 'Albany Tennis Park, 325 Oteha Valley Road, Albany',
     isLive: true,
-    lat: -36.733, lng: 174.704,
+    lat: -36.72355, lng: 174.69998,
     courts: [
       { id: 'alb-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'alb-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -72,7 +72,7 @@ export const VENUES: Venue[] = [
     region: 'Auckland',
     address: '69 Merton Road, St Johns, Auckland',
     isLive: true,
-    lat: -36.866, lng: 174.857,
+    lat: -36.8798, lng: 174.8424,
     courts: [
       { id: 'mrt-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'mrt-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -91,7 +91,7 @@ export const VENUES: Venue[] = [
     region: 'Auckland',
     address: '40 Anzac Street, Takapuna, Auckland 0622',
     isLive: true,
-    lat: -36.787, lng: 174.77,
+    lat: -36.78582, lng: 174.77284,
     courts: [
       { id: 'tak-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'tak-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -109,7 +109,7 @@ export const VENUES: Venue[] = [
     region: 'Auckland',
     address: '50 Anzac Road, Browns Bay, Auckland 0630',
     isLive: true,
-    lat: -36.715, lng: 174.744,
+    lat: -36.71759, lng: 174.7447,
     courts: [
       { id: 'bb-1', name: 'Court 1', type: 'Indoor (24/7)', isIndoor: true, x: 0, y: 0 },
     ],
@@ -125,7 +125,7 @@ export const VENUES: Venue[] = [
     region: 'Wellington',
     address: '48a Kemp Street, Kilbirnie, Wellington',
     isLive: true,
-    lat: -41.319, lng: 174.794,
+    lat: -41.31748, lng: 174.7994,
     courts: [
       { id: 'wlg-1', name: 'Court 1', type: 'Glass-backed (Doubles)', isIndoor: true, x: 0, y: 0 },
       { id: 'wlg-2', name: 'Court 2', type: 'Glass-backed (Doubles)', isIndoor: true, x: 1, y: 0 },
@@ -145,7 +145,7 @@ export const VENUES: Venue[] = [
     region: 'Christchurch',
     address: '111 Woodham Road, Linwood, Christchurch 8062',
     isLive: true,
-    lat: -43.532, lng: 172.672,
+    lat: -43.52406, lng: 172.66812,
     courts: [
       { id: 'chc-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'chc-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -194,7 +194,7 @@ export const VENUES: Venue[] = [
     region: 'Nelspruit',
     address: 'LVCC, 1 Aurora Drive, Mbombela',
     isLive: true,
-    lat: -25.465, lng: 30.98,
+    lat: -25.49739, lng: 31.0073,
     courts: [
       { id: 'p24-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'p24-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -261,7 +261,7 @@ export const VENUES: Venue[] = [
     region: 'Johannesburg',
     address: '4 Cruden Bay Road, Greenside, Johannesburg',
     isLive: true,
-    lat: -26.136, lng: 28.012,
+    lat: -26.14573, lng: 28.01352,
     courts: [
       { id: 'cp-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'cp-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -324,7 +324,7 @@ export const VENUES: Venue[] = [
     region: 'Cape Town',
     address: 'Herschel Close, Claremont, Cape Town',
     isLive: true,
-    lat: -33.984, lng: 18.465,
+    lat: -33.98504, lng: 18.46341,
     courts: [
       { id: 'apcl-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'apcl-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -348,7 +348,7 @@ export const VENUES: Venue[] = [
     region: 'Cape Town',
     address: '1 Donkin Avenue, Table View, Cape Town',
     isLive: true,
-    lat: -33.825, lng: 18.49,
+    lat: -33.82793, lng: 18.49135,
     courts: [
       { id: 'ap-1', name: 'Court 1', type: 'Crystal (panoramic)', isIndoor: false, x: 0, y: 0 },
       { id: 'ap-2', name: 'Court 2', type: 'Crystal (panoramic)', isIndoor: false, x: 1, y: 0 },
@@ -519,7 +519,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: '17 Park Road North, Moore Park, Sydney NSW 2021',
     isLive: true,
-    lat: -33.892, lng: 151.223,
+    lat: -33.89316, lng: 151.22528,
     courts: [
       { id: 'src-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'src-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -537,7 +537,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: '16/18 Epping Road, North Ryde, Sydney NSW 2113',
     isLive: true,
-    lat: -33.793, lng: 151.14,
+    lat: -33.79463, lng: 151.13367,
     courts: [
       { id: 'tpw-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'tpw-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -556,7 +556,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: "85 O'Riordan Street, Alexandria, Sydney NSW 2015",
     isLive: true,
-    lat: -33.9100, lng: 151.1980,
+    lat: -33.91865, lng: 151.19151,
     courts: [
       { id: 'ipa-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'ipa-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -581,7 +581,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: 'Warehouse 2, 4 Inman Rd, Cromer NSW',
     isLive: true,
-    lat: -33.736, lng: 151.277,
+    lat: -33.73807, lng: 151.28611,
     courts: [
       { id: 'crm-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'crm-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -598,7 +598,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: 'Unit D, 21 Loyalty Road, North Rocks NSW 2151',
     isLive: true,
-    lat: -33.77, lng: 151.023,
+    lat: -33.77495, lng: 151.00942,
     courts: [
       { id: 'nrk-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'nrk-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -617,7 +617,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: '72 Topham Road, Smeaton Grange NSW 2567',
     isLive: true,
-    lat: -34.048, lng: 150.741,
+    lat: -34.03599, lng: 150.75512,
     courts: [
       { id: 'smg-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'smg-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -636,7 +636,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: '10 Carter Street, Lidcombe NSW 2141',
     isLive: true,
-    lat: -33.857, lng: 151.045,
+    lat: -33.8525, lng: 151.06034,
     courts: [
       { id: 'lid-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'lid-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -655,7 +655,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: '5 Saggart Field Road, Minto NSW 2566',
     isLive: true,
-    lat: -34.023, lng: 150.856,
+    lat: -34.0242, lng: 150.837,
     courts: [
       { id: 'mnt-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'mnt-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -675,7 +675,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: 'Unit B2, 20-28 Carrington Road, Marrickville NSW 2204',
     isLive: true,
-    lat: -33.912, lng: 151.159,
+    lat: -33.91798, lng: 151.15673,
     courts: [
       { id: 'swm-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'swm-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -695,7 +695,7 @@ export const VENUES: Venue[] = [
     region: 'Sydney',
     address: 'Starkie Drive, Bankstown Aerodrome NSW 2200',
     isLive: true,
-    lat: -33.924, lng: 150.988,
+    lat: -33.92755, lng: 150.98104,
     courts: [
       { id: 'bnk-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'bnk-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -714,7 +714,7 @@ export const VENUES: Venue[] = [
     region: 'Melbourne',
     address: '17 Rocklea Drive, Port Melbourne, VIC 3207',
     isLive: true,
-    lat: -37.83, lng: 144.938,
+    lat: -37.83011, lng: 144.92102,
     courts: [
       { id: 'rpc-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'rpc-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -735,7 +735,7 @@ export const VENUES: Venue[] = [
     region: 'Melbourne',
     address: '194-206 Lorimer Street, Docklands, VIC 3008',
     isLive: true,
-    lat: -37.824, lng: 144.944,
+    lat: -37.82402, lng: 144.94181,
     courts: [
       { id: 'g4d-1', name: 'Court 1', type: 'Covered outdoor', isIndoor: false, x: 0, y: 0 },
       { id: 'g4d-2', name: 'Court 2', type: 'Covered outdoor', isIndoor: false, x: 1, y: 0 },
@@ -756,7 +756,7 @@ export const VENUES: Venue[] = [
     region: 'Melbourne',
     address: '8 Whiteman Street, Southbank, VIC 3006',
     isLive: true,
-    lat: -37.825, lng: 144.957,
+    lat: -37.82333, lng: 144.95829,
     courts: [
       { id: 'crc-1', name: 'Court 1', type: 'Panoramic outdoor', isIndoor: false, x: 0, y: 0 },
       { id: 'crc-2', name: 'Court 2', type: 'Panoramic outdoor', isIndoor: false, x: 1, y: 0 },
@@ -772,7 +772,7 @@ export const VENUES: Venue[] = [
     region: 'Melbourne',
     address: '38 Newlands Road, Reservoir, VIC 3073',
     isLive: true,
-    lat: -37.717, lng: 145.0,
+    lat: -37.71958, lng: 144.97983,
     courts: [
       { id: 'ipm-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'ipm-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -791,7 +791,7 @@ export const VENUES: Venue[] = [
     region: 'Melbourne',
     address: '437 Plummer Street, Port Melbourne VIC 3207',
     isLive: true,
-    lat: -37.829, lng: 144.924,
+    lat: -37.83204, lng: 144.92612,
     courts: [
       { id: 'g4pp-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'g4pp-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -813,7 +813,7 @@ export const VENUES: Venue[] = [
     region: 'Melbourne',
     address: '2/10-12 Carrick Drive, Tullamarine VIC 3043',
     isLive: true,
-    lat: -37.695, lng: 144.883,
+    lat: -37.69948, lng: 144.88697,
     courts: [
       { id: 'ndc-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'ndc-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },
@@ -834,7 +834,7 @@ export const VENUES: Venue[] = [
     region: 'Brisbane',
     address: '200 Settlement Road, The Gap, QLD 4061',
     isLive: true,
-    lat: -27.45, lng: 152.937,
+    lat: -27.43084, lng: 152.94272,
     courts: [
       { id: 'pbg-1', name: 'Court 1', type: 'Glass-backed', isIndoor: false, x: 0, y: 0 },
       { id: 'pbg-2', name: 'Court 2', type: 'Glass-backed', isIndoor: false, x: 1, y: 0 },
@@ -954,7 +954,7 @@ export const VENUES: Venue[] = [
     region: 'Adelaide',
     address: '8 Light Terrace, Thebarton SA 5031',
     isLive: true,
-    lat: -34.919, lng: 138.566,
+    lat: -34.91742, lng: 138.57466,
     courts: [
       { id: 'pft-1', name: 'Court 1', type: 'Indoor', isIndoor: true, x: 0, y: 0 },
       { id: 'pft-2', name: 'Court 2', type: 'Indoor', isIndoor: true, x: 1, y: 0 },

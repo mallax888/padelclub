@@ -5,7 +5,7 @@ import { VENUES, getVenue } from '@/lib/venues'
 import { currencyForVenueSlug } from '@/lib/currency'
 import { covers } from '@/lib/team'
 import { isManagerRole, isOwnerRole } from '@/lib/view-mode'
-import { loadVenueSettings, loadVenueLocations, venueLocationReady } from '@/lib/venue-settings'
+import { loadVenueSettings } from '@/lib/venue-settings'
 import { loadRegularRules } from '@/lib/regulars'
 import ClubSetup, { type SetupClub } from '@/components/admin/ClubSetup'
 import { createAdminClient } from '@/lib/supabase-admin'
@@ -70,10 +70,6 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
     examplePrice: courts.length ? Math.max(...courts.map(c => c.pricePerHourPeak ?? c.pricePerHour)) : null,
   }
 
-  // Where the club sits on the map; null (card hidden) until the 031 database change has been run.
-  const locReady = await venueLocationReady(admin)
-  const locationInfo = locReady ? { source: ((await loadVenueLocations(admin))[slug] ? 'club' : 'listed') as 'club' | 'listed', approx: !!venue.approx } : null
-
   return (
     <ClubSetup
       key={slug}
@@ -86,7 +82,6 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       courts={courts}
       regulars={regRules}
       memberships={memberships}
-      location={locationInfo}
     />
   )
 }

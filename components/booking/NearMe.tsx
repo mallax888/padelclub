@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Venue } from '@/lib/venues'
 import type { OfferLite } from '@/lib/offer-rules'
 import { isOpenForBooking, type VenueSettingsMap } from '@/lib/venue-settings'
-import { coordsFor, dealAt, dealLabel, formatKm, rankNearby, type LatLng } from '@/lib/nearby'
+import { NEAR_RADIUS_KM, dealAt, dealLabel, formatKm, rankNearby, withinRadius, type LatLng } from '@/lib/nearby'
 import { localDateStr } from '@/lib/utils'
 
 type Phase = 'ask' | 'locating' | 'list' | 'denied'
@@ -15,11 +15,10 @@ const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)
 
 // "Clubs near you". The phone's position is read once, here, and used only to sort the
 // list: it is held in this component's state and never sent anywhere or stored.
-export default function NearMe({ venues, courtCounts, settings, overrides, offers, homeSlug, onPick, onFallback, onClose }: {
+export default function NearMe({ venues, courtCounts, settings, offers, homeSlug, onPick, onFallback, onClose }: {
   venues: Venue[]
   courtCounts: Record<string, number>
   settings: VenueSettingsMap
-  overrides: Record<string, LatLng>
   offers: OfferLite[]
   homeSlug: string | null
   onPick: (v: Venue) => void
@@ -30,6 +29,7 @@ export default function NearMe({ venues, courtCounts, settings, overrides, offer
   const [pos, setPos] = useState<LatLng | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
   const [all, setAll] = useState(false)
+  const [far, setFar] = useState(false) // also show clubs beyond the radius
 
   const locate = () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) { setPhase('denied'); return }
@@ -43,11 +43,12 @@ export default function NearMe({ venues, courtCounts, settings, overrides, offer
 
   const nowMs = Date.now(), today = localDateStr()
   const items = venues.map(v => {
-    const c = coordsFor(v, overrides)
-    return { v, slug: v.slug, lat: c?.lat, lng: c?.lng, approx: c?.approx, bookable: isOpenForBooking(settings, v.slug) && (courtCounts[v.slug] ?? 0) > 0 }
+    return { v, slug: v.slug, lat: v.lat, lng: v.lng, approx: v.approx, bookable: isOpenForBooking(settings, v.slug) && (courtCounts[v.slug] ?? 0) > 0 }
   })
   const ranked = pos ? rankNearby(items, pos).map(r => ({ ...r, deal: dealAt(offers, r.slug, nowMs) })) : []
-  const rows = ranked.filter(r => filter === 'all' || (filter === 'deal' ? !!r.deal : r.bookable))
+  const nearby = withinRadius(ranked)
+  const pool = far ? ranked : nearby
+  const rows = pool.filter(r => filter === 'all' || (filter === 'deal' ? !!r.deal : r.bookable))
   const shown = all || filter !== 'all' ? rows : rows.slice(0, SHOWN)
 
   const wrap = (children: React.ReactNode) => (
@@ -86,7 +87,7 @@ export default function NearMe({ venues, courtCounts, settings, overrides, offer
 
   return (
     wrap(<>
-      <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Clubs near you</h2>
+      <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{far ? 'Clubs near you' : `Clubs within ${NEAR_RADIUS_KM} km`}</h2>
       <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-subtle)' }}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-green)', display: 'inline-block' }} />
         Using your current location ·{' '}
@@ -124,10 +125,18 @@ export default function NearMe({ venues, courtCounts, settings, overrides, offer
             </span>
           </button>
         ))}
-        {shown.length === 0 && <p className="text-sm py-6 text-center" style={{ color: 'var(--text-muted)' }}>{filter === 'deal' ? 'No deals on right now.' : 'No clubs to show.'}</p>}
+        {shown.length === 0 && (
+          <div className="text-sm py-6 text-center" data-testid="none-nearby" style={{ color: 'var(--text-muted)' }}>
+            {filter === 'deal' ? 'No deals on right now.' : filter === 'open' ? `No clubs open for booking within ${NEAR_RADIUS_KM} km.` : `No clubs within ${NEAR_RADIUS_KM} km of you.`}
+            {!far && <button type="button" data-testid="show-further" onClick={() => setFar(true)} className="block w-full mt-3 font-bold" style={{ color: 'var(--brand-primary-text)' }}>Show the nearest clubs anyway</button>}
+          </div>
+        )}
       </div>
       {!all && filter === 'all' && rows.length > SHOWN && (
         <button type="button" onClick={() => setAll(true)} className="w-full py-3 mt-2 text-sm font-bold" style={{ color: 'var(--brand-primary-text)' }}>Show all {rows.length} clubs</button>
+      )}
+      {!far && shown.length > 0 && ranked.length > nearby.length && (
+        <button type="button" data-testid="show-further" onClick={() => setFar(true)} className="w-full py-3 mt-1 text-sm font-bold" style={{ color: 'var(--brand-primary-text)' }}>Show clubs further away</button>
       )}
       <button type="button" onClick={onFallback} className="w-full py-3 mt-1 text-sm font-bold" style={{ color: 'var(--text-muted)' }}>Choose a country and city instead</button>
     </>)

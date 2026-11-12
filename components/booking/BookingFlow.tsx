@@ -14,7 +14,6 @@ import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
 import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
 import { memberDiscount, memberWindowDays, effectivePlans, planOf, type PlanRow } from '@/lib/plan-rules'
 import NearMe from '@/components/booking/NearMe'
-import type { LatLng } from '@/lib/nearby'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
@@ -107,7 +106,6 @@ export default function BookingFlow({
     offers = [],
     offerPrefill = null,
     plans = [],
-    venueLocations = {},
     todayStr,
   }: {
     courts: Court[]
@@ -135,7 +133,6 @@ export default function BookingFlow({
     // discount and how far ahead they can book come from their plan at their home club.
     plans?: PlanRow[]
     // Positions clubs' owners have set for themselves (otherwise the built-in ones are used).
-    venueLocations?: Record<string, LatLng>
     // "Today" as the server saw it, so the first render matches the server's HTML; replaced by the viewer's own date after load.
     todayStr?: string
   }) {
@@ -767,7 +764,7 @@ export default function BookingFlow({
     const courtCounts: Record<string, number> = {}
     for (const c of courts) { const slug = (c as any).venue_slug as string; courtCounts[slug] = (courtCounts[slug] ?? 0) + 1 }
     return (
-      <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} overrides={venueLocations} offers={offers} homeSlug={homeSlug}
+      <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} offers={offers} homeSlug={homeSlug}
         onClose={() => setNearOpen(false)}
         onFallback={() => { setNearOpen(false); setVenue(null); setDate(null); setTime(null); setStep(STEPS[0]) }}
         onPick={v => {
@@ -971,11 +968,11 @@ export default function BookingFlow({
         </div>
       )}
 
-      {/* Find a club near me: once, at the bottom of the first club-picking screen. Members with a home club skip these screens and get the Travelling card on the date step instead. */}
-      {step === visibleSteps[0] && (step === 'country' || step === 'region' || step === 'venue') && (
+      {/* Find a club near me: once, at the bottom of the city screen. By then the country is known and it is only the area they are unsure of. Members with a home club skip these screens and get the Travelling card on the date step instead. */}
+      {step === 'region' && (
         <div className="rounded-2xl p-4 mt-4" data-testid="near-me-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
-          <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Not sure which club?</div>
-          <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Find one near you and book there. Great when you&apos;re travelling.</p>
+          <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Not sure of the area?</div>
+          <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>We&apos;ll find clubs within 25 km of where you are. Great when you&apos;re travelling.</p>
           <button type="button" data-testid="near-me-button" onClick={() => setNearOpen(true)} className="w-full rounded-xl py-2.5 text-sm font-extrabold" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Find a club near me</button>
         </div>
       )}

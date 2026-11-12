@@ -23,13 +23,6 @@ export const formatKm = (km: number): string => (km < 10 ? (Math.round(km * 10) 
 export type NearbyInput = { slug: string; lat?: number | null; lng?: number | null; approx?: boolean; bookable: boolean }
 export type NearbyRow<T extends NearbyInput> = T & { km: number | null; precise: boolean }
 
-// A club whose position an owner has set, otherwise the one built in.
-export function coordsFor(v: { slug: string; lat?: number; lng?: number; approx?: boolean }, overrides: Record<string, LatLng> | undefined): { lat: number; lng: number; approx: boolean } | null {
-  const o = overrides?.[v.slug]
-  if (o && validCoords(o.lat, o.lng)) return { lat: o.lat, lng: o.lng, approx: false }
-  return validCoords(v.lat, v.lng) ? { lat: v.lat!, lng: v.lng!, approx: !!v.approx } : null
-}
-
 // Clubs a player can book come first, nearest first; clubs that can't be booked yet
 // follow (also nearest first); a club with no position goes last. A club known only
 // to its city is shown without a distance, since a number would pretend to be exact.
@@ -41,6 +34,11 @@ export function rankNearby<T extends NearbyInput>(items: T[], pos: LatLng): Near
   const key = (r: NearbyRow<T>) => (r.km === null ? Infinity : r.km)
   return rows.sort((a, b) => Number(!a.bookable) - Number(!b.bookable) || key(a) - key(b) || a.slug.localeCompare(b.slug))
 }
+
+// "Clubs near me" only lists clubs this close; the player can ask to see further away.
+export const NEAR_RADIUS_KM = 25
+export const withinRadius = <T extends { km: number | null }>(rows: T[], radiusKm: number = NEAR_RADIUS_KM): T[] =>
+  rows.filter(r => r.km !== null && r.km <= radiusKm)
 
 export type Deal = { percent: number; date: string; start: string; end: string }
 
