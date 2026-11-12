@@ -35,6 +35,11 @@ export function rankNearby<T extends NearbyInput>(items: T[], pos: LatLng): Near
   return rows.sort((a, b) => Number(!a.bookable) - Number(!b.bookable) || key(a) - key(b) || a.slug.localeCompare(b.slug))
 }
 
+// "Clubs near me" only lists clubs this close; the player can ask to see further away.
+export const NEAR_RADIUS_KM = 25
+export const withinRadius = <T extends { km: number | null }>(rows: T[], radiusKm: number = NEAR_RADIUS_KM): T[] =>
+  rows.filter(r => r.km !== null && r.km <= radiusKm)
+
 export type Deal = { percent: number; date: string; start: string; end: string }
 
 // The best offer still open at a club: the biggest discount, then the soonest.
