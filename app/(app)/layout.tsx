@@ -31,7 +31,7 @@ export default async function AppLayout({
       <Navbar viewMode={resolveViewMode((profile as any)?.role, cookies().get(VIEW_COOKIE)?.value)} isOwner={isOwnerRole((profile as any)?.role)} />
       {/* md:ml offsets the fixed desktop sidebar; the inner wrapper keeps the
           existing centered content width within whatever space remains. */}
-      <main className="md:ml-[220px] px-3 sm:px-4 pt-6 pb-[calc(90px+env(safe-area-inset-bottom))] md:pb-6 overflow-x-hidden">
+      <main className="md:ml-[220px] px-3 sm:px-4 pt-6 pb-[calc(84px+env(safe-area-inset-bottom))] md:pb-6 overflow-x-hidden">
         <div className="max-w-6xl mx-auto">
           {children}
         </div>
