@@ -144,16 +144,16 @@ function SidebarLink({ href, label, active }: { href: string; label: string; act
 function TabBarLink({ href, label, active, icon }: { href: string; label: string; active: boolean; icon?: JSX.Element }) {
   return (
     <Link href={href} className="flex items-center justify-center transition-all" style={{
-      flexDirection: active ? 'row' : 'column',
-      gap: active ? 6 : 2,
-      padding: active ? '9px 15px' : '6px 8px',
-      borderRadius: 999,
+      flexDirection: 'column',
+      gap: 2,
+      padding: '6px 12px',
+      minWidth: 58,
+      borderRadius: 14,
       background: active ? 'var(--brand-primary)' : 'transparent',
-      boxShadow: active ? 'var(--glow-primary)' : 'none',
     }}>
       <span style={{ width: 16, height: 16, flexShrink: 0, color: active ? 'var(--brand-primary-on)' : 'var(--text-subtle)' }}>{icon ?? ICONS[href]}</span>
       <span className="whitespace-nowrap" style={{
-        fontSize: active ? 11 : 9,
+        fontSize: 10,
         fontWeight: 700,
         color: active ? 'var(--brand-primary-on)' : 'var(--text-subtle)',
       }}>{label}</span>
@@ -229,13 +229,12 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
         </div>
       </nav>
 
-      {/* Mobile bottom tab bar — floating pill, inset from the screen edges */}
-      <nav className="fixed left-3 right-3 z-40 md:hidden flex items-center justify-between gap-0.5 rounded-full px-2 py-1.5"
+      {/* Mobile bottom tab bar: docked flush with the bottom of the screen (not floating), solid, with a thin top line */}
+      <nav className="fixed left-0 right-0 bottom-0 z-40 md:hidden flex items-center justify-around gap-0.5 px-1.5 pt-2"
         style={{
-          bottom: 'calc(12px + env(safe-area-inset-bottom))',
+          paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
           background: 'var(--bg-surface)',
-          border: '1px solid var(--border)',
-          boxShadow: '0 16px 36px -10px rgba(0,0,0,0.55)',
+          borderTop: '1px solid var(--border)',
         }}>
         {manager
           ? (isOwner ? OWNER_TAB_ITEMS : DESK_TAB_ITEMS).map(item => (
@@ -245,18 +244,18 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
               <TabBarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
             ))}
         <button onClick={() => setMenuOpen(!menuOpen)} className="flex items-center justify-center transition-all" style={{
-          flexDirection: menuOpen ? 'row' : 'column',
-          gap: menuOpen ? 6 : 2,
-          padding: menuOpen ? '9px 15px' : '6px 8px',
-          borderRadius: 999,
+          flexDirection: 'column',
+          gap: 2,
+          padding: '6px 12px',
+          minWidth: 58,
+          borderRadius: 14,
           background: menuOpen ? 'var(--brand-primary)' : 'transparent',
-          boxShadow: menuOpen ? 'var(--glow-primary)' : 'none',
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
             style={{ flexShrink: 0, color: menuOpen ? 'var(--brand-primary-on)' : 'var(--text-subtle)' }}>
             <circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/>
           </svg>
-          <span className="whitespace-nowrap" style={{ fontSize: menuOpen ? 11 : 9, fontWeight: 700, color: menuOpen ? 'var(--brand-primary-on)' : 'var(--text-subtle)' }}>More</span>
+          <span className="whitespace-nowrap" style={{ fontSize: 10, fontWeight: 700, color: menuOpen ? 'var(--brand-primary-on)' : 'var(--text-subtle)' }}>More</span>
         </button>
       </nav>
 
