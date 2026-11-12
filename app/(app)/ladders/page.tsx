@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase-server'
 
+export const metadata = { title: 'Ladders' }
+
 export default async function LaddersPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

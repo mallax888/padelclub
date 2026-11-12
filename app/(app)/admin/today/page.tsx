@@ -12,6 +12,8 @@ import Link from 'next/link'
 import { loadVenueSettings, weekFor } from '@/lib/venue-settings'
 import { dayHours } from '@/lib/venue-hours'
 
+export const metadata = { title: 'Today' }
+
 export const dynamic = 'force-dynamic'
 
 const longDate = (d: string) =>

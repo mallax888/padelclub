@@ -3,6 +3,8 @@ import { createServerClient } from '@/lib/supabase-server'
 import { VENUES } from '@/lib/venues'
 import { formatDate } from '@/lib/utils'
 
+export const metadata = { title: 'Tournaments' }
+
 export default async function TournamentsPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

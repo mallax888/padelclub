@@ -6,6 +6,8 @@ import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { localDateStr } from '@/lib/utils'
 import { effectivePlans, planOf } from '@/lib/plan-rules'
 import { loadPlanRows } from '@/lib/club-plans'
+
+export const metadata = { title: 'My bookings' }
 export default async function MyBookingsPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

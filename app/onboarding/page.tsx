@@ -4,6 +4,8 @@ import { createServerClient } from '@/lib/supabase-server'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { INVITE_COOKIE, joinPathFor, safeNext } from '@/lib/return-to'
 
+export const metadata = { title: 'Welcome' }
+
 export default async function OnboardingPage({ searchParams }: { searchParams: { next?: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

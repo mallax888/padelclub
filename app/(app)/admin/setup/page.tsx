@@ -12,6 +12,8 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { effectivePlans } from '@/lib/plan-rules'
 import { loadPlanRows, planStats } from '@/lib/club-plans'
 
+export const metadata = { title: 'Club setup' }
+
 export const dynamic = 'force-dynamic'
 
 export default async function SetupPage({ searchParams }: { searchParams?: { venue?: string } }) {

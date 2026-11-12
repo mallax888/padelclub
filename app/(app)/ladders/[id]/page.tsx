@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import LadderBoard from '@/components/ladders/LadderBoard'
 
+export const metadata = { title: 'Ladder' }
+
 export default async function LadderPage({ params }: { params: { id: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

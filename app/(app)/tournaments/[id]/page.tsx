@@ -2,6 +2,8 @@ import { notFound } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import TournamentHub from '@/components/tournaments/TournamentHub'
 
+export const metadata = { title: 'Tournament' }
+
 export default async function TournamentPage({ params }: { params: { id: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()

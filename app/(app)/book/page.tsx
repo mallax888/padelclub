@@ -7,6 +7,8 @@ import { localDateStr } from '@/lib/utils'
 import { loadOpenOffers } from '@/lib/offers'
 import { loadPlanRows } from '@/lib/club-plans'
 
+export const metadata = { title: 'Book a court' }
+
 // How many past split partners to hand the booking flow. The picker shows the
 // first few and everyone else is reachable through search, so this only needs
 // to be deep enough to cover a regular group.
@@ -99,7 +101,7 @@ export default async function BookPage() {
       </div>
       <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings}
         waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill}
-        regularsOn={regularsOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} venueLocations={venueLocations} />
+        regularsOn={regularsOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} venueLocations={venueLocations} todayStr={localDateStr()} />
     </div>
   )
 }

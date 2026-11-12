@@ -6,6 +6,8 @@ import { isManagerRole, isOwnerRole } from '@/lib/view-mode'
 import { covers, scopeLabel, scopeOf, type TeamScope } from '@/lib/team'
 import TeamView from '@/components/admin/TeamView'
 
+export const metadata = { title: 'Team' }
+
 export const dynamic = 'force-dynamic'
 
 export default async function TeamPage() {

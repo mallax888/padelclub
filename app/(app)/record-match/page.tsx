@@ -2,6 +2,8 @@
 import RecordMatchForm from '@/components/matches/RecordMatchForm'
 import { formatDate } from '@/lib/utils'
 
+export const metadata = { title: 'Record a match' }
+
 export default async function RecordMatchPage({
   searchParams,
 }: {
