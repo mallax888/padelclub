@@ -1,5 +1,6 @@
 ﻿import { createServerClient } from '@/lib/supabase-server'
 import FindGameList from '@/components/matches/FindGameList'
+import { loadMatchCounts } from '@/lib/matchmaking-server'
 
 export default async function FindGamePage() {
   const supabase = createServerClient()
@@ -35,6 +36,14 @@ export default async function FindGamePage() {
     ? Number(me.skill_rating)
     : null
 
+  // How many matches the viewer and the players in these games have recorded, so a
+  // rating can be marked Reliable or New. null (can't be read) hides that.
+  const playerIds = [
+    ...(session?.user?.id ? [session.user.id] : []),
+    ...((matches ?? []) as any[]).flatMap(m => (m.open_match_players ?? []).map((p: any) => p.player_id as string)),
+  ]
+  const matchCounts = await loadMatchCounts(supabase, playerIds)
+
   return (
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
@@ -48,6 +57,7 @@ export default async function FindGamePage() {
         currentUserId={session?.user?.id ?? ''}
         viewerRating={viewerRating}
         homeVenueSlug={me?.home_venue_slug ?? null}
+        matchCounts={matchCounts}
       />
     </div>
   )
