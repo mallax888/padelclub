@@ -12,7 +12,9 @@ import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-se
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
 import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
-import { memberDiscount, memberWindowDays, type PlanRow } from '@/lib/plan-rules'
+import { memberDiscount, memberWindowDays, effectivePlans, planOf, type PlanRow } from '@/lib/plan-rules'
+import NearMe from '@/components/booking/NearMe'
+import type { LatLng } from '@/lib/nearby'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
@@ -105,6 +107,7 @@ export default function BookingFlow({
     offers = [],
     offerPrefill = null,
     plans = [],
+    venueLocations = {},
   }: {
     courts: Court[]
     profile: Profile
@@ -130,6 +133,8 @@ export default function BookingFlow({
     // Every club's membership plans (empty until clubs have set their own). A member's
     // discount and how far ahead they can book come from their plan at their home club.
     plans?: PlanRow[]
+    // Positions clubs' owners have set for themselves (otherwise the built-in ones are used).
+    venueLocations?: Record<string, LatLng>
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -147,6 +152,8 @@ export default function BookingFlow({
   const [country, setCountry] = useState<string | null>(homeCountry ?? ONLY_COUNTRY)
   const [region, setRegion] = useState<string | null>(homeVenue?.region ?? null)
   const [venue, setVenue] = useState<Venue | null>(homeVenue)
+  // "Clubs near me" replaces the steps while it is open.
+  const [nearOpen, setNearOpen] = useState(false)
   const currency = currencyForRegion(venue?.region)
   // The member's plan at their home club decides the discount and how many days
   // ahead they can book there; at any other club they get that club's normal terms.
@@ -754,6 +761,20 @@ export default function BookingFlow({
     confirm:  { title: 'Confirm booking', subtitle: date ? formatDate(date) : '' },
   }
 
+  if (nearOpen) {
+    const courtCounts: Record<string, number> = {}
+    for (const c of courts) { const slug = (c as any).venue_slug as string; courtCounts[slug] = (courtCounts[slug] ?? 0) + 1 }
+    return (
+      <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} overrides={venueLocations} offers={offers} homeSlug={homeSlug}
+        onClose={() => setNearOpen(false)}
+        onFallback={() => { setNearOpen(false); setVenue(null); setDate(null); setTime(null); setStep(STEPS[0]) }}
+        onPick={v => {
+          setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null); setRegion(v.region); setVenue(v)
+          setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); setNearOpen(false); playSelectionSound()
+        }} />
+    )
+  }
+
   return (
     <div className="max-w-lg mx-auto">
 
@@ -790,6 +811,14 @@ export default function BookingFlow({
             style={{ background: visibleSteps.indexOf(s) <= visibleSteps.indexOf(step) ? 'var(--brand-primary)' : 'rgba(128,128,128,0.35)' }} />
         ))}
       </div>
+
+      {(step === 'country' || step === 'region' || step === 'venue') && (
+        <button type="button" data-testid="near-me-button" onClick={() => setNearOpen(true)}
+          className="w-full rounded-xl py-3 mb-4 text-sm font-bold flex items-center justify-center gap-2"
+          style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary-text)' }}>
+          📍 Find a club near me
+        </button>
+      )}
 
       {/* STEP: Country */}
       {step === 'country' && (
@@ -955,6 +984,13 @@ export default function BookingFlow({
           time is what makes the flow feel like it's guiding you. */}
       {step === 'date' && (
         <div className="animate-fade-in">
+          {homeVenue && venue?.slug === homeVenue.slug && (
+            <div className="rounded-2xl p-4 mb-4" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
+              <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Travelling?</div>
+              <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Find a club near you and book there. Your home club stays the same.</p>
+              <button type="button" onClick={() => setNearOpen(true)} className="w-full rounded-xl py-2.5 text-sm font-extrabold" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Find a club near me</button>
+            </div>
+          )}
           <button
             onClick={() => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }}
             className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-5 text-left"
@@ -1203,6 +1239,12 @@ export default function BookingFlow({
               <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
             </div>
           </div>
+
+          {homeSlug && venue && venue.slug !== homeSlug && memberDiscount(plans, { tier, homeSlug, bookingSlug: homeSlug }) > 0 && (
+            <div className="rounded-xl px-3.5 py-3 mb-4 text-xs leading-relaxed" data-testid="away-note" style={{ background: 'var(--brand-primary-muted)', color: 'var(--text-muted)' }}>
+              <b style={{ color: 'var(--text-primary)' }}>Away from home.</b> Your {planOf(effectivePlans(plans, homeSlug), tier).name} plan discount applies at {homeVenue?.name ?? 'your home club'} only, so this is {venue.name}&apos;s normal price{confirmOffer ? `. The ${confirmOffer.offer.discount_percent}% is their deal, open to everyone.` : '.'}
+            </div>
+          )}
 
           {/* Open play toggle. This is where most members meet the feature,
               so it carries the same name as the nav item they'll later go
