@@ -8,6 +8,9 @@ import { isManagerRole, isOwnerRole } from '@/lib/view-mode'
 import { loadVenueSettings } from '@/lib/venue-settings'
 import { loadRegularRules } from '@/lib/regulars'
 import ClubSetup, { type SetupClub } from '@/components/admin/ClubSetup'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { effectivePlans } from '@/lib/plan-rules'
+import { loadPlanRows, planStats } from '@/lib/club-plans'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,6 +57,17 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
   const regProbe: any = await (supabase as any).from('regular_settings').select('venue_slug').limit(1)
   const regRules = regProbe.error ? null : ((await loadRegularRules(supabase))[slug] ?? { enabled: true, peakCap: null })
 
+  // This club's membership plans and figures; null (card hidden) until the club plans
+  // database change has been run.
+  const admin = createAdminClient()
+  const planRows = await loadPlanRows(admin, [slug])
+  const plans = effectivePlans(planRows, slug)
+  const memberships = planRows === null ? null : {
+    plans,
+    stats: await planStats(admin, slug, plans),
+    examplePrice: courts.length ? Math.max(...courts.map(c => c.pricePerHourPeak ?? c.pricePerHour)) : null,
+  }
+
   return (
     <ClubSetup
       key={slug}
@@ -65,6 +79,7 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       isOpen={row ? row.isOpen : courts.length > 0}
       courts={courts}
       regulars={regRules}
+      memberships={memberships}
     />
   )
 }

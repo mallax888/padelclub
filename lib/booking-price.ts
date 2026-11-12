@@ -1,9 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
-import { MEMBERSHIP_CONFIG, type MembershipTier } from '@/types/database'
 import { basePricePerHour } from '@/lib/pricing'
 import { offerValidForBooking, priceWithOffer } from '@/lib/offer-rules'
 import { toMin } from '@/lib/waitlist-rules'
+import { memberDiscount } from '@/lib/plan-rules'
+import { loadPlanRows } from '@/lib/club-plans'
 
 // Bookings are inserted directly by the browser client, so price_nzd on the
 // row can't be trusted -- this recomputes the authoritative price from the
@@ -29,20 +30,24 @@ export async function verifyAndCorrectBookingPrice(
 
   const { data: court } = await admin
     .from('courts')
-    .select('price_per_hour, price_per_hour_peak')
+    .select('price_per_hour, price_per_hour_peak, venue_slug')
     .eq('id', booking.court_id)
     .single()
   if (!court) return null
 
+  // The member's plan at their home club (see lib/plan-rules.ts): its discount applies
+  // to bookings at that club only. A database without club plans yet gives the
+  // standard plans, as before.
   let discount = 0
   if (booking.user_id) {
     const { data: profile } = await admin
       .from('profiles')
-      .select('membership_tier')
+      .select('membership_tier, home_venue_slug')
       .eq('id', booking.user_id)
       .single()
-    const tier = (profile?.membership_tier ?? 'casual') as MembershipTier
-    discount = MEMBERSHIP_CONFIG[tier]?.discount ?? 0
+    const home = (profile as any)?.home_venue_slug ?? null
+    const rows = home ? await loadPlanRows(admin, [home]) : null
+    discount = memberDiscount(rows, { tier: profile?.membership_tier, homeSlug: home, bookingSlug: (court as any).venue_slug })
   }
 
   const durationHours = booking.duration_minutes / 60
@@ -54,7 +59,7 @@ export async function verifyAndCorrectBookingPrice(
   const claimedOffer: string | null = !claimError ? claim?.offer_id ?? null : null
   if (claimedOffer) {
     const { data: offer } = await (admin as any).from('court_offers').select('*').eq('id', claimedOffer).maybeSingle()
-    const { data: venue } = await admin.from('courts').select('venue_slug').eq('id', booking.court_id).single()
+    const venue = { venue_slug: (court as any).venue_slug as string }
     if (offer && venue && offerValidForBooking(offer, {
       createdAtMs: Date.parse(claim.created_at), venueSlug: venue.venue_slug, date: booking.date,
       startMin: toMin(booking.start_time), durMin: booking.duration_minutes,

@@ -15,7 +15,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [passkeyLoading, setPasskeyLoading] = useState(false)
-  const passkeySupported = typeof window !== 'undefined' && !!window.PublicKeyCredential
+  // Read after mount: the server render has no window, so deciding this while rendering
+  // shows the fingerprint button in the browser but not in the server's HTML (a hydration mismatch).
+  const [passkeySupported, setPasskeySupported] = useState(false)
+  useEffect(() => { setPasskeySupported(!!window.PublicKeyCredential) }, [])
   // Carried onto the sign-up link so someone who came here from an invite
   // doesn't lose it by choosing to make an account instead. Read after mount:
   // the server render has no window, and a link whose href differs between

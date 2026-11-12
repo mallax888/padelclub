@@ -5,6 +5,7 @@ import { loadRegularRules } from '@/lib/regulars'
 import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { localDateStr } from '@/lib/utils'
 import { loadOpenOffers } from '@/lib/offers'
+import { loadPlanRows } from '@/lib/club-plans'
 
 // How many past split partners to hand the booking flow. The picker shows the
 // first few and everyone else is reachable through search, so this only needs
@@ -84,6 +85,7 @@ export default async function BookPage() {
   // Offers open right now (the player's own session sees only open ones). Tapping an
   // offer notification opens on the one at their home club, else the newest.
   const offers = await loadOpenOffers(supabase as any, nowMs)
+  const plans = (await loadPlanRows(supabase as any)) ?? []
   const mine = offers.filter(o => o.venue_slug === (profile as any)?.home_venue_slug)
   const pick = (mine.length ? mine : offers).slice().sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))[0]
   const offerPrefill = pick ? { venueSlug: pick.venue_slug, date: pick.date } : null
@@ -96,7 +98,7 @@ export default async function BookPage() {
       </div>
       <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings}
         waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill}
-        regularsOn={regularsOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} />
+        regularsOn={regularsOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} />
     </div>
   )
 }

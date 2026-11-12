@@ -4,6 +4,8 @@ import { stripeDashboardBase } from '@/lib/stripe'
 import { loadVenueSettings } from '@/lib/venue-settings'
 import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { localDateStr } from '@/lib/utils'
+import { effectivePlans, planOf } from '@/lib/plan-rules'
+import { loadPlanRows } from '@/lib/club-plans'
 export default async function MyBookingsPage() {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -64,13 +66,18 @@ export default async function MyBookingsPage() {
   const nowMs = Date.now()
   const waits = ((waitRes.error ? [] : waitRes.data ?? []) as any[])
     .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
+  // Their plan at their home club: its name, and how many days ahead they can book.
+  const home: string | null = (profile as any)?.home_venue_slug ?? null
+  const mp = home ? planOf(effectivePlans(await loadPlanRows(supabase as any, [home]), home), (profile as any)?.membership_tier) : null
+  const memberPlan = mp ? { name: mp.name, windowDays: mp.windowDays } : null
+
   return (
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} plan={memberPlan} />
     </div>
   )
 }

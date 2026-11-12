@@ -3,8 +3,14 @@ import { stripe } from '@/lib/stripe'
 import { createServerClient } from '@/lib/supabase-server'
 import { MEMBERSHIP_CONFIG, type MembershipTier } from '@/types/database'
 import { getAppUrl } from '@/lib/env'
-import { currencyForVenueSlug, localPriceFromNzd, formatPrice } from '@/lib/currency'
+import { currencyForVenueSlug, localPriceFromNzd } from '@/lib/currency'
+import { getVenue } from '@/lib/venues'
+import { effectivePlans } from '@/lib/plan-rules'
+import { loadPlanRows } from '@/lib/club-plans'
 
+// Buying a plan. What is charged comes from the plan the member's home club has
+// set (or the standard plan if the club hasn't changed it), looked up here on the
+// server, never from anything the browser sends beyond which plan was chosen.
 export async function POST(request: Request) {
   try {
     const supabase = createServerClient()
@@ -12,24 +18,32 @@ export async function POST(request: Request) {
     if (!session) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
-    const { tier } = await request.json()
-    const config = MEMBERSHIP_CONFIG[tier as MembershipTier]
-    if (!config || config.priceNzd <= 0) {
-      return NextResponse.json({ error: 'Invalid membership tier' }, { status: 400 })
-    }
+    const body = await request.json().catch(() => ({}))
+    const planKey: string | undefined = typeof body?.planKey === 'string' ? body.planKey : typeof body?.tier === 'string' ? body.tier : undefined
+    if (!planKey) return NextResponse.json({ error: 'Invalid membership plan' }, { status: 400 })
 
-    // Charged in the member's own currency at that country's price -- see
-    // localPriceFromNzd. home_venue_slug is set during onboarding; a member
-    // who skipped that step has none and falls back to NZD.
     const { data: profile } = await supabase
       .from('profiles')
       .select('home_venue_slug')
       .eq('id', session.user.id)
       .single()
-    const currency = currencyForVenueSlug(profile?.home_venue_slug)
-    const localPrice = localPriceFromNzd(config.priceNzd, currency)
-    const allowance = localPriceFromNzd(config.monthlyFreeSessionsNzd, currency)
+    const home: string | null = (profile as any)?.home_venue_slug ?? null
+    const currency = currencyForVenueSlug(home)
 
+    let name: string, price: number, discountPercent: number, key: string
+    if (home) {
+      const rows = await loadPlanRows(supabase, [home])
+      const plan = effectivePlans(rows, home).find(p => p.key === planKey && p.active)
+      if (!plan || plan.price <= 0) return NextResponse.json({ error: 'That plan is not available at your club.' }, { status: 400 })
+      ;({ name, price, discountPercent, key } = { name: plan.name, price: plan.price, discountPercent: plan.discountPercent, key: plan.key })
+    } else {
+      // No home club chosen: the standard plans, priced as they always were.
+      const config = MEMBERSHIP_CONFIG[planKey as MembershipTier]
+      if (!config || config.priceNzd <= 0) return NextResponse.json({ error: 'Invalid membership plan' }, { status: 400 })
+      ;({ name, price, discountPercent, key } = { name: config.name, price: localPriceFromNzd(config.priceNzd, currency), discountPercent: Math.round(config.discount * 100), key: config.id })
+    }
+
+    const where = home ? ` at ${getVenue(home).name}` : ''
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -37,14 +51,10 @@ export async function POST(request: Request) {
           price_data: {
             currency,
             product_data: {
-              name: `${config.name} membership`,
-              // The allowance is spent on court fees, which are already in
-              // this member's currency, so it converts too. Quoting a bare
-              // "$40" to a Johannesburg member for what arrives as R400 of
-              // credit undersells it tenfold.
-              description: `1 month · ${Math.round(config.discount * 100)}% off bookings, ${formatPrice(allowance, currency)} monthly credit allowance`,
+              name: `${name} membership${where}`,
+              description: `1 month${discountPercent > 0 ? ` · ${discountPercent}% off court bookings${where}` : ''}`,
             },
-            unit_amount: Math.round(localPrice * 100),
+            unit_amount: Math.round(price * 100),
           },
           quantity: 1,
         },
@@ -54,7 +64,7 @@ export async function POST(request: Request) {
       cancel_url: `${getAppUrl(request)}/membership?payment=cancelled`,
       metadata: {
         type: 'membership',
-        tier: config.id,
+        tier: key,
         userId: session.user.id,
       },
     })

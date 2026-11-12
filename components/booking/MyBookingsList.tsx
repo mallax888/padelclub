@@ -7,6 +7,7 @@ import { cn, formatDate } from '@/lib/utils'
 import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
+import { tierLabel } from '@/lib/plan-rules'
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
 import { VENUES } from '@/lib/venues'
@@ -546,6 +547,7 @@ export default function MyBookingsList({
   waits = [],
   regulars = [],
   sharesOn = false,
+  plan = null,
 }: {
   bookings: BookingWithCourt[]
   profile: Profile
@@ -565,6 +567,8 @@ export default function MyBookingsList({
   regulars?: RegularSeries[]
   // Whether unpaid shares have a deadline (the share-deadline database change has been run).
   sharesOn?: boolean
+  // The member's plan at their home club, from the server page.
+  plan?: { name: string; windowDays: number } | null
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -576,7 +580,9 @@ export default function MyBookingsList({
   const [payingSplit, setPayingSplit] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
 
-  const mem = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
+  // The member's plan at their home club (name and how many days ahead they can book).
+  const legacy = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
+  const mem = { name: plan?.name ?? legacy.name ?? tierLabel(profile?.membership_tier), bookingWindowDays: plan?.windowDays ?? legacy.bookingWindowDays }
   const now = new Date()
   const hasEnded = (date: string, endTime: string) => new Date(`${date}T${endTime}`) <= now
   const upcoming = bookings.filter(b => b.status !== 'cancelled' && !hasEnded(b.date, b.end_time))

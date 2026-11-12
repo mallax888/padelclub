@@ -10,16 +10,21 @@ import { cn, formatDateWithYear } from '@/lib/utils'
 // routes compute the charge -- the price shown and the price billed have to
 // be the same number.
 import { formatPrice, currencyForVenueSlug, localPriceFromNzd } from '@/lib/currency'
-import { MEMBERSHIP_CONFIG } from '@/types/database'
-import type { Profile, CreditTransaction, MembershipTier } from '@/types/database'
+import type { Profile, CreditTransaction } from '@/types/database'
+import { planLines, planOf, type Plan } from '@/lib/plan-rules'
 import { CREDIT_PACKS } from '@/lib/creditPacks'
 
 export default function MembershipPanel({
   profile,
   transactions,
+  plans,
+  clubName = null,
 }: {
   profile: Profile
   transactions: CreditTransaction[]
+  // The plans the member's home club offers, and that club's name.
+  plans: Plan[]
+  clubName?: string | null
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -29,7 +34,7 @@ export default function MembershipPanel({
   const [showBookingPrompt, setShowBookingPrompt] = useState<string | null>(null)
 
   const currentTier = profile?.membership_tier ?? 'casual'
-  const currentMem = MEMBERSHIP_CONFIG[currentTier]
+  const currentMem = planOf(plans, currentTier)
   // The same derivation the two checkout routes use, so nothing on this page
   // can quote a price the card isn't then charged.
   const memberCurrency = currencyForVenueSlug((profile as any)?.home_venue_slug)
@@ -40,13 +45,13 @@ export default function MembershipPanel({
   // straight out of handleUpgrade.
   useEffect(() => {
     if (searchParams.get('payment') === 'success' && currentTier !== 'casual') {
-      setShowBookingPrompt(MEMBERSHIP_CONFIG[currentTier].name)
+      setShowBookingPrompt(currentMem.name)
       router.replace('/membership')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const handleUpgrade = async (tier: MembershipTier) => {
+  const handleUpgrade = async (tier: string) => {
     if (tier === currentTier) return
     setUpgrading(true)
     if (tier === 'casual') {
@@ -64,7 +69,7 @@ export default function MembershipPanel({
     const res = await fetch('/api/checkout-membership', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tier }),
+      body: JSON.stringify({ planKey: tier }),
     })
     const data = await res.json()
     if (!res.ok || !data.url) {
@@ -110,22 +115,27 @@ export default function MembershipPanel({
             {currentMem.name} member
           </div>
           <div className="text-sm" style={{ color: 'var(--text-muted)' }}>
-            {currentMem.discount > 0 ? `${(currentMem.discount * 100).toFixed(0)}% discount · ` : ''}
+            {currentMem.discountPercent > 0 ? `${currentMem.discountPercent}% discount${clubName ? ` at ${clubName}` : ''} · ` : ''}
             {profile?.credits ?? 0} credits remaining
           </div>
         </div>
       </div>
 
       {/* Plan cards */}
-      <h2 className="text-base font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
-        Choose a plan
+      <h2 className="text-base font-medium mb-1" style={{ color: 'var(--text-primary)' }}>
+        {clubName ? `Choose a plan at ${clubName}` : 'Choose a plan'}
       </h2>
+      {clubName && (
+        <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+          A plan&apos;s discount and booking window apply at {clubName}. At other clubs you pay their normal court price.
+        </p>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        {Object.values(MEMBERSHIP_CONFIG).map(mem => {
-          const isCurrent = currentTier === mem.id
+        {plans.filter(p => p.active || p.key === currentTier).map(mem => {
+          const isCurrent = currentTier === mem.key
           return (
             <div
-              key={mem.id}
+              key={mem.key}
               className="relative flex flex-col rounded-2xl p-5"
               style={{
                 background: 'var(--bg-surface)',
@@ -133,7 +143,7 @@ export default function MembershipPanel({
                 boxShadow: isCurrent ? '0 0 0 1px var(--ring-primary), 0 30px 70px -20px var(--ring-primary)' : 'var(--shadow-float)',
               }}
             >
-              {mem.featured && (
+              {mem.featured && mem.key !== currentTier && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1 rounded-full whitespace-nowrap font-semibold"
                   style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
                   Most popular
@@ -141,13 +151,13 @@ export default function MembershipPanel({
               )}
               <div className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{mem.name}</div>
               <div className="text-2xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
-                {mem.priceNzd === 0 ? 'Free' : formatPrice(localPriceFromNzd(mem.priceNzd, memberCurrency), memberCurrency)}
+                {mem.price === 0 ? 'Free' : formatPrice(mem.price, memberCurrency)}
                 <span className="text-sm font-normal" style={{ color: 'var(--text-muted)' }}>
-                  {mem.period !== 'free' ? mem.period : ''}
+                  {mem.price !== 0 ? '/month' : ''}
                 </span>
               </div>
               <ul className="space-y-1.5 mt-3 flex-1">
-                {mem.features.map(f => (
+                {planLines(mem).map(f => (
                   <li key={f} className="text-sm flex items-start gap-2" style={{ color: 'var(--text-muted)' }}>
                     <span className="mt-0.5 shrink-0" style={{ color: 'var(--brand-primary-text)', fontWeight: 700, fontSize: '0.95rem' }}>✓</span>
                     {f}
@@ -164,7 +174,7 @@ export default function MembershipPanel({
                   border: isCurrent ? '1px solid var(--brand-primary)' : undefined,
                   fontWeight: 600,
                 }}
-                onClick={() => handleUpgrade(mem.id as MembershipTier)}
+                onClick={() => handleUpgrade(mem.key)}
               >
                 {isCurrent ? '✓ Current plan' : `Select ${mem.name}`}
               </button>

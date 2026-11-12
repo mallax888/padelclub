@@ -5,6 +5,9 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
+import MembershipPlans from '@/components/admin/MembershipPlans'
+import type { Plan } from '@/lib/plan-rules'
+import type { PlanStats } from '@/lib/club-plans'
 import { DAY_KEYS, DAY_NAMES, TIME_CHOICES, defaultWeek, describeWeek, fromMinutes, toMinutes, type DayKey, type WeekHours } from '@/lib/venue-hours'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
@@ -56,7 +59,7 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   )
 }
 
-export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars }: {
+export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null }: {
   clubs: SetupClub[]
   venue: { slug: string; name: string; address: string; region: string }
   listed: Listed[]
@@ -66,6 +69,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   courts: CourtRow[]
   // This club's rules for weekly regulars. Null when the regulars database change hasn't been run.
   regulars: { enabled: boolean; peakCap: number | null } | null
+  // This club's membership plans and figures. Null when the club plans database change hasn't been run.
+  memberships?: { plans: Plan[]; stats: PlanStats; examplePrice: number | null } | null
 }) {
   const router = useRouter()
   const [step, setStep] = useState<Step>('home')
@@ -174,6 +179,16 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           <Row n={3} state={liveDone ? 'done' : next === 'live' ? 'next' : 'todo'} title="Open for booking" onClick={() => setStep('live')}
             text={liveDone ? 'Open to players' : "Switch on when you're happy"} />
         </div>
+        {memberships && (
+          <button type="button" data-testid="open-memberships" className="w-full text-left rounded-[18px] mt-3.5 px-3.5 py-3.5 flex items-center gap-3" style={card}
+            onClick={() => { setStep('live'); setTimeout(() => document.querySelector('[data-testid="membership-plans"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80) }}>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🏅 Memberships</span>
+              <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{memberships.plans.length} plans · set your own prices, discounts and perks</span>
+            </span>
+            <span style={{ color: 'var(--text-subtle)' }} aria-hidden>›</span>
+          </button>
+        )}
         <Primary onClick={() => setStep(next)}>{nextLabel}</Primary>
         {!liveDone && (
           <p className="text-xs mt-3.5 rounded-2xl px-3.5 py-3 leading-relaxed" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--text-muted)' }}>
@@ -330,6 +345,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           )}
         </div>
       )}
+      {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
       <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
         {isOpen ? 'Done' : 'Save for later'}
       </Primary>

@@ -10,7 +10,8 @@ import SpecialsMenu from '@/components/ui/SpecialsMenu'
 import { SPECIALS, cadencePill } from '@/lib/specials'
 import { useState } from 'react'
 import ViewSwitch from '@/components/ui/ViewSwitch'
-import { homePathFor, type ViewMode } from '@/lib/view-mode'
+import { homePathFor, roleLabel, type ViewMode } from '@/lib/view-mode'
+import { tierLabel } from '@/lib/plan-rules'
 
 const ICONS: Record<string, JSX.Element> = {
   '/book': (
@@ -185,6 +186,8 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
   // reliable signal; the profile (loaded in the browser a moment later) only
   // adds the switch for staff who are currently looking at the player side.
   const manager = viewMode === 'manager'
+  // What sits under the person's name: managers by their role (Owner, Front desk), players by plan.
+  const whoLabel = (p: any) => manager ? (roleLabel(p?.role) ?? 'Manager') : `${tierLabel(p?.membership_tier)} member`
   const isStaff = manager || profile?.role === 'staff' || profile?.role === 'admin'
   const homeHref = homePathFor(viewMode)
   const managerTabActive = (item: { href: string; tab: string | null }) =>
@@ -206,7 +209,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
           <div className="flex items-center gap-2 shrink-0">
             {profile && (
               <span className="badge badge-member capitalize hidden sm:inline-flex">
-                {profile.membership_tier}
+                {manager ? (roleLabel((profile as any).role) ?? 'Manager') : tierLabel(profile.membership_tier)}
               </span>
             )}
             <ThemeToggle />
@@ -326,7 +329,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
                     {profile.full_name}
                   </div>
                   <div className="text-[10.5px] capitalize" style={{ color: 'var(--text-muted)' }}>
-                    {profile.membership_tier} member
+                    {whoLabel(profile)}
                   </div>
                 </div>
               </div>
@@ -429,7 +432,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
                         {profile.full_name}
                       </div>
                       <div className="text-xs capitalize" style={{ color: 'var(--text-muted)' }}>
-                        {profile.membership_tier} member
+                        {whoLabel(profile)}
                       </div>
                     </div>
                     <button onClick={handleSignOut} className="btn btn-sm btn-danger">

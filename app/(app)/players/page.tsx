@@ -26,7 +26,7 @@ export default async function PlayersPage() {
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Players</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>All club members and their stats</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Everyone on PadelClub, with their stats and ranking</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">

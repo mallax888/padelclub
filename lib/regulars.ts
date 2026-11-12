@@ -6,7 +6,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { VENUES } from '@/lib/venues'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { computeCourtPrice } from '@/lib/pricing'
-import { MEMBERSHIP_CONFIG } from '@/types/database'
+import { memberDiscount } from '@/lib/plan-rules'
+import { loadPlanRows } from '@/lib/club-plans'
 import { dayHours } from '@/lib/venue-hours'
 import { loadVenueSettings, isOpenForBooking, weekFor } from '@/lib/venue-settings'
 import { sendPushToUser } from '@/lib/push'
@@ -108,8 +109,9 @@ export async function createRegularWeeks(admin: Admin, input: { userId: string; 
   if (tableMissing(seriesError) || columnMissing(seriesError)) return fail(503, "Regulars aren't switched on yet.")
   if (seriesError || !series) return fail(500, 'Could not set up your regular. Please try again.')
 
-  const { data: profile } = await db.from('profiles').select('membership_tier').eq('id', input.userId).maybeSingle()
-  const discount = (MEMBERSHIP_CONFIG as any)[profile?.membership_tier ?? 'casual']?.discount ?? 0
+  const { data: profile } = await db.from('profiles').select('membership_tier, home_venue_slug').eq('id', input.userId).maybeSingle()
+  const planRows = profile?.home_venue_slug ? await loadPlanRows(db, [profile.home_venue_slug]) : null
+  const discount = memberDiscount(planRows, { tier: profile?.membership_tier, homeSlug: profile?.home_venue_slug ?? null, bookingSlug: slug })
   const endOf = (t: string, mins: number) => { const m = Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) + mins; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:00` }
 
   const booked: string[] = []
