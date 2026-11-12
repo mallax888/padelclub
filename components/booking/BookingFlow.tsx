@@ -10,7 +10,8 @@ import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { planWeeks, seriesDates, weekdayPlural, WEEK_OPTIONS, type DatedBusy } from '@/lib/regulars-rules'
 import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
-import { isPeakTime, computeCourtPrice } from '@/lib/pricing'
+import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
+import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
@@ -101,6 +102,8 @@ export default function BookingFlow({
     waitPrefill = null,
     regularsOn = false,
     regularRules = {},
+    offers = [],
+    offerPrefill = null,
   }: {
     courts: Court[]
     profile: Profile
@@ -119,6 +122,10 @@ export default function BookingFlow({
     // rules for them (a club can turn them off or cap how many courts they hold at peak).
     regularsOn?: boolean
     regularRules?: Record<string, { enabled: boolean; peakCap: number | null }>
+    // "Fill my empty courts" offers open right now, and (from an offer notification)
+    // the club and day to open straight onto.
+    offers?: OfferLite[]
+    offerPrefill?: { venueSlug: string; date: string } | null
   }) {
   const supabase = createClient()
   const router = useRouter()
@@ -279,6 +286,26 @@ export default function BookingFlow({
     setStep('time')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wlParam, waitPrefill?.venueSlug, waitPrefill?.date, waitPrefill?.durationMinutes])
+
+  // Arriving from an offer notification: open on that club and day.
+  const offerParam = searchParams.get('offer')
+  const appliedOffer = useRef<string | null>(null)
+  useEffect(() => {
+    if (offerParam !== '1' || !offerPrefill) return
+    const key = `${offerPrefill.venueSlug}|${offerPrefill.date}`
+    if (appliedOffer.current === key) return
+    const v = LIVE_VENUES.find(x => x.slug === offerPrefill.venueSlug)
+    if (!v) return
+    appliedOffer.current = key
+    setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null)
+    setRegion(v.region)
+    setVenue(v)
+    setDate(offerPrefill.date)
+    setDuration(1)
+    setTime(null)
+    setStep('time')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [offerParam, offerPrefill?.venueSlug, offerPrefill?.date])
 
   const joinWait = async (t: string) => {
     if (!venue || !date || !duration) return
@@ -470,7 +497,17 @@ export default function BookingFlow({
   const regularBlocked = regularPlan ? regularPlan.filter(p => !p.court) : []
 
   const isPeak = isPeakTime(date, time)
-  const courtPrice = assignedCourt && date && time && duration ? computeCourtPrice(assignedCourt, date, time, duration, discount) : 0
+  // A "fill my empty courts" offer covering this booking, if one is open. The
+  // player pays whichever is cheaper, the offer or their membership discount.
+  const offerAt = (court: Court | null | undefined, t: string | null) => {
+    if (!venue || !date || !t || !duration || !court) return null
+    const o = bestOfferFor(offers, venue.slug, date, toMinutes(t), Math.round(duration * 60), Date.now())
+    if (!o) return null
+    const r = priceWithOffer(basePricePerHour(court as any, date, t), duration, discount, o.discount_percent)
+    return r.offerApplied ? { offer: o, price: r.price } : null
+  }
+  const confirmOffer = offerAt(assignedCourt, time)
+  const courtPrice = assignedCourt && date && time && duration ? (confirmOffer ? confirmOffer.price : computeCourtPrice(assignedCourt, date, time, duration, discount)) : 0
 
   // Everyone the court is split with besides the booker: people picked from the
   // member list plus seats held open by link. Every price on this screen, and
@@ -536,6 +573,7 @@ export default function BookingFlow({
     let bookingData: any = null
     let error: any = null
     for (const candidate of candidates) {
+      const offerHere = offerAt(candidate, time)
       const attempt = await sb.from('bookings').insert({
         user_id: userId,
         court_id: candidate.id,
@@ -544,9 +582,11 @@ export default function BookingFlow({
         end_time: endTime + ':00',
         duration_minutes: duration * 60,
         status: 'confirmed',
-        price_nzd: parseFloat(computeCourtPrice(candidate, date, time, duration, discount).toFixed(2)),
-        discount_applied: discount,
+        price_nzd: parseFloat((offerHere ? offerHere.price : computeCourtPrice(candidate, date, time, duration, discount)).toFixed(2)),
+        discount_applied: offerHere ? 0 : discount,
         payment_method: 'card',
+        // Only sent when an offer applies, so booking works the same before offers are switched on.
+        ...(offerHere ? { offer_id: offerHere.offer.id } : {}),
       }).select().single()
       if (!attempt.error) { bookingData = attempt.data; break }
       error = attempt.error
@@ -1016,6 +1056,11 @@ export default function BookingFlow({
               <span style={{ color: 'var(--text-subtle)' }}>Off-peak</span>
             </div>
           </div>
+          {venue && date && offers.some(o => o.venue_slug === venue.slug && o.date === date) && (
+            <div className="rounded-xl px-3 py-2.5 mb-3 text-sm" data-testid="deal-banner" style={{ background: 'var(--brand-green-muted, var(--brand-primary-muted))', color: 'var(--text-primary)' }}>
+              🏷️ <b>Deals on {formatDate(date)}</b> — {offers.filter(o => o.venue_slug === venue.slug && o.date === date).map(o => `${o.discount_percent}% off ${o.start_time.slice(0, 5)}–${o.end_time.slice(0, 5)}`).join(', ')}. Look for the tag on the times.
+            </div>
+          )}
           {closedOnDate && (
             <div className="rounded-xl px-4 py-5 text-center text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
               {venue!.name} is closed on {DAY_PLURALS[dayKeyOfDate(date!)]}. Pick another day.
@@ -1028,6 +1073,8 @@ export default function BookingFlow({
               const waiting = !available && !!waitFor(t)
               const waitable = !available && (waiting || canWaitFor(t))
               const beyondClose = !available && !waitable && !!openingDay && !!duration && toMinutes(t) + duration * 60 > toMinutes(openingDay.close)
+              const deal = available ? offerAt(freeCourtsAt(t)[0], t) : null
+              const dealList = deal ? computeCourtPrice(freeCourtsAt(t)[0] as any, date!, t, duration!, 0) : 0
               if (waitable) {
                 return (
                   <button key={t} onClick={() => { setWaitSheet(t); playSelectionSound() }}
@@ -1060,7 +1107,11 @@ export default function BookingFlow({
                   onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
                   <div className="text-sm font-semibold">{t}</div>
-                  {available && (
+                  {deal ? (
+                    <div className="text-[10px] mt-0.5 font-bold" data-testid="deal-tile" style={{ color: 'var(--brand-green, var(--brand-primary-text))' }}>
+                      🏷️ Deal {formatPrice(deal.price, currency)} <s style={{ opacity: 0.6 }}>{formatPrice(dealList, currency)}</s>
+                    </div>
+                  ) : available && (
                     <div className="text-[10px] mt-0.5 font-medium"
                       style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary-text)' }}>
                       {peak ? '⚡ Peak' : '✓ Off-peak'}
@@ -1134,7 +1185,7 @@ export default function BookingFlow({
               ['Time', time && duration ? time + ' — ' + addHoursDecimal(time, duration) : ''],
               ['Duration', duration ? durationLabel(duration) : ''],
               ['Pricing', isPeak ? '⚡ Peak rate' : '✓ Off-peak rate'],
-              ...(discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
+              ...(confirmOffer ? [['Deal', confirmOffer.offer.discount_percent + '% off']] : discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between py-2 text-sm"
                 style={{ borderBottom: '1px solid var(--border)' }}>

@@ -10,6 +10,7 @@ import { ADMIN_TABS, canOpenTab, isOwnerRole } from '@/lib/view-mode'
 import { loadVenueSettings } from '@/lib/venue-settings'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { loadWaitlistDemand } from '@/lib/waitlist'
+import { loadOfferRows } from '@/lib/offers'
 
 export default async function AdminPage({ searchParams }: { searchParams?: { tab?: string; venue?: string } }) {
   const supabase = createServerClient()
@@ -155,6 +156,12 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     ? await loadWaitlistDemand(createAdminClient(), managedVenueSlug ? [managedVenueSlug] : managedCountryVenueSlugs ?? null)
     : null
 
+  // Owners only: offers they've sent and what came of them. null (table not set up
+  // yet) hides the Fill it buttons.
+  const offers = isOwner
+    ? await loadOfferRows(createAdminClient(), managedVenueSlug ? [managedVenueSlug] : managedCountryVenueSlugs ?? null)
+    : null
+
   const venueSettings = await loadVenueSettings(supabase)
 
   const publicBookingIds = (openMatchRows ?? []).map((m: any) => m.booking_id as string)
@@ -189,6 +196,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   }))
 
   return (
-    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
+    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} offers={offers} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }
