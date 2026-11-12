@@ -51,9 +51,9 @@ export default function SignupPage() {
             <svg width="56" height="56" viewBox="0 0 100 100" style={{ colorScheme: 'light' }}>
               <defs>
                 <radialGradient id="ball" cx="35%" cy="28%" r="75%">
-                  <stop offset="0%" stopColor="#CFE3FA"/>
-                  <stop offset="40%" stopColor="#3D8BE0"/>
-                  <stop offset="100%" stopColor="#1F5FB5"/>
+                  <stop offset="0%" stopColor="#F7FFD6"/>
+                  <stop offset="40%" stopColor="#D4FF3D"/>
+                  <stop offset="100%" stopColor="#8FAE1E"/>
                 </radialGradient>
                 <clipPath id="ballClip">
                   <circle cx="50" cy="50" r="46"/>
