@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import AdminDashboard from '@/components/admin/AdminDashboard'
 import { computeClubAnalytics } from '@/lib/analytics'
+import { REPORT_HISTORY_DAYS } from '@/lib/report-rules'
 import { localDateStr } from '@/lib/utils'
 import { addDays, format } from 'date-fns'
 import { VENUES, COUNTRIES } from '@/lib/venues'
@@ -108,6 +109,14 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     .select('created_at, amount, type, profiles!inner(home_venue_slug)')
     .gte('created_at', ninetyDaysAgo)
 
+  // The Reports tab compares each period with the one before it, so it needs about twice as far
+  // back as the 90 days above. Owners only (it holds money), scoped like the other admin queries.
+  let reportQuery = supabase
+    .from('bookings')
+    .select('id, user_id, court_id, date, start_time, status, price_nzd, payment_method, stripe_payment_id, created_at, profiles(full_name, membership_tier), courts!inner(name, venue_slug)')
+    .gte('date', format(addDays(new Date(), -REPORT_HISTORY_DAYS), 'yyyy-MM-dd'))
+    .order('date', { ascending: true })
+
   // Which bookings are also public "find a game" matches -- open_matches
   // carries venue_slug directly, so it's scoped the same simple way courts
   // are, no join needed. Used purely to colour those cells differently on
@@ -130,6 +139,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     courtPerfQuery = courtPerfQuery.eq('courts.venue_slug', managedVenueSlug)
     creditTxQuery = creditTxQuery.eq('profiles.home_venue_slug', managedVenueSlug)
     openMatchesQuery = openMatchesQuery.eq('venue_slug', managedVenueSlug)
+    reportQuery = reportQuery.eq('courts.venue_slug', managedVenueSlug)
   } else if (managedCountryVenueSlugs) {
     bookingsQuery = bookingsQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     courtsQuery = courtsQuery.in('venue_slug', managedCountryVenueSlugs)
@@ -138,9 +148,10 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     courtPerfQuery = courtPerfQuery.in('courts.venue_slug', managedCountryVenueSlugs)
     creditTxQuery = creditTxQuery.in('profiles.home_venue_slug', managedCountryVenueSlugs)
     openMatchesQuery = openMatchesQuery.in('venue_slug', managedCountryVenueSlugs)
+    reportQuery = reportQuery.in('courts.venue_slug', managedCountryVenueSlugs)
   }
 
-  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }, { data: creditTxRows }, { data: openMatchRows }, { data: unpaidShareRows }] = await Promise.all([
+  const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }, { data: creditTxRows }, { data: openMatchRows }, { data: unpaidShareRows }, { data: reportRows }] = await Promise.all([
     bookingsQuery,
     membersQuery,
     courtsQuery,
@@ -149,6 +160,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     creditTxQuery,
     openMatchesQuery,
     unpaidSharesQ,
+    isOwner ? reportQuery : Promise.resolve({ data: [] as any[] }),
   ])
 
   const unpaidShares = isOwner ? mapUnpaidShares(unpaidShareRows) : []
@@ -204,6 +216,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   }))
 
   return (
-    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} offers={offers} plans={plans} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} todayStr={localDateStr()} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
+    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} reportBookings={isOwner ? (reportRows ?? []) : []} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} offers={offers} plans={plans} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} todayStr={localDateStr()} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }
