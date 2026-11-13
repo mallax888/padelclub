@@ -315,3 +315,24 @@ h1, h2, h3, h4, h5, h6 {
 
 
 
+
+/* Two-handle range slider (the exact-range control for "Who should join?"): two native
+   range inputs on top of each other, so it keeps keyboard and screen-reader support. Only
+   the thumbs take pointer events, so both can be grabbed. */
+.dual-range { position: relative; height: 28px; }
+.dual-range input[type='range'] {
+  position: absolute; left: 0; top: 0; width: 100%; height: 28px; margin: 0;
+  background: transparent; pointer-events: none; -webkit-appearance: none; appearance: none;
+}
+.dual-range input[type='range']::-webkit-slider-runnable-track { background: transparent; height: 28px; }
+.dual-range input[type='range']::-moz-range-track { background: transparent; height: 28px; }
+.dual-range input[type='range']::-webkit-slider-thumb {
+  pointer-events: auto; -webkit-appearance: none; appearance: none; width: 24px; height: 24px; margin-top: 2px;
+  border-radius: 50%; background: #fff; border: 3px solid var(--brand-primary); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); cursor: grab;
+}
+.dual-range input[type='range']::-moz-range-thumb {
+  pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  border: 3px solid var(--brand-primary); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); cursor: grab;
+}
+.dual-range input[type='range']:focus-visible::-webkit-slider-thumb { outline: 3px solid var(--ring-primary); outline-offset: 2px; }
+.dual-range input[type='range']:focus-visible::-moz-range-thumb { outline: 3px solid var(--ring-primary); outline-offset: 2px; }
