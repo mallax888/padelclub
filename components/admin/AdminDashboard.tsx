@@ -24,6 +24,7 @@ import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import type { UnpaidShareRow } from '@/lib/money-demand'
 import type { WaitDemand } from '@/lib/waitlist-rules'
 import FinancialReports from '@/components/admin/FinancialReports'
+import type { ReportRow } from '@/lib/report-rules'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import BoardRightRail from '@/components/admin/BoardRightRail'
 import BoardFooterStrip from '@/components/admin/BoardFooterStrip'
@@ -101,6 +102,7 @@ export default function AdminDashboard({
   canSeeMoney = true,
   courtPerfBookings,
   creditTransactions,
+  reportBookings = [],
   publicBookingIds,
   unpaidShares = [],
   waitDemand = null,
@@ -122,6 +124,8 @@ export default function AdminDashboard({
   canSeeMoney?: boolean
   courtPerfBookings: CourtPerformanceBooking[]
   creditTransactions: FinancialCreditTx[]
+  // About 190 days of this owner's bookings with who and what, for the Reports tab (see lib/report-rules.ts).
+  reportBookings?: any[]
   publicBookingIds: string[]
   unpaidShares?: UnpaidShareRow[]
   // Waitlist demand per club for owners; null when the waitlist isn't set up.
@@ -402,16 +406,12 @@ export default function AdminDashboard({
     : avgDurationMin >= 60 ? `${Math.floor(avgDurationMin / 60)}h${avgDurationMin % 60 ? ' ' + (avgDurationMin % 60) + 'm' : ''}`
     : `${avgDurationMin}m`
 
-  const financialReportBookings = bookingsForVenue.map(b => ({
-    date: b.date,
-    status: b.status,
-    price_nzd: b.price_nzd,
-    payment_method: b.payment_method,
-    stripe_payment_id: b.stripe_payment_id ?? null,
-    venue_slug: b.courts?.venue_slug,
-    start_time: b.start_time,
-    court_name: b.courts?.name ?? 'Court',
-    member_name: b.profiles?.full_name ?? '—',
+  // The Reports tab's rows: this club's bookings, in the club's own currency, with the member's plan named.
+  const reportRows: ReportRow[] = reportBookings.filter((b: any) => venueCourtIds.has(b.court_id)).map((b: any) => ({
+    id: b.id, date: b.date, start_time: b.start_time ?? '', status: b.status, amount: Number(b.price_nzd) || 0,
+    payment_method: b.payment_method, stripe_payment_id: b.stripe_payment_id ?? null, created_at: b.created_at ?? null,
+    court_name: b.courts?.name ?? 'Court', member_id: b.user_id ?? null, member_name: b.profiles?.full_name ?? '—',
+    plan: b.profiles?.membership_tier ? planOf(effectivePlans(plans, activeVenue), b.profiles.membership_tier).name : '',
   }))
 
   const memberTiers = Array.from(new Set(members.map(m => m.membership_tier))).sort()
@@ -692,7 +692,7 @@ export default function AdminDashboard({
       )}
 
       {tab === 'reports' && (
-        <FinancialReports bookings={financialReportBookings} creditTransactions={creditTransactions} todayStr={today} />
+        <FinancialReports rows={reportRows} creditTransactions={creditTransactions} todayStr={today} venueSlug={activeVenue} />
       )}
 
       {/* Bookings tab */}
