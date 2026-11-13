@@ -4,6 +4,8 @@
 // a sensible level range when starting one. Used by Open play and by the booking
 // flow, so they agree. Ratings are the app's 0.5-7.0 skill_rating (lib/skill-levels).
 
+import { bandIndexOf, bandRange } from '@/lib/level-bands'
+
 // Recorded matches needed before a rating counts as settled.
 export const RELIABLE_MATCHES = 10
 // A game this much (or more) outside your level gets a heads-up before you join.
@@ -114,11 +116,12 @@ export function rankForYou<G extends GameLite>(games: G[], viewerRating: number 
 
 // ---------------------------------------------------------------- starting one
 
-// The level range suggested when you open a game: a step either side of you,
-// to the nearest half. No rating means no suggestion: open to everyone.
+// The level range suggested when you open a game: your own level ("Similar to me",
+// see lib/level-bands.ts). No rating means no suggestion: open to everyone.
 export function defaultRange(rating: number | null | undefined): { min: number; max: number } {
   if (!finite(rating)) return { min: MIN_RATING, max: MAX_RATING }
-  return { min: Math.max(MIN_RATING, roundHalf(rating - 1)), max: Math.min(MAX_RATING, roundHalf(rating + 1)) }
+  const i = bandIndexOf(rating)
+  return bandRange(i, i)
 }
 
 // A range clamped to the scale and kept at least half a step wide.
