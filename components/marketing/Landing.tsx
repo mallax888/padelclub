@@ -15,6 +15,7 @@ export default function Landing() {
           <div className={styles.brandword}>PadelClub</div>
         </div>
         <div className={styles.navActions}>
+          <Link href="/club" className={`${styles.btn} ${styles.btnGhost}`} data-testid="nav-for-clubs">For clubs</Link>
           <Link href="/auth/login" className={`${styles.btn} ${styles.btnGhost}`}>Sign in</Link>
           <Link href="/auth/signup" className={`${styles.btn} ${styles.btnLime}`}>Get started</Link>
         </div>
@@ -85,6 +86,25 @@ export default function Landing() {
                 <div className={styles.psCourtRow}><div><div className={styles.courtName}>Court 2</div><div className={styles.courtType}>Panoramic</div></div><div className={styles.courtPrice}>$34/hr</div></div>
                 <div className={styles.psCourtRow}><div><div className={styles.courtName}>Court 3</div><div className={styles.courtType}>Glass-backed</div></div><div className={styles.courtPrice}>$32/hr</div></div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section style={{ padding: '8px 0 48px' }} aria-label="Choose how you use PadelClub" data-testid="two-doors">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 18, padding: 22 }} data-testid="door-player">
+              <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '3px 10px', background: 'rgba(47,112,204,.25)', color: '#86BBF7' }}>For players</span>
+              <h3 style={{ fontSize: 20, fontWeight: 700, margin: '10px 0 4px' }}>I want to play</h3>
+              <p style={{ opacity: 0.8, fontSize: 14, margin: '0 0 16px' }}>Find a club near you, book courts, join games and tournaments.</p>
+              <Link href="/auth/signup" className={`${styles.btn} ${styles.btnLg}`} style={{ background: 'var(--lime)', color: 'var(--lime-ink)' }}>Sign up as a player</Link>
+              <p style={{ fontSize: 13, opacity: 0.75, marginTop: 12 }}>Already have an account? <Link href="/auth/login" style={{ textDecoration: 'underline', fontWeight: 600 }}>Log in</Link></p>
+            </div>
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 18, padding: 22 }} data-testid="door-club">
+              <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '3px 10px', background: 'rgba(255,212,0,.16)', color: '#FFD400' }}>For clubs</span>
+              <h3 style={{ fontSize: 20, fontWeight: 700, margin: '10px 0 4px' }}>I run a club</h3>
+              <p style={{ opacity: 0.8, fontSize: 14, margin: '0 0 16px' }}>Courts, bookings, members, money and reports in one place.</p>
+              <Link href="/club" className={`${styles.btn} ${styles.btnLg}`} style={{ background: '#FFD400', color: '#1b1f24' }}>Start a club</Link>
+              <p style={{ fontSize: 13, opacity: 0.75, marginTop: 12 }}>On a club team? <Link href="/club/login" style={{ textDecoration: 'underline', fontWeight: 600 }}>Club log in</Link></p>
             </div>
           </div>
         </section>

@@ -1,3 +1,4 @@
+import { keepClubAccountsOut } from '@/lib/club-guard'
 import { createServerClient } from '@/lib/supabase-server'
 import MembershipPanel from '@/components/membership/MembershipPanel'
 import { effectivePlans } from '@/lib/plan-rules'
@@ -8,6 +9,7 @@ export const metadata = { title: 'Membership' }
 
 export default async function MembershipPage() {
   const supabase = createServerClient()
+  await keepClubAccountsOut(supabase)
   const { data: { session } } = await supabase.auth.getSession()
 
   const { data: profile } = await supabase

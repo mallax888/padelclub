@@ -1,3 +1,4 @@
+import { splitOn } from '@/lib/club-access'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
@@ -29,8 +30,10 @@ export async function GET(request: Request) {
   const admin: any = createAdminClient()
   const counts: number[] = []
   for (const [min, max] of ranges) {
-    const { count, error } = await admin.from('profiles').select('id', { count: 'exact', head: true })
+    let q = admin.from('profiles').select('id', { count: 'exact', head: true })
       .in('home_venue_slug', slugs).gte('skill_rating', min).lte('skill_rating', max).neq('id', session.user.id)
+    if (splitOn()) q = q.eq('role', 'member') // club accounts are not players
+    const { count, error } = await q
     if (error) return NextResponse.json({ error: 'Could not count players.' }, { status: 500 })
     counts.push(count ?? 0)
   }

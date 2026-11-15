@@ -7,6 +7,7 @@ import { isManagerRole, isOwnerRole, roleLabel } from '@/lib/view-mode'
 import { addDaysStr, computeToday, greetingFor, venueClock, type TodayBooking } from '@/lib/today'
 import { computeEmptyCourtTime, summariseUnpaidShares } from '@/lib/money-demand'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
+import { splitOn } from '@/lib/club-access'
 import TodayView from '@/components/admin/TodayView'
 import Link from 'next/link'
 import { loadVenueSettings, weekFor } from '@/lib/venue-settings'
@@ -115,6 +116,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
 
   return (
     <TodayView
+      canSwitchView={!splitOn()}
       venueSlug={venueSlug}
       venues={venues}
       greeting={greetingFor(clock.hour)}

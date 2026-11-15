@@ -1,4 +1,5 @@
-﻿import { createServerClient } from '@/lib/supabase-server'
+﻿import { keepClubAccountsOut } from '@/lib/club-guard'
+import { createServerClient } from '@/lib/supabase-server'
 import MyBookingsList from '@/components/booking/MyBookingsList'
 import { stripeDashboardBase } from '@/lib/stripe'
 import { loadVenueSettings } from '@/lib/venue-settings'
@@ -10,6 +11,7 @@ import { loadPlanRows } from '@/lib/club-plans'
 export const metadata = { title: 'My bookings' }
 export default async function MyBookingsPage() {
   const supabase = createServerClient()
+  await keepClubAccountsOut(supabase)
   const { data: { session } } = await supabase.auth.getSession()
   const [{ data: bookings }, { data: profile }, { data: splitRequests }, { data: outgoingSplits }, { data: joinedGames }, venueSettings] = await Promise.all([
     supabase

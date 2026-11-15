@@ -1,3 +1,4 @@
+import { splitOn } from '@/lib/club-access'
 // Server side of "fill my empty courts" (see supabase/migrations/029_court_offers.sql
 // and lib/offer-rules.ts): previewing an offer for the owner, creating it and telling
 // the players, ending it early, and the results afterwards. The price itself is
@@ -52,7 +53,9 @@ async function pastPlayerIds(db: any, courtIds: string[], nowMs: number): Promis
 }
 
 async function homeClubIds(db: any, slug: string): Promise<string[]> {
-  const { data } = await db.from('profiles').select('id').eq('home_venue_slug', slug)
+  let homeQ = db.from('profiles').select('id').eq('home_venue_slug', slug)
+  if (splitOn()) homeQ = homeQ.eq('role', 'member') // club accounts do not get player offers
+  const { data } = await homeQ
   return ((data ?? []) as any[]).map(p => p.id as string)
 }
 

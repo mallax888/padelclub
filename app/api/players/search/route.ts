@@ -1,3 +1,4 @@
+import { splitOn } from '@/lib/club-access'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 
@@ -28,7 +29,8 @@ export async function GET(req: NextRequest) {
     .from('profiles')
     .select('id, full_name, nickname')
     .or(`full_name.ilike.%${term}%,nickname.ilike.%${term}%`)
-    .not('role', 'eq', 'staff')
+    // With the club/player split on, owners are club accounts too and never show up as players.
+    .not('role', 'in', splitOn() ? '(staff,admin)' : '(staff)')
     .neq('id', session.user.id)
     .order('full_name')
     .limit(MAX_RESULTS)

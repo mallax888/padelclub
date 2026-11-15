@@ -1,3 +1,4 @@
+import { splitOn } from '@/lib/club-access'
 ﻿import { createServerClient } from '@/lib/supabase-server'
 import PlayersDirectory from '@/components/players/PlayersDirectory'
 import Link from 'next/link'
@@ -16,7 +17,7 @@ export default async function PlayersPage() {
       .order('member_number', { ascending: true })
 
     if (!error && data) {
-      players = (data as any[]).filter((p: any) => p.role !== 'staff')
+      players = (data as any[]).filter((p: any) => (splitOn() ? p.role === 'member' : p.role !== 'staff'))
     }
   } catch (e) {
     console.error('Players page error:', e)

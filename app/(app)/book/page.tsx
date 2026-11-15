@@ -1,3 +1,4 @@
+import { keepClubAccountsOut } from '@/lib/club-guard'
 import { createServerClient } from '@/lib/supabase-server'
 import BookingFlow from '@/components/booking/BookingFlow'
 import { loadVenueSettings } from '@/lib/venue-settings'
@@ -16,6 +17,7 @@ const RECENT_PARTNER_LIMIT = 12
 
 export default async function BookPage() {
   const supabase = createServerClient()
+  await keepClubAccountsOut(supabase)
   const [{ data: courts }, { data: { session } }, venueSettings] = await Promise.all([
     supabase.from('courts').select('*').eq('is_active', true),
     supabase.auth.getSession(),

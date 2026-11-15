@@ -10,6 +10,7 @@ const sectionLabel = { letterSpacing: '0.14em', color: 'var(--text-subtle)' } as
 
 export type TodayViewProps = {
   venueSlug: string
+  canSwitchView?: boolean // false once club accounts are kept out of the player side
   venues: { slug: string; name: string }[]
   greeting: string
   staffName: string | null
@@ -91,7 +92,7 @@ export default function TodayView(p: TodayViewProps) {
       <AutoRefresh />
       <div className="flex items-center justify-between gap-2.5">
         <VenuePicker venues={p.venues} value={p.venueSlug} />
-        <ViewSwitch mode="manager" />
+        {p.canSwitchView !== false && <ViewSwitch mode="manager" />}
       </div>
 
       <h1 className="mt-4 text-2xl font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>

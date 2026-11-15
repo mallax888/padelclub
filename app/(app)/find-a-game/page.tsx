@@ -1,4 +1,5 @@
-﻿import { createServerClient } from '@/lib/supabase-server'
+﻿import { keepClubAccountsOut } from '@/lib/club-guard'
+import { createServerClient } from '@/lib/supabase-server'
 import FindGameList from '@/components/matches/FindGameList'
 import { loadMatchCounts } from '@/lib/matchmaking-server'
 
@@ -6,6 +7,7 @@ export const metadata = { title: 'Open play' }
 
 export default async function FindGamePage() {
   const supabase = createServerClient()
+  await keepClubAccountsOut(supabase)
   const { data: { session } } = await supabase.auth.getSession()
 
   // This runs on the server, which has no idea what timezone the visitor is

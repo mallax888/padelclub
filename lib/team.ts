@@ -66,7 +66,7 @@ export type PlanResult =
   | { ok: false; status: number; error: string }
 
 const fail = (status: number, error: string): PlanResult => ({ ok: false, status, error })
-const isTeamRole = (r: unknown): r is TeamRole => r === 'admin' || r === 'staff'
+export const isTeamRole = (r: unknown): r is TeamRole => r === 'admin' || r === 'staff'
 
 export function planTeamChange(input: {
   action: TeamAction
