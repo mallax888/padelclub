@@ -5,6 +5,7 @@ import { COUNTRIES, VENUES } from '@/lib/venues'
 import { isManagerRole, isOwnerRole } from '@/lib/view-mode'
 import { covers, scopeLabel, scopeOf, type TeamScope } from '@/lib/team'
 import TeamView from '@/components/admin/TeamView'
+import InviteTeam, { type PendingInvite } from '@/components/admin/InviteTeam'
 
 export const metadata = { title: 'Team' }
 
@@ -48,5 +49,21 @@ export default async function TeamPage() {
     ?? (caller.homeVenueSlug && clubs.some(c => c.slug === caller.homeVenueSlug) ? caller.homeVenueSlug : null)
     ?? clubs[0]?.slug ?? ''
 
-  return <TeamView members={members} clubs={clubs} countries={countries} canGrantAll={!caller.reach.venueSlug && !caller.reach.country} defaultClub={defaultClub} />
+  // Waiting invites inside this owner's reach. A missing table (database change 033 not run yet) just means "not switched on".
+  const { data: inviteRows, error: inviteError } = await createAdminClient()
+    .from('team_invites' as any)
+    .select('id, email, role, managed_venue_slug, managed_country, expires_at, used_at, cancelled_at')
+    .is('used_at', null).is('cancelled_at', null).gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+  const invites: PendingInvite[] = ((inviteRows ?? []) as any[])
+    .filter(r => covers(caller.reach, scopeOf(r)))
+    .map(r => ({ id: r.id, email: r.email, role: r.role, scopeLabel: scopeLabel(scopeOf(r)), expiresAt: r.expires_at }))
+  const canGrantAll = !caller.reach.venueSlug && !caller.reach.country
+
+  return (
+    <>
+      <InviteTeam clubs={clubs} canGrantAll={canGrantAll} defaultClub={defaultClub} invites={invites} ready={!inviteError} />
+      <TeamView members={members} clubs={clubs} countries={countries} canGrantAll={canGrantAll} defaultClub={defaultClub} />
+    </>
+  )
 }

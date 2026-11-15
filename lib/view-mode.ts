@@ -23,8 +23,10 @@ export const canOpenTab = (role: string | null | undefined, tab: string): boolea
   isOwnerRole(role) || (FRONT_DESK_TABS as readonly string[]).includes(tab)
 
 // A manager is in manager mode unless they have chosen player mode.
-export function resolveViewMode(role: string | null | undefined, cookieValue: string | null | undefined): ViewMode {
+// `locked` is the club/player split: a club account is always in manager mode.
+export function resolveViewMode(role: string | null | undefined, cookieValue: string | null | undefined, locked = false): ViewMode {
   if (!isManagerRole(role)) return 'player'
+  if (locked) return 'manager'
   return cookieValue === 'player' ? 'player' : 'manager'
 }
 

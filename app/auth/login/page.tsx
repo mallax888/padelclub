@@ -193,6 +193,10 @@ export default function LoginPage() {
               Create one
             </Link>
           </p>
+          <p style={{ color: 'var(--text-muted)' }}>
+            On a club team?{' '}
+            <Link href="/club/login" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary-text)' }}>Club log in</Link>
+          </p>
         </div>
 
       </div>

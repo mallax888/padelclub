@@ -153,6 +153,10 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
+        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          Running a club?{' '}
+          <Link href="/club" className="font-semibold hover:underline" style={{ color: 'var(--brand-primary-text)' }}>Start a club</Link>
+        </p>
         <p className="text-center text-xs mt-3" style={{ color: 'var(--text-subtle)' }}>
           By signing up you agree to our terms and privacy policy.
         </p>

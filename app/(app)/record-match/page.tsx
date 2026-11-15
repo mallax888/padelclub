@@ -1,4 +1,5 @@
-﻿import { createServerClient } from '@/lib/supabase-server'
+﻿import { keepClubAccountsOut } from '@/lib/club-guard'
+import { createServerClient } from '@/lib/supabase-server'
 import RecordMatchForm from '@/components/matches/RecordMatchForm'
 import { formatDate } from '@/lib/utils'
 
@@ -10,6 +11,7 @@ export default async function RecordMatchPage({
   searchParams: { bookingId?: string }
 }) {
   const supabase = createServerClient()
+  await keepClubAccountsOut(supabase)
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session!.user.id
 

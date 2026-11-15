@@ -169,7 +169,7 @@ function SidebarGroupLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function Navbar({ viewMode = 'player', isOwner = false }: { viewMode?: ViewMode; isOwner?: boolean }) {
+export default function Navbar({ viewMode = 'player', isOwner = false, canSwitchView = true, isPlatform = false }: { viewMode?: ViewMode; isOwner?: boolean; canSwitchView?: boolean; isPlatform?: boolean }) {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
   const tabParam = useSearchParams()?.get('tab') ?? 'board'
@@ -277,6 +277,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
                 <SidebarLink href="/admin" label="Dashboard" active={pathname === '/admin'} />
                 {isOwner && <SidebarLink href="/admin/team" label="Team" active={pathname === '/admin/team'} />}
                 {isOwner && <SidebarLink href="/admin/setup" label="Club setup" active={pathname === '/admin/setup'} />}
+                {isPlatform && <SidebarLink href="/platform" label="Club requests" active={pathname === '/platform'} />}
               </div>
               <SidebarGroupLabel>Club</SidebarGroupLabel>
               <div className="flex flex-col gap-0.5">
@@ -306,7 +307,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
 
           <div className="flex-1" />
 
-          {isStaff && (
+          {isStaff && canSwitchView && (
             <div className="pt-3">
               <ViewSwitch mode={viewMode} variant="row" />
             </div>
@@ -381,7 +382,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false }: { viewM
                   </Link>
                 )
               })}
-              {isStaff && (
+              {isStaff && canSwitchView && (
                 <div className="pt-2">
                   <ViewSwitch mode={viewMode} variant="row" onNavigate={() => setMenuOpen(false)} />
                 </div>
