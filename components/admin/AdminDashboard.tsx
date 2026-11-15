@@ -410,7 +410,8 @@ export default function AdminDashboard({
   const reportRows: ReportRow[] = reportBookings.filter((b: any) => venueCourtIds.has(b.court_id)).map((b: any) => ({
     id: b.id, date: b.date, start_time: b.start_time ?? '', status: b.status, amount: Number(b.price_nzd) || 0,
     payment_method: b.payment_method, stripe_payment_id: b.stripe_payment_id ?? null, created_at: b.created_at ?? null,
-    court_name: b.courts?.name ?? 'Court', member_id: b.user_id ?? null, member_name: b.profiles?.full_name ?? '—',
+    court_name: b.courts?.name ?? 'Court', end_time: b.end_time ?? '', duration_minutes: b.duration_minutes ?? undefined, member_email: b.profiles?.email ?? null,
+    member_id: b.user_id ?? null, member_name: b.profiles?.full_name ?? '—',
     plan: b.profiles?.membership_tier ? planOf(effectivePlans(plans, activeVenue), b.profiles.membership_tier).name : '',
   }))
 
