@@ -113,7 +113,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   // back as the 90 days above. Owners only (it holds money), scoped like the other admin queries.
   let reportQuery = supabase
     .from('bookings')
-    .select('id, user_id, court_id, date, start_time, status, price_nzd, payment_method, stripe_payment_id, created_at, profiles(full_name, membership_tier), courts!inner(name, venue_slug)')
+    .select('id, user_id, court_id, date, start_time, end_time, duration_minutes, status, price_nzd, payment_method, stripe_payment_id, created_at, profiles(full_name, email, membership_tier), courts!inner(name, venue_slug)')
     .gte('date', format(addDays(new Date(), -REPORT_HISTORY_DAYS), 'yyyy-MM-dd'))
     .order('date', { ascending: true })
 

@@ -43,6 +43,9 @@ export type ReportRow = {
   stripe_payment_id: string | null
   created_at?: string | null
   court_name: string
+  end_time?: string
+  duration_minutes?: number
+  member_email?: string | null
   member_id: string | null
   member_name: string
   plan: string // the member's plan, already named
@@ -142,11 +145,26 @@ export const bookedOnDay = (iso: string | null | undefined, venueSlug: string): 
 // 17 Aug 2026: no US or NZ day/month mix-up in a spreadsheet.
 export const niceDate = (ymdStr: string): string => (ymdStr ? format(parseISO(ymdStr), 'd MMM yyyy') : '')
 
+// Every booking in the period, cancelled ones included (staff blocks are not bookings), oldest first. The "raw data".
+export function rawBookings(rows: ReportRow[], range: DateRange): ReportRow[] {
+  return rows.filter(b => inRange(b.date, range) && b.status !== 'blocked')
+    .sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time))
+}
+export const statusLabel = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '')
+// "Booked at" as a clock time at the club.
+export const bookedAtTime = (iso: string | null | undefined, venueSlug: string): string => {
+  if (!iso) return ''
+  const t = new Date(iso)
+  return Number.isNaN(t.getTime()) ? '' : new Intl.DateTimeFormat('en-GB', { timeZone: timezoneForVenueSlug(venueSlug), hour: '2-digit', minute: '2-digit', hour12: false }).format(t)
+}
+export const RAW_HEADER = ['Date', 'Day', 'Start', 'End', 'Minutes', 'Club', 'Court', 'Member', 'Email', 'Plan', 'Status', 'Amount', 'Currency', 'Paid with', 'Booked on', 'Booked at', 'Payment reference', 'Booking ID']
+
 export function detailedCsv(rows: ReportRow[], range: DateRange, opts: { clubName: string; venueSlug: string; currency: string }): string {
-  const header = ['Date', 'Day', 'Time', 'Club', 'Court', 'Member', 'Plan', 'Amount', 'Currency', 'Paid with', 'Status', 'Booked on']
-  const lines = rows.filter(b => inRange(b.date, range) && (EARNED(b))).sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)).map(b => [
-    niceDate(b.date), weekdayName(b.date).slice(0, 3), b.start_time?.slice(0, 5) ?? '', csvText(opts.clubName), csvText(b.court_name), csvText(b.member_name), csvText(b.plan),
-    csvNum(b.amount || 0), opts.currency.toUpperCase(), csvText(paymentLabel(b.payment_method)), b.status, niceDate(bookedOnDay(b.created_at, opts.venueSlug)),
+  const lines = rawBookings(rows, range).map(b => [
+    niceDate(b.date), weekdayName(b.date).slice(0, 3), b.start_time?.slice(0, 5) ?? '', b.end_time?.slice(0, 5) ?? '', b.duration_minutes ?? '',
+    csvText(opts.clubName), csvText(b.court_name), csvText(b.member_name), csvText(b.member_email ?? ''), csvText(b.plan),
+    statusLabel(b.status), csvNum(b.amount || 0), opts.currency.toUpperCase(), csvText(paymentLabel(b.payment_method)),
+    niceDate(bookedOnDay(b.created_at, opts.venueSlug)), bookedAtTime(b.created_at, opts.venueSlug), csvText(b.stripe_payment_id ?? ''), csvText(b.id ?? ''),
   ].join(','))
-  return BOM + [header.join(','), ...lines].join('\n')
+  return BOM + [RAW_HEADER.join(','), ...lines].join('\n')
 }

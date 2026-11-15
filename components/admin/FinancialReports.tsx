@@ -13,6 +13,7 @@ import {
 import type { FinancialCreditTx } from '@/lib/analytics'
 import ReportSheet from '@/components/admin/ReportSheet'
 import { buildWorkbook } from '@/lib/report-xlsx'
+import { drawRevenueChart } from '@/lib/report-chart'
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
 const short = (s: string) => format(parseISO(s), 'd MMM')
@@ -100,8 +101,11 @@ export default function FinancialReports({
     try {
       // loaded only when asked for, so the Reports tab stays light
       const { default: writeExcelFile } = await import('write-excel-file/browser')
-      const sheets = buildWorkbook({ clubName, venueSlug, currency, range, prevRange, rows, summary, prev, preparedOn: today })
-      await writeExcelFile(sheets as any).toFile(file('report').replace(/\.csv$/, '.xlsx'))
+      const bestDay = summary.byDay.reduce((m, x) => (x.revenue > m.revenue ? x : m), summary.byDay[0] ?? { date: '', revenue: 0, bookings: 0 })
+      const midDay = summary.byDay[Math.floor(summary.byDay.length / 2)]
+      const chart = await drawRevenueChart(summary.byDay, bestDay.date, { from: short(range.from), mid: midDay ? short(midDay.date) : '', to: short(range.to) }).catch(() => null)
+      const sheets = buildWorkbook({ clubName, venueSlug, currency, range, prevRange, rows, summary, prev, preparedOn: today, chart })
+      await writeExcelFile(sheets as any, { fontFamily: 'Calibri' } as any).toFile(file('report').replace(/\.csv$/, '.xlsx'))
     } finally { setExporting(false) }
   }
   const kpis = [
