@@ -55,7 +55,7 @@ function Row({ r, venues, onDone }: { r: ClubRequest; venues: { slug: string; na
   return (
     <div className="rounded-2xl p-4" style={card} data-testid="request-row">
       <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{r.clubName} <span className="font-normal" style={{ color: 'var(--text-muted)' }}>· {r.city}, {r.country}</span></div>
-      <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ''}{r.courts ? ` · ${r.courts} courts` : ''} · asked {new Date(r.createdAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })}</div>
+      <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{r.contactName} · {r.email}{r.phone ? ` · ${r.phone}` : ''}{r.courts ? ` · ${r.courts} courts` : ''} · asked {new Date(r.createdAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' })}</div>
       {r.address && <div className="text-xs mt-0.5" style={{ color: 'var(--text-subtle)' }}>{r.address}</div>}
       {link ? (
         <div className="mt-3 text-sm rounded-xl p-3" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }} data-testid="approve-link">
