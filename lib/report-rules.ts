@@ -109,10 +109,12 @@ export function change(current: number, previous: number): Change {
   const pct = Math.round(((current - previous) / previous) * 100)
   return { pct, dir: pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat' }
 }
-export function describeChange(c: Change): string {
+// In words. A tiny starting figure makes a silly percentage (▲ 4600%), so past +200% the earlier figure is shown instead.
+export function describeChange(c: Change, previousText?: string): string {
   if (c.dir === 'none') return 'Nothing in either period'
   if (c.dir === 'new') return 'New: nothing in the period before'
   if (c.dir === 'flat') return 'No change'
+  if (c.dir === 'up' && (c.pct as number) > 200 && previousText) return `▲ from ${previousText}`
   return `${c.dir === 'up' ? '▲' : '▼'} ${Math.abs(c.pct as number)}%`
 }
 
@@ -131,22 +133,20 @@ const BOM = '﻿' // so Excel reads names with accents properly
 export const PAYMENT_LABELS: Record<string, string> = { card: 'Card', credits: 'Session credits', membership_allowance: 'Membership allowance', staff_block: 'Staff block' }
 export const paymentLabel = (m: string): string => PAYMENT_LABELS[m] ?? m
 
-const bookedOn = (iso: string | null | undefined, venueSlug: string): string => {
+// The day it was booked, at the club (not London), as YYYY-MM-DD.
+export const bookedOnDay = (iso: string | null | undefined, venueSlug: string): string => {
   if (!iso) return ''
   const t = new Date(iso)
   return Number.isNaN(t.getTime()) ? '' : new Intl.DateTimeFormat('en-CA', { timeZone: timezoneForVenueSlug(venueSlug) }).format(t)
 }
+// 17 Aug 2026: no US or NZ day/month mix-up in a spreadsheet.
+export const niceDate = (ymdStr: string): string => (ymdStr ? format(parseISO(ymdStr), 'd MMM yyyy') : '')
 
 export function detailedCsv(rows: ReportRow[], range: DateRange, opts: { clubName: string; venueSlug: string; currency: string }): string {
   const header = ['Date', 'Day', 'Time', 'Club', 'Court', 'Member', 'Plan', 'Amount', 'Currency', 'Paid with', 'Status', 'Booked on']
   const lines = rows.filter(b => inRange(b.date, range) && (EARNED(b))).sort((a, b) => a.date.localeCompare(b.date) || a.start_time.localeCompare(b.start_time)).map(b => [
-    b.date, weekdayName(b.date).slice(0, 3), b.start_time?.slice(0, 5) ?? '', csvText(opts.clubName), csvText(b.court_name), csvText(b.member_name), csvText(b.plan),
-    csvNum(b.amount || 0), opts.currency.toUpperCase(), csvText(paymentLabel(b.payment_method)), b.status, bookedOn(b.created_at, opts.venueSlug),
+    niceDate(b.date), weekdayName(b.date).slice(0, 3), b.start_time?.slice(0, 5) ?? '', csvText(opts.clubName), csvText(b.court_name), csvText(b.member_name), csvText(b.plan),
+    csvNum(b.amount || 0), opts.currency.toUpperCase(), csvText(paymentLabel(b.payment_method)), b.status, niceDate(bookedOnDay(b.created_at, opts.venueSlug)),
   ].join(','))
   return BOM + [header.join(','), ...lines].join('\n')
-}
-
-export function dailyCsv(summary: Summary, opts: { currency: string }): string {
-  const header = ['Date', 'Day', 'Bookings', 'Revenue', 'Currency']
-  return BOM + [header.join(','), ...summary.byDay.map(d => [d.date, weekdayName(d.date).slice(0, 3), d.bookings, csvNum(d.revenue), opts.currency.toUpperCase()].join(','))].join('\n')
 }
