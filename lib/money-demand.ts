@@ -5,6 +5,7 @@
 import { isPeakTime } from '@/lib/pricing'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { dayHours, toMinutes, type WeekHours } from '@/lib/venue-hours'
+import { shareSchedule, shareStage } from '@/lib/share-rules'
 
 // The selling window used when a club hasn't set its opening hours -- what the
 // whole app assumed before hours existed. Clubs that have set hours pass them in.
@@ -66,6 +67,25 @@ export function summariseUnpaidShares(rows: UnpaidShareRow[], venueSlug: string,
   return { total: round2(total), count: lines.length, bands, rows: lines }
 }
 
+// Overdue = the friend's pay-by time has passed (the same rule that decides when
+// the booker is asked to cover). Shares still inside their time, or on bookings made
+// too close to play to have a deadline, are "not due yet": reminders for those go out
+// on their own, so the owner only needs to act on the overdue ones.
+export type OverdueSummary = { overdue: UnpaidShareLine[]; overdueTotal: number; notDueCount: number; notDueTotal: number }
+
+export function splitOverdueShares(rows: UnpaidShareRow[], venueSlug: string, nowMs: number): OverdueSummary {
+  const tz = timezoneForVenueSlug(venueSlug)
+  const overdue: UnpaidShareLine[] = []
+  let overdueTotal = 0, notDueCount = 0, notDueTotal = 0
+  for (const line of summariseUnpaidShares(rows, venueSlug, nowMs).rows) {
+    const startMs = venueInstant(line.date, line.startTime.length === 5 ? `${line.startTime}:00` : line.startTime, tz).getTime()
+    const sched = shareSchedule(startMs, Date.parse(line.createdAt))
+    const isOverdue = sched !== null && shareStage(sched, nowMs) !== 'before'
+    if (isOverdue) { overdue.push(line); overdueTotal += line.amount } else { notDueCount++; notDueTotal += line.amount }
+  }
+  return { overdue, overdueTotal: round2(overdueTotal), notDueCount, notDueTotal: round2(notDueTotal) }
+}
+
 // ------------------------------------------------------------------ empty time
 
 export type CourtLite = { id: string; price_per_hour: number; price_per_hour_peak: number | null; is_active?: boolean | null }
@@ -74,6 +94,8 @@ export type BookingLite = { court_id: string; date: string; start_time: string; 
 export type DayDemand = { date: string; label: string; sellable: number; booked: number; empty: number; fillPct: number | null }
 export type DemandGap = { date: string; from: string; to: string; courts: number; kind: 'peak' | 'quiet' | 'mixed'; emptyHours: number }
 export type Bucket = { sellable: number; empty: number; fillPct: number | null }
+// One hour of the week ahead: how full it is and what its empty courts could earn.
+export type SlotDemand = { date: string; from: string; to: string; courts: number; empty: number; fillPct: number; potential: number; kind: 'peak' | 'quiet' }
 
 export type EmptyTime = {
   courtCount: number
@@ -83,6 +105,7 @@ export type EmptyTime = {
   peak: Bucket
   quiet: Bucket
   gaps: DemandGap[]
+  slots: SlotDemand[] // every hour with something left to sell, in time order
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -107,6 +130,7 @@ export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite
   const days: DayDemand[] = []
   const emptyByHour = new Map<string, { base: number; hourly: number[] }>() // date -> first hour, then courts empty at each hour (-1 = hour not on sale)
   let potential = 0
+  const slots: SlotDemand[] = []
 
   for (let i = 0; i < spanDays; i++) {
     const date = addDaysStr(today, i)
@@ -122,6 +146,7 @@ export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite
       const peakHour = isPeakTime(date, `${pad(h)}:00`)
       let emptyCourts = 0
       let onSale = 0
+      let slotPotential = 0
       for (const court of active) {
         const hits = bookings.filter(b =>
           b.court_id === court.id && b.date === date && b.status !== 'cancelled' &&
@@ -136,7 +161,12 @@ export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite
         bucket.empty++
         day.empty++
         emptyCourts++
-        potential += peakHour && court.price_per_hour_peak ? court.price_per_hour_peak : court.price_per_hour
+        const fee = peakHour && court.price_per_hour_peak ? court.price_per_hour_peak : court.price_per_hour
+        potential += fee
+        slotPotential += fee
+      }
+      if (onSale > 0 && emptyCourts > 0) {
+        slots.push({ date, from: `${pad(h)}:00`, to: `${pad(h + 1)}:00`, courts: onSale, empty: emptyCourts, fillPct: Math.round(((onSale - emptyCourts) / onSale) * 100), potential: Math.round(slotPotential), kind: peakHour ? 'peak' : 'quiet' })
       }
       hourly.push(onSale > 0 ? emptyCourts : -1)
     }
@@ -183,5 +213,14 @@ export function computeEmptyCourtTime(courts: CourtLite[], bookings: BookingLite
     peak: { sellable: peak.sellable, empty: peak.empty, fillPct: pct(peak.sellable - peak.empty, peak.sellable) },
     quiet: { sellable: quiet.sellable, empty: quiet.empty, fillPct: pct(quiet.sellable - quiet.empty, quiet.sellable) },
     gaps: gaps.slice(0, 3),
+    slots,
   }
+}
+
+// The slots most worth filling: ranked by what their empty courts could earn,
+// the emptier one first when two could earn the same, then the earlier one.
+export function bestSlotsToFill(slots: SlotDemand[], limit = 5): SlotDemand[] {
+  return [...slots]
+    .sort((a, b) => b.potential - a.potential || a.fillPct - b.fillPct || (a.date + a.from < b.date + b.from ? -1 : 1))
+    .slice(0, limit)
 }
