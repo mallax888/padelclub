@@ -676,19 +676,20 @@ export default function AdminDashboard({
       )}
 
       {tab === 'analytics' && canSeeMoney && activeVenue && (
-        <MoneyDemand venueSlug={activeVenue} week={activeWeek} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares}
-          waitDemand={waitDemand ? (waitDemand[activeVenue] ?? { total: 0, bookedAfter: 0, slots: [] }) : null}
-          offers={offers ? offers.filter(o => o.venue_slug === activeVenue) : null} />
-      )}
-
-      {tab === 'analytics' && canSeeMoney && analytics && (
         <ClubAnalytics
-          data={analytics}
-          courtPerfBookings={courtPerfForVenue}
-          heatmapBookings={bookingsForVenue}
+          rows={reportRows.map(r => ({ date: r.date, start_time: r.start_time, status: r.status, member_id: r.member_id }))}
+          members={members as any}
           courtCount={venueCourts.length}
+          venueSlug={activeVenue}
+          week={activeWeek}
+          offersOn={offers !== null}
+          todayStr={today}
           upcomingBookings={upcomingBookings}
-        />
+        >
+          <MoneyDemand venueSlug={activeVenue} week={activeWeek} courts={venueCourts} bookings={bookingsForVenue as any} unpaidShares={unpaidShares}
+            waitDemand={waitDemand ? (waitDemand[activeVenue] ?? { total: 0, bookedAfter: 0, slots: [] }) : null}
+            offers={offers ? offers.filter(o => o.venue_slug === activeVenue) : null} />
+        </ClubAnalytics>
       )}
 
       {tab === 'reports' && (

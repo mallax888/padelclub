@@ -18,10 +18,10 @@ export default function ReportSheet({ clubName, range, prevRange, summary, prev,
   const money = (n: number) => formatPrice(n, currency)
   const max = Math.max(1, ...summary.byDay.map(x => x.revenue))
   const kpis = [
-    { label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), good: true },
-    { label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), good: true },
-    { label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), good: true },
-    { label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), good: false },
+    { label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), good: true, was: money(prev.revenue) },
+    { label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), good: true, was: String(prev.bookings) },
+    { label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), good: true, was: money(prev.average) },
+    { label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), good: false, was: money(prev.cancelled) },
   ]
   const share = (n: number) => (summary.revenue > 0 ? `${Math.round((n / summary.revenue) * 100)}%` : '–')
   return (
@@ -33,7 +33,7 @@ export default function ReportSheet({ clubName, range, prevRange, summary, prev,
           <div key={k.label}>
             <small>{k.label}</small>
             <b>{k.value}</b>
-            <em className={k.c.dir === 'up' ? (k.good ? 'good' : 'bad') : k.c.dir === 'down' ? (k.good ? 'bad' : 'good') : ''}>{describeChange(k.c)}</em>
+            <em className={k.c.dir === 'up' ? (k.good ? 'good' : 'bad') : k.c.dir === 'down' ? (k.good ? 'bad' : 'good') : ''}>{describeChange(k.c, k.was)}</em>
           </div>
         ))}
       </div>

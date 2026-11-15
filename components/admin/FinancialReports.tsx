@@ -7,11 +7,12 @@ import { localDateStr } from '@/lib/utils'
 import { currencyForVenueSlug, formatPrice } from '@/lib/currency'
 import { getVenue } from '@/lib/venues'
 import {
-  PERIOD_OPTIONS, change, dailyCsv, describeChange, detailedCsv, paymentLabel, periodRange, previousRange, summarise, weekdayName,
+  PERIOD_OPTIONS, change, describeChange, detailedCsv, paymentLabel, periodRange, previousRange, summarise, weekdayName,
   type Change, type PeriodKey, type ReportRow,
 } from '@/lib/report-rules'
 import type { FinancialCreditTx } from '@/lib/analytics'
 import ReportSheet from '@/components/admin/ReportSheet'
+import { buildWorkbook } from '@/lib/report-xlsx'
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
 const short = (s: string) => format(parseISO(s), 'd MMM')
@@ -25,11 +26,11 @@ function save(name: string, csv: string) {
   URL.revokeObjectURL(url)
 }
 
-function Delta({ c, goodWhenUp = true }: { c: Change; goodWhenUp?: boolean }) {
+function Delta({ c, goodWhenUp = true, previousText }: { c: Change; goodWhenUp?: boolean; previousText?: string }) {
   const good = c.dir === 'up' ? goodWhenUp : c.dir === 'down' ? !goodWhenUp : null
   return (
     <span className="text-[11px] font-bold" style={{ color: good === null ? 'var(--text-subtle)' : good ? 'var(--brand-green)' : 'var(--brand-crimson)' }}>
-      {describeChange(c)}
+      {describeChange(c, previousText)}
     </span>
   )
 }
@@ -93,11 +94,21 @@ export default function FinancialReports({
   const max = Math.max(1, ...summary.byDay.map(x => x.revenue))
   const mid = summary.byDay[Math.floor(summary.byDay.length / 2)]
   const file = (what: string) => `padelclub-${what}-${clubName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${range.from}-to-${range.to}.csv`
+  const [exporting, setExporting] = useState(false)
+  const downloadExcel = async () => {
+    setExporting(true)
+    try {
+      // loaded only when asked for, so the Reports tab stays light
+      const { default: writeExcelFile } = await import('write-excel-file/browser')
+      const sheets = buildWorkbook({ clubName, venueSlug, currency, range, prevRange, rows, summary, prev, preparedOn: today })
+      await writeExcelFile(sheets as any).toFile(file('report').replace(/\.csv$/, '.xlsx'))
+    } finally { setExporting(false) }
+  }
   const kpis = [
-    { id: 'revenue', label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), goodWhenUp: true },
-    { id: 'bookings', label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), goodWhenUp: true },
-    { id: 'average', label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), goodWhenUp: true },
-    { id: 'cancelled', label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), goodWhenUp: false },
+    { id: 'revenue', label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), goodWhenUp: true, was: money(prev.revenue) },
+    { id: 'bookings', label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), goodWhenUp: true, was: String(prev.bookings) },
+    { id: 'average', label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), goodWhenUp: true, was: money(prev.average) },
+    { id: 'cancelled', label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), goodWhenUp: false, was: money(prev.cancelled) },
   ]
 
   return (
@@ -113,9 +124,9 @@ export default function FinancialReports({
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
+          <button className="btn btn-sm" data-testid="report-xlsx" disabled={exporting} onClick={downloadExcel}>{exporting ? 'Preparing…' : 'Download Excel'}</button>
           <button className="btn btn-sm" data-testid="report-csv-bookings" disabled={summary.bookings === 0}
-            onClick={() => save(file('bookings'), detailedCsv(rows, range, { clubName, venueSlug, currency }))}>Export bookings (CSV)</button>
-          <button className="btn btn-sm" data-testid="report-csv-daily" onClick={() => save(file('daily-totals'), dailyCsv(summary, { currency }))}>Totals by day (CSV)</button>
+            onClick={() => save(file('bookings'), detailedCsv(rows, range, { clubName, venueSlug, currency }))}>Raw data (CSV)</button>
           <button className="btn btn-primary btn-sm" data-testid="report-print" onClick={() => window.print()}>Print or save as PDF</button>
         </div>
       </div>
@@ -129,7 +140,7 @@ export default function FinancialReports({
           <div key={k.id} className="rounded-2xl p-4" data-testid={`report-kpi-${k.id}`} style={card}>
             <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{k.label}</div>
             <div className="text-xl font-semibold" style={{ color: k.id === 'cancelled' ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>{k.value}</div>
-            <div className="mt-0.5"><Delta c={k.c} goodWhenUp={k.goodWhenUp} /></div>
+            <div className="mt-0.5"><Delta c={k.c} goodWhenUp={k.goodWhenUp} previousText={k.was} /></div>
           </div>
         ))}
       </div>

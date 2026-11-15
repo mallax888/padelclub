@@ -20,10 +20,15 @@ const halfHours = (from: string, to: string): string[] => {
 
 // The owner's "fill it" dialog: pick the discount, who hears about it, see what
 // it would earn, and send. The server checks everything again.
-export default function OfferSheet({ venueSlug, date, from, to, onClose, onSent }: {
-  venueSlug: string; date: string; from: string; to: string; onClose: () => void; onSent: () => void
+export default function OfferSheet({ venueSlug, date, from, to, bounds, onClose, onSent }: {
+  venueSlug: string; date: string; from: string; to: string
+  // The times the pickers may offer (the club's opening hours). The window starts as from-to and can be widened within these.
+  bounds?: { from: string; to: string }
+  onClose: () => void; onSent: () => void
 }) {
-  const times = useMemo(() => halfHours(from, to), [from, to])
+  const lo = bounds && toMin(bounds.from) < toMin(from) ? bounds.from : from
+  const hi = bounds && toMin(bounds.to) > toMin(to) ? bounds.to : to
+  const times = useMemo(() => halfHours(lo, hi), [lo, hi])
   const [start, setStart] = useState(from)
   const [end, setEnd] = useState(() => {
     const cap = toMin(from) + MAX_WINDOW_MIN
