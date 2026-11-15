@@ -43,9 +43,9 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
           <div><label className="label" htmlFor="invite-email">Email</label><input id="invite-email" type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@yourclub.com" /></div>
           <div>
             <label className="label">Role</label>
-            <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }} role="radiogroup" aria-label="Role">
+            <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }} role="group" aria-label="Invite as">
               {([['staff', 'Front desk'], ['admin', 'Owner']] as const).map(([v, l]) => (
-                <button key={v} type="button" role="radio" aria-checked={role === v} data-testid={`invite-role-${v}`} onClick={() => setRole(v)} className="px-3 py-2 rounded-md text-xs font-medium"
+                <button key={v} type="button" aria-pressed={role === v} data-testid={`invite-role-${v}`} onClick={() => setRole(v)} className="px-3 py-2 rounded-md text-xs font-medium"
                   style={{ background: role === v ? 'var(--brand-primary)' : 'transparent', color: role === v ? 'var(--brand-primary-on, #fff)' : 'var(--text-muted)' }}>{l}</button>
               ))}
             </div>
