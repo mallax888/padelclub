@@ -40,9 +40,9 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Inviting by email isn&apos;t switched on yet: the database change 033 has not been run.</p>
       ) : (
         <form onSubmit={send} className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
-          <div><label className="label" htmlFor="invite-email">Email</label><input id="invite-email" type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@yourclub.com" /></div>
+          <div><label className="label" htmlFor="invite-email">Their email</label><input id="invite-email" type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@yourclub.com" /></div>
           <div>
-            <label className="label">Role</label>
+            <label className="label">Invite as</label>
             <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }} role="group" aria-label="Invite as">
               {([['staff', 'Front desk'], ['admin', 'Owner']] as const).map(([v, l]) => (
                 <button key={v} type="button" aria-pressed={role === v} data-testid={`invite-role-${v}`} onClick={() => setRole(v)} className="px-3 py-2 rounded-md text-xs font-medium"
@@ -50,7 +50,7 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
               ))}
             </div>
           </div>
-          <div><label className="label" htmlFor="invite-club">Club</label>
+          <div><label className="label" htmlFor="invite-club">Their club</label>
             <select id="invite-club" className="input" value={club} onChange={e => setClub(e.target.value)}>
               {canGrantAll && <option value="__all">All clubs</option>}
               {clubs.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
