@@ -30,7 +30,7 @@ export function resolveViewMode(role: string | null | undefined, cookieValue: st
   return cookieValue === 'player' ? 'player' : 'manager'
 }
 
-export const homePathFor = (mode: ViewMode): string => (mode === 'manager' ? '/admin/today' : '/book')
+export const homePathFor = (mode: ViewMode): string => (mode === 'manager' ? '/admin/today' : '/home')
 
 const ONE_YEAR_SECONDS = 365 * 24 * 60 * 60
 

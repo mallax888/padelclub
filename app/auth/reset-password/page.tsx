@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
       toast.error(error.message)
     } else {
       toast.success('Password updated! Signing you in…')
-      router.push('/book')
+      router.push('/')
       router.refresh()
     }
     setLoading(false)

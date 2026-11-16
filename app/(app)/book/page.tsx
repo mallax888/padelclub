@@ -1,3 +1,4 @@
+import { VENUES } from '@/lib/venues'
 import { keepClubAccountsOut } from '@/lib/club-guard'
 import { createServerClient } from '@/lib/supabase-server'
 import BookingFlow from '@/components/booking/BookingFlow'
@@ -15,7 +16,7 @@ export const metadata = { title: 'Book a court' }
 // to be deep enough to cover a regular group.
 const RECENT_PARTNER_LIMIT = 12
 
-export default async function BookPage() {
+export default async function BookPage({ searchParams }: { searchParams?: { [key: string]: string | string[] | undefined } }) {
   const supabase = createServerClient()
   await keepClubAccountsOut(supabase)
   const [{ data: courts }, { data: { session } }, venueSettings] = await Promise.all([
@@ -85,7 +86,14 @@ export default async function BookPage() {
     .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
   // Tapping "a court just opened" opens on the most recent time they were told about.
   const told = waits.filter(w => w.status === 'notified').sort((a, b) => String(b.notified_at ?? '').localeCompare(String(a.notified_at ?? '')))[0]
-  const waitPrefill = told ? { venueSlug: told.venue_slug as string, date: told.date as string, durationMinutes: told.duration_minutes as number } : null
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
+  // "Book your usual" on the Home screen: that club, that day, that length, with the time left to pick.
+  const uSlug = one(searchParams?.u), uDate = one(searchParams?.ud), uMin = Number(one(searchParams?.um))
+  const usualPrefill = uSlug && VENUES.some(v => v.slug === uSlug) && uDate && /^\d{4}-\d{2}-\d{2}$/.test(uDate) && [30, 60, 90, 120].includes(uMin)
+    ? { venueSlug: uSlug, date: uDate, durationMinutes: uMin } : null
+  const waitPrefill = told
+    ? { venueSlug: told.venue_slug as string, date: told.date as string, durationMinutes: told.duration_minutes as number }
+    : usualPrefill
 
   // Offers open right now (the player's own session sees only open ones). Tapping an
   // offer notification opens on the one at their home club, else the newest.

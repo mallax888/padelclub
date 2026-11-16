@@ -37,6 +37,6 @@ export async function GET(request: NextRequest) {
   const destination =
     safeNext(requestUrl.searchParams.get('next'))
     ?? joinPathFor(request.cookies.get(INVITE_COOKIE)?.value)
-    ?? '/' // the front door sends each person to their own home: players to /book, managers to Today
+    ?? '/' // the front door sends each person to their own home: players to Home, managers to Today
   return NextResponse.redirect(new URL(destination, request.url))
 }
