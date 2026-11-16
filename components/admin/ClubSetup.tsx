@@ -131,7 +131,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
       <div className="flex items-center justify-between gap-2.5">
         {back
           ? <button type="button" onClick={() => setStep('home')} className="inline-flex items-center text-[13px] font-bold" style={{ minHeight: 40, color: 'var(--brand-primary-text)' }}>‹ Setup</button>
-          : <span className="text-[13px] font-bold" style={{ color: 'var(--text-subtle)' }}>Club setup</span>}
+          : <span className="text-[13px] font-bold" style={{ color: 'var(--text-subtle)' }}>Club settings</span>}
         <label className="relative inline-flex items-center min-w-0">
           <span className="sr-only">Club</span>
           <select value={venue.slug} onChange={e => router.push(`/admin/setup?venue=${encodeURIComponent(e.target.value)}`)}
