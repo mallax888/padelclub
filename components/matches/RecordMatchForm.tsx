@@ -238,7 +238,7 @@ export default function RecordMatchForm({
   )
 
   return (
-    <div className="max-w-lg mx-auto space-y-4">
+    <div className="max-w-lg mx-auto lg:mx-0 space-y-4">
       {prefill && (
         <div className="rounded-xl px-4 py-3 flex items-center gap-2.5"
           style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }}>

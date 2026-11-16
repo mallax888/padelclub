@@ -14,8 +14,8 @@ export default function ClubRequests({ requests, venues }: { requests: ClubReque
   const decided = requests.filter(r => r.status !== 'pending')
   return (
     <div data-testid="club-requests">
-      <div className="flex items-center gap-3 mb-4">
-        <h1 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>Club requests</h1>
+      <div className="flex items-center gap-3 mb-6">
+        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Club requests</h1>
         {waiting.length > 0 && <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: 'rgba(255,212,0,.15)', color: 'var(--brand-yellow)' }} data-testid="waiting-count">{waiting.length} waiting</span>}
       </div>
       {waiting.length === 0 && <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }} data-testid="none-waiting">No requests waiting.</p>}

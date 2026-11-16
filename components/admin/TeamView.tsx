@@ -203,11 +203,11 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
         + Add team member
       </button>
 
-      <div className="text-[11px] font-extrabold uppercase mt-5 mb-2 px-0.5" style={sectionLabel}>Owners</div>
-      <div className="rounded-[18px] overflow-hidden" style={card}>{owners.length > 0 ? owners.map(m => <Row key={m.id} m={m} />) : <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No owners in your reach.</div>}</div>
+      <div className="text-[11px] font-extrabold uppercase mt-6 mb-2 px-0.5" style={sectionLabel}>Owners</div>
+      <div className="rounded-[20px] overflow-hidden" style={card}>{owners.length > 0 ? owners.map(m => <Row key={m.id} m={m} />) : <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No owners in your reach.</div>}</div>
 
-      <div className="text-[11px] font-extrabold uppercase mt-5 mb-2 px-0.5" style={sectionLabel}>Front desk</div>
-      <div className="rounded-[18px] overflow-hidden" style={card}>{desk.length > 0 ? desk.map(m => <Row key={m.id} m={m} />) : <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No front-desk staff yet. Add someone above.</div>}</div>
+      <div className="text-[11px] font-extrabold uppercase mt-6 mb-2 px-0.5" style={sectionLabel}>Front desk</div>
+      <div className="rounded-[20px] overflow-hidden" style={card}>{desk.length > 0 ? desk.map(m => <Row key={m.id} m={m} />) : <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No front-desk staff yet. Add someone above.</div>}</div>
 
       <p className="text-xs mt-3 px-1 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
         Owners see everything, including money and settings. Front desk runs the day but sees no money. People must already have a PadelClub account.
@@ -219,7 +219,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
           {!picked ? (
             <>
               <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Name or email" aria-label="Find a person"
-                className="w-full rounded-xl px-3.5 mt-3.5 text-sm" style={{ minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--brand-primary)', color: 'var(--text-primary)' }} />
+                className="w-full rounded-xl px-3.5 mt-4 text-sm" style={{ minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--brand-primary)', color: 'var(--text-primary)' }} />
               <div className="mt-2.5 rounded-[14px] overflow-hidden" style={{ border: results.length > 0 ? '1px solid var(--border)' : 'none' }}>
                 {results.map(r => {
                   const onTeam = r.role === 'admin' || r.role === 'staff'
@@ -238,7 +238,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
               )}
             </>
           ) : (
-            <div className="flex items-center gap-3 mt-3.5 rounded-[14px] px-3 py-2" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', minHeight: 60 }}>
+            <div className="flex items-center gap-3 mt-4 rounded-[14px] px-3 py-2" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', minHeight: 60 }}>
               <span aria-hidden className="inline-flex items-center justify-center rounded-full text-xs font-extrabold shrink-0" style={{ width: 36, height: 36, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{getInitials(picked.name)}</span>
               <span className="min-w-0"><span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{picked.name}</span><span className="block text-[11.5px] truncate" style={{ color: 'var(--text-muted)' }}>{picked.email}</span></span>
               <button type="button" onClick={() => setPicked(null)} className="ml-auto text-xs font-bold px-2" style={{ minHeight: 40, color: 'var(--brand-primary-text)' }}>Change</button>

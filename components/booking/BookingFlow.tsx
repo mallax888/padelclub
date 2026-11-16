@@ -775,7 +775,7 @@ export default function BookingFlow({
   }
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="max-w-lg mx-auto lg:mx-0">
 
       {/* Back arrow + step title */}
       <div className="flex items-center gap-3 mb-6">

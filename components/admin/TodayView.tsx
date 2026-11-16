@@ -88,15 +88,15 @@ export default function TodayView(p: TodayViewProps) {
 
   const noCourts = s.courts.length === 0
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto flex flex-col">
+    <div className="max-w-2xl lg:max-w-none mx-auto flex flex-col">
       <AutoRefresh />
       {/* On a computer the page title is the first thing on the page; the club picker sits under it, and the Manager switch is in the sidebar. */}
-      <div className="flex items-center justify-between gap-2.5 lg:mt-4">
+      <div className="flex items-center justify-between gap-3 lg:mt-6">
         <VenuePicker venues={p.venues} value={p.venueSlug} />
         {p.canSwitchView !== false && <div className="lg:hidden"><ViewSwitch mode="manager" /></div>}
       </div>
 
-      <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>
+      <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold">
         {p.greeting}{p.staffName ? `, ${p.staffName}` : ''}
         {p.roleLabel && (
           <span className="ml-2.5 align-middle text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-full"
@@ -105,7 +105,7 @@ export default function TodayView(p: TodayViewProps) {
               : { color: 'var(--text-muted)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }) }}>{p.roleLabel}</span>
         )}
       </h1>
-      <div className="text-[13px] mt-1 pl-[15px] lg:order-first" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
+      <div className="text-sm mt-1 lg:order-first" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
 
       <div className="grid grid-cols-3 gap-2.5 mt-4">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />
@@ -116,22 +116,22 @@ export default function TodayView(p: TodayViewProps) {
       </div>
 
       {/* On a computer: needs attention and the courts on the left, next bookings on the right. On a phone it is one column, as before. */}
-      <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-6 lg:items-start lg:mt-5">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-6 lg:items-start lg:mt-6">
       <div>
-      <div className="text-[11px] font-extrabold uppercase mt-5 lg:mt-0 mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
-      <div className="rounded-[18px] overflow-hidden" style={card}>
+      <div className="text-[11px] font-extrabold uppercase mt-6 lg:mt-0 mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
+      <div className="rounded-[20px] overflow-hidden" style={card}>
         {attention.length > 0 ? attention : (
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>All clear. Nothing needs your attention right now.</div>
         )}
       </div>
 
-      <div className="text-[11px] font-extrabold uppercase mt-5 mb-2 px-0.5" style={sectionLabel}>Courts right now</div>
+      <div className="text-[11px] font-extrabold uppercase mt-6 mb-2 px-0.5" style={sectionLabel}>Courts right now</div>
       {noCourts ? (
-        <div className="rounded-[18px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
+        <div className="rounded-[20px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
           This club has no courts set up yet.{p.showMoney ? <> <Link href={`/admin/setup?${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up this club</Link>.</> : ' Ask the owner to add them.'}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-3">
           {s.courts.map(c => (
             <div key={c.id} className="rounded-[14px] px-3 py-2.5" style={card}>
               <div className="text-[12.5px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
@@ -149,8 +149,8 @@ export default function TodayView(p: TodayViewProps) {
 
       </div>
       <div>
-      <div className="text-[11px] font-extrabold uppercase mt-5 lg:mt-0 mb-2 px-0.5" style={sectionLabel}>Next up</div>
-      <div className="rounded-[18px] overflow-hidden" style={card}>
+      <div className="text-[11px] font-extrabold uppercase mt-6 lg:mt-0 mb-2 px-0.5" style={sectionLabel}>Next up</div>
+      <div className="rounded-[20px] overflow-hidden" style={card}>
         {s.nextUp.length === 0 ? (
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No more bookings today.</div>
         ) : s.nextUp.map(n => (
@@ -170,7 +170,7 @@ export default function TodayView(p: TodayViewProps) {
         ))}
       </div>
 
-      <Link href={`/admin?tab=board&${q}`} className="flex items-center justify-center rounded-2xl mt-5 text-sm font-bold"
+      <Link href={`/admin?tab=board&${q}`} className="flex items-center justify-center rounded-2xl mt-6 text-sm font-bold"
         style={{ minHeight: 48, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
         Open the full dashboard
       </Link>

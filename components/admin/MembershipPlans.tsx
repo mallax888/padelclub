@@ -81,11 +81,11 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
   const canRemove = !!current && !current.builtIn && members === 0
 
   return (
-    <div className="rounded-2xl mt-3.5 px-3.5 py-3.5" style={card} data-testid="membership-plans">
+    <div className="rounded-2xl mt-4 px-3.5 py-3.5" style={card} data-testid="membership-plans">
       <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🏅 Memberships</div>
       <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>The plans your players can join at your club. You set the price and what each plan includes.</div>
 
-      <div className="grid grid-cols-3 gap-2 mt-3.5">
+      <div className="grid grid-cols-3 gap-2 mt-4">
         {[
           { n: String(stats.paidMembers), t: 'on a paid plan' },
           { n: formatPrice(stats.income, currency), t: 'plan income a month' },
@@ -98,7 +98,7 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
         ))}
       </div>
 
-      <div className="mt-3.5 space-y-2">
+      <div className="mt-4 space-y-2">
         {plans.map(p => (
           <button key={p.key} type="button" onClick={() => load(p.key)} data-testid={`plan-${p.key}`}
             className="w-full text-left rounded-xl px-3 py-2.5"
@@ -157,7 +157,7 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
         <p className="text-[11px] mt-1" style={{ color: 'var(--text-subtle)' }}>Players always see the discount and days ahead. Anything you write here is shown too, and delivering it is up to you.</p>
 
         {examplePrice !== null && (
-          <div className="rounded-xl px-3 py-2.5 mt-3.5 text-[12.5px] leading-relaxed" data-testid="plan-effect" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+          <div className="rounded-xl px-3 py-2.5 mt-4 text-[12.5px] leading-relaxed" data-testid="plan-effect" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
             A member books a <b style={{ color: 'var(--text-primary)' }}>{formatPrice(examplePrice, currency)}</b> peak court and pays <b style={{ color: 'var(--text-primary)' }}>{formatPrice(Math.round(examplePrice * (1 - eff / 100)), currency)}</b>.
             {eff > 0 && <> You give up <b style={{ color: 'var(--text-primary)' }}>{formatPrice(examplePrice - Math.round(examplePrice * (1 - eff / 100)), currency)}</b> a booking.</>}
             {!isCasual && priceNum > 0 && <> The plan brings in <b style={{ color: 'var(--text-primary)' }}>{formatPrice(priceNum, currency)}</b> a month.</>}
@@ -165,7 +165,7 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
         )}
 
         {!isCasual && (
-          <div className="flex items-center justify-between gap-3 mt-3.5 pt-3.5" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="flex items-center justify-between gap-3 mt-4 pt-3.5" style={{ borderTop: '1px solid var(--border)' }}>
             <span className="min-w-0">
               <span className="block text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>Offer this plan</span>
               <span className="block text-[11.5px]" style={{ color: 'var(--text-subtle)' }}>Switch off to stop new sign-ups. Current members keep it.</span>
