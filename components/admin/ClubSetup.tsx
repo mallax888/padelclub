@@ -150,119 +150,90 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
     </>
   )
 
-  const Row = ({ n, state, title, text, onClick }: { n: number; state: 'done' | 'next' | 'todo'; title: string; text: string; onClick?: () => void }) => (
-    <button type="button" onClick={onClick} disabled={!onClick} className="flex items-center gap-3.5 px-3.5 py-3.5 w-full text-left" style={{ minHeight: 72, borderBottom: '1px solid var(--border)' }}>
-      <span aria-hidden className="inline-flex items-center justify-center rounded-full text-sm font-extrabold shrink-0"
-        style={{ width: 34, height: 34,
-          background: state === 'done' ? 'var(--brand-primary-muted)' : state === 'next' ? 'var(--brand-primary)' : 'var(--bg-raised)',
-          color: state === 'done' ? 'var(--brand-primary-text)' : state === 'next' ? 'var(--brand-primary-on)' : 'var(--text-primary)',
-          border: `1px solid ${state === 'done' ? 'var(--brand-primary)' : state === 'next' ? 'var(--brand-primary)' : 'var(--border)'}` }}>{state === 'done' ? '✓' : n}</span>
-      <span className="min-w-0">
-        <span className="block text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
-        <span className="block text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{text}</span>
-      </span>
-      {onClick && <span aria-hidden className="ml-auto text-lg" style={{ color: 'var(--text-subtle)' }}>›</span>}
-    </button>
+  // ------------------------------------------------------------- the prompt flow
+  // One question at a time, read straight down. Answered questions fold into a one-line card with a
+  // Change link; the open question sits under them; what is still to come is shown dimmed. Once the
+  // club is set up, the page is simply its answers plus its settings, stacked.
+  const selectStyle = { minHeight: 40, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
+  const inputStyle = { minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
+  const first = courts[0]
+  const next: Step = !hoursDone ? 'hours' : !courtsDone ? 'courts' : 'live'
+  const eff: Step = step === 'home' ? next : step
+  type Q = 'hours' | 'courts' | 'live'
+  const order: Q[] = ['hours', 'courts', 'live']
+  const qLabel: Record<Q, string> = { hours: 'What are your opening hours?', courts: 'Courts and prices', live: isOpen ? 'Open for booking' : 'Ready to open?' }
+  const hoursText = hoursDone ? describeWeek(savedHours).join(' · ') : ''
+  const courtsText = courtsDone ? `${courts.length} ${courts.length === 1 ? 'court' : 'courts'}${first ? ` · ${formatPrice(first.pricePerHour, currency)}/hr${first.pricePerHourPeak != null ? ` · ${formatPrice(first.pricePerHourPeak, currency)} peak` : ''}` : ''}` : ''
+  const answered = (key: string, label: string, value: React.ReactNode, onChange?: () => void) => (
+    <div key={key} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5" data-testid={`answered-${key}`} style={{ ...card }}>
+      <span className="flex items-center justify-center rounded-full shrink-0 text-[13px] font-extrabold" style={{ width: 26, height: 26, background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }} aria-hidden>✓</span>
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{label}</div>
+        <div className="text-[15px] font-bold sm:truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
+      </div>
+      {onChange && <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }} aria-label={`Change ${label}`}>Change</button>}
+    </div>
   )
+  const ask = (title: string, subtitle: string | undefined, children: React.ReactNode) => (
+    <div className="rounded-[20px] p-5 sm:p-6" data-testid="open-question" style={{ ...card, border: '1.5px solid var(--brand-primary)', boxShadow: '0 0 0 4px var(--brand-primary-muted)' }}>
+      <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--brand-primary-text)' }}>Question {order.indexOf(eff) + 1} of {order.length}</div>
+      <h2 className="text-xl font-extrabold mt-0.5" style={{ color: 'var(--text-primary)' }}>{title}</h2>
+      {subtitle && <p className="text-xs mt-0.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{subtitle}</p>}
+      <div className="flex flex-col [&>*:first-child]:mt-4">{children}</div>
+    </div>
+  )
+  const later = (q: Q) => (
+    <div key={q} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5 text-[14px] font-bold" data-testid={`later-${q}`} style={{ border: '1px dashed var(--border)', color: 'var(--text-subtle)' }}>
+      <span className="rounded-full shrink-0" style={{ width: 26, height: 26, border: '1.5px dashed var(--border)' }} aria-hidden />
+      {qLabel[q]}
+    </div>
+  )
+  const stack = 'flex flex-col gap-4 [&>*]:mt-0'
 
-  // ------------------------------------------------------------------ home
-  if (step === 'home') {
-    const next: Step = !hoursDone ? 'hours' : !courtsDone ? 'courts' : 'live'
-    const nextLabel = !hoursDone ? 'Start with opening hours' : !courtsDone ? 'Add courts and prices' : liveDone ? 'Review and finish' : 'Review and open for booking'
-    return (
-      <div className="max-w-md mx-auto flex flex-col">
-        <Header />
-        <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">
-          {liveDone ? `${venue.name} is open for booking` : `Get ${venue.name} ready for bookings`}
-        </h1>
-        <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          {liveDone ? 'Change any of it below, any time.' : "A few quick steps and players can book courts. You can change any of it later."}
-        </p>
+  return (
+    <div className="max-w-md lg:max-w-[1100px] mx-auto flex flex-col">
+      <Header />
+      <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">
+        {liveDone ? `${venue.name} is open for booking` : `Get ${venue.name} ready for bookings`}
+      </h1>
+      <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        {liveDone ? 'Change any of it below, any time.' : "A few quick questions and players can book courts. You can change any of it later."}
+      </p>
+      <div className={`${stack} mt-4`}>
+        {answered('club', 'Your club', <>{venue.name} · {venue.address}</>)}
+        {hoursDone && eff !== 'hours' && answered('hours', 'Opening hours', hoursText, () => setStep('hours'))}
+        {courtsDone && eff !== 'courts' && answered('courts', 'Courts and prices', courtsText, () => setStep('courts'))}
+
+        {eff === 'hours' && ask(qLabel.hours, "The hours players can book. Times outside them aren't offered.", <>
         <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
-          <Row n={0} state="done" title="Your club" text={venue.address} />
-          <Row n={1} state={hoursDone ? 'done' : next === 'hours' ? 'next' : 'todo'} title="Opening hours" onClick={() => setStep('hours')}
-            text={hoursDone ? describeWeek(savedHours)[0] + (describeWeek(savedHours).length > 1 ? ' …' : '') : 'Not set. Players see 07:00–22:00 for now'} />
-          <Row n={2} state={courtsDone ? 'done' : next === 'courts' ? 'next' : 'todo'} title="Courts and prices" onClick={() => setStep('courts')}
-            text={courtsDone ? `${courts.length} ${courts.length === 1 ? 'court' : 'courts'}` : `${listed.length} ${listed.length === 1 ? 'court' : 'courts'} listed, none set up yet`} />
-          <Row n={3} state={liveDone ? 'done' : next === 'live' ? 'next' : 'todo'} title="Open for booking" onClick={() => setStep('live')}
-            text={liveDone ? 'Open to players' : "Switch on when you're happy"} />
-        </div>
-        {memberships && (
-          <button type="button" data-testid="open-memberships" className="w-full text-left rounded-[20px] mt-4 px-3.5 py-3.5 flex items-center gap-3" style={card}
-            onClick={() => { setStep('live'); setTimeout(() => document.querySelector('[data-testid="membership-plans"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80) }}>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🏅 Memberships</span>
-              <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{memberships.plans.length} plans · set your own prices, discounts and perks</span>
-            </span>
-            <span style={{ color: 'var(--text-subtle)' }} aria-hidden>›</span>
-          </button>
-        )}
-        <button type="button" data-testid="open-payouts" className="w-full text-left rounded-[20px] mt-4 px-3.5 py-3.5 flex items-center gap-3" style={card}
-          onClick={() => { setStep('live'); setTimeout(() => document.querySelector('[data-testid="club-payouts"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120) }}>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>💳 Get paid directly</span>
-            <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Connect your own Stripe account so players pay you straight</span>
-          </span>
-          <span style={{ color: 'var(--text-subtle)' }} aria-hidden>›</span>
-        </button>
-        <Primary onClick={() => setStep(next)}>{nextLabel}</Primary>
-        {!liveDone && (
-          <p className="text-xs mt-4 rounded-2xl px-3.5 py-3 leading-relaxed" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--text-muted)' }}>
-            Until a club is open for booking, players see it as &ldquo;Courts coming soon&rdquo; and can&apos;t book.
-          </p>
-        )}
-      </div>
-    )
-  }
+            {DAY_KEYS.map(d => {
+              const h = week[d]
+              return (
+                <div key={d} className="flex items-center gap-2 px-3.5 py-2.5" style={{ minHeight: 58, borderBottom: '1px solid var(--border)' }}>
+                  <span className="w-10 text-[13px] font-extrabold shrink-0" style={{ color: 'var(--text-primary)' }}>{DAY_NAMES[d]}</span>
+                  {h ? (
+                    <>
+                      <select aria-label={`${DAY_NAMES[d]} opens`} value={h.open} onChange={e => setOpenTime(d, e.target.value)} className="rounded-[10px] px-2 text-[13.5px] font-bold" style={selectStyle}>
+                        {TIME_CHOICES.filter(t => t !== '24:00').map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <span aria-hidden style={{ color: 'var(--text-subtle)' }}>–</span>
+                      <select aria-label={`${DAY_NAMES[d]} closes`} value={h.close} onChange={e => setDay(d, { open: h.open, close: e.target.value })} className="rounded-[10px] px-2 text-[13.5px] font-bold" style={selectStyle}>
+                        {TIME_CHOICES.filter(t => toMinutes(t) > toMinutes(h.open)).map(t => <option key={t}>{t}</option>)}
+                      </select>
+                    </>
+                  ) : <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-subtle)' }}>Closed</span>}
+                  <span className="ml-auto"><Switch on={!!h} label={`${DAY_NAMES[d]} open`} onClick={() => setDay(d, h ? null : { open: '07:00', close: '22:00' })} /></span>
+                </div>
+              )
+            })}
+          </div>
+          {week.mon && <Ghost onClick={copyMonday}>Copy Monday to all weekdays</Ghost>}
+          <Primary disabled={busy} onClick={async () => { if (await run('/api/admin/venue-settings', { venueSlug: venue.slug, hours: week }, 'Opening hours saved')) setStep('courts') }}>
+            {busy ? 'Saving…' : 'Save and continue'}
+          </Primary>
+        </>)}
 
-  // ----------------------------------------------------------------- hours
-  if (step === 'hours') {
-    const selectStyle = { minHeight: 40, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
-    return (
-      <div className="max-w-md mx-auto flex flex-col">
-        <Header back />
-        <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">Opening hours</h1>
-        <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>The hours players can book. Times outside them aren&apos;t offered.</p>
-        <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
-          {DAY_KEYS.map(d => {
-            const h = week[d]
-            return (
-              <div key={d} className="flex items-center gap-2 px-3.5 py-2.5" style={{ minHeight: 58, borderBottom: '1px solid var(--border)' }}>
-                <span className="w-10 text-[13px] font-extrabold shrink-0" style={{ color: 'var(--text-primary)' }}>{DAY_NAMES[d]}</span>
-                {h ? (
-                  <>
-                    <select aria-label={`${DAY_NAMES[d]} opens`} value={h.open} onChange={e => setOpenTime(d, e.target.value)} className="rounded-[10px] px-2 text-[13.5px] font-bold" style={selectStyle}>
-                      {TIME_CHOICES.filter(t => t !== '24:00').map(t => <option key={t}>{t}</option>)}
-                    </select>
-                    <span aria-hidden style={{ color: 'var(--text-subtle)' }}>–</span>
-                    <select aria-label={`${DAY_NAMES[d]} closes`} value={h.close} onChange={e => setDay(d, { open: h.open, close: e.target.value })} className="rounded-[10px] px-2 text-[13.5px] font-bold" style={selectStyle}>
-                      {TIME_CHOICES.filter(t => toMinutes(t) > toMinutes(h.open)).map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </>
-                ) : <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-subtle)' }}>Closed</span>}
-                <span className="ml-auto"><Switch on={!!h} label={`${DAY_NAMES[d]} open`} onClick={() => setDay(d, h ? null : { open: '07:00', close: '22:00' })} /></span>
-              </div>
-            )
-          })}
-        </div>
-        {week.mon && <Ghost onClick={copyMonday}>Copy Monday to all weekdays</Ghost>}
-        <Primary disabled={busy} onClick={async () => { if (await run('/api/admin/venue-settings', { venueSlug: venue.slug, hours: week }, 'Opening hours saved')) setStep('courts') }}>
-          {busy ? 'Saving…' : 'Save and continue'}
-        </Primary>
-      </div>
-    )
-  }
-
-  // ---------------------------------------------------------------- courts
-  if (step === 'courts') {
-    const inputStyle = { minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
-    return (
-      <div className="max-w-md mx-auto flex flex-col">
-        <Header back />
-        <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">Courts and prices</h1>
-        <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          {listed.length > 0 ? `${venue.name} lists ${listed.length} ${listed.length === 1 ? 'court' : 'courts'}. Add ${listed.length === 1 ? 'it' : 'them'} in one go, then set the prices.` : 'Set the prices, then add your courts.'}
-        </p>
+        {eff === 'courts' && ask(qLabel.courts, listed.length > 0 ? `${venue.name} lists ${listed.length} ${listed.length === 1 ? 'court' : 'courts'}. Add ${listed.length === 1 ? 'it' : 'them'} in one go, then set the prices.` : 'Set the price, then add your courts.', <>
         <div className="flex gap-2.5 mt-4">
           {([['Price per hour', price, setPrice, '48'], ['Peak price', peak, setPeak, 'same']] as const).map(([label, val, set, ph]) => (
             <label key={label} className="flex-1 block">
@@ -298,21 +269,11 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           </>
         )}
         <Ghost onClick={() => { void addAnother() }}>+ Add another court</Ghost>
-        <Primary disabled={courts.length === 0} onClick={() => setStep('live')}>Continue</Primary>
-      </div>
-    )
-  }
+        <Primary disabled={courts.length === 0} onClick={() => setStep('home')}>Continue</Primary>
+        </>)}
 
-  // ------------------------------------------------------------------ live
-  const first = courts[0]
-  return (
-    <div className="max-w-md lg:max-w-5xl mx-auto flex flex-col">
-      <Header back />
-      <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">{isOpen ? 'Open for booking' : 'Ready to open?'}</h1>
-      <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Check it over. You can change any of this later.</p>
-      {/* On a computer: the summary, open switch and regulars on the left; money and plans on the right. One column on a phone, as before. */}
-      <div className="lg:grid lg:grid-cols-2 lg:gap-x-6 lg:items-start">
-      <div>
+        {eff === 'live' && <>
+          {ask(qLabel.live, 'Check it over. You can change any of this later.', <>
       <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
         {[
           ['Club', venue.name],
@@ -326,6 +287,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           </div>
         ))}
       </div>
+
       <div className="flex items-center gap-3 rounded-2xl mt-4 px-3.5 py-3.5" style={{ ...card, border: '1px solid var(--brand-primary)', minHeight: 72 }}>
         <span className="min-w-0">
           <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>Open for booking</span>
@@ -336,6 +298,13 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
             onClick={() => { void run('/api/admin/venue-settings', { venueSlug: venue.slug, isOpen: !isOpen }, !isOpen ? `${venue.name} is open for booking` : 'Closed to players') }} />
         </span>
       </div>
+
+          </>)}
+        </>}
+
+        {order.filter(q => order.indexOf(q) > order.indexOf(eff)).map(later)}
+
+        {eff !== 'live' && <div className="text-[11px] font-extrabold uppercase mt-2 px-0.5" style={sectionLabel}>More settings</div>}
       {regulars && (
         <div className="rounded-2xl mt-4 px-3.5 py-3.5" style={card} data-testid="regulars-rules">
           <div className="flex items-center gap-3">
@@ -364,20 +333,19 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           )}
         </div>
       )}
-      </div>
-      <div>
-      <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
-      <BriefingSettings venueSlug={venue.slug} settings={briefing} />
-      {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
-      </div>
-      </div>
-      <div className="lg:max-w-md lg:mx-auto">
-      <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
-        {isOpen ? 'Done' : 'Save for later'}
-      </Primary>
-      <p className="text-xs mt-4 rounded-2xl px-3.5 py-3 leading-relaxed" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--text-muted)' }}>
-        Bookings show on your Today screen as soon as the first one comes in.
-      </p>
+          <BriefingSettings venueSlug={venue.slug} settings={briefing} />
+          <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
+          {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
+
+        {eff === 'live' && <>
+          <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
+            {isOpen ? 'Done' : 'Save for later'}
+          </Primary>
+          <p className="text-xs rounded-2xl px-3.5 py-3 leading-relaxed" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--text-muted)' }}>
+            Bookings show on your Today screen as soon as the first one comes in.
+          </p>
+        </>}
+
       </div>
     </div>
   )
