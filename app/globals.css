@@ -24,6 +24,8 @@
   --brand-accent-on:    #FFFFFF;
   --brand-primary-muted:#1F5FB526;
   --brand-accent-muted: #D8380F1A;
+  /* The "Change" link on an answered question: not the primary blue, so it reads as an action. */
+  --link-change:        var(--brand-accent);
   --glow-primary:       0 0 16px 0 #1F5FB533;
   --glow-accent:        0 0 16px 0 #D8380F3D;
   --brand-blue:         #2563EB;
