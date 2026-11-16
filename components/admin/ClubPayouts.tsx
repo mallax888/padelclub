@@ -38,7 +38,7 @@ export default function ClubPayouts({ venueSlug, returning }: { venueSlug: strin
     try {
       const res = await fetch('/api/club/payouts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ venueSlug }) })
       const data = await res.json().catch(() => ({}))
-      if (!res.ok || !data.url) { toast.error(data.error ?? 'Could not start Stripe. Please try again.'); setBusy(false); return }
+      if (!res.ok || !data.url) { toast.error((data.error ?? 'Could not start Stripe. Please try again.') + (data.detail ? ` [${data.detail}]` : ''), { duration: 12000 }); setBusy(false); return }
       window.location.href = data.url
     } catch { toast.error('Could not reach Stripe. Check your connection and try again.'); setBusy(false) }
   }

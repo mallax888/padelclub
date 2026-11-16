@@ -6,6 +6,7 @@ import { covers } from '@/lib/team'
 import { VENUES, getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { currencyForVenueSlug } from '@/lib/currency'
+import { isPlatformAdmin } from '@/lib/club-access'
 import { connectOn, connectState, describeDue, stripeCountry } from '@/lib/connect-rules'
 import { countryNameOfVenue, feeOf, loadClubAccount, syncAccount } from '@/lib/club-payments'
 
@@ -116,6 +117,15 @@ export async function POST(request: Request) {
     if (/signed up for Connect|Connect/i.test(msg) && /sign/i.test(msg)) {
       return NextResponse.json({ error: "Stripe Connect hasn't been turned on for PadelClub's Stripe account yet." }, { status: 503 })
     }
-    return NextResponse.json({ error: 'Could not reach Stripe. Please try again in a moment.' }, { status: 502 })
+    // The exact reason from Stripe goes only to the platform admin (who runs PadelClub's Stripe
+    // account), never to a club owner. Everyone gets a plain sentence.
+    const detail = isPlatformAdmin(who.caller) ? `${err?.type ?? 'Error'}: ${msg}`.slice(0, 300) : undefined
+    if (err?.type === 'StripeAuthenticationError') {
+      return NextResponse.json({ error: "Stripe didn't accept PadelClub's connection key. PadelClub needs to fix this.", detail }, { status: 502 })
+    }
+    if (err?.type === 'StripePermissionError') {
+      return NextResponse.json({ error: "PadelClub's Stripe key isn't allowed to set up club accounts. PadelClub needs to fix this.", detail }, { status: 502 })
+    }
+    return NextResponse.json({ error: 'Stripe could not start the set-up. Please try again in a moment.', detail }, { status: 502 })
   }
 }
