@@ -832,7 +832,7 @@ export default function BookingFlow({
       {lead ?? <span className="flex items-center justify-center rounded-full shrink-0 text-[13px] font-extrabold" style={{ width: 26, height: 26, background: 'var(--brand-green-muted, var(--brand-primary-muted))', color: 'var(--brand-green, var(--brand-primary-text))' }} aria-hidden>✓</span>}
       <div className="min-w-0 flex-1">
         <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{label}</div>
-        <div className="text-[15px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
+        <div className="text-[15px] font-bold sm:truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
       </div>
       {trailing}
       <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }} aria-label={`Change ${label}`}>Change</button>
