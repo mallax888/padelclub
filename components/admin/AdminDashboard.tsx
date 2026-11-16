@@ -558,7 +558,7 @@ export default function AdminDashboard({
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week', spark: bookingsSpark },
           { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
@@ -819,7 +819,7 @@ export default function AdminDashboard({
 
       {/* Courts tab */}
       {tab === 'courts' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {venueCourts.length === 0 ? (
             <div className="rounded-xl text-center py-12 text-sm sm:col-span-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
               No courts yet for this venue.

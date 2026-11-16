@@ -509,7 +509,7 @@ function WaitingCard({ waits }: { waits: WaitingFor[] }) {
   return (
     <div className="mt-4" data-testid="waiting-card">
       <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-subtle)' }}>🔔 Waiting for</div>
-      <div className="space-y-2">
+      <div className="space-y-4">
         {rows.map(w => {
           const [h, m] = w.start_time.slice(0, 5).split(':').map(Number)
           const end = h * 60 + m + w.duration_minutes
@@ -674,7 +674,7 @@ export default function MyBookingsList({
       {splitRequests.length > 0 && (
         <div className="rounded-2xl p-4 mb-6" style={{ background: 'var(--brand-crimson-muted)', border: '1px solid var(--brand-crimson)' }}>
           <div className="text-sm font-extrabold mb-3 uppercase tracking-wide" style={{ color: 'var(--brand-crimson)' }}>Outstanding split requests</div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {splitRequests.map(s => {
               const who = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
               const court = s.bookings?.courts?.name ?? 'a court'
@@ -779,7 +779,7 @@ export default function MyBookingsList({
       </div>
 
       {!showHistory && regulars.length > 0 && (
-        <div className="space-y-3 mb-3" data-testid="regulars">
+        <div className="space-y-4 mb-4" data-testid="regulars">
           {regulars.map(r => <RegularCard key={r.id} series={r} bookings={bookings} onSkip={handleCancel} />)}
         </div>
       )}
@@ -798,7 +798,7 @@ export default function MyBookingsList({
              member's side they're the same thing — somewhere to be this week
              — and keeping them apart meant checking two places to see what
              was on. The row's own badge says which is which. */
-          <div className="space-y-2">
+          <div className="space-y-4">
             {upcoming.map((b, i) => (
               <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
             ))}
@@ -815,7 +815,7 @@ export default function MyBookingsList({
             Nothing here yet.
           </div>
         ) : (
-          <div className="space-y-2 opacity-60">
+          <div className="space-y-4 opacity-60">
             {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} stripeDashboardBase={stripeDashboardBase} />)}
           </div>
         )

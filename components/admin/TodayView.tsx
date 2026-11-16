@@ -130,7 +130,7 @@ export default function TodayView(p: TodayViewProps) {
 
       {p.briefing && <YesterdayStrip b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} />}
 
-      <div className="grid grid-cols-3 gap-3 mt-4">
+      <div className="grid grid-cols-3 gap-4 mt-4">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />
         <Stat label="Players" value={String(s.players.today)} note={`vs ${s.players.lastWeek} last ${p.lastWeekLabel}`} />
         {p.showMoney
@@ -154,7 +154,7 @@ export default function TodayView(p: TodayViewProps) {
           This club has no courts set up yet.{p.showMoney ? <> <Link href={`/admin/setup?${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up this club</Link>.</> : ' Ask the owner to add them.'}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {s.courts.map(c => (
             <div key={c.id} className="rounded-[14px] px-3 py-2.5" style={card}>
               <div className="text-[12.5px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</div>

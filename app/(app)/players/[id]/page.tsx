@@ -127,7 +127,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-4 mb-4">
         {[
           { label: 'Points',   value: player.ranking_points ?? 0, color: 'var(--brand-primary-text)' },
           { label: 'Wins',     value: wins,                        color: 'var(--brand-primary-text)' },

@@ -139,7 +139,7 @@ export default function FinancialReports({
         {clubName} · {long(range.from)} to {long(range.to)} · compared with {short(prevRange.from)} to {long(prevRange.to)}
       </p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {kpis.map(k => (
           <div key={k.id} className="rounded-2xl p-4" data-testid={`report-kpi-${k.id}`} style={card}>
             <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{k.label}</div>

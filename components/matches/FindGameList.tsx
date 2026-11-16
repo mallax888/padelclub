@@ -448,7 +448,7 @@ export default function FindGameList({
       {forYou.length > 0 && (
         <section className="mb-5" data-testid="for-you">
           <div className="text-[11px] font-extrabold uppercase mb-2.5 px-0.5" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>For you</div>
-          <div className="space-y-2.5">
+          <div className="space-y-4">
             {forYou.map(g => {
               const m = g.match
               const q = qualityOf([...g.ratings, viewerRating as number])
@@ -500,7 +500,7 @@ export default function FindGameList({
             style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>
             {dayLabel(day.date)}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {day.matches.map(match => {
               const allPlayers = match.open_match_players ?? []
               const acceptedPlayers = allPlayers.filter(p => p.status === 'accepted')
