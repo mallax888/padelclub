@@ -105,6 +105,7 @@ export default function BookingFlow({
     waitPrefill = null,
     regularsOn = false,
     prepayOn = false,
+    header = null,
     regularRules = {},
     offers = [],
     offerPrefill = null,
@@ -128,6 +129,7 @@ export default function BookingFlow({
     // rules for them (a club can turn them off or cap how many courts they hold at peak).
     regularsOn?: boolean
     prepayOn?: boolean
+    header?: React.ReactNode
     regularRules?: Record<string, { enabled: boolean; peakCap: number | null }>
     // "Fill my empty courts" offers open right now, and (from an offer notification)
     // the club and day to open straight onto.
@@ -484,6 +486,10 @@ export default function BookingFlow({
   // How a regular is paid: week by week (the default) or every week now. And whether friends
   // chosen for this week's split share every later week too.
   const [prepay, setPrepay] = useState(false)
+  // The confirm screen is three short questions, asked one at a time: who is playing, whether it is a
+  // regular, then check and pay.
+  const [confirmStage, setConfirmStage] = useState<'players' | 'regular' | 'pay'>('players')
+  useEffect(() => { if (step === 'confirm') setConfirmStage('players') }, [step])
   const [splitAllWeeks, setSplitAllWeeks] = useState(true)
   const [futureBusy, setFutureBusy] = useState<DatedBusy[] | null>(null)
   // A different slot or length is a different regular: forget the weeks skipped.
@@ -793,6 +799,8 @@ export default function BookingFlow({
     const courtCounts: Record<string, number> = {}
     for (const c of courts) { const slug = (c as any).venue_slug as string; courtCounts[slug] = (courtCounts[slug] ?? 0) + 1 }
     return (
+      <div className="max-w-lg mx-auto">
+      {header}
       <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} offers={offers} homeSlug={homeSlug}
         onClose={() => setNearOpen(false)}
         onFallback={() => { setNearOpen(false); setVenue(null); setDate(null); setTime(null); setStep(STEPS[0]) }}
@@ -800,47 +808,92 @@ export default function BookingFlow({
           setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null); setRegion(v.region); setVenue(v)
           setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); setNearOpen(false); playSelectionSound()
         }} />
+      </div>
     )
   }
 
-  return (
-    // The country step is four cards in a row on a desktop screen, so it gets a wider frame;
-    // every other step stays one comfortable column. Phones are unchanged.
-    <div className={`max-w-lg mx-auto lg:mx-0 ${step === 'country' ? 'lg:max-w-[760px]' : ''}`}>
+  // ---------------------------------------------------------------- the prompt flow
+  // One question at a time, read straight down. Answered questions fold into a one-line card with
+  // a Change link; the open question sits under them with its choices; what is still to come is
+  // shown dimmed so nobody wonders how long it takes.
+  const venueCountry = venue ? COUNTRIES.find(c => c.regions.includes(venue.region)) ?? null : null
+  const askRegular = regularAllowed && !!assignedCourt && !!date && !!time
+  type Group = 'where' | 'date' | 'duration' | 'time' | 'players' | 'regular' | 'pay'
+  const groupOf = (st: Step): Group => (st === 'country' || st === 'region' || st === 'venue' ? 'where' : st === 'confirm' ? (confirmStage === 'players' ? 'players' : confirmStage === 'regular' ? 'regular' : 'pay') : st)
+  const venuePickerSkipped = venue === homeVenue && homeVenue !== null && visibleSteps[0] === 'date'
+  const groups: Group[] = [...(venuePickerSkipped ? [] : ['where' as Group]), 'date', 'duration', 'time', 'players', ...(askRegular ? ['regular' as Group] : []), 'pay']
+  const groupNow = groupOf(step)
+  const groupLabel: Record<Group, string> = { where: 'Where are you playing?', date: 'When?', duration: 'How long?', time: 'What time?', players: 'Anyone playing with you?', regular: 'Same time every week?', pay: 'Check and pay' }
+  const done = (g: Group) => groups.indexOf(g) < groups.indexOf(groupNow)
+  const endTimeNow = time && duration ? addHoursDecimal(time, duration) : ''
+  const flagImg = (name?: string | null) => { const f = COUNTRIES.find(c => c.name === name)?.flag; return f ? <img src={f} alt={name ?? ''} style={{ width: 28, height: 19, objectFit: 'cover', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} /> : null }
+  const doneRow = (key: string, label: string, value: React.ReactNode, onChange: () => void, lead?: React.ReactNode, trailing?: React.ReactNode) => (
+    <div key={key} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5" data-testid={`answered-${key}`} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+      {lead ?? <span className="flex items-center justify-center rounded-full shrink-0 text-[13px] font-extrabold" style={{ width: 26, height: 26, background: 'var(--brand-green-muted, var(--brand-primary-muted))', color: 'var(--brand-green, var(--brand-primary-text))' }} aria-hidden>✓</span>}
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{label}</div>
+        <div className="text-[15px] font-bold sm:truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
+      </div>
+      {trailing}
+      <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }} aria-label={`Change ${label}`}>Change</button>
+    </div>
+  )
+  const laterRow = (g: Group) => (
+    <div key={g} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5 text-[14px] font-bold" data-testid={`later-${g}`} style={{ border: '1px dashed var(--border)', color: 'var(--text-subtle)' }}>
+      <span className="rounded-full shrink-0" style={{ width: 26, height: 26, border: '1.5px dashed var(--border)' }} aria-hidden />
+      {groupLabel[g]}
+    </div>
+  )
+  const changeWhere = () => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }
+  const answeredRows: React.ReactNode[] = []
+  if (!venuePickerSkipped && venue && done('where')) answeredRows.push(doneRow('where', 'Where', <>{venue.name} · {venue.region}</>, changeWhere, flagImg(venueCountry?.name) ?? undefined))
+  if (step !== 'confirm' && date && done('date')) answeredRows.push(doneRow('date', 'When', formatDate(date), () => { setStep('date'); playBackSound() }))
+  if (step !== 'confirm' && duration && done('duration')) answeredRows.push(doneRow('duration', 'How long', durationLabel(duration), () => { setStep('duration'); playBackSound() }))
+  if (step !== 'confirm' && time && done('time')) answeredRows.push(doneRow('time', 'What time', `${time} — ${endTimeNow}`, () => { setStep('time'); playBackSound() }))
+  // On the confirm screen the three answers fold into one line, with the price.
+  if (step === 'confirm' && assignedCourt && date && time) answeredRows.push(doneRow('booking', 'Your booking', `${assignedCourt.name} · ${formatDate(date)} · ${time}–${endTimeNow} · ${venue?.name ?? ''}`, () => { setStep('time'); playBackSound() }, undefined, <span className="text-[15px] font-extrabold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(courtPrice, currency)}</span>))
+  if (step === 'confirm' && done('players')) answeredRows.push(doneRow('players', 'Playing with', seatCount > 0 ? `${seatCount} other${seatCount === 1 ? '' : 's'} · you pay ${formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}` : 'Just me', () => { setConfirmStage('players'); playBackSound() }))
+  if (step === 'confirm' && askRegular && done('regular')) answeredRows.push(doneRow('regular', 'Every week', regular && date ? `Every ${weekdayPlural(date).slice(0, -1)} for ${regularWeeks} weeks${prepayActive ? ', all paid now' : ''}` : 'Just this once', () => { setConfirmStage('regular'); playBackSound() }))
+  const laterRows = groups.filter(g => groups.indexOf(g) > groups.indexOf(groupNow)).map(laterRow)
+  const promptNo = groups.indexOf(groupNow) + 1
 
-      {/* Back arrow + step title */}
-      <div className="flex items-center gap-3 mb-6">
-        {step !== visibleSteps[0] && (
-          <button onClick={() => { goBack(); playBackSound() }}
+  // The open question's card. `back` is only for moving between the three Where screens.
+  const askCard = (children: React.ReactNode, o: { title: string; subtitle?: string; back?: boolean } = { title: groupLabel[groupNow] }) => (
+    <div className="rounded-[20px] p-5 sm:p-6 animate-fade-in" data-testid="open-question" style={{ background: 'var(--bg-surface)', border: '1.5px solid var(--brand-primary)', boxShadow: '0 0 0 4px var(--brand-primary-muted)' }}>
+      <div className="flex items-start gap-3 mb-4">
+        {o.back && (
+          <button onClick={() => { goBack(); playBackSound() }} aria-label="Back"
             className="w-9 h-9 rounded-full flex items-center justify-center transition-all shrink-0"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 18 9 12 15 6"/>
-            </svg>
+            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
         )}
-        <div>
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {stepMeta[step].title}
-          </h2>
-          {stepMeta[step].subtitle && (
-            <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {stepMeta[step].subtitle}
-            </div>
-          )}
+        <div className="min-w-0">
+          <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--brand-primary-text)' }}>Question {promptNo} of {groups.length}</div>
+          <h2 className="text-xl font-extrabold mt-0.5" style={{ color: 'var(--text-primary)' }}>{o.title}</h2>
+          {o.subtitle && <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{o.subtitle}</div>}
         </div>
       </div>
+      {children}
+    </div>
+  )
+  const whereBack = step !== visibleSteps[0]
 
-      {/* Progress bar — only the steps this booking will actually take.
-          Someone whose venue is already known walks two screens, and showing
-          five segments mostly filled in told them they were further through a
-          longer journey than the one they are on. */}
-      <div className="flex gap-1.5 mb-6">
-        {visibleSteps.map(s => (
-          <div key={s} className="h-1 flex-1 rounded-full transition-all"
-            style={{ background: visibleSteps.indexOf(s) <= visibleSteps.indexOf(step) ? 'var(--brand-primary)' : 'rgba(128,128,128,0.35)' }} />
+  return (
+    <div className="max-w-lg mx-auto lg:max-w-[1100px]">
+      {header}
+
+      {/* Progress bar: one segment for every question this booking will ask. */}
+      <div className="flex gap-1.5 mb-5">
+        {groups.map(g => (
+          <div key={g} className="h-1 flex-1 rounded-full transition-all"
+            style={{ background: groups.indexOf(g) <= groups.indexOf(groupNow) ? 'var(--brand-primary)' : 'rgba(128,128,128,0.35)' }} />
         ))}
       </div>
+
+      <div className="flex flex-col gap-4">
+      {answeredRows}
+      {step !== 'confirm' && askCard(<>
 
       {step === 'country' && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in" data-testid="country-grid">
@@ -882,7 +935,7 @@ export default function BookingFlow({
         </div>
       )}
       {step === 'region' && (
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in">
           {countryFilteredRegions.map(r => {
             const venues = LIVE_VENUES.filter(v => v.region === r)
             const totalCourts = courts.filter(ct => venues.some(v => v.slug === (ct as any).venue_slug)).length
@@ -953,7 +1006,7 @@ export default function BookingFlow({
 
       {/* STEP: Venue */}
       {step === 'venue' && (
-        <div className="space-y-2 animate-fade-in">
+        <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4 animate-fade-in">
           {regionVenues.map(v => {
             // A club that has courts but isn't open for booking yet looks the
             // same to players as one with no courts: "coming soon".
@@ -1015,6 +1068,7 @@ export default function BookingFlow({
           time is what makes the flow feel like it's guiding you. */}
       {step === 'date' && (
         <div className="animate-fade-in">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:mb-5 lg:[&>*]:mb-0 lg:[&>*:only-child]:col-span-2">
           {homeVenue && venue?.slug === homeVenue.slug && (
             <div className="rounded-2xl p-4 mb-4" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Travelling?</div>
@@ -1033,8 +1087,9 @@ export default function BookingFlow({
             </span>
             <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>Change</span>
           </button>
+          </div>
 
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 lg:gap-4">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
               const busy = busynessLabel(dateBusyness[d])
@@ -1070,7 +1125,7 @@ export default function BookingFlow({
               down to the three-line shape: the hour reading sits where a date
               carries its Quiet/Busy line, so the two steps read as one
               control rather than two different kinds of picker. */}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 lg:gap-4">
             {DURATIONS.map(d => (
               <button key={d.value}
                 onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
@@ -1138,7 +1193,7 @@ export default function BookingFlow({
               {venue!.name} is closed on {DAY_PLURALS[dayKeyOfDate(date!)]}. Pick another day.
             </div>
           )}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 lg:grid-cols-7 gap-2 lg:gap-4">
             {timeSlots.map(t => {
               const available = isSlotAvailable(t)
               const peak = isPeakTime(date, t)
@@ -1246,55 +1301,25 @@ export default function BookingFlow({
         </div>
       )}
 
+      </>, { title: stepMeta[step].title, subtitle: stepMeta[step].subtitle, back: groupNow === 'where' && whereBack })}
+
       {/* STEP: Confirm */}
       {step === 'confirm' && (
-        <div className="animate-fade-in">
-          <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-            {[
-              ['Venue', venue?.name],
-              ['Court', assignedCourt ? `${assignedCourt.name} — ${assignedCourt.type}` : '—'],
-              ['Date', date ? formatDate(date) : ''],
-              ['Time', time && duration ? time + ' — ' + addHoursDecimal(time, duration) : ''],
-              ['Duration', duration ? durationLabel(duration) : ''],
-              ['Pricing', isPeak ? '⚡ Peak rate' : '✓ Off-peak rate'],
-              ...(confirmOffer ? [['Deal', confirmOffer.offer.discount_percent + '% off']] : discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
-            ].map(([label, value]) => (
-              <div key={label} className="flex justify-between py-2 text-sm"
-                style={{ borderBottom: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                <span className="font-medium text-right ml-4" style={{ color: 'var(--text-primary)' }}>{value}</span>
-              </div>
-            ))}
-            <div className="flex justify-between pt-3">
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{seatCount > 0 ? 'Court total' : 'Total'}</span>
-              <span className="text-xl" style={{ color: seatCount > 0 ? 'var(--text-muted)' : 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
-            </div>
-            {seatCount > 0 && (
-              <div className="flex justify-between items-baseline pt-3" data-testid="your-share">
-                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Your share <span className="text-xs font-normal" style={{ color: 'var(--text-subtle)' }}>split {seatCount + 1} ways</span></span>
-                <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}</span>
-              </div>
-            )}
-            {prepayActive && (
-              <div className="flex justify-between items-baseline pt-3" data-testid="prepay-row">
-                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Plus {weeksPhrase(regularBookable.length)} now</span>
-                <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(laterCents / 100, currency)}</span>
-              </div>
-            )}
-          </div>
-
+        <>
+          {confirmStage === 'players' && askCard(<div className="flex flex-col gap-4">
           {homeSlug && venue && venue.slug !== homeSlug && memberDiscount(plans, { tier, homeSlug, bookingSlug: homeSlug }) > 0 && (
-            <div className="rounded-xl px-3.5 py-3 mb-4 text-xs leading-relaxed" data-testid="away-note" style={{ background: 'var(--brand-primary-muted)', color: 'var(--text-muted)' }}>
+            <div className="rounded-xl px-3.5 py-3 text-xs leading-relaxed" data-testid="away-note" style={{ background: 'var(--brand-primary-muted)', color: 'var(--text-muted)' }}>
               <b style={{ color: 'var(--text-primary)' }}>Away from home.</b> Your {planOf(effectivePlans(plans, homeSlug), tier).name} plan discount applies at {homeVenue?.name ?? 'your home club'} only, so this is {venue.name}&apos;s normal price{confirmOffer ? `. The ${confirmOffer.offer.discount_percent}% is their deal, open to everyone.` : '.'}
             </div>
           )}
+
 
           {/* Open play toggle. This is where most members meet the feature,
               so it carries the same name as the nav item they'll later go
               looking for it under. It was "Open to other players?" here,
               "Find a game" in the nav, "open matches" on that page and
               "Open Play" in Admin — all the same thing. */}
-          <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+          <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>🎾 Open play</div>
@@ -1337,7 +1362,8 @@ export default function BookingFlow({
             )}
           </div>
 
-          <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+
+          <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Split the cost?</div>
@@ -1449,26 +1475,17 @@ export default function BookingFlow({
                     {inviteSeats > 0 && (splitPlayers.length > 0 ? '. ' : ' - ') + 'Invite links are ready on My Bookings once you\'ve paid'}
                   </div>
                 )}
-                {regular && regularAllowed && regularBookable.length > 0 && splitPlayers.length > 0 && (
-                  <div role="radiogroup" aria-label="Which weeks to split" data-testid="split-weeks" className="pt-3 flex flex-col gap-2.5">
-                    {([[true, 'Everyone, every week', `${splitPlayers.length === 1 ? 'They are' : 'They are'} asked to pay their share of each week. You pay ${formatPrice(bookerShareCents(computeCourtPrice(assignedCourt as any, date!, time!, duration!, discount), splitPlayers.length + 1) / 100, currency)} a week.`], [false, 'Just this week', 'The later weeks stay with you.']] as const).map(([val, title, sub]) => (
-                      <button key={String(val)} type="button" role="radio" aria-checked={splitAllWeeks === val} onClick={() => setSplitAllWeeks(val)} data-testid={val ? 'split-all-weeks' : 'split-this-week'}
-                        className="flex items-start gap-3 rounded-2xl px-3.5 py-3 text-left"
-                        style={{ background: splitAllWeeks === val ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: `1px solid ${splitAllWeeks === val ? 'var(--brand-primary)' : 'var(--border)'}` }}>
-                        <span className="mt-0.5 shrink-0 rounded-full" style={{ width: 18, height: 18, border: `2px solid ${splitAllWeeks === val ? 'var(--brand-primary)' : 'var(--text-subtle)'}`, background: splitAllWeeks === val ? 'radial-gradient(var(--brand-primary) 45%, transparent 50%)' : 'transparent' }} />
-                        <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
-                          <span className="block text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-muted)' }}>{sub}</span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
           </div>
+
+          <button type="button" onClick={() => { setConfirmStage(askRegular ? 'regular' : 'pay'); playSelectionSound() }} data-testid="confirm-continue"
+            className="w-full py-3.5 rounded-xl text-[15px] font-extrabold mt-1" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Continue</button>
+          </div>, { title: 'Anyone playing with you?', subtitle: 'Leave it as it is if it is just you.' })}
+
+          {confirmStage === 'regular' && askRegular && askCard(<div className="flex flex-col gap-4">
           {regularAllowed && assignedCourt && date && time && (
-            <div className="rounded-2xl p-4 mb-4" data-testid="regular-card" style={{ background: 'var(--bg-surface)', border: `1px solid ${regular ? 'var(--brand-primary)' : 'var(--border)'}`, boxShadow: 'var(--shadow-float)' }}>
+            <div className="rounded-2xl p-4" data-testid="regular-card" style={{ background: 'var(--bg-surface)', border: `1px solid ${regular ? 'var(--brand-primary)' : 'var(--border)'}`, boxShadow: 'var(--shadow-float)' }}>
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>🔁 Make it a regular</div>
@@ -1550,6 +1567,62 @@ export default function BookingFlow({
               )}
             </div>
           )}
+
+          {splitEnabled && regular && regularAllowed && regularBookable.length > 0 && splitPlayers.length > 0 && (
+                  <div role="radiogroup" aria-label="Which weeks to split" data-testid="split-weeks" className="pt-3 flex flex-col gap-2.5">
+                    {([[true, 'Everyone, every week', `${splitPlayers.length === 1 ? 'They are' : 'They are'} asked to pay their share of each week. You pay ${formatPrice(bookerShareCents(computeCourtPrice(assignedCourt as any, date!, time!, duration!, discount), splitPlayers.length + 1) / 100, currency)} a week.`], [false, 'Just this week', 'The later weeks stay with you.']] as const).map(([val, title, sub]) => (
+                      <button key={String(val)} type="button" role="radio" aria-checked={splitAllWeeks === val} onClick={() => setSplitAllWeeks(val)} data-testid={val ? 'split-all-weeks' : 'split-this-week'}
+                        className="flex items-start gap-3 rounded-2xl px-3.5 py-3 text-left"
+                        style={{ background: splitAllWeeks === val ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: `1px solid ${splitAllWeeks === val ? 'var(--brand-primary)' : 'var(--border)'}` }}>
+                        <span className="mt-0.5 shrink-0 rounded-full" style={{ width: 18, height: 18, border: `2px solid ${splitAllWeeks === val ? 'var(--brand-primary)' : 'var(--text-subtle)'}`, background: splitAllWeeks === val ? 'radial-gradient(var(--brand-primary) 45%, transparent 50%)' : 'transparent' }} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
+                          <span className="block text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-muted)' }}>{sub}</span>
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+          <button type="button" onClick={() => { setConfirmStage('pay'); playSelectionSound() }} data-testid="confirm-continue"
+            className="w-full py-3.5 rounded-xl text-[15px] font-extrabold mt-1" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Continue</button>
+          </div>, { title: 'Same time every week?', subtitle: 'A regular holds the court for you. You can skip any week.' })}
+
+          {confirmStage === 'pay' && askCard(<div className="flex flex-col gap-4">
+          <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+            {[
+              ['Venue', venue?.name],
+              ['Court', assignedCourt ? `${assignedCourt.name} — ${assignedCourt.type}` : '—'],
+              ['Date', date ? formatDate(date) : ''],
+              ['Time', time && duration ? time + ' — ' + addHoursDecimal(time, duration) : ''],
+              ['Duration', duration ? durationLabel(duration) : ''],
+              ['Pricing', isPeak ? '⚡ Peak rate' : '✓ Off-peak rate'],
+              ...(confirmOffer ? [['Deal', confirmOffer.offer.discount_percent + '% off']] : discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
+            ].map(([label, value]) => (
+              <div key={label} className="flex justify-between py-2 text-sm"
+                style={{ borderBottom: '1px solid var(--border)' }}>
+                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
+                <span className="font-medium text-right ml-4" style={{ color: 'var(--text-primary)' }}>{value}</span>
+              </div>
+            ))}
+            <div className="flex justify-between pt-3">
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{seatCount > 0 ? 'Court total' : 'Total'}</span>
+              <span className="text-xl" style={{ color: seatCount > 0 ? 'var(--text-muted)' : 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
+            </div>
+            {seatCount > 0 && (
+              <div className="flex justify-between items-baseline pt-3" data-testid="your-share">
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Your share <span className="text-xs font-normal" style={{ color: 'var(--text-subtle)' }}>split {seatCount + 1} ways</span></span>
+                <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}</span>
+              </div>
+            )}
+            {prepayActive && (
+              <div className="flex justify-between items-baseline pt-3" data-testid="prepay-row">
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Plus {weeksPhrase(regularBookable.length)} now</span>
+                <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(laterCents / 100, currency)}</span>
+              </div>
+            )}
+          </div>
+
+
           <button className="w-full py-4 rounded-xl transition-all flex items-center justify-center gap-2"
             style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
             disabled={submitting} onClick={handleConfirm}>
@@ -1569,8 +1642,11 @@ export default function BookingFlow({
               </>
             )}
           </button>
-        </div>
+          </div>, { title: 'Check and pay' })}
+        </>
       )}
+      </div>
+      {laterRows.length > 0 && <div className="flex flex-col gap-4 mt-4">{laterRows}</div>}
 
     </div>
   )

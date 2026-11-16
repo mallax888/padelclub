@@ -170,7 +170,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
     const next: Step = !hoursDone ? 'hours' : !courtsDone ? 'courts' : 'live'
     const nextLabel = !hoursDone ? 'Start with opening hours' : !courtsDone ? 'Add courts and prices' : liveDone ? 'Review and finish' : 'Review and open for booking'
     return (
-      <div className="max-w-md mx-auto lg:mx-0 flex flex-col">
+      <div className="max-w-md mx-auto flex flex-col">
         <Header />
         <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">
           {liveDone ? `${venue.name} is open for booking` : `Get ${venue.name} ready for bookings`}
@@ -219,7 +219,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   if (step === 'hours') {
     const selectStyle = { minHeight: 40, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
     return (
-      <div className="max-w-md mx-auto lg:mx-0 flex flex-col">
+      <div className="max-w-md mx-auto flex flex-col">
         <Header back />
         <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">Opening hours</h1>
         <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>The hours players can book. Times outside them aren&apos;t offered.</p>
@@ -257,7 +257,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   if (step === 'courts') {
     const inputStyle = { minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
     return (
-      <div className="max-w-md mx-auto lg:mx-0 flex flex-col">
+      <div className="max-w-md mx-auto flex flex-col">
         <Header back />
         <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">Courts and prices</h1>
         <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
@@ -306,7 +306,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   // ------------------------------------------------------------------ live
   const first = courts[0]
   return (
-    <div className="max-w-md lg:max-w-5xl mx-auto lg:mx-0 flex flex-col">
+    <div className="max-w-md lg:max-w-5xl mx-auto flex flex-col">
       <Header back />
       <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">{isOpen ? 'Open for booking' : 'Ready to open?'}</h1>
       <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Check it over. You can change any of this later.</p>

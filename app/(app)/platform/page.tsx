@@ -32,7 +32,7 @@ export default async function PlatformPage() {
   const venues = VENUES.map(v => ({ slug: v.slug, name: v.name })).sort((a, b) => a.name.localeCompare(b.name))
 
   return (
-    <div className="max-w-3xl mx-auto lg:mx-0">
+    <div className="max-w-3xl mx-auto">
         {error ? <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Club requests aren&apos;t switched on yet: the database change 033 has not been run.</p> : <ClubRequests requests={requests} venues={venues} />}
         <ClubFees clubs={fees} />
     </div>
