@@ -804,7 +804,9 @@ export default function BookingFlow({
   }
 
   return (
-    <div className="max-w-lg mx-auto lg:mx-0">
+    // The country step is four cards in a row on a desktop screen, so it gets a wider frame;
+    // every other step stays one comfortable column. Phones are unchanged.
+    <div className={`max-w-lg mx-auto lg:mx-0 ${step === 'country' ? 'lg:max-w-[760px]' : ''}`}>
 
       {/* Back arrow + step title */}
       <div className="flex items-center gap-3 mb-6">
@@ -841,11 +843,11 @@ export default function BookingFlow({
       </div>
 
       {step === 'country' && (
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in" data-testid="country-grid">
           {LIVE_COUNTRIES.map(c => (
             <button key={c.name}
               onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
-              className="rounded-xl p-5 transition-all flex flex-col items-center gap-3"
+              className="rounded-xl lg:rounded-[20px] p-5 transition-all flex flex-col items-center gap-3"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
@@ -864,12 +866,13 @@ export default function BookingFlow({
                   const cities = c.regions.filter(r => REGIONS.includes(r)).length
                   const venueCount = LIVE_VENUES.filter(v => c.regions.includes(v.region)).length
                   const courtCount = courts.filter(ct => LIVE_VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length
-                  return `${cities} cities · ${venueCount} venues · ${courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}`
+                  // One line on a phone; two on a desktop card, where four sit side by side.
+                  return <><span className="lg:block">{cities} cities</span><span className="lg:hidden"> · </span><span className="lg:block">{venueCount} venues · {courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}</span></>
                 })()}
               </div>
             </button>
           ))}
-            <div className="rounded-xl p-5 flex flex-col items-center gap-3 opacity-80"
+            <div className="rounded-xl lg:rounded-[20px] p-5 flex flex-col items-center gap-3 opacity-80"
               style={{ background: 'var(--bg-surface)', border: '1px dashed var(--brand-accent)', minHeight: 180, position: 'relative', cursor: 'default' }}>
               <div style={{ fontSize: 36 }}>🌍</div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
