@@ -196,10 +196,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>Team</h1>
-      <p className="text-[13px] mt-1.5 pl-[15px]" style={{ color: 'var(--text-muted)' }}>Who can run your clubs in the app</p>
-
+    <div className="max-w-2xl lg:max-w-none mx-auto">
       <button type="button" onClick={() => { closeAll(); setAdding(true) }}
         className="flex items-center justify-center gap-2 w-full rounded-2xl mt-4 text-[14.5px] font-extrabold"
         style={{ minHeight: 48, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>

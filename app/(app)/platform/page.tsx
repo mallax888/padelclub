@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { loadTeamCaller } from '@/lib/team-server'
 import { isPlatformAdmin } from '@/lib/club-access'
@@ -33,15 +32,9 @@ export default async function PlatformPage() {
   const venues = VENUES.map(v => ({ slug: v.slug, name: v.name })).sort((a, b) => a.name.localeCompare(b.name))
 
   return (
-    <div className="min-h-screen px-4 py-8" style={{ background: 'var(--bg-base)' }}>
-      <div className="max-w-3xl mx-auto">
-        <div className="flex items-center justify-between mb-5">
-          <span className="text-sm font-extrabold tracking-[0.14em]" style={{ color: 'var(--text-primary)' }}>PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span> <span className="text-xs font-medium tracking-normal" style={{ color: 'var(--text-subtle)' }}>· Platform</span></span>
-          <Link href="/admin/today" className="text-sm font-semibold" style={{ color: 'var(--brand-primary-text)' }}>Back to my club</Link>
-        </div>
+    <div className="max-w-3xl mx-auto">
         {error ? <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Club requests aren&apos;t switched on yet: the database change 033 has not been run.</p> : <ClubRequests requests={requests} venues={venues} />}
         <ClubFees clubs={fees} />
-      </div>
     </div>
   )
 }

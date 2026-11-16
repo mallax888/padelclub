@@ -16,7 +16,7 @@ export default async function LaddersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 lg:flex-col lg:items-start lg:gap-4">
         <div>
           <h1 className="text-2xl font-semibold">Ladders</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Challenge players above you and climb the club ranking</p>
