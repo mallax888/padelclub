@@ -122,7 +122,7 @@ export default function TournamentHub({
   const noTies = (m: VMatch) => stage(m) === 'ko' || stage(m) === 'third_place'
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="max-w-2xl lg:max-w-none mx-auto space-y-5">
       <div>
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold" data-testid="title">{t.name}</h1>

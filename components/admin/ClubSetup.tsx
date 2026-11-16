@@ -170,7 +170,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
     const next: Step = !hoursDone ? 'hours' : !courtsDone ? 'courts' : 'live'
     const nextLabel = !hoursDone ? 'Start with opening hours' : !courtsDone ? 'Add courts and prices' : liveDone ? 'Review and finish' : 'Review and open for booking'
     return (
-      <div className="max-w-md mx-auto flex flex-col">
+      <div className="max-w-md lg:max-w-none mx-auto flex flex-col">
         <Header />
         <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">
           {liveDone ? `${venue.name} is open for booking` : `Get ${venue.name} ready for bookings`}
@@ -178,6 +178,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
         <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {liveDone ? 'Change any of it below, any time.' : "A few quick steps and players can book courts. You can change any of it later."}
         </p>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-x-4 lg:items-start">
+        <div>
         <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
           <Row n={0} state="done" title="Your club" text={venue.address} />
           <Row n={1} state={hoursDone ? 'done' : next === 'hours' ? 'next' : 'todo'} title="Opening hours" onClick={() => setStep('hours')}
@@ -187,6 +189,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           <Row n={3} state={liveDone ? 'done' : next === 'live' ? 'next' : 'todo'} title="Open for booking" onClick={() => setStep('live')}
             text={liveDone ? 'Open to players' : "Switch on when you're happy"} />
         </div>
+        </div>
+        <div>
         {memberships && (
           <button type="button" data-testid="open-memberships" className="w-full text-left rounded-[20px] mt-4 px-3.5 py-3.5 flex items-center gap-3" style={card}
             onClick={() => { setStep('live'); setTimeout(() => document.querySelector('[data-testid="membership-plans"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80) }}>
@@ -205,6 +209,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           </span>
           <span style={{ color: 'var(--text-subtle)' }} aria-hidden>›</span>
         </button>
+        </div>
+        </div>
         <Primary onClick={() => setStep(next)}>{nextLabel}</Primary>
         {!liveDone && (
           <p className="text-xs mt-4 rounded-2xl px-3.5 py-3 leading-relaxed" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--text-muted)' }}>
@@ -219,11 +225,11 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   if (step === 'hours') {
     const selectStyle = { minHeight: 40, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
     return (
-      <div className="max-w-md mx-auto flex flex-col">
+      <div className="max-w-md lg:max-w-none mx-auto flex flex-col">
         <Header back />
         <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">Opening hours</h1>
         <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>The hours players can book. Times outside them aren&apos;t offered.</p>
-        <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
+        <div className="rounded-[20px] overflow-hidden mt-4 lg:columns-2 lg:gap-0 lg:[column-rule:1px_solid_var(--border)] lg:[&>*]:break-inside-avoid" style={card}>
           {DAY_KEYS.map(d => {
             const h = week[d]
             return (
@@ -257,12 +263,14 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   if (step === 'courts') {
     const inputStyle = { minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
     return (
-      <div className="max-w-md mx-auto flex flex-col">
+      <div className="max-w-md lg:max-w-none mx-auto flex flex-col">
         <Header back />
         <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">Courts and prices</h1>
         <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {listed.length > 0 ? `${venue.name} lists ${listed.length} ${listed.length === 1 ? 'court' : 'courts'}. Add ${listed.length === 1 ? 'it' : 'them'} in one go, then set the prices.` : 'Set the prices, then add your courts.'}
         </p>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-x-4 lg:items-start">
+        <div>
         <div className="flex gap-2.5 mt-4">
           {([['Price per hour', price, setPrice, '48'], ['Peak price', peak, setPeak, 'same']] as const).map(([label, val, set, ph]) => (
             <label key={label} className="flex-1 block">
@@ -281,9 +289,11 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
             {busy ? 'Adding…' : courts.length === 0 ? `Add all ${toAdd.length} ${toAdd.length === 1 ? 'court' : 'courts'}` : `Add the other ${toAdd.length} listed ${toAdd.length === 1 ? 'court' : 'courts'}`}
           </Primary>
         )}
+        </div>
+        <div>
         {courts.length > 0 && (
           <>
-            <div className="text-[11px] font-extrabold uppercase mt-5 mb-2 px-0.5" style={sectionLabel}>Courts added</div>
+            <div className="text-[11px] font-extrabold uppercase mt-5 lg:mt-4 mb-2 px-0.5" style={sectionLabel}>Courts added</div>
             <div className="rounded-[20px] overflow-hidden" style={card}>
               {courts.map(c => (
                 <Link key={c.id} href={`/admin?tab=courts&venue=${encodeURIComponent(venue.slug)}`} className="flex items-center gap-3 px-3.5 py-3" style={{ minHeight: 64, borderBottom: '1px solid var(--border)' }}>
@@ -297,6 +307,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
             <p className="text-[11.5px] mt-2 px-1" style={{ color: 'var(--text-subtle)' }}>Tap a court to rename it or change its price.</p>
           </>
         )}
+        </div>
+        </div>
         <Ghost onClick={() => { void addAnother() }}>+ Add another court</Ghost>
         <Primary disabled={courts.length === 0} onClick={() => setStep('live')}>Continue</Primary>
       </div>
@@ -306,7 +318,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   // ------------------------------------------------------------------ live
   const first = courts[0]
   return (
-    <div className="max-w-md lg:max-w-5xl mx-auto flex flex-col">
+    <div className="max-w-md lg:max-w-none mx-auto flex flex-col">
       <Header back />
       <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">{isOpen ? 'Open for booking' : 'Ready to open?'}</h1>
       <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Check it over. You can change any of this later.</p>
@@ -364,14 +376,14 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           )}
         </div>
       )}
+      <BriefingSettings venueSlug={venue.slug} settings={briefing} />
       </div>
       <div>
       <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
-      <BriefingSettings venueSlug={venue.slug} settings={briefing} />
       {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
       </div>
       </div>
-      <div className="lg:max-w-md lg:mx-auto">
+      <div>
       <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
         {isOpen ? 'Done' : 'Save for later'}
       </Primary>

@@ -38,12 +38,15 @@ export default function NewLadderForm({ organizerId }: { organizerId: string }) 
   }
 
   return (
-    <div className="max-w-lg mx-auto space-y-4">
+    <div className="max-w-lg lg:max-w-none mx-auto space-y-4">
       <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div className="lg:grid lg:grid-cols-2 lg:gap-6">
+        <div>
         <label className="label">Ladder name</label>
         <input type="text" className="input text-sm" placeholder="Club Ladder" value={name} onChange={e => setName(e.target.value)} />
-
-        <label className="label mt-3">Challenge range</label>
+        </div>
+        <div>
+        <label className="label mt-3 lg:mt-0">Challenge range</label>
         <p className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>Players can only challenge someone ranked within this many spots above them</p>
         <div className="flex gap-1.5">
           {[1, 2, 3, 4, 5].map(n => (
@@ -57,6 +60,8 @@ export default function NewLadderForm({ organizerId }: { organizerId: string }) 
               {n}
             </button>
           ))}
+        </div>
+        </div>
         </div>
       </div>
 

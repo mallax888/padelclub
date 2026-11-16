@@ -119,13 +119,15 @@ export default function NewTournamentForm({
   const field = (label: string, node: React.ReactNode) => (<div><label className="label">{label}</label>{node}</div>)
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl lg:max-w-none mx-auto space-y-4">
       {!formatsReady && (
         <div className="rounded-xl p-3 text-sm" data-testid="formats-not-ready" style={{ background: 'var(--brand-yellow-muted)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
           The new formats need a one-off setup step first. Americano and Mexicano work as usual.
         </div>
       )}
 
+      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
+      <div className="space-y-4">
       {/* where and when */}
       <section className="rounded-2xl p-4 space-y-3" style={card}>
         <h2 className="text-sm font-extrabold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>Where and when</h2>
@@ -228,6 +230,8 @@ export default function NewTournamentForm({
         ))}
       </section>
 
+      </div>
+      <div className="space-y-4">
       {/* set up */}
       <section className="rounded-2xl p-4 space-y-3" style={card}>
         <div>
@@ -324,6 +328,8 @@ export default function NewTournamentForm({
           </div>
         </div>
       </section>
+      </div>
+      </div>
 
       <button className="btn btn-primary w-full justify-center py-3" disabled={saving || !usable(format)} onClick={create} data-testid="create-tournament">
         {saving ? 'Creating…' : 'Create tournament'}
