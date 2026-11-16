@@ -196,10 +196,9 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
   }
 
   return (
-    <div className="max-w-2xl lg:max-w-none mx-auto">
+    <div className="w-full">
       <button type="button" onClick={() => { closeAll(); setAdding(true) }}
-        className="flex items-center justify-center gap-2 w-full rounded-2xl mt-4 text-[14.5px] font-extrabold"
-        style={{ minHeight: 48, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
+        className="btn-main mt-4">
         + Add team member
       </button>
 
@@ -262,7 +261,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
           <Label>Role</Label><RolePicker role={role} setRole={setRole} />
           <Label>Which clubs</Label><ScopePicker scope={scope} setScope={setScope} clubs={clubs} countries={countries} canGrantAll={canGrantAll} />
           <button type="button" disabled={busy} onClick={() => finish({ action: 'update', userId: editing.id, role, scope }, 'Saved')}
-            className="flex items-center justify-center w-full rounded-2xl mt-4 text-[14.5px] font-extrabold disabled:opacity-60" style={{ minHeight: 48, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+            className="btn-main mt-4">
             {busy ? 'Saving…' : 'Save changes'}
           </button>
           {!confirmRemove ? (

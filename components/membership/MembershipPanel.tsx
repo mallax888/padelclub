@@ -165,14 +165,13 @@ export default function MembershipPanel({
                 ))}
               </ul>
               <button
-                className={isCurrent ? 'btn w-full justify-center mt-4' : 'btn btn-primary w-full justify-center mt-4'}
+                className={isCurrent ? 'btn-main btn-main-quiet mt-4' : 'btn-main mt-4'}
                 disabled={isCurrent || upgrading}
                 style={{
                   cursor: isCurrent ? 'default' : 'pointer',
                   background: isCurrent ? 'var(--brand-primary-muted)' : undefined,
                   color: isCurrent ? 'var(--brand-primary-text)' : undefined,
-                  border: isCurrent ? '1px solid var(--brand-primary)' : undefined,
-                  fontWeight: 600,
+                  borderColor: isCurrent ? 'var(--brand-primary)' : undefined,
                 }}
                 onClick={() => handleUpgrade(mem.key)}
               >
@@ -288,8 +287,7 @@ export default function MembershipPanel({
               Your new perks are active now. Ready to put them to use?
             </p>
             <button
-              className="w-full py-3 rounded-xl text-sm font-bold transition-all mb-2"
-              style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
+              className="btn-main mb-2"
               onClick={() => router.push('/book')}
             >
               New booking →

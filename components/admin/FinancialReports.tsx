@@ -149,7 +149,7 @@ export default function FinancialReports({
         ))}
       </div>
 
-      <div className="rounded-2xl p-4" style={card}>
+      <div className="rounded-2xl p-5" style={card}>
         <div className="flex items-baseline justify-between gap-2 mb-3">
           <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Revenue by day</div>
           {summary.bestWeekday && <div className="text-xs" style={{ color: 'var(--text-muted)' }} data-testid="report-best-weekday">Strongest day: {summary.bestWeekday.name}</div>}
@@ -182,7 +182,7 @@ export default function FinancialReports({
       </div>
 
       {summary.topMembers.length > 0 && (
-        <div className="rounded-2xl p-4" data-testid="report-top-members" style={card}>
+        <div className="rounded-2xl p-5" data-testid="report-top-members" style={card}>
           <div className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Top members by spend</div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm tabular-nums">

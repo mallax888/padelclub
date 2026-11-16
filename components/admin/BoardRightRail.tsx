@@ -89,13 +89,11 @@ export default function BoardRightRail({
 
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Quick Actions</div>
-        <div className="space-y-2">
-          <button onClick={onBlockCourt} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
+        <div className="flex flex-col gap-4">
+          <button onClick={onBlockCourt} className="btn-main !justify-between px-4">
             🔒 Block a court <span>→</span>
           </button>
-          <button onClick={onAddCourt} className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
-            style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
+          <button onClick={onAddCourt} className="btn-main btn-main-quiet !justify-between px-4">
             + Add a court <span>→</span>
           </button>
         </div>

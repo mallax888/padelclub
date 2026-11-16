@@ -765,7 +765,7 @@ export default function MyBookingsList({
       {/* The full policy was a permanent four-line paragraph sitting above
           every booking — read once, scrolled past forever after. The line
           that matters stays visible; the rest opens on demand. */}
-      <details className="mb-5 text-xs rounded-2xl px-3 py-2.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+      <details className="mb-4 text-xs rounded-2xl px-4 py-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
         <summary className="cursor-pointer select-none" style={{ listStyle: 'none' }}>
           Cancel 24hrs+ before for a full refund. <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
         </summary>
@@ -775,7 +775,7 @@ export default function MyBookingsList({
       </details>
 
       {/* New booking — solid lime CTA card */}
-      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-5 py-[21px] mb-5 transition-all hover:scale-[1.01]"
+      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-6 py-5 mb-4 transition-all hover:scale-[1.01]"
         style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
         <div className="min-w-0">
           <div className="text-2xl" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.01em' }}>+ New booking</div>
@@ -905,7 +905,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="w-full flex items-center gap-3 rounded-2xl px-3.5 py-3 text-left transition-colors"
+        className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors"
         style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
         <span className="text-xs font-bold shrink-0" style={{ color: 'var(--text-primary)', width: 52, fontVariantNumeric: 'tabular-nums' }}>
           {dateParts(b.date).weekday} {dateParts(b.date).day}
@@ -963,7 +963,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   }
 
   return (
-    <div className="rounded-2xl p-3.5" style={{
+    <div className="rounded-2xl p-5" style={{
       background: isNext ? 'var(--bg-surface)' : 'var(--bg-raised)',
       border: '1px solid var(--border)',
       boxShadow: isNext ? '0 0 0 1px var(--ring-primary), 0 30px 70px -20px var(--ring-primary)' : 'var(--shadow-float)',
@@ -1147,7 +1147,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id && s.user_id !== currentUserId)
 
   return (
-    <div className="rounded-2xl p-3.5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
       <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
           <DateBlock dateStr={b.date} />

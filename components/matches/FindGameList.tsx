@@ -79,7 +79,7 @@ function YourLevelCard({ rating, matches }: { rating: number; matches: number | 
   const reliability = reliabilityOf(matches)
   const TIERS = ['Beginner', 'Improver', 'Intermediate', 'Advanced', 'Elite']
   return (
-    <div className="rounded-2xl p-4 mb-4" data-testid="your-level" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+    <div className="rounded-2xl p-5 mb-4" data-testid="your-level" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
       <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Your level</div>
       <div className="flex items-baseline gap-2.5 mt-1.5">
         <span className="text-[38px] leading-none font-extrabold" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{levelNumber(rating)}</span>
@@ -453,7 +453,7 @@ export default function FindGameList({
               const m = g.match
               const q = qualityOf([...g.ratings, viewerRating as number])
               return (
-                <div key={g.id} className="rounded-2xl p-3.5 flex items-center justify-between gap-3" data-testid="for-you-game"
+                <div key={g.id} className="rounded-2xl p-4 flex items-center justify-between gap-3" data-testid="for-you-game"
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted), var(--shadow-float)' }}>
                   <div className="min-w-0">
                     <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{dayLabel(m.date)} · {m.start_time.slice(0, 5)} · {getVenue(m.venue_slug).name}</div>
@@ -517,7 +517,7 @@ export default function FindGameList({
               const quality = qualityOf([...levelPlayers.map(p => p.rating).filter((r): r is number => r !== null), ...(youIfJoin ? [viewerRating as number] : [])])
 
               return (
-                <div key={match.id} className="rounded-2xl p-4"
+                <div key={match.id} className="rounded-2xl p-5"
                   style={{
                     background: 'var(--bg-surface)',
                     border: `1px solid ${fit === 'fits' ? 'var(--brand-primary)' : 'var(--border)'}`,
@@ -694,10 +694,7 @@ export default function FindGameList({
                       </div>
                     ) : (
                       <button
-                        className="w-full rounded-xl text-sm font-extrabold disabled:opacity-60"
-                        style={isFull || fit === 'above' || fit === 'below'
-                          ? { minHeight: 44, background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }
-                          : { minHeight: 44, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
+                        className={isFull || fit === 'above' || fit === 'below' ? 'btn-main btn-main-quiet' : 'btn-main'}
                         disabled={isFull || loading === match.id + '-request'}
                         onClick={() => tryJoin(match)}
                       >

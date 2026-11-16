@@ -76,7 +76,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
   const regularsList = Object.values(partners).sort((a, b) => b.together - a.together).slice(0, 5)
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full">
       <Link href="/players" className="inline-flex items-center gap-1.5 text-sm mb-6 transition-colors"
         style={{ color: 'var(--text-muted)' }}>
         ← Back to players

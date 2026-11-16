@@ -25,7 +25,7 @@ export default function BoardFooterStrip({
   ]
 
   return (
-    <div className="rounded-2xl mt-4 px-5 py-3 flex flex-wrap items-center gap-x-8 gap-y-2"
+    <div className="rounded-2xl mt-4 px-4 py-3 flex flex-wrap items-center gap-x-8 gap-y-2"
       style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
       {items.map(item => (
         <div key={item.label} className="flex items-baseline gap-2">

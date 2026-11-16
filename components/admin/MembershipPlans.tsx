@@ -81,7 +81,7 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
   const canRemove = !!current && !current.builtIn && members === 0
 
   return (
-    <div className="rounded-2xl mt-4 px-3.5 py-3.5" style={card} data-testid="membership-plans">
+    <div className="rounded-2xl mt-4 p-5" style={card} data-testid="membership-plans">
       <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🏅 Memberships</div>
       <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>The plans your players can join at your club. You set the price and what each plan includes.</div>
 
@@ -179,7 +179,7 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
         {given > 0 && <p className="text-[11.5px] mt-2" style={{ color: 'var(--text-subtle)' }}>{given} {given === 1 ? 'member has' : 'members have'} this plan free, given by you.</p>}
 
         <div className="flex gap-2 mt-4">
-          <button type="button" onClick={save} disabled={busy} className="flex-1 rounded-xl text-sm font-extrabold disabled:opacity-50" style={{ minHeight: 46, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+          <button type="button" onClick={save} disabled={busy} className="btn-main flex-1">
             {busy ? 'Saving…' : 'Save changes'}
           </button>
           {canRemove && (

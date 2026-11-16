@@ -70,7 +70,7 @@ export default function PushRemindersPrompt({ highlight = false }: {
 
   return (
     <div
-      className="rounded-2xl px-4 py-3.5 mb-5 flex items-start gap-3"
+      className="rounded-2xl p-5 mb-4 flex items-start gap-3"
       style={{
         background: 'var(--bg-surface)',
         border: `1px solid ${highlight ? 'var(--brand-primary)' : 'var(--border)'}`,

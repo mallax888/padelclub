@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect, useRef, useId } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useId, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
@@ -15,7 +15,7 @@ type Notification = {
 }
 
 export default function NotificationBell({ userId, panelPosition = 'top-right' }: { userId: string; panelPosition?: 'top-right' | 'flyout' }) {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const router = useRouter()
   const channelId = useId()
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -27,7 +27,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   const unread = notifications.filter(n => !n.read).length
   const hasRead = notifications.some(n => n.read)
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     const { data } = await supabase
       .from('notifications')
       .select('*')
@@ -35,7 +35,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
       .order('created_at', { ascending: false })
       .limit(20)
     if (data) setNotifications(data)
-  }
+  }, [supabase, userId])
 
   useEffect(() => {
     fetchNotifications()
@@ -56,7 +56,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [userId])
+  }, [userId, channelId, supabase, fetchNotifications])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
