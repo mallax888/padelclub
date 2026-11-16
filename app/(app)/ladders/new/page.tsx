@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import NewLadderForm from '@/components/ladders/NewLadderForm'
+import { FLOW_FRAME } from '@/lib/flow-frame'
 
 export const metadata = { title: 'New ladder' }
 
@@ -15,7 +16,7 @@ export default async function NewLadderPage() {
 
   return (
     <div>
-      <div className="mb-6">
+      <div className={`mb-6 ${FLOW_FRAME}`}>
         <h1 className="text-2xl font-semibold">New ladder</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Players join, challenge their way up, and climb the ranking</p>
       </div>
