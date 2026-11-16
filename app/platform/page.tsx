@@ -9,7 +9,7 @@ import ClubFees, { type ClubFee } from '@/components/platform/ClubFees'
 import { connectState } from '@/lib/connect-rules'
 import { getVenue } from '@/lib/venues'
 
-export const metadata = { title: 'Club requests' }
+export const metadata = { title: 'Clubs and fees' }
 export const dynamic = 'force-dynamic'
 
 // For the person who runs PadelClub itself: new clubs waiting to be approved.

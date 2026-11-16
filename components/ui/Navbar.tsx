@@ -109,8 +109,11 @@ const OWNER_MORE_ITEMS = [
   { href: '/admin?tab=reports',  label: 'Reports',  tab: 'reports' },
   { href: '/admin?tab=courts',   label: 'Courts',   tab: 'courts' },
   { href: '/admin?tab=xero',     label: 'Xero',     tab: 'xero' },
-  { href: '/admin/team',         label: 'Team',     tab: null },
-  { href: '/admin/setup',        label: 'Club setup', tab: null },
+]
+// Owners only: the settings an owner changes now and then, kept apart from the daily pages.
+const OWNER_MANAGE_ITEMS: { href: string; label: string; tab: string | null }[] = [
+  { href: '/admin/team',         label: 'Team',          tab: null },
+  { href: '/admin/setup',        label: 'Club settings', tab: null },
 ]
 const MANAGER_CLUB_ITEMS = NAV_ITEMS.filter(i => ['/players', '/tournaments', '/ladders'].includes(i.href))
 
@@ -275,16 +278,31 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
               <div className="flex flex-col gap-0.5">
                 <SidebarLink href="/admin/today" label="Today" active={pathname === '/admin/today'} />
                 <SidebarLink href="/admin" label="Dashboard" active={pathname === '/admin'} />
-                {isOwner && <SidebarLink href="/admin/team" label="Team" active={pathname === '/admin/team'} />}
-                {isOwner && <SidebarLink href="/admin/setup" label="Club setup" active={pathname === '/admin/setup'} />}
-                {isPlatform && <SidebarLink href="/platform" label="Club requests" active={pathname === '/platform'} />}
               </div>
-              <SidebarGroupLabel>Club</SidebarGroupLabel>
+              <SidebarGroupLabel>Players and play</SidebarGroupLabel>
               <div className="flex flex-col gap-0.5">
                 {MANAGER_CLUB_ITEMS.map(item => (
                   <SidebarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
                 ))}
               </div>
+              {isOwner && (
+                <>
+                  <SidebarGroupLabel>Manage your club</SidebarGroupLabel>
+                  <div className="flex flex-col gap-0.5" data-testid="manage-group">
+                    {OWNER_MANAGE_ITEMS.map(item => (
+                      <SidebarLink key={item.href} href={item.href} label={item.label} active={pathname === item.href} />
+                    ))}
+                  </div>
+                </>
+              )}
+              {isPlatform && (
+                <>
+                  <SidebarGroupLabel>PadelClub</SidebarGroupLabel>
+                  <div className="flex flex-col gap-0.5">
+                    <SidebarLink href="/platform" label="Clubs and fees" active={pathname === '/platform'} />
+                  </div>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -367,21 +385,35 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
               paddingBottom: 'env(safe-area-inset-bottom)',
             }}>
             <div className="px-4 py-3 space-y-1">
-              {(manager ? [...(isOwner ? OWNER_MORE_ITEMS : []), ...MANAGER_CLUB_ITEMS.map(i => ({ ...i, tab: null as string | null }))] : NAV_ITEMS).map((item: { href: string; label: string; tab?: string | null }) => {
-                const active = manager && item.tab ? pathname === '/admin' && tabParam === item.tab : pathname.startsWith(item.href)
-                return (
-                  <Link key={item.href} href={item.href}
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center px-3 py-3 rounded-lg text-base transition-colors"
-                    style={{
-                      background: active ? 'var(--bg-raised)' : 'transparent',
-                      color: active ? 'var(--brand-primary-text)' : 'var(--text-primary)',
-                      fontWeight: active ? 500 : 400,
-                    }}>
-                    {item.label}
-                  </Link>
-                )
-              })}
+              {(manager
+                ? [
+                    { label: null as string | null, items: [...(isOwner ? OWNER_MORE_ITEMS : []), ...MANAGER_CLUB_ITEMS.map(i => ({ ...i, tab: null as string | null }))] },
+                    ...(isOwner ? [{ label: 'Manage your club', items: OWNER_MANAGE_ITEMS }] : []),
+                    ...(isPlatform ? [{ label: 'PadelClub', items: [{ href: '/platform', label: 'Clubs and fees', tab: null as string | null }] }] : []),
+                  ]
+                : [{ label: null as string | null, items: NAV_ITEMS as { href: string; label: string; tab?: string | null }[] }]
+              ).map(section => (
+                <div key={section.label ?? 'main'}>
+                  {section.label && (
+                    <div className="px-3 pt-3 pb-1 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>{section.label}</div>
+                  )}
+                  {section.items.map((item: { href: string; label: string; tab?: string | null }) => {
+                    const active = manager && item.tab ? pathname === '/admin' && tabParam === item.tab : pathname.startsWith(item.href)
+                    return (
+                      <Link key={item.href} href={item.href}
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center px-3 py-3 rounded-lg text-base transition-colors"
+                        style={{
+                          background: active ? 'var(--bg-raised)' : 'transparent',
+                          color: active ? 'var(--brand-primary-text)' : 'var(--text-primary)',
+                          fontWeight: active ? 500 : 400,
+                        }}>
+                        {item.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              ))}
               {isStaff && canSwitchView && (
                 <div className="pt-2">
                   <ViewSwitch mode={viewMode} variant="row" onNavigate={() => setMenuOpen(false)} />
