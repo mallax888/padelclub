@@ -76,14 +76,12 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
   const regularsList = Object.values(partners).sort((a, b) => b.together - a.together).slice(0, 5)
 
   return (
-    <div className="max-w-2xl lg:max-w-none mx-auto">
+    <div className="max-w-2xl mx-auto">
       <Link href="/players" className="inline-flex items-center gap-1.5 text-sm mb-6 transition-colors"
         style={{ color: 'var(--text-muted)' }}>
         ← Back to players
       </Link>
 
-      <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
-      <div>
       {/* Profile header */}
       <div className="rounded-xl p-6 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <div className="flex items-center gap-5">
@@ -199,8 +197,6 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
         </div>
       )}
 
-      </div>
-      <div>
       {/* Match history */}
       {matches.length > 0 && (
         <div className="rounded-xl p-5 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
@@ -256,8 +252,6 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
             <span style={{ color: 'var(--text-primary)' }}>{value}</span>
           </div>
         ))}
-      </div>
-      </div>
       </div>
     </div>
   )

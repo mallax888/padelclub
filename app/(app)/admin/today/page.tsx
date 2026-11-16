@@ -53,7 +53,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const firstName = ((profile as any).nickname ?? (profile as any).full_name ?? '').toString().split(' ')[0] || null
   if (venues.length === 0) {
     return (
-      <div className="max-w-2xl lg:max-w-none mx-auto">
+      <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-extrabold">Today</h1>
         <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
           None of your clubs have courts set up yet.{isOwnerRole((profile as any).role) ? <> <Link href="/admin/setup" style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up your club</Link> and today&apos;s bookings will show here.</> : ' Ask the owner to set up the club.'}

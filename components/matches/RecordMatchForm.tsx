@@ -238,7 +238,7 @@ export default function RecordMatchForm({
   )
 
   return (
-    <div className="max-w-lg lg:max-w-none mx-auto space-y-4">
+    <div className="max-w-lg mx-auto space-y-4">
       {prefill && (
         <div className="rounded-xl px-4 py-3 flex items-center gap-2.5"
           style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }}>
@@ -251,8 +251,6 @@ export default function RecordMatchForm({
           </span>
         </div>
       )}
-      <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
-      <div className="space-y-4">
       <div className="grid grid-cols-2 gap-1.5">
         {([
           { value: 'doubles' as const, label: 'Doubles', desc: '2 vs 2', icon: <RacketPair /> },
@@ -293,8 +291,6 @@ export default function RecordMatchForm({
         </div>
       </div>
 
-      </div>
-      <div className="space-y-4">
       <div className="rounded-2xl p-5" style={{ background: 'linear-gradient(180deg, var(--bg-surface), var(--bg-raised))', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="flex items-center gap-3 mb-5">
           <div className="flex-1 min-w-0 text-center">
@@ -364,8 +360,6 @@ export default function RecordMatchForm({
         <textarea className="input text-sm" rows={2} placeholder="Any notes about the match..." value={notes} onChange={e => setNotes(e.target.value)} maxLength={200} />
       </div>
 
-      </div>
-      </div>
       <div className="rounded-xl p-3 text-xs font-semibold" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>
         Winners +{POINTS.win}{sets.length === 2 ? ` +${POINTS.win_bonus} bonus` : ''} pts · Losers +{POINTS.loss} pts
       </div>

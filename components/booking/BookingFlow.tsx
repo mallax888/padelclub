@@ -795,7 +795,7 @@ export default function BookingFlow({
     const courtCounts: Record<string, number> = {}
     for (const c of courts) { const slug = (c as any).venue_slug as string; courtCounts[slug] = (courtCounts[slug] ?? 0) + 1 }
     return (
-      <div className="max-w-lg mx-auto lg:max-w-none">
+      <div className="max-w-lg mx-auto">
       {header}
       <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} offers={offers} homeSlug={homeSlug}
         onClose={() => setNearOpen(false)}
@@ -811,7 +811,7 @@ export default function BookingFlow({
   return (
     // The country step is four cards in a row on a desktop screen, so it gets a wider frame;
     // every other step stays one comfortable column. Phones are unchanged.
-    <div className="max-w-lg mx-auto lg:max-w-none">
+    <div className={`max-w-lg mx-auto ${step === 'country' ? 'lg:max-w-none' : ''}`}>
       {header}
 
       {/* Back arrow + step title */}
@@ -888,7 +888,7 @@ export default function BookingFlow({
         </div>
       )}
       {step === 'region' && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in">
+        <div className="grid grid-cols-2 gap-3 animate-fade-in">
           {countryFilteredRegions.map(r => {
             const venues = LIVE_VENUES.filter(v => v.region === r)
             const totalCourts = courts.filter(ct => venues.some(v => v.slug === (ct as any).venue_slug)).length
@@ -959,7 +959,7 @@ export default function BookingFlow({
 
       {/* STEP: Venue */}
       {step === 'venue' && (
-        <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4 animate-fade-in">
+        <div className="space-y-2 animate-fade-in">
           {regionVenues.map(v => {
             // A club that has courts but isn't open for booking yet looks the
             // same to players as one with no courts: "coming soon".
@@ -1021,7 +1021,6 @@ export default function BookingFlow({
           time is what makes the flow feel like it's guiding you. */}
       {step === 'date' && (
         <div className="animate-fade-in">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:mb-5 lg:[&>*]:mb-0 lg:[&>*:only-child]:col-span-2">
           {homeVenue && venue?.slug === homeVenue.slug && (
             <div className="rounded-2xl p-4 mb-4" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Travelling?</div>
@@ -1040,9 +1039,8 @@ export default function BookingFlow({
             </span>
             <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>Change</span>
           </button>
-          </div>
 
-          <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 lg:gap-4">
+          <div className="grid grid-cols-4 gap-2">
             {dates.map(d => {
               const { day, num, month } = dateLabel(d)
               const busy = busynessLabel(dateBusyness[d])
@@ -1078,7 +1076,7 @@ export default function BookingFlow({
               down to the three-line shape: the hour reading sits where a date
               carries its Quiet/Busy line, so the two steps read as one
               control rather than two different kinds of picker. */}
-          <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 lg:gap-4">
+          <div className="grid grid-cols-4 gap-2">
             {DURATIONS.map(d => (
               <button key={d.value}
                 onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
@@ -1146,7 +1144,7 @@ export default function BookingFlow({
               {venue!.name} is closed on {DAY_PLURALS[dayKeyOfDate(date!)]}. Pick another day.
             </div>
           )}
-          <div className="grid grid-cols-3 lg:grid-cols-7 gap-2 lg:gap-4">
+          <div className="grid grid-cols-3 gap-2">
             {timeSlots.map(t => {
               const available = isSlotAvailable(t)
               const peak = isPeakTime(date, t)
@@ -1257,8 +1255,6 @@ export default function BookingFlow({
       {/* STEP: Confirm */}
       {step === 'confirm' && (
         <div className="animate-fade-in">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
-          <div>
           <div className="rounded-2xl p-4 mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
             {[
               ['Venue', venue?.name],
@@ -1477,8 +1473,6 @@ export default function BookingFlow({
               </div>
             )}
           </div>
-          </div>
-          <div>
           {regularAllowed && assignedCourt && date && time && (
             <div className="rounded-2xl p-4 mb-4" data-testid="regular-card" style={{ background: 'var(--bg-surface)', border: `1px solid ${regular ? 'var(--brand-primary)' : 'var(--border)'}`, boxShadow: 'var(--shadow-float)' }}>
               <div className="flex items-center justify-between gap-3">
@@ -1562,8 +1556,6 @@ export default function BookingFlow({
               )}
             </div>
           )}
-          </div>
-          </div>
           <button className="w-full py-4 rounded-xl transition-all flex items-center justify-center gap-2"
             style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
             disabled={submitting} onClick={handleConfirm}>
