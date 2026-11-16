@@ -1,4 +1,5 @@
 ﻿import { keepClubAccountsOut } from '@/lib/club-guard'
+import { prepayReady } from '@/lib/regulars'
 import { createServerClient } from '@/lib/supabase-server'
 import MyBookingsList from '@/components/booking/MyBookingsList'
 import { stripeDashboardBase } from '@/lib/stripe'
@@ -58,6 +59,7 @@ export default async function MyBookingsPage() {
   // Unpaid shares have a deadline once the share-deadline database change is run.
   const sharesProbe: any = await (supabase as any).from('booking_splits').select('covered_by').limit(1)
   const sharesOn = !sharesProbe.error
+  const prepayOn = await prepayReady(supabase as any)
   // Bookings made before the share deadline existed are exempt from it. That flag is
   // read separately (not in the main query above) so a database without the column
   // can't break the list of shares you owe.
@@ -81,7 +83,7 @@ export default async function MyBookingsPage() {
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} plan={memberPlan} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} />
     </div>
   )
 }

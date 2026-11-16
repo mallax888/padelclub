@@ -15,9 +15,11 @@ import { applyCancellationRefund } from '@/lib/cancellation'
 import { notifyWaitlistForBookings } from '@/lib/waitlist'
 import { formatDate } from '@/lib/utils'
 import { reportMoneyIssue } from '@/lib/report'
+import { friendShareCents } from '@/lib/share-rules'
+import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { hhmm } from '@/lib/waitlist-rules'
 import {
-  MAX_ACTIVE_REGULARS, WEEK_OPTIONS, payByFor, planWeeks, releaseDue, reminderDue, seriesDates, weekdayPlural,
+  MAX_ACTIVE_REGULARS, MIN_SKIP_HOURS, WEEK_OPTIONS, payByFor, planWeeks, releaseDue, reminderDue, seriesDates, weekdayPlural,
   type DatedBusy, type WeekReason,
 } from '@/lib/regulars-rules'
 
@@ -52,7 +54,7 @@ const fail = (status: number, error: string): CreateResult => ({ ok: false, stat
 // The first week is the booking the player has just made (they are on their way
 // to pay for it). This books the rest of the series around it: each later week
 // gets the lowest free court of the same type, or is skipped with a reason.
-export async function createRegularWeeks(admin: Admin, input: { userId: string; firstBookingId: string; weeks: number; skipDates?: string[]; nowMs?: number }): Promise<CreateResult> {
+export async function createRegularWeeks(admin: Admin, input: { userId: string; firstBookingId: string; weeks: number; skipDates?: string[]; splitPlayerIds?: string[]; nowMs?: number }): Promise<CreateResult> {
   const nowMs = input.nowMs ?? Date.now()
   const db: any = admin
   if (!(WEEK_OPTIONS as readonly number[]).includes(input.weeks)) return fail(400, 'Choose 4, 8 or 12 weeks.')
@@ -114,6 +116,15 @@ export async function createRegularWeeks(admin: Admin, input: { userId: string; 
   const discount = memberDiscount(planRows, { tier: profile?.membership_tier, homeSlug: profile?.home_venue_slug ?? null, bookingSlug: slug })
   const endOf = (t: string, mins: number) => { const m = Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5)) + mins; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}:00` }
 
+  // Friends who share every week (the "split every week" option): real, other players, at most three.
+  const wantFriends = Array.from(new Set((input.splitPlayerIds ?? []).filter(id => typeof id === 'string' && id !== input.userId))).slice(0, 3)
+  let friends: string[] = []
+  if (wantFriends.length > 0) {
+    const { data: found } = await db.from('profiles').select('id').in('id', wantFriends)
+    friends = ((found ?? []) as any[]).map(f => f.id as string)
+  }
+  const splitWeeks: string[] = []
+
   const booked: string[] = []
   const clashes: { date: string; reason: WeekReason }[] = []
   // Weeks the player chose to skip are simply not booked (and not "taken").
@@ -121,15 +132,24 @@ export async function createRegularWeeks(admin: Admin, input: { userId: string; 
   for (const p of plan) {
     if (skip.has(p.date)) continue
     if (!p.court) { clashes.push({ date: p.date, reason: p.reason as WeekReason }); continue }
-    const { error } = await db.from('bookings').insert({
+    const price = parseFloat(computeCourtPrice(p.court as any, p.date, startTime, durationMin / 60, discount).toFixed(2))
+    const { data: inserted, error } = await db.from('bookings').insert({
       user_id: input.userId, court_id: p.court.id, date: p.date, start_time: `${startTime}:00`, end_time: endOf(startTime, durationMin),
       duration_minutes: durationMin, status: 'confirmed', payment_method: 'card', discount_applied: discount,
-      price_nzd: parseFloat(computeCourtPrice(p.court as any, p.date, startTime, durationMin / 60, discount).toFixed(2)),
+      price_nzd: price,
       regular_id: series.id, pay_by: payByFor(p.date, startTime, tz).toISOString(),
-    })
+    }).select('id').single()
     // Someone else got that court between our look and our insert: that week is taken.
     if (error) { clashes.push({ date: p.date, reason: 'taken' }); if (error.code !== '23P01' && error.code !== '23505') console.error('Could not book a regular week', p.date, error); continue }
     booked.push(p.date)
+    if (friends.length > 0 && inserted?.id) {
+      const share = friendShareCents(price, friends.length + 1) / 100
+      const { error: splitError } = await db.from('booking_splits').insert(friends.map(f => ({
+        booking_id: inserted.id, invited_by: input.userId, user_id: f, amount_nzd: share, status: 'pending',
+      })))
+      if (splitError) console.error('Could not split a regular week', p.date, splitError)
+      else splitWeeks.push(p.date)
+    }
   }
 
   await db.from('bookings').update({ regular_id: series.id }).eq('id', first.id)
@@ -142,6 +162,20 @@ export async function createRegularWeeks(admin: Admin, input: { userId: string; 
     return { ok: true, regularId: null, booked: [], clashes }
   }
 
+  if (friends.length > 0 && splitWeeks.length > 0) {
+    try {
+      const { data: me } = await db.from('profiles').select('full_name, nickname').eq('id', input.userId).maybeSingle()
+      const myName = me?.nickname ?? me?.full_name ?? 'Someone'
+      const { data: firstPrice } = await db.from('bookings').select('price_nzd').eq('id', first.id).maybeSingle()
+      const share = friendShareCents(Number(firstPrice?.price_nzd) || 0, friends.length + 1) / 100
+      const currency = currencyForRegion(VENUES.find(v => v.slug === slug)?.region)
+      await db.from('notifications').insert(friends.map(f => ({
+        user_id: f, type: 'split_request',
+        message: `${myName} is splitting ${splitWeeks.length + 1} weekly games with you: about ${formatPrice(share, currency)} a week. Pay any week from My bookings.`,
+      })))
+    } catch { /* the splits are saved either way */ }
+  }
+
   try {
     const message = `Your regular is set: ${weekdayPlural(first.date)} at ${startTime}. ${booked.length + 1} of ${input.weeks} weeks are booked. Each week is paid about a week before.`
     await db.from('notifications').insert({ user_id: input.userId, type: 'regular_created', message })
@@ -151,13 +185,13 @@ export async function createRegularWeeks(admin: Admin, input: { userId: string; 
 
 // Stop a regular: unpaid weeks still to come are let go (and anyone waiting for
 // them is told); weeks already paid are kept and played.
-export async function stopRegular(admin: Admin, input: { userId: string; regularId: string; nowMs?: number }): Promise<{ ok: true; released: number; keptPaid: number } | { ok: false; status: number; error: string }> {
+export async function stopRegular(admin: Admin, input: { userId: string; regularId: string; nowMs?: number }): Promise<{ ok: true; released: number; keptPaid: number; refunded?: number } | { ok: false; status: number; error: string }> {
   const nowMs = input.nowMs ?? Date.now()
   const db: any = admin
   const { data: series, error } = await db.from('regulars').select('id, user_id, venue_slug, status').eq('id', input.regularId).maybeSingle()
   if (tableMissing(error)) return { ok: false, status: 503, error: "Regulars aren't switched on yet." }
   if (!series || series.user_id !== input.userId) return { ok: false, status: 404, error: 'We could not find that regular.' }
-  if (series.status === 'stopped') return { ok: true, released: 0, keptPaid: 0 }
+  if (series.status === 'stopped') return { ok: true, released: 0, keptPaid: 0, refunded: 0 }
 
   await db.from('regulars').update({ status: 'stopped', stopped_at: new Date(nowMs).toISOString() }).eq('id', series.id)
   const tz = timezoneForVenueSlug(series.venue_slug)
@@ -175,8 +209,28 @@ export async function stopRegular(admin: Admin, input: { userId: string; regular
       reportMoneyIssue('Could not unwind a stopped regular week', { bookingId: b.id, error: err instanceof Error ? err.message : String(err) })
     }
   }
+  // Weeks paid for in advance (as one payment covering several) are given back, each its
+  // own slice, as long as they are still a day or more away. Weeks played within the
+  // next day are kept, like any other paid week.
+  const paidFuture = future.filter(b => b.stripe_payment_id)
+  let refunded = 0
+  if (paidFuture.length > 0) {
+    const { data: slices, error: sliceError } = await db.from('bookings').select('id, paid_cents').in('id', paidFuture.map(b => b.id))
+    const prepaid = new Set(!sliceError ? ((slices ?? []) as any[]).filter(r => r.paid_cents).map(r => r.id as string) : [])
+    for (const b of paidFuture) {
+      if (!prepaid.has(b.id)) continue
+      if (venueInstant(b.date, `${hhmm(b.start_time)}:00`, tz).getTime() - nowMs < MIN_SKIP_HOURS * 3600 * 1000) continue
+      const { data: cancelled } = await db.from('bookings').update({ status: 'cancelled' }).eq('id', b.id).eq('status', 'confirmed').select('id').maybeSingle()
+      if (!cancelled) continue
+      ids.push(b.id)
+      refunded++
+      try { await applyCancellationRefund(admin as any, b) } catch (err) {
+        reportMoneyIssue('Could not refund a prepaid week of a stopped regular', { bookingId: b.id, error: err instanceof Error ? err.message : String(err) })
+      }
+    }
+  }
   await notifyWaitlistForBookings(admin, ids)
-  return { ok: true, released: ids.length, keptPaid: future.length - unpaid.length }
+  return { ok: true, released: ids.length - refunded, keptPaid: future.length - unpaid.length - refunded, refunded }
 }
 
 const fmtPayBy = (iso: string, tz: string): string =>
@@ -234,4 +288,11 @@ export async function sendRegularReminders(admin: Admin, nowMs: number = Date.no
     } catch { /* best effort */ }
   }
   return sent
+}
+
+// Whether paying a regular's weeks in advance is switched on: it needs the column that
+// remembers each week's slice of a shared payment (036_regular_prepay.sql).
+export async function prepayReady(admin: Admin): Promise<boolean> {
+  const { error } = await (admin as any).from('bookings').select('paid_cents').limit(1)
+  return !error
 }

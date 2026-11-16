@@ -51,6 +51,15 @@ export function shareStage(s: ShareSchedule, nowMs: number): ShareStage {
 export function shareCents(courtPrice: number, totalShareRows: number): number {
   return Math.round((courtPrice / (totalShareRows + 1)) * 100)
 }
+// One shared way to split a court fee between `people` (booker included), to the
+// cent. Friends each pay the rounded equal share; the booker pays whatever is
+// left, so the shares always add up to the court fee exactly (a $100 court split
+// three ways is 33.33 + 33.33 + 33.34, never 99.99).
+export const friendShareCents = (courtPrice: number, people: number): number =>
+  Math.round((courtPrice * 100) / Math.max(1, people))
+export const bookerShareCents = (courtPrice: number, people: number): number =>
+  Math.round(courtPrice * 100) - friendShareCents(courtPrice, people) * (Math.max(1, people) - 1)
+
 export const coverCents = (courtPrice: number, totalShareRows: number, unpaidCount: number): number =>
   shareCents(courtPrice, totalShareRows) * unpaidCount
 

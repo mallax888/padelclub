@@ -2,7 +2,7 @@ import { keepClubAccountsOut } from '@/lib/club-guard'
 import { createServerClient } from '@/lib/supabase-server'
 import BookingFlow from '@/components/booking/BookingFlow'
 import { loadVenueSettings } from '@/lib/venue-settings'
-import { loadRegularRules } from '@/lib/regulars'
+import { loadRegularRules, prepayReady } from '@/lib/regulars'
 import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { localDateStr } from '@/lib/utils'
 import { loadOpenOffers } from '@/lib/offers'
@@ -79,6 +79,7 @@ export default async function BookPage() {
   const regularsProbe: any = await (supabase as any).from('regulars').select('id').limit(1)
   const regularsOn = !regularsProbe.error
   const regularRules = regularsOn ? await loadRegularRules(supabase) : {}
+  const prepayOn = regularsOn && (await prepayReady(supabase as any))
   const nowMs = Date.now()
   const waits = ((waitRes.data ?? []) as any[])
     .filter(w => venueInstant(w.date, String(w.start_time).slice(0, 5) + ':00', timezoneForVenueSlug(w.venue_slug)).getTime() > nowMs)
@@ -102,7 +103,7 @@ export default async function BookPage() {
       </div>
       <BookingFlow courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings}
         waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill}
-        regularsOn={regularsOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} todayStr={localDateStr()} />
+        regularsOn={regularsOn} prepayOn={prepayOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} todayStr={localDateStr()} />
     </div>
   )
 }
