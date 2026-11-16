@@ -2,6 +2,7 @@
 import { createServerClient } from '@/lib/supabase-server'
 import RecordMatchForm from '@/components/matches/RecordMatchForm'
 import { formatDate } from '@/lib/utils'
+import { FLOW_FRAME } from '@/lib/flow-frame'
 
 export const metadata = { title: 'Record a match' }
 
@@ -68,7 +69,7 @@ export default async function RecordMatchPage({
 
   return (
     <div>
-      <div className="mb-6">
+      <div className={`mb-6 ${FLOW_FRAME}`}>
         <h1 className="text-2xl font-semibold">Record a match</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Enter the result to update the leaderboard</p>
       </div>
