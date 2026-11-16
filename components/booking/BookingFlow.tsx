@@ -105,6 +105,7 @@ export default function BookingFlow({
     waitPrefill = null,
     regularsOn = false,
     prepayOn = false,
+    header = null,
     regularRules = {},
     offers = [],
     offerPrefill = null,
@@ -128,6 +129,7 @@ export default function BookingFlow({
     // rules for them (a club can turn them off or cap how many courts they hold at peak).
     regularsOn?: boolean
     prepayOn?: boolean
+    header?: React.ReactNode
     regularRules?: Record<string, { enabled: boolean; peakCap: number | null }>
     // "Fill my empty courts" offers open right now, and (from an offer notification)
     // the club and day to open straight onto.
@@ -793,6 +795,8 @@ export default function BookingFlow({
     const courtCounts: Record<string, number> = {}
     for (const c of courts) { const slug = (c as any).venue_slug as string; courtCounts[slug] = (courtCounts[slug] ?? 0) + 1 }
     return (
+      <div className="max-w-lg mx-auto">
+      {header}
       <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} offers={offers} homeSlug={homeSlug}
         onClose={() => setNearOpen(false)}
         onFallback={() => { setNearOpen(false); setVenue(null); setDate(null); setTime(null); setStep(STEPS[0]) }}
@@ -800,13 +804,15 @@ export default function BookingFlow({
           setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null); setRegion(v.region); setVenue(v)
           setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); setNearOpen(false); playSelectionSound()
         }} />
+      </div>
     )
   }
 
   return (
     // The country step is four cards in a row on a desktop screen, so it gets a wider frame;
     // every other step stays one comfortable column. Phones are unchanged.
-    <div className={`max-w-lg mx-auto lg:mx-0 ${step === 'country' ? 'lg:max-w-[760px]' : ''}`}>
+    <div className={`max-w-lg mx-auto ${step === 'country' ? 'lg:max-w-none' : ''}`}>
+      {header}
 
       {/* Back arrow + step title */}
       <div className="flex items-center gap-3 mb-6">

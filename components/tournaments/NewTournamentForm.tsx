@@ -119,7 +119,7 @@ export default function NewTournamentForm({
   const field = (label: string, node: React.ReactNode) => (<div><label className="label">{label}</label>{node}</div>)
 
   return (
-    <div className="max-w-2xl mx-auto lg:mx-0 space-y-4">
+    <div className="max-w-2xl mx-auto space-y-4">
       {!formatsReady && (
         <div className="rounded-xl p-3 text-sm" data-testid="formats-not-ready" style={{ background: 'var(--brand-yellow-muted)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
           The new formats need a one-off setup step first. Americano and Mexicano work as usual.

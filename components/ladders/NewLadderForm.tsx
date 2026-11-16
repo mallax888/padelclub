@@ -38,7 +38,7 @@ export default function NewLadderForm({ organizerId }: { organizerId: string }) 
   }
 
   return (
-    <div className="max-w-lg mx-auto lg:mx-0 space-y-4">
+    <div className="max-w-lg mx-auto space-y-4">
       <div className="rounded-2xl p-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <label className="label">Ladder name</label>
         <input type="text" className="input text-sm" placeholder="Club Ladder" value={name} onChange={e => setName(e.target.value)} />
