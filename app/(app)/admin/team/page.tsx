@@ -64,9 +64,9 @@ export default async function TeamPage() {
     // On a computer the team list takes the width and the invite panel sits beside it; on a phone
     // they stack as before (invite first).
     <div className="mx-auto max-w-2xl lg:max-w-6xl">
-      <h1 className="text-2xl font-extrabold" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', letterSpacing: '-0.02em' }}>Team</h1>
-      <p className="text-[13px] mt-1.5 pl-[15px]" style={{ color: 'var(--text-muted)' }}>Who can run your clubs in the app</p>
-      <div className="mt-4 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6 lg:items-start">
+      <h1 className="text-2xl font-semibold">Team</h1>
+      <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Who can run your clubs in the app</p>
+      <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6 lg:items-start">
       <div className="lg:col-start-2 lg:row-start-1">
         <InviteTeam clubs={clubs} canGrantAll={canGrantAll} defaultClub={defaultClub} invites={invites} ready={!inviteError} />
       </div>
