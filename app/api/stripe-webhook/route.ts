@@ -12,6 +12,7 @@ import { refundIntent, refundPartial } from '@/lib/cancellation'
 import { applyCoverPayment } from '@/lib/shares'
 import { reportMoneyIssue } from '@/lib/report'
 import { recordConnectPayment } from '@/lib/club-payments'
+import { decodeParts, weeksPhrase } from '@/lib/regular-pay'
 
 export async function POST(request: Request) {
   const body = await request.text()
@@ -119,6 +120,38 @@ export async function POST(request: Request) {
           reference: `Credit pack ${session.id}`,
           contactName: buyer?.nickname ?? buyer?.full_name,
           idempotencyKey: session.id,
+        })
+      }
+    } else if (type === 'regular_prepay' && userId && session.metadata.regularId) {
+      // One payment covering several weeks of a regular (see /api/regulars/pay-all).
+      // Each week takes its own slice, so a skipped week can be refunded by itself.
+      // A week that was let go or already paid in the meantime gets its slice back.
+      const slices = decodeParts(session.metadata)
+      let paid = 0
+      let gaveBack = 0
+      for (const slice of slices) {
+        const { data: week } = await supabase.from('bookings').update({
+          payment_method: 'card', stripe_payment_id: session.payment_intent, paid_cents: slice.cents,
+        } as any).eq('id', slice.bookingId).eq('user_id', userId).is('stripe_payment_id', null).eq('status', 'confirmed').select('id').maybeSingle()
+        if (week) { paid++; continue }
+        const { data: current } = await supabase.from('bookings').select('stripe_payment_id').eq('id', slice.bookingId).maybeSingle()
+        // Already carries this very payment: a retried delivery, nothing to do.
+        if (current?.stripe_payment_id === session.payment_intent) continue
+        if (session.payment_intent && await refundPartial(session.payment_intent, slice.cents, `prepay-${session.id}-${slice.bookingId}`)) gaveBack++
+        else reportMoneyIssue('A prepaid week could not be paid or refunded', { bookingId: slice.bookingId, paymentIntent: session.payment_intent, cents: slice.cents })
+      }
+      if (paid > 0 || gaveBack > 0) {
+        const { data: member } = await supabase.from('profiles').select('full_name, nickname').eq('id', userId).maybeSingle()
+        const paidCents = slices.reduce((sum, s) => sum + s.cents, 0)
+        try {
+          await supabase.from('notifications').insert({
+            user_id: userId, type: 'regular_paid',
+            message: `Your regular is paid for ${weeksPhrase(paid)} (${formatPrice(paidCents / 100, paidCurrency)}). ${gaveBack > 0 ? `${weeksPhrase(gaveBack)} could not be kept, so that part was refunded. ` : ''}Skip any week up to 24 hours before and it is refunded to your card.`,
+          })
+        } catch (err) { console.error('Failed to notify of a prepaid regular:', err) }
+        if (paid > 0) await syncReceiveMoneyToXero(supabase, appUrl, {
+          amount: amountPaid, currency: paidCurrency, description: `Weekly regular, ${weeksPhrase(paid)} paid in advance`,
+          reference: `Regular ${session.id}`, contactName: member?.nickname ?? member?.full_name, idempotencyKey: session.id,
         })
       }
     } else if (type === 'split_payment' && splitId) {

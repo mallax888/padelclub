@@ -6,7 +6,6 @@ import { covers } from '@/lib/team'
 import { VENUES, getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { currencyForVenueSlug } from '@/lib/currency'
-import { isPlatformAdmin } from '@/lib/club-access'
 import { connectOn, connectState, describeDue, stripeCountry } from '@/lib/connect-rules'
 import { countryNameOfVenue, feeOf, loadClubAccount, syncAccount } from '@/lib/club-payments'
 
@@ -117,9 +116,14 @@ export async function POST(request: Request) {
     if (/signed up for Connect|Connect/i.test(msg) && /sign/i.test(msg)) {
       return NextResponse.json({ error: "Stripe Connect hasn't been turned on for PadelClub's Stripe account yet." }, { status: 503 })
     }
-    // The exact reason from Stripe goes only to the platform admin (who runs PadelClub's Stripe
-    // account), never to a club owner. Everyone gets a plain sentence.
-    const detail = isPlatformAdmin(who.caller) ? `${err?.type ?? 'Error'}: ${msg}`.slice(0, 300) : undefined
+    // The exact reason from Stripe is shown to the owner who pressed the button, next to a plain
+    // sentence. It holds no keys or bank details, and during set-up the person pressing it is
+    // usually the one who has to fix it. (Tighten this back to platform admins at go-live.)
+    const detail = `${err?.type ?? 'Error'}: ${msg}`.slice(0, 300)
+    // The one-off Stripe step that stops accounts being created: who covers losses on club accounts.
+    if (/managing losses|platform[- ]profile/i.test(msg)) {
+      return NextResponse.json({ error: "PadelClub still has one Stripe setting to finish (who covers losses on club accounts). PadelClub needs to fix this.", detail }, { status: 503 })
+    }
     if (err?.type === 'StripeAuthenticationError') {
       return NextResponse.json({ error: "Stripe didn't accept PadelClub's connection key. PadelClub needs to fix this.", detail }, { status: 502 })
     }

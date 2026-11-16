@@ -1,0 +1,124 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import OfferSheet from '@/components/admin/OfferSheet'
+import { formatPrice, type CurrencyCode } from '@/lib/currency'
+import { formatDate } from '@/lib/utils'
+import { reminderButton, reminderCounts, type FillGap, type OverdueLine } from '@/lib/today-actions'
+
+// The two jobs an owner can do from Needs attention on Today, each right where it is listed: send a reminder to
+// everyone who owes, and offer a discount to fill the biggest gap. Each opens a sheet over Today, does the job,
+// and then the row says what was done.
+
+function Shell({ tone, mark, title, text, children, done, testid }: { tone: 'red' | 'blue'; mark: string; title: string; text: string; children?: React.ReactNode; done?: boolean; testid: string }) {
+  const color = done ? 'var(--brand-primary-text)' : tone === 'red' ? 'var(--brand-crimson)' : 'var(--brand-primary-text)'
+  const bg = done ? 'var(--brand-primary-muted)' : tone === 'red' ? 'var(--brand-crimson-muted)' : 'var(--brand-primary-muted)'
+  return (
+    <div className="flex items-center gap-3 px-3.5 py-3" style={{ minHeight: 60, borderBottom: '1px solid var(--border)' }} data-testid={testid} data-done={done ? 'true' : 'false'}>
+      <span aria-hidden className="inline-flex items-center justify-center rounded-[11px] font-extrabold shrink-0" style={{ width: 34, height: 34, background: bg, color }}>{done ? '✓' : mark}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
+        <span className="block text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{text}</span>
+      </span>
+      {children}
+    </div>
+  )
+}
+const Action = ({ children, onClick, testid }: { children: React.ReactNode; onClick: () => void; testid: string }) => (
+  <button type="button" onClick={onClick} data-testid={testid} className="shrink-0 rounded-[10px] px-3.5 text-[12.5px] font-extrabold" style={{ minHeight: 38, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{children}</button>
+)
+
+function Dialog({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.45)' }} role="dialog" aria-modal="true" aria-label={label} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>{children}</div>
+    </div>
+  )
+}
+
+export function OverdueRow({ currency, lines, total, notDueCount, notDueTotal, autoOpen }: {
+  currency: CurrencyCode; lines: OverdueLine[]; total: number; notDueCount: number; notDueTotal: number; autoOpen: boolean
+}) {
+  const router = useRouter()
+  const [open, setOpen] = useState(autoOpen)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [sent, setSent] = useState<{ told: number } | null>(null)
+  useEffect(() => { if (autoOpen) setOpen(true) }, [autoOpen])
+  const counts = reminderCounts(lines)
+  const money = (n: number) => formatPrice(n, currency)
+
+  async function remindAll() {
+    setBusy(true); setError(null)
+    let told = 0, failed = 0
+    for (const l of lines) {
+      try {
+        const res = await fetch('/api/admin/remind-shares', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: l.id }) })
+        if (res.ok) told += (await res.json().catch(() => ({ told: 0 }))).told ?? 0
+        else failed++
+      } catch { failed++ }
+    }
+    setBusy(false)
+    if (failed > 0 && told === 0) { setError('We could not send the reminders. Please try again in a moment.'); return }
+    if (failed > 0) setError(`${failed} of ${lines.length} could not be sent.`)
+    setSent({ told }); if (failed === 0) setOpen(false)
+    router.refresh()
+  }
+
+  const title = `${lines.length} ${lines.length === 1 ? 'share' : 'shares'} overdue · ${money(total)}`
+  const more = notDueCount > 0 ? `${notDueCount} more (${money(notDueTotal)}) ${notDueCount === 1 ? 'is' : 'are'} not due yet. Those remind themselves.` : 'Friends past the time they had to pay their part.'
+  return (
+    <>
+      {sent
+        ? <Shell tone="red" mark="$" done testid="overdue-row" title="Reminders sent" text={`${counts.friends} ${counts.friends === 1 ? 'friend' : 'friends'} and ${counts.organisers === 1 ? 'the organiser' : 'the organisers'} have been told, just now.`} />
+        : <Shell tone="red" mark="$" testid="overdue-row" title={title} text={more}><Action testid="remind-all" onClick={() => setOpen(true)}>Remind all</Action></Shell>}
+      {open && (
+        <Dialog label="Remind overdue shares" onClose={() => { if (!busy) setOpen(false) }}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-extrabold" style={{ color: 'var(--text-primary)' }}>Remind about {lines.length} overdue {lines.length === 1 ? 'share' : 'shares'}</h3>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Each friend gets a nudge, and so does the person who booked.</p>
+            </div>
+            <button type="button" onClick={() => setOpen(false)} disabled={busy} aria-label="Close" className="text-xl leading-none px-2" style={{ color: 'var(--text-muted)' }}>×</button>
+          </div>
+          <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border)' }} data-testid="remind-list">
+            {lines.map(l => (
+              <div key={l.id} className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{l.playerName}</div>
+                  <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{l.courtName} · {formatDate(l.date)} {String(l.startTime).slice(0, 5)}{l.organiserName ? ` · booked by ${l.organiserName}` : ''}</div>
+                </div>
+                <div className="text-[13px] font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>{money(l.amount)}</div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>{money(total)} in total. They have all passed their pay-by time.</p>
+          {error && <p role="alert" className="text-xs mt-2" style={{ color: 'var(--brand-crimson)' }}>{error}</p>}
+          <button type="button" onClick={() => void remindAll()} disabled={busy} data-testid="remind-send"
+            className="flex items-center justify-center w-full rounded-2xl mt-4 text-[14.5px] font-extrabold disabled:opacity-60" style={{ minHeight: 48, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+            {busy ? 'Sending…' : reminderButton(counts)}
+          </button>
+        </Dialog>
+      )}
+    </>
+  )
+}
+
+export function FillRow({ venueSlug, emptyHours, gap, bounds, autoOpen }: {
+  venueSlug: string; emptyHours: number; gap: FillGap; bounds: { from: string; to: string }; autoOpen: boolean
+}) {
+  const router = useRouter()
+  const [open, setOpen] = useState(autoOpen)
+  const [sent, setSent] = useState(false)
+  useEffect(() => { if (autoOpen) setOpen(true) }, [autoOpen])
+  const courts = `${gap.courtsFree} ${gap.courtsFree === 1 ? 'court' : 'courts'} free`
+  return (
+    <>
+      {sent
+        ? <Shell tone="blue" mark="◔" done testid="fill-row" title="Offer sent" text={`${gap.from}–${gap.to} today. Players have been told. Results show in Money & demand.`} />
+        : <Shell tone="blue" mark="◔" testid="fill-row" title={`${emptyHours} court-${emptyHours === 1 ? 'hour' : 'hours'} still empty today`} text={`Biggest gap: ${gap.from}–${gap.to}, ${courts}`}><Action testid="fill-them" onClick={() => setOpen(true)}>Fill them</Action></Shell>}
+      {open && <OfferSheet venueSlug={venueSlug} date={gap.date} from={gap.from} to={gap.to} bounds={bounds} onClose={() => setOpen(false)} onSent={() => { setOpen(false); setSent(true); router.refresh() }} />}
+    </>
+  )
+}

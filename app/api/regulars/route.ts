@@ -11,13 +11,17 @@ export async function POST(request: Request) {
   if (!session) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
 
   const body = await request.json().catch(() => ({}))
-  const { firstBookingId, weeks, skipDates } = body ?? {}
+  const { firstBookingId, weeks, skipDates, splitPlayerIds } = body ?? {}
   if (typeof firstBookingId !== 'string' || !Number.isInteger(weeks)) return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   if (skipDates !== undefined && (!Array.isArray(skipDates) || skipDates.length > 12 || !skipDates.every((d: unknown) => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)))) {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
   }
 
-  const result = await createRegularWeeks(createAdminClient(), { userId: session.user.id, firstBookingId, weeks, skipDates })
+  if (splitPlayerIds !== undefined && (!Array.isArray(splitPlayerIds) || splitPlayerIds.length > 3 || !splitPlayerIds.every((id: unknown) => typeof id === 'string' && id.length < 64))) {
+    return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+  }
+
+  const result = await createRegularWeeks(createAdminClient(), { userId: session.user.id, firstBookingId, weeks, skipDates, splitPlayerIds })
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status })
   return NextResponse.json({ ok: true, regularId: result.regularId, booked: result.booked, clashes: result.clashes })
 }

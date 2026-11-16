@@ -76,7 +76,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
   const regularsList = Object.values(partners).sort((a, b) => b.together - a.together).slice(0, 5)
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto lg:mx-0">
       <Link href="/players" className="inline-flex items-center gap-1.5 text-sm mb-6 transition-colors"
         style={{ color: 'var(--text-muted)' }}>
         ← Back to players
@@ -127,7 +127,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-4 gap-4 mb-4">
         {[
           { label: 'Points',   value: player.ranking_points ?? 0, color: 'var(--brand-primary-text)' },
           { label: 'Wins',     value: wins,                        color: 'var(--brand-primary-text)' },

@@ -6,6 +6,7 @@ import { verifyAndCorrectBookingPrice } from '@/lib/booking-price'
 import { currencyForRegion } from '@/lib/currency'
 import { getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
+import { bookerShareCents } from '@/lib/share-rules'
 
 export async function POST(request: Request) {
   try {
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
       .eq('booking_id', bookingId)
     const safeSplitCount = (splitRowCount ?? 0) + 1
 
-    const unitAmount = Math.round((verified.verifiedPrice / safeSplitCount) * 100)
+    const unitAmount = bookerShareCents(verified.verifiedPrice, safeSplitCount)
     const target = await paymentTarget(admin, court?.venue_slug, unitAmount)
     const checkoutSession = await createCheckout({
       payment_method_types: ['card'],

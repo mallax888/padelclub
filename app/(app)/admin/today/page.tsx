@@ -2,15 +2,17 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { loadBriefing } from '@/lib/briefing-server'
+import { offersReady } from '@/lib/offers'
+import { pickFillSlot } from '@/lib/today-actions'
 import { COUNTRIES, VENUES, getVenue } from '@/lib/venues'
 import { currencyForVenueSlug } from '@/lib/currency'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { isManagerRole, isOwnerRole, roleLabel } from '@/lib/view-mode'
 import { addDaysStr, computeToday, greetingFor, venueClock, type TodayBooking } from '@/lib/today'
-import { computeEmptyCourtTime, summariseUnpaidShares } from '@/lib/money-demand'
+import { computeEmptyCourtTime, splitOverdueShares, summariseUnpaidShares } from '@/lib/money-demand'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
 import { splitOn } from '@/lib/club-access'
-import TodayView from '@/components/admin/TodayView'
+import TodayView, { type TodayViewProps } from '@/components/admin/TodayView'
 import Link from 'next/link'
 import { loadVenueSettings, weekFor } from '@/lib/venue-settings'
 import { dayHours } from '@/lib/venue-hours'
@@ -24,7 +26,7 @@ const longDate = (d: string) =>
 const shortWeekday = (d: string) =>
   new Intl.DateTimeFormat('en-NZ', { weekday: 'short', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'))
 
-export default async function TodayPage({ searchParams }: { searchParams?: { venue?: string } }) {
+export default async function TodayPage({ searchParams }: { searchParams?: { venue?: string; act?: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
   const { data: profile } = await supabase
@@ -51,7 +53,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const firstName = ((profile as any).nickname ?? (profile as any).full_name ?? '').toString().split(' ')[0] || null
   if (venues.length === 0) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto lg:mx-0">
         <h1 className="text-2xl font-extrabold">Today</h1>
         <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
           None of your clubs have courts set up yet.{isOwnerRole((profile as any).role) ? <> <Link href="/admin/setup" style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up your club</Link> and today&apos;s bookings will show here.</> : ' Ask the owner to set up the club.'}
@@ -125,6 +127,21 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
     } catch (err) { console.error('Could not load the morning briefing card', err) }
   }
 
+  // Owners can act on the overdue shares and on the biggest empty gap right here.
+  let actions: TodayViewProps['actions'] = null
+  if (isOwner) {
+    const split = splitOverdueShares(mapUnpaidShares(unpaidRows), venueSlug, nowMs)
+    const offersOn = await offersReady(createAdminClient())
+    const hours = dayHours(week, clock.date)
+    const gap = offersOn ? pickFillSlot(empty.slots, nowMs, tz) : null
+    actions = {
+      overdue: { lines: split.overdue.map(l => ({ id: l.id, playerName: l.playerName, organiserName: l.organiserName, courtName: l.courtName, date: l.date, startTime: l.startTime, amount: l.amount })), total: split.overdueTotal, notDueCount: split.notDueCount, notDueTotal: split.notDueTotal },
+      offersOn,
+      fill: gap && hours ? { gap, bounds: { from: hours.open, to: hours.close } } : null,
+      autoOpen: searchParams?.act === 'fill' ? 'fill' : searchParams?.act === 'remind' ? 'remind' : null,
+    }
+  }
+
   return (
     <TodayView
       canSwitchView={!splitOn()}
@@ -144,6 +161,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       showMoney={isOwner}
       roleLabel={roleLabel((profile as any).role)}
       briefing={briefing}
+      actions={actions}
     />
   )
 }

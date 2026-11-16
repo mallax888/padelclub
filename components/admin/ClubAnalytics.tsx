@@ -81,7 +81,7 @@ export default function ClubAnalytics({
       </div>
       <p className="text-xs mb-4" style={{ color: 'var(--text-subtle)' }} data-testid="period-range">{rangeLabel(todayStr, days)}</p>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5" data-testid="kpis">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-5" data-testid="kpis">
         {kpis.map(k => {
           const d = k.cmp ? describeVersusBefore(k.cmp.c, days, k.cmp.points) : null
           return (

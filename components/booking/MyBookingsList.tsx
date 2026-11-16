@@ -14,7 +14,7 @@ import { VENUES } from '@/lib/venues'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import RescheduleModal from '@/components/booking/RescheduleModal'
 import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
-import { shareSchedule, shareStage, coverCents } from '@/lib/share-rules'
+import { shareSchedule, shareStage, coverCents, bookerShareCents } from '@/lib/share-rules'
 import { canSkipWeek, weekRows, upcomingWeeks, bookedWeekCount, weekdayPlural, seriesDates, type WeekRow } from '@/lib/regulars-rules'
 import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
 import InviteShare from '@/components/invites/InviteShare'
@@ -376,11 +376,12 @@ const fmtPayBy = (iso: string, tz: string) => new Intl.DateTimeFormat('en-NZ', {
 
 // One card per weekly regular: the slot, how much of it is booked, each week to
 // come, and the two things a player does with it -- skip a week, or stop.
-function RegularCard({ series: r, bookings, onSkip }: { series: RegularSeries; bookings: BookingWithCourt[]; onSkip: (bookingId: string) => void }) {
+function RegularCard({ series: r, bookings, onSkip, prepayOn = false }: { series: RegularSeries; bookings: BookingWithCourt[]; onSkip: (bookingId: string) => void; prepayOn?: boolean }) {
   const router = useRouter()
   const [sheet, setSheet] = useState(false)
   const [stopping, setStopping] = useState(false)
   const [showAll, setShowAll] = useState(false)
+  const [payingAll, setPayingAll] = useState(false)
   const tz = timezoneForVenueSlug(r.venue_slug)
   const nowMs = Date.now()
   const rows = weekRows(r, bookings.filter(b => b.regular_id === r.id) as any, tz, nowMs)
@@ -394,18 +395,34 @@ function RegularCard({ series: r, bookings, onSkip }: { series: RegularSeries; b
   const lastDate = seriesDates(r.start_date, r.weeks)[r.weeks - 1]
 
   const stop = async () => {
-    if (!confirm('Stop this regular?\n\nWeeks you have not paid for yet will be let go. Weeks you have already paid for stay booked.')) return
+    if (!confirm('Stop this regular?\n\nWeeks you have not paid for yet will be let go. Weeks you paid for in advance, a day or more away, are refunded to your card. Other paid weeks stay booked.')) return
     setStopping(true)
     try {
       const res = await fetch('/api/regulars/stop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: r.id }) })
       const body = await res.json().catch(() => ({}))
       if (!res.ok) { toast.error(body.error ?? 'Could not stop your regular. Please try again.'); return }
-      toast.success(body.keptPaid > 0 ? `Regular stopped. Your ${body.keptPaid === 1 ? 'paid week stays' : 'paid weeks stay'} booked.` : 'Regular stopped.')
+      const back = body.refunded > 0 ? ` ${body.refunded === 1 ? '1 week was' : `${body.refunded} weeks were`} refunded to your card.` : ''
+      toast.success(body.keptPaid > 0 ? `Regular stopped. Your ${body.keptPaid === 1 ? 'paid week stays' : 'paid weeks stay'} booked.${back}` : `Regular stopped.${back}`)
       router.refresh()
     } catch {
       toast.error('Could not stop your regular. Please try again.')
     } finally {
       setStopping(false)
+    }
+  }
+
+  const dueWeeks = coming.filter(w => w.kind === 'due' && w.bookingId)
+  const payAll = async () => {
+    setPayingAll(true)
+    try {
+      const res = await fetch('/api/regulars/pay-all', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ regularId: r.id }) })
+      const body = await res.json().catch(() => ({}))
+      if (res.ok && body.url) { window.location.href = body.url; return }
+      toast.error(body.error ?? 'Could not open the payment. Please try again.')
+    } catch {
+      toast.error('Could not open the payment. Please try again.')
+    } finally {
+      setPayingAll(false)
     }
   }
 
@@ -445,6 +462,12 @@ function RegularCard({ series: r, bookings, onSkip }: { series: RegularSeries; b
             </button>
           )}
         </div>
+      )}
+      {prepayOn && dueWeeks.length > 1 && (
+        <button onClick={payAll} disabled={payingAll} data-testid="pay-all-due"
+          className="w-full rounded-xl text-sm font-bold mt-3 disabled:opacity-40" style={{ minHeight: 44, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+          {payingAll ? 'Opening payment…' : `Pay all ${dueWeeks.length} weeks now`}
+        </button>
       )}
       <div className="flex gap-2 mt-3">
         <button onClick={() => setSheet(true)} disabled={skippable.length === 0}
@@ -509,7 +532,7 @@ function WaitingCard({ waits }: { waits: WaitingFor[] }) {
   return (
     <div className="mt-4" data-testid="waiting-card">
       <div className="text-[11px] font-bold uppercase tracking-wide mb-2" style={{ color: 'var(--text-subtle)' }}>🔔 Waiting for</div>
-      <div className="space-y-2">
+      <div className="space-y-4">
         {rows.map(w => {
           const [h, m] = w.start_time.slice(0, 5).split(':').map(Number)
           const end = h * 60 + m + w.duration_minutes
@@ -547,6 +570,7 @@ export default function MyBookingsList({
   waits = [],
   regulars = [],
   sharesOn = false,
+  prepayOn = false,
   plan = null,
 }: {
   bookings: BookingWithCourt[]
@@ -567,6 +591,7 @@ export default function MyBookingsList({
   regulars?: RegularSeries[]
   // Whether unpaid shares have a deadline (the share-deadline database change has been run).
   sharesOn?: boolean
+  prepayOn?: boolean
   // The member's plan at their home club, from the server page.
   plan?: { name: string; windowDays: number } | null
 }) {
@@ -613,7 +638,7 @@ export default function MyBookingsList({
     // Quote 50% of what this member paid, not 50% of the court fee -- on a
     // split booking they were only ever charged their own share of it.
     const bookingSplits = outgoingSplits.filter(s => s.booking_id === booking.id)
-    const yourShare = Math.round((booking.price_nzd / (bookingSplits.length + 1)) * 100) / 100
+    const yourShare = bookerShareCents(booking.price_nzd, bookingSplits.length + 1) / 100
     // Everyone else on the booking is refunded in full whatever the notice,
     // so say so -- cancelling is a lot easier to face when you know you
     // aren't leaving your mates out of pocket.
@@ -674,7 +699,7 @@ export default function MyBookingsList({
       {splitRequests.length > 0 && (
         <div className="rounded-2xl p-4 mb-6" style={{ background: 'var(--brand-crimson-muted)', border: '1px solid var(--brand-crimson)' }}>
           <div className="text-sm font-extrabold mb-3 uppercase tracking-wide" style={{ color: 'var(--brand-crimson)' }}>Outstanding split requests</div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {splitRequests.map(s => {
               const who = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
               const court = s.bookings?.courts?.name ?? 'a court'
@@ -779,8 +804,8 @@ export default function MyBookingsList({
       </div>
 
       {!showHistory && regulars.length > 0 && (
-        <div className="space-y-3 mb-3" data-testid="regulars">
-          {regulars.map(r => <RegularCard key={r.id} series={r} bookings={bookings} onSkip={handleCancel} />)}
+        <div className="space-y-4 mb-4" data-testid="regulars">
+          {regulars.map(r => <RegularCard key={r.id} series={r} bookings={bookings} onSkip={handleCancel} prepayOn={prepayOn} />)}
         </div>
       )}
 
@@ -798,7 +823,7 @@ export default function MyBookingsList({
              member's side they're the same thing — somewhere to be this week
              — and keeping them apart meant checking two places to see what
              was on. The row's own badge says which is which. */
-          <div className="space-y-2">
+          <div className="space-y-4">
             {upcoming.map((b, i) => (
               <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
             ))}
@@ -815,7 +840,7 @@ export default function MyBookingsList({
             Nothing here yet.
           </div>
         ) : (
-          <div className="space-y-2 opacity-60">
+          <div className="space-y-4 opacity-60">
             {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} stripeDashboardBase={stripeDashboardBase} />)}
           </div>
         )
@@ -866,7 +891,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   const members = splits.filter(s => s.user_id)
   const openSeats = past ? [] : splits.filter(s => !s.user_id && s.status === 'pending' && s.invite_token)
   const yourShare = splits.length > 0
-    ? Math.round((b.price_nzd / shareCount) * 100) / 100
+    ? bookerShareCents(b.price_nzd, shareCount) / 100
     : null
   const bookingCurrency = currencyForRegion(venue?.region)
 
@@ -1090,7 +1115,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
                 court={b.courts?.name ?? 'the court'}
                 venueName={venue?.name ?? 'the club'}
                 when={`${formatDate(b.date)} at ${b.start_time.slice(0, 5)}`}
-                amount={formatPrice(Math.round((b.price_nzd / shareCount) * 100) / 100, bookingCurrency)}
+                amount={formatPrice(bookerShareCents(b.price_nzd, shareCount) / 100, bookingCurrency)}
               />
             </div>
           ))}

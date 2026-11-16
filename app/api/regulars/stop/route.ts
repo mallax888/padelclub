@@ -15,5 +15,5 @@ export async function POST(request: Request) {
 
   const result = await stopRegular(createAdminClient(), { userId: session.user.id, regularId: body.id })
   if ('error' in result) return NextResponse.json({ error: result.error }, { status: result.status })
-  return NextResponse.json({ ok: true, released: result.released, keptPaid: result.keptPaid })
+  return NextResponse.json({ ok: true, released: result.released, keptPaid: result.keptPaid, refunded: result.refunded ?? 0 })
 }

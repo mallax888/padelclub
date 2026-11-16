@@ -7,6 +7,8 @@ import toast from 'react-hot-toast'
 import { formatDate, addHours, localDateStr } from '@/lib/utils'
 import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes, toMinutes } from '@/lib/venue-hours'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
+import { bookerShareCents, friendShareCents } from '@/lib/share-rules'
+import { weeksPhrase } from '@/lib/regular-pay'
 import { planWeeks, seriesDates, weekdayPlural, WEEK_OPTIONS, type DatedBusy } from '@/lib/regulars-rules'
 import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
@@ -102,6 +104,7 @@ export default function BookingFlow({
     waitlistOn = false,
     waitPrefill = null,
     regularsOn = false,
+    prepayOn = false,
     regularRules = {},
     offers = [],
     offerPrefill = null,
@@ -124,6 +127,7 @@ export default function BookingFlow({
     // Whether weekly regulars are switched on in the database, and each club's own
     // rules for them (a club can turn them off or cap how many courts they hold at peak).
     regularsOn?: boolean
+    prepayOn?: boolean
     regularRules?: Record<string, { enabled: boolean; peakCap: number | null }>
     // "Fill my empty courts" offers open right now, and (from an offer notification)
     // the club and day to open straight onto.
@@ -477,6 +481,10 @@ export default function BookingFlow({
   const [regular, setRegular] = useState(false)
   const [regularWeeks, setRegularWeeks] = useState<number>(8)
   const [regularSkips, setRegularSkips] = useState<string[]>([])
+  // How a regular is paid: week by week (the default) or every week now. And whether friends
+  // chosen for this week's split share every later week too.
+  const [prepay, setPrepay] = useState(false)
+  const [splitAllWeeks, setSplitAllWeeks] = useState(true)
   const [futureBusy, setFutureBusy] = useState<DatedBusy[] | null>(null)
   // A different slot or length is a different regular: forget the weeks skipped.
   useEffect(() => { setRegularSkips([]) }, [date, time, duration, regularWeeks, venue?.slug])
@@ -525,6 +533,14 @@ export default function BookingFlow({
   // the share each person is charged, is the court fee over this plus one.
   const seatCount = splitEnabled ? splitPlayers.length + inviteSeats : 0
   const seatsFull = splitPlayers.length + inviteSeats >= 3
+  // The money for a regular, to the cent. Later weeks are split with the same friends only
+  // when "every week" is chosen; the booker's slice of each week is their share of it.
+  const everyWeekSplit = splitEnabled && splitPlayers.length > 0 && splitAllWeeks
+  const laterPeople = everyWeekSplit ? splitPlayers.length + 1 : 1
+  const laterCents = regularBookable.reduce((sum, p) => sum + bookerShareCents(computeCourtPrice(p.court as any, p.date, time, duration!, discount), laterPeople), 0)
+  const firstCents = seatCount > 0 ? bookerShareCents(courtPrice, seatCount + 1) : Math.round(courtPrice * 100)
+  const prepayActive = prepay && prepayOn && regular && regularAllowed && regularBookable.length > 0
+  const payNowCents = prepayActive ? firstCents + laterCents : firstCents
 
   useEffect(() => {
     if (!splitEnabled || invitesAvailable) return
@@ -672,7 +688,7 @@ export default function BookingFlow({
     }
 
     if (splitEnabled && splitPlayers.length > 0 && bookingData) {
-      const splitAmount = parseFloat((courtPrice / (splitPlayers.length + inviteCount + 1)).toFixed(2))
+      const splitAmount = friendShareCents(courtPrice, splitPlayers.length + inviteCount + 1) / 100
       for (const pid of splitPlayers) {
         const { error: splitError } = await sb.from('booking_splits').insert({
           booking_id: bookingData.id,
@@ -698,18 +714,31 @@ export default function BookingFlow({
 
     // Weekly regular: book the later weeks around this one. This week is already
     // held, so if it can't be set up we still carry on to pay for this week.
+    let regularIdMade: string | null = null
     if (regular && regularAllowed && regularPlan) {
       try {
         const regRes = await fetch('/api/regulars', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ firstBookingId: bookingData.id, weeks: regularWeeks, skipDates: regularSkips }),
+          body: JSON.stringify({ firstBookingId: bookingData.id, weeks: regularWeeks, skipDates: regularSkips, ...(everyWeekSplit ? { splitPlayerIds: splitPlayers } : {}) }),
         })
         const reg = await regRes.json().catch(() => ({}))
         if (!regRes.ok) toast.error((reg.error ?? 'We could not set up your regular.') + ' This week is still booked.')
         else if (!reg.regularId) toast.error('None of the later weeks could be booked, so this is a one-off booking.')
+        else regularIdMade = reg.regularId
       } catch {
         toast.error('We could not set up your regular. This week is still booked.')
       }
+    }
+
+    // Every week paid now: one payment for this week and the held weeks after it. If it
+    // can't be opened this week is still paid the usual way, so nothing is left unpaid.
+    if (prepayActive && regularIdMade) {
+      const payRes = await fetch('/api/regulars/pay-all', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ regularId: regularIdMade }),
+      }).catch(() => null)
+      const pay = payRes ? await payRes.json().catch(() => ({})) : {}
+      if (payRes?.ok && pay.url) { window.location.href = pay.url; setSubmitting(false); return }
+      toast.error((pay.error ?? 'We could not open the payment for every week.') + ' You can pay this week now, and the others from My bookings.')
     }
 
     const res = await fetch('/api/create-checkout', {
@@ -775,7 +804,9 @@ export default function BookingFlow({
   }
 
   return (
-    <div className="max-w-lg mx-auto lg:mx-0">
+    // The country step is four cards in a row on a desktop screen, so it gets a wider frame;
+    // every other step stays one comfortable column. Phones are unchanged.
+    <div className={`max-w-lg mx-auto lg:mx-0 ${step === 'country' ? 'lg:max-w-[760px]' : ''}`}>
 
       {/* Back arrow + step title */}
       <div className="flex items-center gap-3 mb-6">
@@ -812,11 +843,11 @@ export default function BookingFlow({
       </div>
 
       {step === 'country' && (
-        <div className="grid grid-cols-2 gap-3 animate-fade-in">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in" data-testid="country-grid">
           {LIVE_COUNTRIES.map(c => (
             <button key={c.name}
               onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
-              className="rounded-xl p-5 transition-all flex flex-col items-center gap-3"
+              className="rounded-xl lg:rounded-[20px] p-5 transition-all flex flex-col items-center gap-3"
               style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
@@ -835,12 +866,13 @@ export default function BookingFlow({
                   const cities = c.regions.filter(r => REGIONS.includes(r)).length
                   const venueCount = LIVE_VENUES.filter(v => c.regions.includes(v.region)).length
                   const courtCount = courts.filter(ct => LIVE_VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length
-                  return `${cities} cities · ${venueCount} venues · ${courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}`
+                  // One line on a phone; two on a desktop card, where four sit side by side.
+                  return <><span className="lg:block">{cities} cities</span><span className="lg:hidden"> · </span><span className="lg:block">{venueCount} venues · {courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}</span></>
                 })()}
               </div>
             </button>
           ))}
-            <div className="rounded-xl p-5 flex flex-col items-center gap-3 opacity-80"
+            <div className="rounded-xl lg:rounded-[20px] p-5 flex flex-col items-center gap-3 opacity-80"
               style={{ background: 'var(--bg-surface)', border: '1px dashed var(--brand-accent)', minHeight: 180, position: 'relative', cursor: 'default' }}>
               <div style={{ fontSize: 36 }}>🌍</div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
@@ -1234,9 +1266,21 @@ export default function BookingFlow({
               </div>
             ))}
             <div className="flex justify-between pt-3">
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{seatCount > 0 ? 'Court total' : 'Total'}</span>
+              <span className="text-xl" style={{ color: seatCount > 0 ? 'var(--text-muted)' : 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
             </div>
+            {seatCount > 0 && (
+              <div className="flex justify-between items-baseline pt-3" data-testid="your-share">
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Your share <span className="text-xs font-normal" style={{ color: 'var(--text-subtle)' }}>split {seatCount + 1} ways</span></span>
+                <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}</span>
+              </div>
+            )}
+            {prepayActive && (
+              <div className="flex justify-between items-baseline pt-3" data-testid="prepay-row">
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Plus {weeksPhrase(regularBookable.length)} now</span>
+                <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(laterCents / 100, currency)}</span>
+              </div>
+            )}
           </div>
 
           {homeSlug && venue && venue.slug !== homeSlug && memberDiscount(plans, { tier, homeSlug, bookingSlug: homeSlug }) > 0 && (
@@ -1336,7 +1380,7 @@ export default function BookingFlow({
                                 </span>
                               )}
                             </span>
-                            {selected && <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(Math.round(courtPrice / (seatCount + 1)), currency)} each</span>}
+                            {selected && <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(friendShareCents(courtPrice, seatCount + 1) / 100, currency)} each</span>}
                           </button>
                         )
                       })}
@@ -1389,7 +1433,7 @@ export default function BookingFlow({
                         </span>
                         <span className="flex items-center gap-3 shrink-0">
                           <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>
-                            {formatPrice(Math.round(courtPrice / (seatCount + 1)), currency)} each
+                            {formatPrice(friendShareCents(courtPrice, seatCount + 1) / 100, currency)} each
                           </span>
                           <button type="button" onClick={() => setInviteSeats(n => Math.max(0, n - 1))}
                             className="text-xs" style={{ color: 'var(--text-subtle)' }}>Remove</button>
@@ -1400,9 +1444,24 @@ export default function BookingFlow({
                 )}
                 {seatCount > 0 && (
                   <div className="text-xs pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
-                    You pay {formatPrice(Math.round(courtPrice / (seatCount + 1)), currency)}
+                    You pay {formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}
                     {splitPlayers.length > 0 && ' - others notified to pay their share'}
                     {inviteSeats > 0 && (splitPlayers.length > 0 ? '. ' : ' - ') + 'Invite links are ready on My Bookings once you\'ve paid'}
+                  </div>
+                )}
+                {regular && regularAllowed && regularBookable.length > 0 && splitPlayers.length > 0 && (
+                  <div role="radiogroup" aria-label="Which weeks to split" data-testid="split-weeks" className="pt-3 flex flex-col gap-2.5">
+                    {([[true, 'Everyone, every week', `${splitPlayers.length === 1 ? 'They are' : 'They are'} asked to pay their share of each week. You pay ${formatPrice(bookerShareCents(computeCourtPrice(assignedCourt as any, date!, time!, duration!, discount), splitPlayers.length + 1) / 100, currency)} a week.`], [false, 'Just this week', 'The later weeks stay with you.']] as const).map(([val, title, sub]) => (
+                      <button key={String(val)} type="button" role="radio" aria-checked={splitAllWeeks === val} onClick={() => setSplitAllWeeks(val)} data-testid={val ? 'split-all-weeks' : 'split-this-week'}
+                        className="flex items-start gap-3 rounded-2xl px-3.5 py-3 text-left"
+                        style={{ background: splitAllWeeks === val ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: `1px solid ${splitAllWeeks === val ? 'var(--brand-primary)' : 'var(--border)'}` }}>
+                        <span className="mt-0.5 shrink-0 rounded-full" style={{ width: 18, height: 18, border: `2px solid ${splitAllWeeks === val ? 'var(--brand-primary)' : 'var(--text-subtle)'}`, background: splitAllWeeks === val ? 'radial-gradient(var(--brand-primary) 45%, transparent 50%)' : 'transparent' }} />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
+                          <span className="block text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-muted)' }}>{sub}</span>
+                        </span>
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
@@ -1462,8 +1521,29 @@ export default function BookingFlow({
                       </div>
                       <div className="text-xs mt-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
                         {regularBlocked.length > 0 && <>{regularBlocked.length === 1 ? '1 week is' : `${regularBlocked.length} weeks are`} already taken, so we&apos;ll skip {regularBlocked.length === 1 ? 'it' : 'them'}. </>}
-                        Tap a week to skip it. You pay for this week now. {regularBookable.length} more {regularBookable.length === 1 ? 'week is' : 'weeks are'} held, each paid about a week before.
+                        {prepayActive
+                          ? <>Tap a week to skip it. Every week is paid now, and a week you skip later is refunded to your card.</>
+                          : <>Tap a week to skip it. You pay for this week now. {regularBookable.length} more {regularBookable.length === 1 ? 'week is' : 'weeks are'} held, each paid about a week before.</>}
                       </div>
+                      {prepayOn && regularBookable.length > 0 && (
+                        <div role="radiogroup" aria-label="How do you want to pay?" data-testid="pay-mode" className="mt-4">
+                          <div className="text-[11px] font-extrabold uppercase mb-2" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>How do you want to pay?</div>
+                          <div className="flex flex-col gap-2.5">
+                            {([[false, 'Week by week', 'Pay this week now. Each later week is held and paid about 48 hours before.', firstCents], [true, `All ${regularBookable.length + 1} weeks now`, 'One payment. Every week is paid and locked in.', firstCents + laterCents]] as const).map(([val, title, sub, cents]) => (
+                              <button key={String(val)} type="button" role="radio" aria-checked={prepay === val} onClick={() => setPrepay(val)} data-testid={val ? 'pay-all-weeks' : 'pay-weekly'}
+                                className="flex items-start gap-3 rounded-2xl px-3.5 py-3 text-left"
+                                style={{ background: prepay === val ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: `1px solid ${prepay === val ? 'var(--brand-primary)' : 'var(--border)'}` }}>
+                                <span className="mt-0.5 shrink-0 rounded-full" style={{ width: 18, height: 18, border: `2px solid ${prepay === val ? 'var(--brand-primary)' : 'var(--text-subtle)'}`, background: prepay === val ? 'radial-gradient(var(--brand-primary) 45%, transparent 50%)' : 'transparent' }} />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
+                                  <span className="block text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-muted)' }}>{sub}</span>
+                                </span>
+                                <span className="text-sm font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{formatPrice(cents / 100, currency)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
                 </>
@@ -1483,7 +1563,7 @@ export default function BookingFlow({
                     800 is as heavy as this can go without adding a weight. */}
                 <span className="text-[17px] leading-none font-bold uppercase" style={{ letterSpacing: '0.14em', opacity: 0.8 }}>Pay</span>
                 <span className="text-[42px] leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.03em' }}>
-                  {formatPrice(Math.round(seatCount > 0 ? courtPrice / (seatCount + 1) : courtPrice), currency)}
+                  {formatPrice(payNowCents / 100, currency)}
                 </span>
                 <span className="text-[22px] leading-none font-extrabold">→</span>
               </>

@@ -190,7 +190,7 @@ export default function MembershipPanel({
       <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
         Pre-buy sessions at a discount — use any time, on any court
       </p>
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-4 mb-4">
         {CREDIT_PACKS.map(pack => {
           const isSelected = selectedPack === pack.id
           return (

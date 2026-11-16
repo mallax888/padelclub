@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { bookerShareCents } from '@/lib/share-rules'
 
 export async function GET(request: Request) {
   const supabase = createServerClient()
@@ -103,7 +104,7 @@ export async function GET(request: Request) {
   const replacedNames = await loadReplacedNames('booking_splits', (splits ?? []).map((s: any) => s.id))
 
   const totalShares = (splits?.length ?? 0) + 1
-  const organizerShare = Math.round(booking.price_nzd / totalShares)
+  const organizerShare = bookerShareCents(booking.price_nzd, totalShares) / 100
   // A booking sits in 'pending' until its own checkout succeeds -- only then
   // is the organizer's share actually paid, same as everyone else's split.
   const organizerPaid = booking.status !== 'pending'

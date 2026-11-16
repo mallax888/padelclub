@@ -178,8 +178,25 @@ export async function applyCancellationRefund(
     .select('id')
   splitsWithdrawn = withdrawn?.length ?? 0
 
-  // The booker's own money.
+  // A week paid for as part of one payment covering several weeks (a regular paid
+  // up front) carries its own slice of that payment. Refund only that slice, never
+  // the whole payment, or skipping one week would hand back all of them. The column
+  // only exists once the regular-payments database change has been run.
+  let paidSlice: number | null = null
   if (booking.stripe_payment_id) {
+    const { data: sliceRow, error: sliceError } = await (admin as any).from('bookings').select('paid_cents').eq('id', booking.id).maybeSingle()
+    if (!sliceError && sliceRow?.paid_cents) paidSlice = Number(sliceRow.paid_cents)
+  }
+
+  // The booker's own money.
+  if (booking.stripe_payment_id && paidSlice) {
+    if (fullRefund) {
+      if (!(await refundPartial(booking.stripe_payment_id, paidSlice, `slice-refund-${booking.id}`))) refundFailed = true
+    } else if (booking.user_id) {
+      creditAmount = Math.round((paidSlice * 0.5) / 100)
+      await admin.rpc('increment_credits', { p_user_id: booking.user_id, p_amount: creditAmount })
+    }
+  } else if (booking.stripe_payment_id) {
     if (fullRefund) {
       if (!(await refundIntent(booking.stripe_payment_id, booking.id))) {
         refundFailed = true

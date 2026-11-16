@@ -56,7 +56,7 @@ export type BriefingInput = {
   yesterday: DayTotals
   lastWeek: { bookings: number; revenue: number }
   sellableHours: number // court hours the club could have sold yesterday
-  emptyPrimeHours: number // empty court-hours in busy times still to sell today
+  emptyHours: number // empty court-hours still to sell today (the same number Today shows)
   bestGap: { from: string; to: string; courtsFree: number } | null
   overdue: { count: number; total: number | null }
   newPlayers: number
@@ -65,7 +65,7 @@ export type Briefing = {
   takings: number; takingsDiff: number | null
   bookings: number; bookingsDiff: number | null
   fillPct: number | null
-  emptyPrimeHours: number; bestGap: BriefingInput['bestGap']
+  emptyHours: number; bestGap: BriefingInput['bestGap']
   overdueCount: number; overdueTotal: number | null
   newPlayers: number
   quiet: boolean // nothing happened and nothing needs doing
@@ -80,13 +80,13 @@ export function buildBriefing(i: BriefingInput): Briefing {
     bookings: i.yesterday.bookings,
     bookingsDiff: hadLastWeek ? i.yesterday.bookings - i.lastWeek.bookings : null,
     fillPct: i.sellableHours > 0 ? Math.min(100, Math.round((i.yesterday.bookedHours / i.sellableHours) * 100)) : null,
-    emptyPrimeHours: Math.max(0, Math.round(i.emptyPrimeHours)),
+    emptyHours: Math.max(0, Math.round(i.emptyHours)),
     bestGap: i.bestGap,
     overdueCount: i.overdue.count, overdueTotal: i.overdue.total,
     newPlayers: i.newPlayers,
     quiet: false,
   }
-  b.quiet = b.bookings === 0 && b.emptyPrimeHours === 0 && b.overdueCount === 0 && b.newPlayers === 0
+  b.quiet = b.bookings === 0 && b.emptyHours === 0 && b.overdueCount === 0 && b.newPlayers === 0
   return b
 }
 
@@ -105,39 +105,39 @@ export function describeDiff(diff: number | null, weekday: string, money: boolea
 
 export const gapText = (g: NonNullable<Briefing['bestGap']>) => `${g.from}–${g.to}, ${plural(g.courtsFree, 'court', 'courts')} free`
 const emptyLine = (b: Briefing) =>
-  b.emptyPrimeHours > 0
-    ? `${plural(b.emptyPrimeHours, 'prime court-hour is', 'prime court-hours are')} empty today.`
-    : 'Prime time today is fully booked.'
+  b.emptyHours > 0
+    ? `${plural(b.emptyHours, 'court-hour is', 'court-hours are')} empty today.`
+    : 'Every court is booked for the rest of today.'
 
 export type PushMessage = { title: string; body: string; url: string }
 
 // The phone message(s): a main one, and a second only when shares are overdue.
-export function briefingPush(b: Briefing, o: { name: string; currency: CurrencyCode; weekday: string; todayUrl: string; fixUrl: string }): PushMessage[] {
+export function briefingPush(b: Briefing, o: { name: string; currency: CurrencyCode; weekday: string; todayUrl: string; fillUrl: string; remindUrl: string }): PushMessage[] {
   const hi = `Morning, ${o.name}.`
   const main: PushMessage = b.quiet
     ? { title: `${hi} All clear`, body: 'Nothing to chase and nothing empty today. Have a good one.', url: o.todayUrl }
     : b.bookings === 0
-      ? { title: `${hi} Yesterday was quiet`, body: `No bookings. ${emptyLine(b)}${b.emptyPrimeHours > 0 ? ' Tap to fill them.' : ''}`, url: b.emptyPrimeHours > 0 ? o.fixUrl : o.todayUrl }
+      ? { title: `${hi} Yesterday was quiet`, body: `No bookings. ${emptyLine(b)}${b.emptyHours > 0 ? ' Tap to fill them.' : ''}`, url: b.emptyHours > 0 ? o.fillUrl : o.todayUrl }
       : {
           title: `${hi} Yesterday: ${amount(b.takings, o.currency)}`,
           body: [
             `${plural(b.bookings, 'booking', 'bookings')}${b.takingsDiff !== null ? `, ${describeDiff(b.takingsDiff, o.weekday, true, o.currency)}` : ''}.`,
-            emptyLine(b) + (b.emptyPrimeHours > 0 ? ' Tap to fill them.' : ''),
+            emptyLine(b) + (b.emptyHours > 0 ? ' Tap to fill them.' : ''),
           ].join(' '),
-          url: b.emptyPrimeHours > 0 ? o.fixUrl : o.todayUrl,
+          url: b.emptyHours > 0 ? o.fillUrl : o.todayUrl,
         }
   const out = [main]
   if (b.overdueCount > 0) {
     out.push({
       title: `${plural(b.overdueCount, 'share is', 'shares are')} overdue${b.overdueTotal !== null ? ` (${amount(b.overdueTotal, o.currency)})` : ''}`,
-      body: 'Tap to remind both players in one go.', url: o.fixUrl,
+      body: 'Tap to remind them all in one go.', url: o.remindUrl,
     })
   }
   return out
 }
 
 // The email. Every button opens a screen inside the app.
-export function briefingEmail(b: Briefing, o: { name: string; venueName: string; currency: CurrencyCode; weekday: string; todayUrl: string; fixUrl: string; settingsUrl: string }): { subject: string; html: string } {
+export function briefingEmail(b: Briefing, o: { name: string; venueName: string; currency: CurrencyCode; weekday: string; todayUrl: string; fillUrl: string; remindUrl: string; settingsUrl: string }): { subject: string; html: string } {
   const subject = b.quiet ? `${o.venueName}: all clear this morning` : b.bookings === 0 ? `${o.venueName}: a quiet day yesterday` : `Yesterday at ${o.venueName}: ${amount(b.takings, o.currency)}`
   const stat = (big: string, small: string) => `<td style="background:#f1f4f8;border-radius:10px;padding:10px 12px;vertical-align:top"><div style="font-size:20px;font-weight:800">${esc(big)}</div><div style="font-size:11px;color:#6a727c;margin-top:2px">${esc(small)}</div></td>`
   const item = (title: string, small: string, btn: string, url: string) =>
@@ -146,8 +146,8 @@ export function briefingEmail(b: Briefing, o: { name: string; venueName: string;
   const diffCount = describeDiff(b.bookingsDiff, o.weekday, false, o.currency)
   const headline = b.quiet ? 'All clear this morning.' : b.bookings === 0 ? 'Yesterday was a quiet one.' : 'Here is yesterday.'
   const rows: string[] = []
-  if (b.emptyPrimeHours > 0) rows.push(item(emptyLine(b).replace(/\.$/, ''), b.bestGap ? `Biggest gap: ${gapText(b.bestGap)}` : 'In the busy times', 'Fill them', o.fixUrl))
-  if (b.overdueCount > 0) rows.push(item(`${plural(b.overdueCount, 'share is', 'shares are')} overdue`, b.overdueTotal !== null ? `${amount(b.overdueTotal, o.currency)} still to collect` : 'Still to collect', 'Remind both', o.fixUrl))
+  if (b.emptyHours > 0) rows.push(item(emptyLine(b).replace(/\.$/, ''), b.bestGap ? `Biggest gap: ${gapText(b.bestGap)}` : 'Still open to book', 'Fill them', o.fillUrl))
+  if (b.overdueCount > 0) rows.push(item(`${plural(b.overdueCount, 'share is', 'shares are')} overdue`, b.overdueTotal !== null ? `${amount(b.overdueTotal, o.currency)} still to collect` : 'Still to collect', 'Remind all', o.remindUrl))
   if (b.newPlayers > 0) rows.push(item(`${plural(b.newPlayers, 'new player', 'new players')} joined yesterday`, 'Have a look at who they are', 'See players', o.todayUrl.replace('/admin/today', '/players')))
   const html = `<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;color:#1b1f24;border-radius:14px;overflow:hidden;border:1px solid #e3e7ec">
 <div style="background:#262B31;color:#fff;padding:14px 22px;font-size:11px;letter-spacing:.14em;font-weight:800">PADEL<span style="color:#86BBF7">CLUB</span> · Good morning, ${esc(o.name)}</div>
