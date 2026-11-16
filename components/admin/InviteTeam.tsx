@@ -39,7 +39,7 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
       {!ready ? (
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Inviting by email isn&apos;t switched on yet: the database change 033 has not been run.</p>
       ) : (
-        <form onSubmit={send} className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+        <form onSubmit={send} className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end lg:grid-cols-1 lg:items-stretch">
           <div><label className="label" htmlFor="invite-email">Their email</label><input id="invite-email" type="email" className="input" value={email} onChange={e => setEmail(e.target.value)} required placeholder="name@yourclub.com" /></div>
           <div>
             <label className="label">Invite as</label>

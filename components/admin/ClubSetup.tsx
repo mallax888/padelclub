@@ -128,7 +128,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
 
   const Header = ({ back }: { back?: boolean }) => (
     <>
-      <div className="flex items-center justify-between gap-2.5">
+      <div className="flex items-center justify-between gap-2.5 lg:mt-4">
         {back
           ? <button type="button" onClick={() => setStep('home')} className="inline-flex items-center text-[13px] font-bold" style={{ minHeight: 40, color: 'var(--brand-primary-text)' }}>‹ Setup</button>
           : <span className="text-[13px] font-bold" style={{ color: 'var(--text-subtle)' }}>Club settings</span>}
@@ -166,12 +166,12 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
     const next: Step = !hoursDone ? 'hours' : !courtsDone ? 'courts' : 'live'
     const nextLabel = !hoursDone ? 'Start with opening hours' : !courtsDone ? 'Add courts and prices' : liveDone ? 'Review and finish' : 'Review and open for booking'
     return (
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto flex flex-col">
         <Header />
-        <h1 className="mt-4 text-[23px] leading-tight font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>
+        <h1 className="mt-4 lg:mt-0 lg:order-first text-[23px] leading-tight font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>
           {liveDone ? `${venue.name} is open for booking` : `Get ${venue.name} ready for bookings`}
         </h1>
-        <p className="text-[13px] mt-1.5 pl-[15px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <p className="lg:order-first text-[13px] mt-1.5 pl-[15px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {liveDone ? 'Change any of it below, any time.' : "A few quick steps and players can book courts. You can change any of it later."}
         </p>
         <div className="rounded-[18px] overflow-hidden mt-4" style={card}>
@@ -215,10 +215,10 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   if (step === 'hours') {
     const selectStyle = { minHeight: 40, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
     return (
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto flex flex-col">
         <Header back />
-        <h1 className="mt-4 text-[23px] font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>Opening hours</h1>
-        <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>The hours players can book. Times outside them aren&apos;t offered.</p>
+        <h1 className="mt-4 lg:mt-0 lg:order-first text-[23px] font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>Opening hours</h1>
+        <p className="lg:order-first text-[13px] mt-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>The hours players can book. Times outside them aren&apos;t offered.</p>
         <div className="rounded-[18px] overflow-hidden mt-4" style={card}>
           {DAY_KEYS.map(d => {
             const h = week[d]
@@ -253,10 +253,10 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   if (step === 'courts') {
     const inputStyle = { minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
     return (
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto flex flex-col">
         <Header back />
-        <h1 className="mt-4 text-[23px] font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>Courts and prices</h1>
-        <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <h1 className="mt-4 lg:mt-0 lg:order-first text-[23px] font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>Courts and prices</h1>
+        <p className="lg:order-first text-[13px] mt-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {listed.length > 0 ? `${venue.name} lists ${listed.length} ${listed.length === 1 ? 'court' : 'courts'}. Add ${listed.length === 1 ? 'it' : 'them'} in one go, then set the prices.` : 'Set the prices, then add your courts.'}
         </p>
         <div className="flex gap-2.5 mt-3.5">
@@ -302,10 +302,13 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   // ------------------------------------------------------------------ live
   const first = courts[0]
   return (
-    <div className="max-w-md mx-auto">
+    <div className="max-w-md lg:max-w-5xl mx-auto flex flex-col">
       <Header back />
-      <h1 className="mt-4 text-[23px] font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>{isOpen ? 'Open for booking' : 'Ready to open?'}</h1>
-      <p className="text-[13px] mt-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Check it over. You can change any of this later.</p>
+      <h1 className="mt-4 lg:mt-0 lg:order-first text-[23px] font-extrabold" style={{ ...display, letterSpacing: '-0.02em' }}>{isOpen ? 'Open for booking' : 'Ready to open?'}</h1>
+      <p className="lg:order-first text-[13px] mt-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Check it over. You can change any of this later.</p>
+      {/* On a computer: the summary, open switch and regulars on the left; money and plans on the right. One column on a phone, as before. */}
+      <div className="lg:grid lg:grid-cols-2 lg:gap-x-6 lg:items-start">
+      <div>
       <div className="rounded-[18px] overflow-hidden mt-4" style={card}>
         {[
           ['Club', venue.name],
@@ -357,14 +360,20 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           )}
         </div>
       )}
+      </div>
+      <div>
       <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
       {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
+      </div>
+      </div>
+      <div className="lg:max-w-md lg:mx-auto">
       <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
         {isOpen ? 'Done' : 'Save for later'}
       </Primary>
       <p className="text-xs mt-3.5 rounded-2xl px-3.5 py-3 leading-relaxed" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--text-muted)' }}>
         Bookings show on your Today screen as soon as the first one comes in.
       </p>
+      </div>
     </div>
   )
 }
