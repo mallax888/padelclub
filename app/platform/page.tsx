@@ -5,6 +5,9 @@ import { loadTeamCaller } from '@/lib/team-server'
 import { isPlatformAdmin } from '@/lib/club-access'
 import { VENUES } from '@/lib/venues'
 import ClubRequests, { type ClubRequest } from '@/components/platform/ClubRequests'
+import ClubFees, { type ClubFee } from '@/components/platform/ClubFees'
+import { connectState } from '@/lib/connect-rules'
+import { getVenue } from '@/lib/venues'
 
 export const metadata = { title: 'Club requests' }
 export const dynamic = 'force-dynamic'
@@ -22,6 +25,11 @@ export default async function PlatformPage() {
     // The club the form named, if it is already in the list.
     suggestedSlug: VENUES.find(v => v.name.toLowerCase() === String(r.club_name).trim().toLowerCase())?.slug ?? '',
   }))
+  const { data: acctRows } = await (createAdminClient() as any).from('club_stripe_accounts').select('*').order('created_at')
+  const fees: ClubFee[] = (acctRows ?? []).map((a: any) => ({
+    venueSlug: a.venue_slug, name: getVenue(a.venue_slug).name, state: connectState(a),
+    percent: Number(a.fee_percent), fixed: Number(a.fee_fixed),
+  }))
   const venues = VENUES.map(v => ({ slug: v.slug, name: v.name })).sort((a, b) => a.name.localeCompare(b.name))
 
   return (
@@ -32,6 +40,7 @@ export default async function PlatformPage() {
           <Link href="/admin/today" className="text-sm font-semibold" style={{ color: 'var(--brand-primary-text)' }}>Back to my club</Link>
         </div>
         {error ? <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Club requests aren&apos;t switched on yet: the database change 033 has not been run.</p> : <ClubRequests requests={requests} venues={venues} />}
+        <ClubFees clubs={fees} />
       </div>
     </div>
   )

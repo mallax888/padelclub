@@ -11,15 +11,39 @@ import { syncReceiveMoneyToXero } from '@/lib/xero'
 import { refundIntent, refundPartial } from '@/lib/cancellation'
 import { applyCoverPayment } from '@/lib/shares'
 import { reportMoneyIssue } from '@/lib/report'
+import { recordConnectPayment } from '@/lib/club-payments'
 
 export async function POST(request: Request) {
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')!
-  let event
-  try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
-  } catch (err: any) {
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 })
+  // Two endpoints point here: PadelClub's own account, and (once Connect is switched on) the
+  // clubs' connected accounts. Each has its own signing secret. An event is only treated as a
+  // club's if it verified against the connected-accounts secret.
+  let event: any
+  let viaConnect = false
+  let lastError = 'No webhook secret is set'
+  const secrets: [string | undefined, boolean][] = [[process.env.STRIPE_WEBHOOK_SECRET, false], [process.env.STRIPE_CONNECT_WEBHOOK_SECRET, true]]
+  for (const [secret, isConnect] of secrets) {
+    if (!secret) continue
+    try { event = stripe.webhooks.constructEvent(body, sig, secret); viaConnect = isConnect; break } catch (err: any) { lastError = err.message }
+  }
+  if (!event) return NextResponse.json({ error: `Webhook Error: ${lastError}` }, { status: 400 })
+
+  if (viaConnect && event.type === 'account.updated') {
+    const a = event.data.object as any
+    const admin = createAdminClient() as any
+    await admin.from('club_stripe_accounts').update({
+      details_submitted: !!a.details_submitted, charges_enabled: !!a.charges_enabled, payouts_enabled: !!a.payouts_enabled,
+      requirements_due: a.requirements?.currently_due ?? [], updated_at: new Date().toISOString(),
+    }).eq('stripe_account_id', a.id)
+    return NextResponse.json({ received: true })
+  }
+  // Nothing else from a connected account is ours to act on except a completed checkout.
+  if (viaConnect && event.type !== 'checkout.session.completed') return NextResponse.json({ received: true })
+  // A payment that went to a club's own account: note where it went (and the fees) first, so
+  // anything below that has to refund it knows which account to refund from.
+  if (viaConnect && event.account) {
+    await recordConnectPayment(createAdminClient(), event.account, event.data.object as any)
   }
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as any

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { createCheckout, paymentTarget } from '@/lib/club-payments'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { currencyForRegion } from '@/lib/currency'
@@ -34,7 +34,8 @@ export async function POST(request: Request) {
     if (quote.splitIds.length === 0 || quote.cents <= 0) return NextResponse.json({ error: 'Everything is already paid.' }, { status: 400 })
 
     const region = quote.venueSlug ? getVenue(quote.venueSlug).region : undefined
-    const checkout = await stripe.checkout.sessions.create({
+    const target = await paymentTarget(admin, quote.venueSlug, quote.cents)
+    const checkout = await createCheckout({
       payment_method_types: ['card'],
       line_items: [{
         price_data: {
@@ -57,7 +58,7 @@ export async function POST(request: Request) {
         splitIds: quote.splitIds.join(','),
         perShareCents: String(Math.round(quote.perShareCents)),
       },
-    })
+    }, target)
     return NextResponse.json({ url: checkout.url, cents: quote.cents, shares: quote.splitIds.length })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

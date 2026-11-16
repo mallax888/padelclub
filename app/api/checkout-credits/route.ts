@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { createCheckout, paymentTarget } from '@/lib/club-payments'
+import { createAdminClient } from '@/lib/supabase-admin'
 import { createServerClient } from '@/lib/supabase-server'
 import { CREDIT_PACKS } from '@/lib/creditPacks'
 import { getAppUrl } from '@/lib/env'
@@ -31,7 +32,10 @@ export async function POST(request: Request) {
     const currency = currencyForVenueSlug(profile?.home_venue_slug)
     const unitAmount = Math.round(localPriceFromNzd(pack.priceNzd, currency) * 100)
 
-    const checkoutSession = await stripe.checkout.sessions.create({
+    // A club that is paid directly gets this payment too (the member's home club); otherwise it
+    // goes to PadelClub's own account as before.
+    const target = await paymentTarget(createAdminClient(), profile?.home_venue_slug, unitAmount)
+    const checkoutSession = await createCheckout({
       payment_method_types: ['card'],
       line_items: [
         {
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
         sessions: String(pack.sessions),
         userId: session.user.id,
       },
-    })
+    }, target)
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

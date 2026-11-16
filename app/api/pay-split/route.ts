@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { createCheckout, paymentTarget } from '@/lib/club-payments'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { verifyAndCorrectBookingPrice } from '@/lib/booking-price'
@@ -79,7 +79,8 @@ export async function POST(request: Request) {
     const region = court?.venue_slug ? getVenue(court.venue_slug).region : undefined
     const currency = currencyForRegion(region)
 
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const target = await paymentTarget(admin, court?.venue_slug, shareCents)
+    const checkoutSession = await createCheckout({
       payment_method_types: ['card'],
       line_items: [
         {
@@ -102,7 +103,7 @@ export async function POST(request: Request) {
         userId: session.user.id,
         type: 'split_payment',
       },
-    })
+    }, target)
 
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error: any) {

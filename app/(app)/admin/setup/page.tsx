@@ -16,7 +16,7 @@ export const metadata = { title: 'Club setup' }
 
 export const dynamic = 'force-dynamic'
 
-export default async function SetupPage({ searchParams }: { searchParams?: { venue?: string } }) {
+export default async function SetupPage({ searchParams }: { searchParams?: { venue?: string; stripe?: string } }) {
   const caller = await loadTeamCaller()
   if (!caller || !isManagerRole(caller.role)) redirect('/book')
   // Club settings are an owner's job: front desk is sent back to Today.
@@ -82,6 +82,7 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       courts={courts}
       regulars={regRules}
       memberships={memberships}
+      stripeReturn={searchParams?.stripe === 'return' || searchParams?.stripe === 'refresh' ? searchParams.stripe : null}
     />
   )
 }

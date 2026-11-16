@@ -3,6 +3,8 @@ import type { Database } from '@/types/database'
 import { stripe } from '@/lib/stripe'
 import { hoursUntilBooking } from '@/lib/timezone'
 import { reportMoneyIssue } from '@/lib/report'
+import { accountForIntent } from '@/lib/club-payments'
+import { REFUND_APPLICATION_FEE } from '@/lib/connect-rules'
 
 export type CancellableBooking = {
   id: string
@@ -32,7 +34,9 @@ export type CancellationResult = {
 // been made whole.
 export async function refundIntent(paymentIntentId: string, bookingId: string): Promise<boolean> {
   try {
-    await stripe.refunds.create({ payment_intent: paymentIntentId })
+    const account = await accountForIntent(paymentIntentId)
+    if (account) await stripe.refunds.create({ payment_intent: paymentIntentId, refund_application_fee: REFUND_APPLICATION_FEE }, { stripeAccount: account })
+    else await stripe.refunds.create({ payment_intent: paymentIntentId })
     return true
   } catch (err: any) {
     if (err?.code === 'charge_already_refunded') return true
@@ -52,9 +56,10 @@ export async function refundIntent(paymentIntentId: string, bookingId: string): 
 // the idempotency key makes a repeated call a no-op rather than a second refund.
 export async function refundPartial(paymentIntentId: string, cents: number | null, idempotencyKey: string): Promise<boolean> {
   try {
+    const account = await accountForIntent(paymentIntentId)
     await stripe.refunds.create(
-      { payment_intent: paymentIntentId, ...(cents ? { amount: Math.round(cents) } : {}) },
-      { idempotencyKey },
+      { payment_intent: paymentIntentId, ...(cents ? { amount: Math.round(cents) } : {}), ...(account ? { refund_application_fee: REFUND_APPLICATION_FEE } : {}) },
+      { idempotencyKey, ...(account ? { stripeAccount: account } : {}) },
     )
     return true
   } catch (err: any) {
@@ -74,7 +79,8 @@ async function amountPaidCents(
   fallbackDollars: number,
 ): Promise<number> {
   try {
-    const intent = await stripe.paymentIntents.retrieve(paymentIntentId)
+    const account = await accountForIntent(paymentIntentId)
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId, undefined, account ? { stripeAccount: account } : undefined)
     if (intent.amount_received > 0) return intent.amount_received
   } catch (err) {
     console.error('Could not read payment intent', paymentIntentId, err)
