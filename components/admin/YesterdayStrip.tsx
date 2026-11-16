@@ -16,7 +16,7 @@ function Delta({ diff, money: isMoney, currency }: { diff: number | null; money:
 export default function YesterdayStrip({ b, currency, weekday, label }: { b: Briefing; currency: CurrencyCode; weekday: string; label: string }) {
   const compared = b.takingsDiff !== null
   return (
-    <section className="rounded-[20px] mt-4 px-4 py-3.5" style={card} data-testid="yesterday-strip">
+    <section className="rounded-2xl mt-4 p-4" style={card} data-testid="yesterday-strip">
       {b.bookings === 0 ? (
         <>
           <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>Yesterday was quiet</div>

@@ -59,7 +59,7 @@ export function LaterRow({ id, label }: { id: string; label: string }) {
 // The full-width button that moves to the next question or finishes the page.
 export function FlowButton({ children, onClick, disabled, testId }: { children: ReactNode; onClick: () => void; disabled?: boolean; testId?: string }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} data-testid={testId} className="btn btn-primary w-full justify-center" style={{ height: 52, fontSize: 16, fontWeight: 700, borderRadius: 16 }}>
+    <button type="button" onClick={onClick} disabled={disabled} data-testid={testId} className="btn-main">
       {children}
     </button>
   )

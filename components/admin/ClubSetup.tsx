@@ -44,12 +44,10 @@ function Progress({ done }: { done: number }) {
 
 const Primary = ({ children, onClick, disabled }: { children: React.ReactNode; onClick: () => void; disabled?: boolean }) => (
   <button type="button" onClick={onClick} disabled={disabled}
-    className="flex items-center justify-center w-full rounded-2xl mt-4 text-[15px] font-extrabold disabled:opacity-50"
-    style={{ minHeight: 50, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>{children}</button>
+    className="btn-main mt-4">{children}</button>
 )
 const Ghost = ({ children, onClick }: { children: React.ReactNode; onClick: () => void }) => (
-  <button type="button" onClick={onClick} className="flex items-center justify-center w-full rounded-2xl mt-2.5 text-sm font-bold"
-    style={{ minHeight: 46, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>{children}</button>
+  <button type="button" onClick={onClick} className="btn-main btn-main-quiet mt-4">{children}</button>
 )
 
 function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => void; label: string; disabled?: boolean }) {
@@ -132,7 +130,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
 
   const Header = ({ back }: { back?: boolean }) => (
     <>
-      <div className="flex items-center justify-between gap-3 lg:mt-6">
+      <div className="flex items-center justify-between gap-3 mt-4">
         {back
           ? <button type="button" onClick={() => setStep('home')} className="inline-flex items-center text-[13px] font-bold" style={{ minHeight: 40, color: 'var(--brand-primary-text)' }}>‹ Setup</button>
           : <span className="text-[13px] font-bold" style={{ color: 'var(--text-subtle)' }}>Club settings</span>}
@@ -191,12 +189,12 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   const stack = 'flex flex-col gap-4 [&>*]:mt-0'
 
   return (
-    <div className="max-w-md lg:max-w-[1100px] mx-auto flex flex-col">
+    <div className="w-full flex flex-col">
       <Header />
-      <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold leading-tight">
+      <h1 className="order-first text-2xl font-semibold leading-tight">
         {liveDone ? `${venue.name} is open for booking` : `Get ${venue.name} ready for bookings`}
       </h1>
-      <p className="lg:order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+      <p className="order-first text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
         {liveDone ? 'Change any of it below, any time.' : "A few quick questions and players can book courts. You can change any of it later."}
       </p>
       <div className={`${stack} mt-4`}>
@@ -306,7 +304,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
 
         {eff !== 'live' && <div className="text-[11px] font-extrabold uppercase mt-2 px-0.5" style={sectionLabel}>More settings</div>}
       {regulars && (
-        <div className="rounded-2xl mt-4 px-3.5 py-3.5" style={card} data-testid="regulars-rules">
+        <div className="rounded-2xl mt-4 p-5" style={card} data-testid="regulars-rules">
           <div className="flex items-center gap-3">
             <span className="min-w-0">
               <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🔁 Weekly regulars</span>

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
+import Image from 'next/image'
 import { formatDate, addHours, localDateStr } from '@/lib/utils'
 import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes, toMinutes } from '@/lib/venue-hours'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
@@ -799,7 +800,7 @@ export default function BookingFlow({
     const courtCounts: Record<string, number> = {}
     for (const c of courts) { const slug = (c as any).venue_slug as string; courtCounts[slug] = (courtCounts[slug] ?? 0) + 1 }
     return (
-      <div className="max-w-lg mx-auto">
+      <div className="w-full">
       {header}
       <NearMe venues={LIVE_VENUES} courtCounts={courtCounts} settings={venueSettings} offers={offers} homeSlug={homeSlug}
         onClose={() => setNearOpen(false)}
@@ -826,7 +827,7 @@ export default function BookingFlow({
   const groupLabel: Record<Group, string> = { where: 'Where are you playing?', date: 'When?', duration: 'How long?', time: 'What time?', players: 'Anyone playing with you?', regular: 'Same time every week?', pay: 'Check and pay' }
   const done = (g: Group) => groups.indexOf(g) < groups.indexOf(groupNow)
   const endTimeNow = time && duration ? addHoursDecimal(time, duration) : ''
-  const flagImg = (name?: string | null) => { const f = COUNTRIES.find(c => c.name === name)?.flag; return f ? <img src={f} alt={name ?? ''} style={{ width: 28, height: 19, objectFit: 'cover', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} /> : null }
+  const flagImg = (name?: string | null) => { const f = COUNTRIES.find(c => c.name === name)?.flag; return f ? <Image src={f} alt={name ?? ''} width={28} height={19} unoptimized style={{ width: 28, height: 19, objectFit: 'cover', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} /> : null }
   const doneRow = (key: string, label: string, value: React.ReactNode, onChange: () => void, lead?: React.ReactNode, trailing?: React.ReactNode) => (
     <div key={key} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5" data-testid={`answered-${key}`} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
       {lead ?? <span className="flex items-center justify-center rounded-full shrink-0 text-[13px] font-extrabold" style={{ width: 26, height: 26, background: 'var(--brand-green-muted, var(--brand-primary-muted))', color: 'var(--brand-green, var(--brand-primary-text))' }} aria-hidden>✓</span>}
@@ -880,7 +881,7 @@ export default function BookingFlow({
   const whereBack = step !== visibleSteps[0]
 
   return (
-    <div className="max-w-lg mx-auto lg:max-w-[1100px]">
+    <div className="w-full">
       {header}
 
       {/* Progress bar: one segment for every question this booking will ask. */}
@@ -906,7 +907,7 @@ export default function BookingFlow({
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                <img src={c.flag} alt={c.name} style={{ width: 80, height: 53, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
+                <Image src={c.flag} alt={c.name} width={80} height={53} unoptimized style={{ width: 80, height: 53, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
               </div>
               <div className="text-lg font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
               {/* A country whose clubs are listed but whose courts aren't in
@@ -1058,7 +1059,7 @@ export default function BookingFlow({
         <div className="rounded-2xl p-4 mt-4" data-testid="near-me-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
           <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Not sure of the area?</div>
           <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>We&apos;ll find clubs within 25 km of where you are. Great when you&apos;re travelling.</p>
-          <button type="button" data-testid="near-me-button" onClick={() => setNearOpen(true)} className="w-full rounded-xl py-2.5 text-sm font-extrabold" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Find a club near me</button>
+          <button type="button" data-testid="near-me-button" onClick={() => setNearOpen(true)} className="btn-main">Find a club near me</button>
         </div>
       )}
 
@@ -1070,10 +1071,10 @@ export default function BookingFlow({
         <div className="animate-fade-in">
           <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:mb-5 lg:[&>*]:mb-0 lg:[&>*:only-child]:col-span-2">
           {homeVenue && venue?.slug === homeVenue.slug && (
-            <div className="rounded-2xl p-4 mb-4" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
+            <div className="rounded-2xl p-5 mb-4" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Travelling?</div>
               <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Find a club near you and book there. Your home club stays the same.</p>
-              <button type="button" onClick={() => setNearOpen(true)} className="w-full rounded-xl py-2.5 text-sm font-extrabold" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Find a club near me</button>
+              <button type="button" onClick={() => setNearOpen(true)} className="btn-main">Find a club near me</button>
             </div>
           )}
           <button
@@ -1480,7 +1481,7 @@ export default function BookingFlow({
           </div>
 
           <button type="button" onClick={() => { setConfirmStage(askRegular ? 'regular' : 'pay'); playSelectionSound() }} data-testid="confirm-continue"
-            className="w-full py-3.5 rounded-xl text-[15px] font-extrabold mt-1" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Continue</button>
+            className="btn-main">Continue</button>
           </div>, { title: 'Anyone playing with you?', subtitle: 'Leave it as it is if it is just you.' })}
 
           {confirmStage === 'regular' && askRegular && askCard(<div className="flex flex-col gap-4">
@@ -1584,7 +1585,7 @@ export default function BookingFlow({
                   </div>
                 )}
           <button type="button" onClick={() => { setConfirmStage('pay'); playSelectionSound() }} data-testid="confirm-continue"
-            className="w-full py-3.5 rounded-xl text-[15px] font-extrabold mt-1" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>Continue</button>
+            className="btn-main">Continue</button>
           </div>, { title: 'Same time every week?', subtitle: 'A regular holds the court for you. You can skip any week.' })}
 
           {confirmStage === 'pay' && askCard(<div className="flex flex-col gap-4">

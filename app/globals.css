@@ -129,6 +129,22 @@
     filter: brightness(1.1);
     color: var(--brand-primary-on);
   }
+  /* The one main button: full width, 52 high, corners 16. Every Continue, Save and Create. */
+  .btn-main {
+    @apply flex items-center justify-center gap-2 w-full rounded-xl text-[15px] font-extrabold transition-all duration-150 cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed;
+    min-height: 52px;
+    background: var(--brand-primary);
+    color: var(--brand-primary-on);
+    border: 1px solid var(--brand-primary);
+    box-shadow: var(--glow-primary);
+  }
+  .btn-main:hover:not(:disabled) { filter: brightness(1.1); }
+  .btn-main-quiet {
+    background: var(--bg-raised);
+    color: var(--text-primary);
+    border-color: var(--border);
+    box-shadow: none;
+  }
   .btn-accent {
     background: var(--brand-accent);
     color: var(--brand-accent-on);

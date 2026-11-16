@@ -171,7 +171,7 @@ export default function XeroSettingsPanel() {
           ))}
         </select>
 
-        <button className="btn btn-primary mt-4 w-full justify-center" disabled={saving} onClick={save}>
+        <button className="btn-main mt-4" disabled={saving} onClick={save}>
           {saving ? 'Saving…' : 'Save settings'}
         </button>
 

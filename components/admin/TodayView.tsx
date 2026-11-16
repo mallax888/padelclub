@@ -43,7 +43,7 @@ export type TodayViewProps = {
 
 function Stat({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="rounded-2xl p-3" style={card}>
+    <div className="rounded-2xl p-4" style={card}>
       <div className="text-[10.5px] font-bold" style={{ color: 'var(--text-subtle)' }}>{label}</div>
       <div className="text-[22px] leading-tight font-extrabold mt-1 truncate" style={{ ...display, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{value}</div>
       <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{note}</div>
@@ -109,15 +109,15 @@ export default function TodayView(p: TodayViewProps) {
 
   const noCourts = s.courts.length === 0
   return (
-    <div className="max-w-2xl lg:max-w-none mx-auto flex flex-col">
+    <div className="w-full flex flex-col">
       <AutoRefresh />
       {/* On a computer the page title is the first thing on the page; the club picker sits under it, and the Manager switch is in the sidebar. */}
-      <div className="flex items-center justify-between gap-3 lg:mt-6">
+      <div className="flex items-center justify-between gap-3 mt-4">
         <VenuePicker venues={p.venues} value={p.venueSlug} />
         {p.canSwitchView !== false && <div className="lg:hidden"><ViewSwitch mode="manager" /></div>}
       </div>
 
-      <h1 className="mt-4 lg:mt-0 lg:order-first text-2xl font-semibold">
+      <h1 className="order-first text-2xl font-semibold">
         {p.greeting}{p.staffName ? `, ${p.staffName}` : ''}
         {p.roleLabel && (
           <span className="ml-2.5 align-middle text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-full"
@@ -126,7 +126,7 @@ export default function TodayView(p: TodayViewProps) {
               : { color: 'var(--text-muted)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }) }}>{p.roleLabel}</span>
         )}
       </h1>
-      <div className="text-sm mt-1 lg:order-first" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
+      <div className="order-first text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
 
       {p.briefing && <YesterdayStrip b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} />}
 
@@ -156,7 +156,7 @@ export default function TodayView(p: TodayViewProps) {
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {s.courts.map(c => (
-            <div key={c.id} className="rounded-[14px] px-3 py-2.5" style={card}>
+            <div key={c.id} className="rounded-xl px-4 py-3" style={card}>
               <div className="text-[12.5px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
               <div className="flex items-center gap-1.5 mt-1 text-[11.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
                 <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, display: 'inline-block', background: c.state === 'inUse' ? 'var(--brand-primary-text)' : c.state === 'blocked' ? 'var(--brand-crimson)' : 'var(--text-subtle)' }} />
@@ -193,8 +193,7 @@ export default function TodayView(p: TodayViewProps) {
         ))}
       </div>
 
-      <Link href={`/admin?tab=board&${q}`} className="flex items-center justify-center rounded-2xl mt-6 text-sm font-bold"
-        style={{ minHeight: 48, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+      <Link href={`/admin?tab=board&${q}`} className="btn-main btn-main-quiet mt-4">
         Open the full dashboard
       </Link>
       </div>

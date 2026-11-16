@@ -122,7 +122,7 @@ export default function TournamentHub({
   const noTies = (m: VMatch) => stage(m) === 'ko' || stage(m) === 'third_place'
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="w-full space-y-4">
       <div>
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold" data-testid="title">{t.name}</h1>
@@ -145,7 +145,7 @@ export default function TournamentHub({
       {canManage && t.status !== 'completed' && (
         <div className="rounded-2xl p-4 space-y-2" style={card} data-testid="next-step">
           {step.kind === 'generate' && (
-            <button className="btn btn-primary w-full justify-center py-3" disabled={busy === 'generate'} onClick={generate} data-testid="generate">
+            <button className="btn-main" disabled={busy === 'generate'} onClick={generate} data-testid="generate">
               {busy === 'generate' ? 'Working…' : step.label}
             </button>
           )}

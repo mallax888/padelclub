@@ -55,7 +55,7 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
               {canGrantAll && <option value="__all">All clubs</option>}
               {clubs.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
             </select></div>
-          <button type="submit" disabled={busy} className="py-2.5 px-4 rounded-lg text-sm font-bold disabled:opacity-60" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)' }} data-testid="invite-send">{busy ? 'Sending…' : 'Send invite'}</button>
+          <button type="submit" disabled={busy} className="btn-main" data-testid="invite-send">{busy ? 'Sending…' : 'Send invite'}</button>
         </form>
       )}
       <p className="text-[11.5px] mt-3" style={{ color: 'var(--text-subtle)' }}>Front desk runs the day: bookings, courts, check-ins. Money and reports stay with owners.</p>

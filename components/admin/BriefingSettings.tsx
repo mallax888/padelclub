@@ -31,7 +31,7 @@ export default function BriefingSettings({ venueSlug, settings }: { venueSlug: s
   )
 
   return (
-    <div className="rounded-[20px] mt-4 px-3.5 py-3.5" style={card} data-testid="briefing-settings">
+    <div className="rounded-2xl mt-4 p-5" style={card} data-testid="briefing-settings">
       <div className="flex items-center gap-3">
         <span className="min-w-0">
           <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>☀️ Morning briefing</span>

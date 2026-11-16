@@ -33,14 +33,14 @@ export default function HomeView({ name, homeSlug, tz, nowMs, next, shares, usua
   const usualCur = usual ? currencyForRegion(getVenue(usual.venueSlug)?.region) : cur
 
   return (
-    <div className="max-w-lg mx-auto lg:max-w-[1100px] flex flex-col gap-4" data-testid="home">
+    <div className="w-full flex flex-col gap-4" data-testid="home">
       <div>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }} data-testid="greeting">{greetingFor(hour)}{name ? `, ${name}` : ''}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{today}{homeName ? ` · ${homeName} is your home club` : ''}</p>
       </div>
 
       {next ? (
-        <section className="rounded-[22px] p-5 sm:p-6" data-testid="next-game" style={{ background: 'linear-gradient(135deg, var(--brand-primary-muted), var(--bg-surface))', border: '1px solid var(--brand-primary)' }}>
+        <section className="rounded-2xl p-5 sm:p-6" data-testid="next-game" style={{ background: 'linear-gradient(135deg, var(--brand-primary-muted), var(--bg-surface))', border: '1px solid var(--brand-primary)' }}>
           <div className="flex items-center gap-4 sm:gap-5">
             <div className="rounded-[18px] shrink-0 flex flex-col items-center justify-center text-center" style={{ width: 72, height: 80, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
               <span className="text-[11px] font-extrabold" style={{ letterSpacing: '0.12em', opacity: 0.85 }}>{dateParts(next.date).weekday}</span>

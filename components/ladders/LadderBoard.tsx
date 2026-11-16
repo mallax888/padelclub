@@ -126,7 +126,7 @@ export default function LadderBoard({ ladder, entries, challenges, isStaff, curr
   }
 
   return (
-    <div className="max-w-lg mx-auto">
+    <div className="w-full">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold">{ladder.name}</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>

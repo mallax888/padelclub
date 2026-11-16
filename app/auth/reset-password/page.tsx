@@ -6,7 +6,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 
 export default function ResetPasswordPage() {
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -77,7 +77,7 @@ export default function ResetPasswordPage() {
       subscription.unsubscribe()
       clearTimeout(timeout)
     }
-  }, [])
+  }, [supabase])
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -166,8 +166,7 @@ export default function ResetPasswordPage() {
               </div>
               <button
                 type="submit"
-                className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
-                style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
+                className="btn-main"
                 disabled={loading}
               >
                 {loading ? 'Updating…' : 'Update password'}

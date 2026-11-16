@@ -138,8 +138,7 @@ export default function SignupPage() {
             </div>
             <button
               type="submit"
-              className="w-full py-3 rounded-lg text-sm font-bold transition-all"
-              style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}
+              className="btn-main"
               disabled={loading}
             >
               {loading ? 'Creating account…' : 'Create account'}

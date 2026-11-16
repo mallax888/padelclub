@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import Image from 'next/image'
 import { type Venue } from '@/lib/venues'
 
 const ICON_MAP: Record<string, string> = {
@@ -46,9 +47,10 @@ export default function VenueLayout({ venue }: { venue: Venue }) {
             </span>
             <div className="w-full rounded-lg overflow-hidden"
               style={{ border: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-              <img
+              <Image
                 src="/courts/court-plan.png" onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                 alt={`${court.name} — ${court.type}`}
+                width={898} height={562} unoptimized
                 className="w-full h-auto block"
                 style={{ aspectRatio: '898 / 562', objectFit: 'cover' }}
               />
