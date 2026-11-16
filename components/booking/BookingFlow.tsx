@@ -1234,9 +1234,15 @@ export default function BookingFlow({
               </div>
             ))}
             <div className="flex justify-between pt-3">
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Total</span>
-              <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{seatCount > 0 ? 'Court total' : 'Total'}</span>
+              <span className="text-xl" style={{ color: seatCount > 0 ? 'var(--text-muted)' : 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(courtPrice, currency)}</span>
             </div>
+            {seatCount > 0 && (
+              <div className="flex justify-between items-baseline pt-3" data-testid="your-share">
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Your share <span className="text-xs font-normal" style={{ color: 'var(--text-subtle)' }}>split {seatCount + 1} ways</span></span>
+                <span className="text-xl" style={{ color: 'var(--brand-primary-text)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>{formatPrice(Math.round(courtPrice / (seatCount + 1)), currency)}</span>
+              </div>
+            )}
           </div>
 
           {homeSlug && venue && venue.slug !== homeSlug && memberDiscount(plans, { tier, homeSlug, bookingSlug: homeSlug }) > 0 && (
