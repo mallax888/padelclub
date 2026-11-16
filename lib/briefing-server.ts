@@ -42,7 +42,7 @@ export async function loadBriefing(admin: any, venueSlug: string, nowMs: number)
     yesterday: dayTotals(bookings, yesterday),
     lastWeek: dayTotals(bookings, lastWeekDay),
     sellableHours,
-    emptyPrimeHours: empty.peak.empty,
+    emptyHours: empty.days[0]?.empty ?? 0,
     bestGap: best ? { from: best.from, to: best.to, courtsFree: best.empty } : null,
     overdue: { count: overdue.overdue.length, total: overdue.overdue.length > 0 ? overdue.overdueTotal : null },
     newPlayers: (joined as any)?.error ? 0 : ((joined as any)?.count ?? 0),

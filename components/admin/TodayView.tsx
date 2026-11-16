@@ -3,8 +3,10 @@ import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import type { TodaySummary } from '@/lib/today'
 import ViewSwitch from '@/components/ui/ViewSwitch'
 import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
-import MorningBriefing from '@/components/admin/MorningBriefing'
+import YesterdayStrip from '@/components/admin/YesterdayStrip'
+import { FillRow, OverdueRow } from '@/components/admin/TodayActionRows'
 import type { Briefing } from '@/lib/briefing'
+import type { FillGap, OverdueLine } from '@/lib/today-actions'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)' } as const
@@ -30,6 +32,13 @@ export type TodayViewProps = {
   roleLabel: string | null
   // Owners only: yesterday at a glance, the same numbers as the morning message.
   briefing?: { b: Briefing; weekday: string; yesterdayLabel: string } | null
+  // Owners only: what the Fill and Remind buttons act on.
+  actions?: {
+    overdue: { lines: OverdueLine[]; total: number; notDueCount: number; notDueTotal: number } | null
+    offersOn: boolean // the offers database change has been run
+    fill: { gap: FillGap; bounds: { from: string; to: string } } | null // null: nothing left that can be offered today
+    autoOpen: 'fill' | 'remind' | null // opened from a phone or email link
+  } | null
 }
 
 function Stat({ label, value, note }: { label: string; value: string; note: string }) {
@@ -61,11 +70,15 @@ export default function TodayView(p: TodayViewProps) {
   const { summary: s, unpaid, openSeats } = p
   const q = `venue=${encodeURIComponent(p.venueSlug)}`
   const attention: React.ReactNode[] = []
-  if (unpaid.count > 0) {
+  const act = p.showMoney ? p.actions : null
+  if (act?.overdue && act.overdue.lines.length > 0) {
+    // Owners: the overdue shares, with a button that reminds everyone who owes, right here.
+    attention.push(<OverdueRow key="overdue" currency={p.currency} lines={act.overdue.lines} total={act.overdue.total} notDueCount={act.overdue.notDueCount} notDueTotal={act.overdue.notDueTotal} autoOpen={act.autoOpen === 'remind'} />)
+  } else if (unpaid.count > 0) {
     attention.push(
       <AttentionRow key="unpaid" href={p.showMoney ? `/admin?tab=analytics&${q}` : `/admin?tab=bookings&${q}`} tone="red" mark="$"
         title={`${unpaid.count} unpaid ${unpaid.count === 1 ? 'share' : 'shares'}${unpaid.total !== null ? ` · ${formatPrice(unpaid.total, p.currency)}` : ''}`}
-        text={unpaid.oldestDays !== null ? `Oldest is ${unpaid.oldestDays === 0 ? 'from today' : unpaid.oldestDays === 1 ? '1 day old' : `${unpaid.oldestDays} days old`}` : ''} />,
+        text={act ? 'None are overdue yet. Those remind themselves.' : unpaid.oldestDays !== null ? `Oldest is ${unpaid.oldestDays === 0 ? 'from today' : unpaid.oldestDays === 1 ? '1 day old' : `${unpaid.oldestDays} days old`}` : ''} />,
     )
   }
   if (openSeats.count > 0) {
@@ -83,11 +96,15 @@ export default function TodayView(p: TodayViewProps) {
     )
   }
   if (p.showMoney && p.emptyHoursToday > 0) {
-    attention.push(
-      <AttentionRow key="empty" href={`/admin?tab=analytics&${q}`} tone="blue" mark="◔"
-        title={`${p.emptyHoursToday} court-${p.emptyHoursToday === 1 ? 'hour' : 'hours'} still empty today`}
-        text={`Between now and ${p.closeToday ?? '22:00'}`} />,
-    )
+    if (act?.offersOn && act.fill) {
+      attention.push(<FillRow key="empty" venueSlug={p.venueSlug} emptyHours={p.emptyHoursToday} gap={act.fill.gap} bounds={act.fill.bounds} autoOpen={act.autoOpen === 'fill'} />)
+    } else {
+      attention.push(
+        <AttentionRow key="empty" href={`/admin?tab=analytics&${q}`} tone="blue" mark="◔"
+          title={`${p.emptyHoursToday} court-${p.emptyHoursToday === 1 ? 'hour' : 'hours'} still empty today`}
+          text={act?.offersOn ? "Too late to offer today: offers need 3 hours' notice." : `Between now and ${p.closeToday ?? '22:00'}`} />,
+      )
+    }
   }
 
   const noCourts = s.courts.length === 0
@@ -111,7 +128,7 @@ export default function TodayView(p: TodayViewProps) {
       </h1>
       <div className="text-sm mt-1 lg:order-first" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
 
-      {p.briefing && <MorningBriefing b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} yesterdayLabel={p.briefing.yesterdayLabel} venueSlug={p.venueSlug} />}
+      {p.briefing && <YesterdayStrip b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} />}
 
       <div className="grid grid-cols-3 gap-3 mt-4">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />

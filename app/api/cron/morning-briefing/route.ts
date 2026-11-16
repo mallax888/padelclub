@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       const loaded = await loadBriefing(admin, slug, nowMs)
       if (!loaded) continue
       const q = encodeURIComponent(slug)
-      const links = { todayUrl: `${base}/admin/today?venue=${q}`, fixUrl: `${base}/admin?tab=analytics&venue=${q}`, settingsUrl: `${base}/admin/setup?venue=${q}` }
+      const links = { todayUrl: `${base}/admin/today?venue=${q}`, fillUrl: `${base}/admin/today?venue=${q}&act=fill`, remindUrl: `${base}/admin/today?venue=${q}&act=remind`, settingsUrl: `${base}/admin/setup?venue=${q}` }
       for (const o of owners) {
         const opts = { name: o.name, currency: loaded.currency, weekday: loaded.weekday, ...links }
         for (const m of briefingPush(loaded.briefing, opts)) {
