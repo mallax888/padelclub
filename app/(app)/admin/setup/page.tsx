@@ -11,6 +11,7 @@ import ClubSetup, { type SetupClub } from '@/components/admin/ClubSetup'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { effectivePlans } from '@/lib/plan-rules'
 import { loadPlanRows, planStats } from '@/lib/club-plans'
+import { loadBriefingSettings } from '@/lib/briefing-server'
 
 export const metadata = { title: 'Club settings' }
 
@@ -82,6 +83,7 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       courts={courts}
       regulars={regRules}
       memberships={memberships}
+      briefing={await loadBriefingSettings(admin, slug)}
       stripeReturn={searchParams?.stripe === 'return' || searchParams?.stripe === 'refresh' ? searchParams.stripe : null}
     />
   )

@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { loadBriefing } from '@/lib/briefing-server'
 import { COUNTRIES, VENUES, getVenue } from '@/lib/venues'
 import { currencyForVenueSlug } from '@/lib/currency'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
@@ -114,6 +116,15 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const soonest = seats[0]
   const soonestLabel = soonest ? `${soonest.court} · ${soonest.date === clock.date ? 'today' : shortWeekday(soonest.date)} ${soonest.time.slice(0, 5)}` : null
 
+  // Owners see yesterday at a glance; front desk never does (it has takings in it).
+  let briefing: { b: any; weekday: string; yesterdayLabel: string } | null = null
+  if (isOwner) {
+    try {
+      const loaded = await loadBriefing(createAdminClient(), venueSlug, nowMs)
+      if (loaded) briefing = { b: loaded.briefing, weekday: loaded.weekday, yesterdayLabel: `Yesterday, ${shortWeekday(loaded.yesterday)} ${new Intl.DateTimeFormat('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(loaded.yesterday + 'T12:00:00Z'))}` }
+    } catch (err) { console.error('Could not load the morning briefing card', err) }
+  }
+
   return (
     <TodayView
       canSwitchView={!splitOn()}
@@ -132,6 +143,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       notOpenYet={isOwner && venueSettings[venueSlug]?.isOpen === false}
       showMoney={isOwner}
       roleLabel={roleLabel((profile as any).role)}
+      briefing={briefing}
     />
   )
 }
