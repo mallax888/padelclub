@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { createCheckout, paymentTarget } from '@/lib/club-payments'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { verifyAndCorrectBookingPrice } from '@/lib/booking-price'
@@ -54,7 +54,8 @@ export async function POST(request: Request) {
     const safeSplitCount = (splitRowCount ?? 0) + 1
 
     const unitAmount = Math.round((verified.verifiedPrice / safeSplitCount) * 100)
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const target = await paymentTarget(admin, court?.venue_slug, unitAmount)
+    const checkoutSession = await createCheckout({
       payment_method_types: ['card'],
       line_items: [
         {
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
         userId: session.user.id,
         splitCount: String(safeSplitCount),
       },
-    })
+    }, target)
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })

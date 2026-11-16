@@ -8,8 +8,14 @@ let _stripe: Stripe | undefined
 export const stripe = new Proxy({} as Stripe, {
   get(_target, prop, receiver) {
     if (!_stripe) {
+      // STRIPE_API_HOST / STRIPE_API_PORT point the client at a local stand-in for Stripe, so the
+      // payment flow can be tested without touching real money. Never set in production.
+      const local = process.env.STRIPE_API_HOST
+        ? { host: process.env.STRIPE_API_HOST, port: process.env.STRIPE_API_PORT, protocol: 'http' as const }
+        : {}
       _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
         apiVersion: '2026-06-24.dahlia',
+        ...local,
       })
     }
     return Reflect.get(_stripe, prop, receiver)

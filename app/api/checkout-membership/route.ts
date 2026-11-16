@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { createCheckout, paymentTarget } from '@/lib/club-payments'
+import { createAdminClient } from '@/lib/supabase-admin'
 import { createServerClient } from '@/lib/supabase-server'
 import { MEMBERSHIP_CONFIG, type MembershipTier } from '@/types/database'
 import { getAppUrl } from '@/lib/env'
@@ -44,7 +45,8 @@ export async function POST(request: Request) {
     }
 
     const where = home ? ` at ${getVenue(home).name}` : ''
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const target = await paymentTarget(createAdminClient(), home, Math.round(price * 100))
+    const checkoutSession = await createCheckout({
       payment_method_types: ['card'],
       line_items: [
         {
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
         tier: key,
         userId: session.user.id,
       },
-    })
+    }, target)
     return NextResponse.json({ url: checkoutSession.url })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
