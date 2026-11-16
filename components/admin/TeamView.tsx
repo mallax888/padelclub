@@ -240,7 +240,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
             <div className="flex items-center gap-3 mt-4 rounded-[14px] px-3 py-2" style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', minHeight: 60 }}>
               <span aria-hidden className="inline-flex items-center justify-center rounded-full text-xs font-extrabold shrink-0" style={{ width: 36, height: 36, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{getInitials(picked.name)}</span>
               <span className="min-w-0"><span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{picked.name}</span><span className="block text-[11.5px] truncate" style={{ color: 'var(--text-muted)' }}>{picked.email}</span></span>
-              <button type="button" onClick={() => setPicked(null)} className="ml-auto text-xs font-bold px-2" style={{ minHeight: 40, color: 'var(--brand-primary-text)' }}>Change</button>
+              <button type="button" onClick={() => setPicked(null)} className="ml-auto text-xs font-bold px-2" style={{ minHeight: 40, color: 'var(--link-change)' }}>Change</button>
             </div>
           )}
           {picked && (

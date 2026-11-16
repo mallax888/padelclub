@@ -91,7 +91,7 @@ export default function NearMe({ venues, courtCounts, settings, offers, homeSlug
       <div className="text-xs mt-0.5 flex items-center gap-1.5" style={{ color: 'var(--text-subtle)' }}>
         <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--brand-green)', display: 'inline-block' }} />
         Using your current location ·{' '}
-        <button type="button" onClick={() => { setPos(null); setPhase('ask') }} className="font-bold" style={{ color: 'var(--brand-primary-text)' }}>Change</button>
+        <button type="button" onClick={() => { setPos(null); setPhase('ask') }} className="font-bold" style={{ color: 'var(--link-change)' }}>Change</button>
       </div>
 
       <div className="flex gap-2 mt-3.5 mb-3 flex-wrap" role="group" aria-label="Filter clubs">

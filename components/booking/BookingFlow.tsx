@@ -89,6 +89,8 @@ type Player = { id: string; full_name: string | null; nickname: string | null; s
 export type MyWait = { id: string; venue_slug: string; date: string; start_time: string; duration_minutes: number; status: string }
 
 const playerName = (p: Player) => p.nickname ?? p.full_name ?? 'Player'
+// "Sam", "Sam and Jo", "Sam, Jo and Alex"
+const joinNames = (xs: string[]) => (xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`)
 
 function dateLabel(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
@@ -548,6 +550,8 @@ export default function BookingFlow({
   const firstCents = seatCount > 0 ? bookerShareCents(courtPrice, seatCount + 1) : Math.round(courtPrice * 100)
   const prepayActive = prepay && prepayOn && regular && regularAllowed && regularBookable.length > 0
   const payNowCents = prepayActive ? firstCents + laterCents : firstCents
+  const splitNames = splitPlayers.flatMap(id => (knownPlayers[id] ? [playerName(knownPlayers[id])] : []))
+  const withText = joinNames([...splitNames, ...(inviteSeats > 0 ? [`${inviteSeats} invite link${inviteSeats === 1 ? '' : 's'}`] : [])])
 
   useEffect(() => {
     if (!splitEnabled || invitesAvailable) return
@@ -836,7 +840,7 @@ export default function BookingFlow({
         <div className="text-[15px] font-bold sm:truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
       </div>
       {trailing}
-      <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }} aria-label={`Change ${label}`}>Change</button>
+      <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--link-change)' }} aria-label={`Change ${label}`}>Change</button>
     </div>
   )
   const laterRow = (g: Group) => (
@@ -853,7 +857,7 @@ export default function BookingFlow({
   if (step !== 'confirm' && time && done('time')) answeredRows.push(doneRow('time', 'What time', `${time} — ${endTimeNow}`, () => { setStep('time'); playBackSound() }))
   // On the confirm screen the three answers fold into one line, with the price.
   if (step === 'confirm' && assignedCourt && date && time) answeredRows.push(doneRow('booking', 'Your booking', `${assignedCourt.name} · ${formatDate(date)} · ${time}–${endTimeNow} · ${venue?.name ?? ''}`, () => { setStep('time'); playBackSound() }, undefined, <span className="text-[15px] font-extrabold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(courtPrice, currency)}</span>))
-  if (step === 'confirm' && done('players')) answeredRows.push(doneRow('players', 'Playing with', seatCount > 0 ? `${seatCount} other${seatCount === 1 ? '' : 's'} · you pay ${formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}` : 'Just me', () => { setConfirmStage('players'); playBackSound() }))
+  if (step === 'confirm' && done('players')) answeredRows.push(doneRow('players', 'Playing with', seatCount > 0 ? `${withText || `${seatCount} other${seatCount === 1 ? '' : 's'}`} · you pay ${formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}` : 'Just me', () => { setConfirmStage('players'); playBackSound() }))
   if (step === 'confirm' && askRegular && done('regular')) answeredRows.push(doneRow('regular', 'Every week', regular && date ? `Every ${weekdayPlural(date).slice(0, -1)} for ${regularWeeks} weeks${prepayActive ? ', all paid now' : ''}` : 'Just this once', () => { setConfirmStage('regular'); playBackSound() }))
   const laterRows = groups.filter(g => groups.indexOf(g) > groups.indexOf(groupNow)).map(laterRow)
   const promptNo = groups.indexOf(groupNow) + 1
@@ -1086,7 +1090,7 @@ export default function BookingFlow({
               <span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{venue?.name}</span>
               <span className="block text-[11px]" style={{ color: 'var(--text-subtle)' }}>{venue?.region}</span>
             </span>
-            <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>Change</span>
+            <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--link-change)' }}>Change</span>
           </button>
           </div>
 
@@ -1376,6 +1380,40 @@ export default function BookingFlow({
             </div>
             {splitEnabled && (
               <div className="mt-3 space-y-2">
+                {invitesAvailable && (
+                  <div className="rounded-xl px-3 py-2.5" style={{ background: 'var(--bg-raised)', border: '1px dashed var(--border)' }}>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className="block text-sm" style={{ color: 'var(--text-primary)' }}>Mate not on PadelClub yet?</span>
+                        <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>
+                          Send them a link on WhatsApp or email. They join when they sign up.
+                        </span>
+                      </span>
+                      <button type="button" disabled={seatsFull} onClick={() => setInviteSeats(n => n + 1)}
+                        className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold whitespace-nowrap disabled:opacity-40"
+                        style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
+                        + Invite
+                      </button>
+                    </div>
+                    {Array.from({ length: inviteSeats }, (_, i) => (
+                      <div key={i} className="flex items-center justify-between gap-3 mt-2 px-3 py-2 rounded-xl"
+                        style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }}>
+                        <span className="flex items-center gap-2 min-w-0">
+                          <span className="inline-flex items-center justify-center rounded-full text-[11px] font-bold shrink-0"
+                            style={{ width: 22, height: 22, border: '1.5px dashed var(--brand-primary-text)', color: 'var(--brand-primary-text)' }}>+</span>
+                          <span className="text-sm truncate" style={{ color: 'var(--brand-primary-text)' }}>Invite link {i + 1}</span>
+                        </span>
+                        <span className="flex items-center gap-3 shrink-0">
+                          <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>
+                            {formatPrice(friendShareCents(courtPrice, seatCount + 1) / 100, currency)} each
+                          </span>
+                          <button type="button" onClick={() => setInviteSeats(n => Math.max(0, n - 1))}
+                            className="text-xs" style={{ color: 'var(--text-subtle)' }}>Remove</button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Select up to 3 players to split with</div>
                 {(() => {
                   const searching = playerQuery.trim().length >= 2
@@ -1435,40 +1473,6 @@ export default function BookingFlow({
                     </>
                   )
                 })()}
-                {invitesAvailable && (
-                  <div className="rounded-xl px-3 py-2.5" style={{ background: 'var(--bg-raised)', border: '1px dashed var(--border)' }}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="min-w-0">
-                        <span className="block text-sm" style={{ color: 'var(--text-primary)' }}>Mate not on PadelClub yet?</span>
-                        <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>
-                          Send them a link on WhatsApp or email. They join when they sign up.
-                        </span>
-                      </span>
-                      <button type="button" disabled={seatsFull} onClick={() => setInviteSeats(n => n + 1)}
-                        className="shrink-0 rounded-lg px-3 py-2 text-xs font-bold whitespace-nowrap disabled:opacity-40"
-                        style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
-                        + Invite
-                      </button>
-                    </div>
-                    {Array.from({ length: inviteSeats }, (_, i) => (
-                      <div key={i} className="flex items-center justify-between gap-3 mt-2 px-3 py-2 rounded-xl"
-                        style={{ background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }}>
-                        <span className="flex items-center gap-2 min-w-0">
-                          <span className="inline-flex items-center justify-center rounded-full text-[11px] font-bold shrink-0"
-                            style={{ width: 22, height: 22, border: '1.5px dashed var(--brand-primary-text)', color: 'var(--brand-primary-text)' }}>+</span>
-                          <span className="text-sm truncate" style={{ color: 'var(--brand-primary-text)' }}>Invite link {i + 1}</span>
-                        </span>
-                        <span className="flex items-center gap-3 shrink-0">
-                          <span className="text-xs font-semibold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>
-                            {formatPrice(friendShareCents(courtPrice, seatCount + 1) / 100, currency)} each
-                          </span>
-                          <button type="button" onClick={() => setInviteSeats(n => Math.max(0, n - 1))}
-                            className="text-xs" style={{ color: 'var(--text-subtle)' }}>Remove</button>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
                 {seatCount > 0 && (
                   <div className="text-xs pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
                     You pay {formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}
@@ -1571,7 +1575,7 @@ export default function BookingFlow({
 
           {splitEnabled && regular && regularAllowed && regularBookable.length > 0 && splitPlayers.length > 0 && (
                   <div role="radiogroup" aria-label="Which weeks to split" data-testid="split-weeks" className="pt-3 flex flex-col gap-2.5">
-                    {([[true, 'Everyone, every week', `${splitPlayers.length === 1 ? 'They are' : 'They are'} asked to pay their share of each week. You pay ${formatPrice(bookerShareCents(computeCourtPrice(assignedCourt as any, date!, time!, duration!, discount), splitPlayers.length + 1) / 100, currency)} a week.`], [false, 'Just this week', 'The later weeks stay with you.']] as const).map(([val, title, sub]) => (
+                    {([[true, 'Everyone, every week', `${splitNames.length > 0 && splitNames.length === splitPlayers.length ? `${joinNames(splitNames)} ${splitNames.length === 1 ? 'is' : 'are'}` : 'They are'} asked to pay their share of each week. You pay ${formatPrice(bookerShareCents(computeCourtPrice(assignedCourt as any, date!, time!, duration!, discount), splitPlayers.length + 1) / 100, currency)} a week.`], [false, 'Just this week', 'The later weeks stay with you.']] as const).map(([val, title, sub]) => (
                       <button key={String(val)} type="button" role="radio" aria-checked={splitAllWeeks === val} onClick={() => setSplitAllWeeks(val)} data-testid={val ? 'split-all-weeks' : 'split-this-week'}
                         className="flex items-start gap-3 rounded-2xl px-3.5 py-3 text-left"
                         style={{ background: splitAllWeeks === val ? 'var(--brand-primary-muted)' : 'var(--bg-raised)', border: `1px solid ${splitAllWeeks === val ? 'var(--brand-primary)' : 'var(--border)'}` }}>
@@ -1643,6 +1647,16 @@ export default function BookingFlow({
               </>
             )}
           </button>
+          {regular && regularBookable.length > 0 && date && (() => {
+            const day = weekdayPlural(date).slice(0, -1), days = weekdayPlural(date), n = regularBookable.length
+            return (
+              <p className="text-xs text-center leading-relaxed" data-testid="pay-note" style={{ color: 'var(--text-muted)' }}>
+                {prepayActive
+                  ? `This ${day} and the next ${n} ${n === 1 ? day : days} are all paid now. Every week is locked in.`
+                  : `This ${day} now. The next ${n} ${n === 1 ? day : days} ${n === 1 ? 'is' : 'are'} held and paid about 48 hours before.`}
+              </p>
+            )
+          })()}
           </div>, { title: 'Check and pay' })}
         </>
       )}

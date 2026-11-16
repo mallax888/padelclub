@@ -797,7 +797,7 @@ export default function AdminDashboard({
                       <span className="badge badge-member">{planOf(effectivePlans(plans, (m as any).home_venue_slug ?? null), m.membership_tier).name}</span>
                       {plans && canSeeMoney && (m as any).home_venue_slug && m.role === 'member' && (
                         <button type="button" onClick={() => setPlanFor({ id: m.id, name: (m as any).nickname ?? m.full_name ?? 'Member', tier: m.membership_tier, home: (m as any).home_venue_slug })}
-                          className="ml-2 text-xs font-bold underline" style={{ color: 'var(--brand-primary-text)' }}>Change</button>
+                          className="ml-2 text-xs font-bold underline" style={{ color: 'var(--link-change)' }}>Change</button>
                       )}
                     </td>
                     <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits}</td>

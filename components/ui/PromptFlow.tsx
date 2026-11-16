@@ -31,7 +31,7 @@ export function AnsweredRow({ id, label, value, onChange }: { id: string; label:
         <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{label}</div>
         <div className="text-[15px] font-bold sm:truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
       </div>
-      {onChange && <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }} aria-label={`Change ${label}`}>Change</button>}
+      {onChange && <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--link-change)' }} aria-label={`Change ${label}`}>Change</button>}
     </div>
   )
 }
