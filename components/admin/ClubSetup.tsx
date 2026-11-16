@@ -7,6 +7,8 @@ import toast from 'react-hot-toast'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import MembershipPlans from '@/components/admin/MembershipPlans'
 import ClubPayouts from '@/components/admin/ClubPayouts'
+import BriefingSettings from '@/components/admin/BriefingSettings'
+import type { BriefingSettings as BriefingSettingsValue } from '@/lib/briefing'
 import type { Plan } from '@/lib/plan-rules'
 import type { PlanStats } from '@/lib/club-plans'
 import { DAY_KEYS, DAY_NAMES, TIME_CHOICES, defaultWeek, describeWeek, fromMinutes, toMinutes, type DayKey, type WeekHours } from '@/lib/venue-hours'
@@ -60,7 +62,7 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   )
 }
 
-export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null, stripeReturn = null }: {
+export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null, stripeReturn = null, briefing = null }: {
   clubs: SetupClub[]
   venue: { slug: string; name: string; address: string; region: string }
   listed: Listed[]
@@ -74,6 +76,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   memberships?: { plans: Plan[]; stats: PlanStats; examplePrice: number | null } | null
   // Set when the owner has just come back from Stripe's form.
   stripeReturn?: 'return' | 'refresh' | null
+  // This club's morning briefing settings. Null when the 035 database change hasn't been run.
+  briefing?: BriefingSettingsValue | null
   // Where this club is on the map for "clubs near me". Null when the 031 database change hasn't been run.
 }) {
   const router = useRouter()
@@ -363,6 +367,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
       </div>
       <div>
       <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
+      <BriefingSettings venueSlug={venue.slug} settings={briefing} />
       {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
       </div>
       </div>

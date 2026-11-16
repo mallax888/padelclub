@@ -1,0 +1,17 @@
+name: Morning briefing
+
+# Runs every hour. The endpoint decides which clubs are due (each club has its own time, in its own
+# time zone) and never sends a club's briefing twice in one day.
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call morning-briefing endpoint
+        run: |
+          curl -sS -f -X GET "${{ vars.APP_URL }}/api/cron/morning-briefing" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

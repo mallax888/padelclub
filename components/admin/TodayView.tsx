@@ -3,6 +3,8 @@ import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import type { TodaySummary } from '@/lib/today'
 import ViewSwitch from '@/components/ui/ViewSwitch'
 import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
+import MorningBriefing from '@/components/admin/MorningBriefing'
+import type { Briefing } from '@/lib/briefing'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)' } as const
@@ -26,6 +28,8 @@ export type TodayViewProps = {
   notOpenYet: boolean // owners only: the club has courts but isn't open for booking
   showMoney: boolean // owners see money; front desk does not
   roleLabel: string | null
+  // Owners only: yesterday at a glance, the same numbers as the morning message.
+  briefing?: { b: Briefing; weekday: string; yesterdayLabel: string } | null
 }
 
 function Stat({ label, value, note }: { label: string; value: string; note: string }) {
@@ -107,7 +111,9 @@ export default function TodayView(p: TodayViewProps) {
       </h1>
       <div className="text-sm mt-1 lg:order-first" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
 
-      <div className="grid grid-cols-3 gap-2.5 mt-4">
+      {p.briefing && <MorningBriefing b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} yesterdayLabel={p.briefing.yesterdayLabel} venueSlug={p.venueSlug} />}
+
+      <div className="grid grid-cols-3 gap-3 mt-4">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />
         <Stat label="Players" value={String(s.players.today)} note={`vs ${s.players.lastWeek} last ${p.lastWeekLabel}`} />
         {p.showMoney
