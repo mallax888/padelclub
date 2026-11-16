@@ -17,6 +17,9 @@ const ICONS: Record<string, JSX.Element> = {
   '/book': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
   ),
+  '/home': (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
+  ),
   '/find-a-game': (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
   ),
@@ -68,6 +71,7 @@ const ICONS: Record<string, JSX.Element> = {
 // happens in. "What have I got on this week" is the weekly habit; Open play
 // is occasional discovery, so My bookings sits above it.
 const NAV_ITEMS = [
+  { href: '/home',        label: 'Home' },
   { href: '/book',        label: 'Book a court' },
   { href: '/mybookings',  label: 'My bookings' },
   { href: '/find-a-game', label: 'Open play' },
@@ -82,10 +86,10 @@ const NAV_ITEMS = [
 // tab bar; everything else (Membership, Players, Record match, Admin,
 // sign out) lives behind "More", which opens the existing full menu panel.
 const TAB_BAR_ITEMS = [
+  { href: '/home',        label: 'Home' },
   { href: '/book',        label: 'Book' },
   { href: '/mybookings',  label: 'Bookings' },
   { href: '/find-a-game', label: 'Open play' },
-  { href: '/players',     label: 'Players' },
 ]
 
 // The manager side: Today first, then the dashboard's busiest tabs. Everything
@@ -120,8 +124,8 @@ const MANAGER_CLUB_ITEMS = NAV_ITEMS.filter(i => ['/players', '/tournaments', '/
 // Primary items get their own row at the top of the sidebar; the rest sit
 // under a "Club" group label. A sidebar has room to show everything at
 // once, unlike the old horizontal bar, so there's no overflow menu to manage.
-const PRIMARY_NAV_ITEMS = NAV_ITEMS.filter(i => ['/book', '/find-a-game', '/mybookings'].includes(i.href))
-const CLUB_NAV_ITEMS = NAV_ITEMS.filter(i => !['/book', '/find-a-game', '/mybookings'].includes(i.href))
+const PRIMARY_NAV_ITEMS = NAV_ITEMS.filter(i => ['/home', '/book', '/find-a-game', '/mybookings'].includes(i.href))
+const CLUB_NAV_ITEMS = NAV_ITEMS.filter(i => !['/home', '/book', '/find-a-game', '/mybookings'].includes(i.href))
 
 function SidebarLink({ href, label, active }: { href: string; label: string; active: boolean }) {
   return (
