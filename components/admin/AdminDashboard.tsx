@@ -152,11 +152,20 @@ export default function AdminDashboard({
   // The bottom bar on a phone links to /admin?tab=..., which changes the address but not this page's own
   // state, so the page now follows the address too. Without this the bar said Bookings while the page
   // still showed Analytics.
-  const urlTab = useSearchParams()?.get('tab') ?? null
+  const search = useSearchParams()
+  const urlTab = search?.get('tab') ?? null
+  const blockCourtParam = search?.get('block') ?? null
   useEffect(() => {
     if (urlTab && (allowedTabs as readonly string[]).includes(urlTab)) setTabState(urlTab as AdminTab)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab])
+  // A link from Today's club map (Block the court) arrives with ?block=<court>: open that dialog ready to use.
+  useEffect(() => {
+    if (blockCourtParam && courts.some((c: any) => c.id === blockCourtParam)) {
+      setShowBlock(true); setBlockForm(f => ({ ...f, courtId: blockCourtParam }))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockCourtParam])
   const setTab = (t: AdminTab) => {
     if (!allowedTabs.includes(t)) return
     setTabState(t)

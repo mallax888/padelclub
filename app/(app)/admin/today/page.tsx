@@ -109,6 +109,26 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const week = weekFor(venueSettings, venueSlug)
   const empty = computeEmptyCourtTime(courts as any, bookings.filter(b => b.date === clock.date), venueSlug, nowMs, 1, week)
   const courtDay = computeCourtDay({ courts: courts as any, bookings: bookings.filter(b => b.date === clock.date), date: clock.date, nowMinutes: clock.minutes, week })
+  // Who is on each court, for the club map: the booker and the friends who have joined.
+  const joined = ((splitRows ?? []) as any[]).filter(s => s.user_id && s.status !== 'cancelled')
+  const joinedIds = Array.from(new Set(joined.map(s => s.user_id as string)))
+  const nameOf = new Map<string, string>()
+  if (joinedIds.length > 0) {
+    const { data: nm } = await supabase.from('profiles').select('id, full_name, nickname').in('id', joinedIds)
+    for (const pr of (nm ?? []) as any[]) nameOf.set(pr.id, pr.nickname ?? pr.full_name ?? '')
+  }
+  const mins = (t: string) => parseInt(t.slice(0, 2), 10) * 60 + parseInt(t.slice(3, 5), 10)
+  const mapBookings = bookings.filter(b => b.date === clock.date).map(b => {
+    const mine = joined.filter(s => s.booking_id === b.id)
+    return {
+      id: b.id, courtId: b.court_id, start: mins(b.start_time), end: mins(b.end_time), status: b.status, who: b.bookerName,
+      people: b.status === 'blocked' ? [] : [b.bookerName ?? '?', ...mine.map(s => nameOf.get(s.user_id) || '?')].slice(0, 4),
+      unpaid: mine.filter(s => s.status === 'pending').length + (b.status === 'pending' ? 1 : 0),
+    }
+  })
+  const liveCount = (courtId: string, date: string) => bookings.filter(b => b.court_id === courtId && b.date === date && b.status !== 'cancelled' && b.status !== 'blocked').length
+  const mapCourts = courts.map((c: any) => ({ id: c.id as string, name: c.name as string, today: liveCount(c.id, clock.date), lastWeek: liveCount(c.id, lastWeek) }))
+  const hoursToday = dayHours(week, clock.date)
   const closeToday = dayHours(week, clock.date)?.close ?? null
 
   // Open invite spots in games that start within the next 24 hours.
@@ -174,6 +194,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       roleLabel={roleLabel((profile as any).role)}
       briefing={briefing}
       courtDay={courtDay}
+      map={{ courts: mapCourts, bookings: mapBookings, takings: summary.revenue.today, bounds: hoursToday ? { from: hoursToday.open, to: hoursToday.close } : null, date: clock.date }}
       nowMinutes={clock.minutes}
       actions={actions}
     />

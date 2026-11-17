@@ -12,7 +12,7 @@ const minutesOf = (t: string) => parseInt(t.slice(0, 2), 10) * 60 + parseInt(t.s
 export type CourtDayCourt = { id: string; name: string; is_active?: boolean | null; price_per_hour?: number | null; price_per_hour_peak?: number | null }
 export type CourtDayBooking = { court_id: string; date: string; start_time: string; end_time: string; status: string }
 export type CourtDayCell = { hour: number; state: 'booked' | 'blocked' | 'open'; past: boolean }
-export type OpenRange = { from: string; to: string }
+export type OpenRange = { from: string; to: string; hours: number; value: number }
 export type CourtDayRow = {
   id: string
   name: string
@@ -47,7 +47,7 @@ export function computeCourtDay(
   const rows: CourtDayRow[] = courts.filter(c => c.is_active !== false).map(c => {
     const cells: CourtDayCell[] = []
     let booked = 0, sellable = 0, openNow = 0, openValue = 0
-    const openHours: number[] = []
+    const openHours: { h: number; fee: number }[] = []
     for (let h = firstHour; h < endHour; h++) {
       const hits = bookings.filter(b => b.court_id === c.id && b.date === date && b.status !== 'cancelled'
         && minutesOf(b.start_time) < (h + 1) * 60 && minutesOf(b.end_time) > h * 60)
@@ -57,16 +57,16 @@ export function computeCourtDay(
       if (hits.length > 0) { booked++; cells.push({ hour: h, state: 'booked', past }); continue }
       cells.push({ hour: h, state: 'open', past })
       if (!past) {
-        openNow++; openHours.push(h)
         const peak = isPeakTime(date, `${pad(h)}:00`)
-        openValue += Number(peak && c.price_per_hour_peak ? c.price_per_hour_peak : c.price_per_hour) || 0
+        const fee = Number(peak && c.price_per_hour_peak ? c.price_per_hour_peak : c.price_per_hour) || 0
+        openNow++; openHours.push({ h, fee }); openValue += fee
       }
     }
     const openRanges: OpenRange[] = []
-    for (const h of openHours) {
+    for (const { h, fee } of openHours) {
       const last = openRanges[openRanges.length - 1]
-      if (last && last.to === `${pad(h)}:00`) last.to = `${pad(h + 1)}:00`
-      else openRanges.push({ from: `${pad(h)}:00`, to: `${pad(h + 1)}:00` })
+      if (last && last.to === `${pad(h)}:00`) { last.to = `${pad(h + 1)}:00`; last.hours++; last.value += fee }
+      else openRanges.push({ from: `${pad(h)}:00`, to: `${pad(h + 1)}:00`, hours: 1, value: fee })
     }
     return { id: c.id, name: c.name, cells, booked, sellable, pct: sellable > 0 ? Math.round((booked / sellable) * 100) : null, openNow, openRanges, openValue: Math.round(openValue * 100) / 100 }
   }).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
