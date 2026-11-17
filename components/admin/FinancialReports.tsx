@@ -119,19 +119,19 @@ export default function FinancialReports({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1 rounded-lg p-1" role="group" aria-label="Period" style={{ background: 'var(--bg-raised)' }}>
+        <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto overflow-x-auto" role="group" aria-label="Period" style={{ background: 'var(--bg-raised)' }}>
           {PERIOD_OPTIONS.map(p => (
             <button key={p.key} type="button" aria-pressed={key === p.key} data-testid={`report-period-${p.key}`} onClick={() => setKey(p.key)}
-              className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+              className="px-3 py-1.5 rounded-md text-xs font-medium transition-all shrink-0 whitespace-nowrap"
               style={{ background: key === p.key ? 'var(--brand-primary)' : 'transparent', color: key === p.key ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
               {p.label}
             </button>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button className="btn btn-primary btn-sm" data-testid="report-xlsx" disabled={exporting} onClick={downloadExcel}>{exporting ? 'Preparing…' : 'Download Excel'}</button>
-          <button className="btn btn-primary btn-sm" data-testid="report-print" onClick={() => window.print()}>Print or save as PDF</button>
-          <button type="button" className="text-xs font-semibold px-1 self-center disabled:opacity-40" data-testid="report-csv-bookings" disabled={summary.bookings === 0}
+        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto sm:flex sm:flex-wrap">
+          <button className="btn btn-primary btn-sm justify-center" data-testid="report-xlsx" disabled={exporting} onClick={downloadExcel}>{exporting ? 'Preparing…' : 'Download Excel'}</button>
+          <button className="btn btn-primary btn-sm justify-center" data-testid="report-print" onClick={() => window.print()}>Print or save as PDF</button>
+          <button type="button" className="text-xs font-semibold px-1 self-center justify-self-center col-span-2 sm:col-span-1 disabled:opacity-40" data-testid="report-csv-bookings" disabled={summary.bookings === 0}
             style={{ color: 'var(--text-subtle)', textDecoration: 'underline' }} title="A plain text file with no formatting, for accounting software"
             onClick={() => save(file('bookings'), detailedCsv(rows, range, { clubName, venueSlug, currency }))}>Plain CSV</button>
         </div>

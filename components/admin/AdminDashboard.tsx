@@ -649,7 +649,7 @@ export default function AdminDashboard({
             </label>
           )}
           {tab === 'courts' && (
-            <button className="btn btn-primary btn-sm" onClick={openAddCourt}>+ Add court</button>
+            <button className="btn btn-primary btn-sm w-full sm:w-auto justify-center" onClick={openAddCourt}>+ Add court</button>
           )}
         </div>
       ) : null}
@@ -1108,7 +1108,7 @@ function BoardView({
           the date beside them and a way back to now. Grid / List only applies to Day, so it sits
           beside the day strip rather than up here. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0" data-testid="board-date-control">
+        <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto" data-testid="board-date-control">
           {(['prev', 'next'] as const).map(k => (
             <button key={k} type="button" onClick={() => shiftDate(k === 'prev' ? -1 : 1)} data-testid={`board-${k}`}
               aria-label={`${k === 'prev' ? 'Previous' : 'Next'} ${unitName}`} title={`${k === 'prev' ? 'Previous' : 'Next'} ${unitName}`}
@@ -1123,10 +1123,10 @@ function BoardView({
             : <button type="button" onClick={() => setBoardDate(today)} data-testid="board-today" className="text-xs font-bold rounded-full px-3 py-1.5 shrink-0"
                 style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>{nowLabel}</button>}
         </div>
-        <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+        <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto" style={{ background: 'var(--bg-raised)' }}>
           {(['day', 'week', 'month'] as const).map(m => (
             <button key={m} onClick={() => setViewMode(m)}
-              className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
               style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
               {m}
             </button>
@@ -1156,10 +1156,10 @@ function BoardView({
               </button>
             ))}
           </div>
-          <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+          <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto" style={{ background: 'var(--bg-raised)' }}>
             {(['grid', 'list'] as const).map(m => (
               <button key={m} onClick={() => setDayLayout(m)}
-                className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+                className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
                 style={{ background: dayLayout === m ? 'var(--brand-primary)' : 'transparent', color: dayLayout === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
                 {m}
               </button>
