@@ -8,6 +8,7 @@ import { COUNTRIES, VENUES, getVenue } from '@/lib/venues'
 import { currencyForVenueSlug } from '@/lib/currency'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { isManagerRole, isOwnerRole, roleLabel } from '@/lib/view-mode'
+import { computeCourtDay } from '@/lib/court-day'
 import { addDaysStr, computeToday, greetingFor, venueClock, type TodayBooking } from '@/lib/today'
 import { computeEmptyCourtTime, splitOverdueShares, summariseUnpaidShares } from '@/lib/money-demand'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
@@ -107,6 +108,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const unpaid = summariseUnpaidShares(mapUnpaidShares(unpaidRows), venueSlug, nowMs)
   const week = weekFor(venueSettings, venueSlug)
   const empty = computeEmptyCourtTime(courts as any, bookings.filter(b => b.date === clock.date), venueSlug, nowMs, 1, week)
+  const courtDay = computeCourtDay({ courts: courts as any, bookings: bookings.filter(b => b.date === clock.date), date: clock.date, nowMinutes: clock.minutes, week })
   const closeToday = dayHours(week, clock.date)?.close ?? null
 
   // Open invite spots in games that start within the next 24 hours.
@@ -171,6 +173,8 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       showMoney={isOwner}
       roleLabel={roleLabel((profile as any).role)}
       briefing={briefing}
+      courtDay={courtDay}
+      nowMinutes={clock.minutes}
       actions={actions}
     />
     </>

@@ -105,19 +105,18 @@ export function OverdueRow({ currency, lines, total, notDueCount, notDueTotal, a
   )
 }
 
-export function FillRow({ venueSlug, emptyHours, gap, bounds, autoOpen }: {
-  venueSlug: string; emptyHours: number; gap: FillGap; bounds: { from: string; to: string }; autoOpen: boolean
+export function FillButton({ venueSlug, gap, bounds, autoOpen }: {
+  venueSlug: string; gap: FillGap; bounds: { from: string; to: string }; autoOpen: boolean
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(autoOpen)
   const [sent, setSent] = useState(false)
   useEffect(() => { if (autoOpen) setOpen(true) }, [autoOpen])
-  const courts = `${gap.courtsFree} ${gap.courtsFree === 1 ? 'court' : 'courts'} free`
   return (
     <>
       {sent
-        ? <Shell tone="blue" mark="◔" done testid="fill-row" title="Offer sent" text={`${gap.from}–${gap.to} today. Players have been told. Results show in Money & demand.`} />
-        : <Shell tone="blue" mark="◔" testid="fill-row" title={`${emptyHours} court-${emptyHours === 1 ? 'hour' : 'hours'} still empty today`} text={`Biggest gap: ${gap.from}–${gap.to}, ${courts}`}><Action testid="fill-them" onClick={() => setOpen(true)}>Fill them</Action></Shell>}
+        ? <span data-testid="fill-row" data-done="true" className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-extrabold" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>✓ Offer sent · {gap.from}–{gap.to}</span>
+        : <span data-testid="fill-row" data-done="false" className="shrink-0"><Action testid="fill-them" onClick={() => setOpen(true)}>Fill them</Action></span>}
       {open && <OfferSheet venueSlug={venueSlug} date={gap.date} from={gap.from} to={gap.to} bounds={bounds} onClose={() => setOpen(false)} onSent={() => { setOpen(false); setSent(true); router.refresh() }} />}
     </>
   )
