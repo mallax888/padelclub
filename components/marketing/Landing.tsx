@@ -9,13 +9,19 @@ export default function Landing() {
     <div className={`${styles.field} ${manrope.className}`}>
       <nav className={styles.nav}>
         <div className={styles.brand}>
-          <div className={styles.brandmark}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C7 2 3 6 3 11c0 6 5 9 9 11 4-2 9-5 9-11 0-5-4-9-9-9zm0 4a5 5 0 110 10 5 5 0 010-10z"/></svg>
-          </div>
-          <div className={styles.brandword}>PadelClub</div>
+          <svg className={styles.brandball} width="38" height="38" viewBox="0 0 100 100" aria-hidden style={{ colorScheme: 'light' }}>
+            <defs>
+              <radialGradient id="landBall" cx="35%" cy="28%" r="75%"><stop offset="0%" stopColor="#F7FFD6" /><stop offset="40%" stopColor="#D4FF3D" /><stop offset="100%" stopColor="#8FAE1E" /></radialGradient>
+              <clipPath id="landBallClip"><circle cx="50" cy="50" r="46" /></clipPath>
+            </defs>
+            <circle cx="50" cy="50" r="46" fill="url(#landBall)" />
+            <g clipPath="url(#landBallClip)"><path d="M 50 4 C 20 20, 20 40, 50 50 C 80 60, 80 80, 50 96" fill="none" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" transform="rotate(25 50 50)" /></g>
+            <ellipse cx="34" cy="28" rx="14" ry="9" fill="white" opacity="0.35" transform="rotate(-25 34 28)" />
+          </svg>
+          <div className={styles.brandword} aria-label="PadelClub">PADEL<span className={styles.brandclub}>CLUB</span></div>
         </div>
         <div className={styles.navActions}>
-          <Link href="/auth/login" className={`${styles.btn} ${styles.btnGhost}`}>Sign in</Link>
+          <Link href="/auth/login" className={`${styles.btn} ${styles.btnLime} ${styles.btnNav}`} data-testid="landing-signin">Sign in</Link>
         </div>
       </nav>
 
