@@ -27,7 +27,7 @@ export type CourtDayRow = {
 export type CourtDay = {
   firstHour: number
   endHour: number
-  rows: CourtDayRow[] // most still open first, then by name
+  rows: CourtDayRow[] // in court order (Court 1, 2, 3...), so each court stays where the manager expects it
   booked: number
   sellable: number
   pct: number | null
@@ -69,7 +69,7 @@ export function computeCourtDay(
       else openRanges.push({ from: `${pad(h)}:00`, to: `${pad(h + 1)}:00` })
     }
     return { id: c.id, name: c.name, cells, booked, sellable, pct: sellable > 0 ? Math.round((booked / sellable) * 100) : null, openNow, openRanges, openValue: Math.round(openValue * 100) / 100 }
-  }).sort((a, b) => b.openNow - a.openNow || a.name.localeCompare(b.name, undefined, { numeric: true }))
+  }).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
 
   const sum = (f: (r: CourtDayRow) => number) => rows.reduce((t, r) => t + f(r), 0)
   const booked = sum(r => r.booked), sellable = sum(r => r.sellable)
