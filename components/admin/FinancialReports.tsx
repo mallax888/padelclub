@@ -13,6 +13,7 @@ import {
 import type { FinancialCreditTx } from '@/lib/analytics'
 import ReportSheet from '@/components/admin/ReportSheet'
 import { buildWorkbook } from '@/lib/report-xlsx'
+import CardHeading from '@/components/ui/CardHeading'
 import { drawRevenueChart } from '@/lib/report-chart'
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
@@ -40,7 +41,7 @@ function Bars({ title, items, money }: { title: string; items: { name: string; a
   const max = Math.max(1, ...items.map(i => i.amount))
   return (
     <div className="rounded-2xl p-4" style={card}>
-      <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>{title}</div>
+      <CardHeading>{title}</CardHeading>
       {items.length === 0 ? <div className="text-sm py-4 text-center" style={{ color: 'var(--text-subtle)' }}>Nothing in this period yet.</div> : (
         <div className="space-y-3">
           {items.map(i => (
@@ -128,10 +129,11 @@ export default function FinancialReports({
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
-          <button className="btn btn-sm" data-testid="report-xlsx" disabled={exporting} onClick={downloadExcel}>{exporting ? 'Preparing…' : 'Download Excel'}</button>
-          <button className="btn btn-sm" data-testid="report-csv-bookings" disabled={summary.bookings === 0}
-            onClick={() => save(file('bookings'), detailedCsv(rows, range, { clubName, venueSlug, currency }))}>Raw data (CSV)</button>
+          <button className="btn btn-primary btn-sm" data-testid="report-xlsx" disabled={exporting} onClick={downloadExcel}>{exporting ? 'Preparing…' : 'Download Excel'}</button>
           <button className="btn btn-primary btn-sm" data-testid="report-print" onClick={() => window.print()}>Print or save as PDF</button>
+          <button type="button" className="text-xs font-semibold px-1 self-center disabled:opacity-40" data-testid="report-csv-bookings" disabled={summary.bookings === 0}
+            style={{ color: 'var(--text-subtle)', textDecoration: 'underline' }} title="A plain text file with no formatting, for accounting software"
+            onClick={() => save(file('bookings'), detailedCsv(rows, range, { clubName, venueSlug, currency }))}>Plain CSV</button>
         </div>
       </div>
 
@@ -150,8 +152,8 @@ export default function FinancialReports({
       </div>
 
       <div className="rounded-2xl p-5" style={card}>
-        <div className="flex items-baseline justify-between gap-2 mb-3">
-          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Revenue by day</div>
+        <div className="flex items-baseline justify-between gap-2 mb-4">
+          <CardHeading className="">Revenue by day</CardHeading>
           {summary.bestWeekday && <div className="text-xs" style={{ color: 'var(--text-muted)' }} data-testid="report-best-weekday">Strongest day: {summary.bestWeekday.name}</div>}
         </div>
         {summary.revenue === 0 ? (
@@ -183,7 +185,7 @@ export default function FinancialReports({
 
       {summary.topMembers.length > 0 && (
         <div className="rounded-2xl p-5" data-testid="report-top-members" style={card}>
-          <div className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>Top members by spend</div>
+          <CardHeading>Top members by spend</CardHeading>
           <div className="overflow-x-auto">
             <table className="w-full text-sm tabular-nums">
               <thead><tr className="text-[11px]" style={{ color: 'var(--text-subtle)' }}>

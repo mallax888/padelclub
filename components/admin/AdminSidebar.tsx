@@ -13,7 +13,7 @@ const ICONS: Record<string, JSX.Element> = {
 }
 
 const TAB_ITEMS: { tab: AdminTab; label: string }[] = [
-  { tab: 'board', label: 'Dashboard' },
+  { tab: 'board', label: 'Board' },
   { tab: 'bookings', label: 'Bookings' },
   { tab: 'members', label: 'Members' },
 ]

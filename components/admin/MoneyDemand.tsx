@@ -1,5 +1,6 @@
 'use client'
 
+import CardHeading from '@/components/ui/CardHeading'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import OfferSheet from '@/components/admin/OfferSheet'
@@ -46,14 +47,11 @@ export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares,
 
   return (
     <section className="mb-6">
-      <div className="mb-3">
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)', ...display }}>Money &amp; demand</h2>
-        <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Who still owes you, and the court time worth selling</p>
-      </div>
+      <CardHeading as="h2" size="section" className="mb-4" sub="Who still owes you, and the court time worth selling">Money &amp; demand</CardHeading>
       {now === null ? (
         <div className="rounded-2xl p-5 text-sm" style={{ ...card, color: 'var(--text-subtle)' }}>Loading…</div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
           <OverdueCard venueSlug={venueSlug} rows={unpaidShares} now={now} currency={currency} />
           <BestSlotsCard venueSlug={venueSlug} courts={courts} bookings={bookings} now={now} currency={currency} week={week} onFill={offers ? setFill : undefined} />
           {offers && offers.length > 0 && <OffersCard offers={offers} currency={currency} onChanged={() => router.refresh()} onFill={setFill} />}
@@ -80,7 +78,7 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
   }
   return (
     <div className="rounded-2xl p-5" style={card} data-testid="overdue-card">
-      <div className="text-[11px] font-extrabold uppercase" style={eyebrow}>Overdue shares</div>
+      <CardHeading className="">Overdue shares</CardHeading>
       {s.overdue.length === 0 ? (
         <div className="py-6">
           <div className="text-2xl font-extrabold" style={{ ...display, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Nothing overdue</div>
@@ -132,7 +130,7 @@ function WaitlistCard({ demand }: { demand: WaitDemand }) {
   const max = Math.max(1, ...demand.slots.map(s => s.waits))
   return (
     <div className="rounded-2xl p-5 lg:col-span-2" style={card} data-testid="waitlist-demand">
-      <div className="text-[11px] font-extrabold uppercase" style={eyebrow}>Waitlist demand · last 14 days</div>
+      <CardHeading className="">Waitlist demand · last 14 days</CardHeading>
       {demand.total === 0 ? (
         <p className="text-sm py-6" style={{ color: 'var(--text-muted)' }}>Nobody has waited for a full time yet. When your busy times fill up, the times people can&apos;t get will show here.</p>
       ) : (
@@ -172,7 +170,7 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
   if (e.courtCount === 0) {
     return (
       <div className="rounded-2xl p-5" style={card}>
-        <div className="text-[11px] font-extrabold uppercase" style={eyebrow}>Best slots to fill</div>
+        <CardHeading className="">Best slots to fill</CardHeading>
         <p className="text-sm py-6" style={{ color: 'var(--text-muted)' }}>This club has no courts set up yet. Add them in the Courts tab and the slots worth filling will show here.</p>
       </div>
     )
@@ -180,15 +178,19 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
   const best = bestSlotsToFill(e.slots, 5)
   return (
     <div className="rounded-2xl p-5" style={card} data-testid="best-slots">
-      <div className="text-[11px] font-extrabold uppercase" style={eyebrow}>Best slots to fill · next 7 days</div>
+      <CardHeading className="">Best slots to fill · next 7 days</CardHeading>
       {best.length === 0 ? (
         <p className="text-sm py-6" style={{ color: 'var(--text-muted)' }}>Nothing left to sell in the next 7 days. Every open hour is booked or blocked.</p>
       ) : (
         <>
+          <div className="mt-2.5 flex items-baseline gap-2 flex-wrap">
+            <span className="text-[38px] leading-none font-extrabold" style={{ ...display, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{formatPrice(e.potential, currency)}</span>
+            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>if they all filled</span>
+          </div>
           <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
-            {e.emptyHours} {e.emptyHours === 1 ? 'court hour' : 'court hours'} unsold, about <b style={{ color: 'var(--text-primary)' }}>{formatPrice(e.potential, currency)}</b> if they all filled. These are the five worth the most.
+            {e.emptyHours} {e.emptyHours === 1 ? 'court hour' : 'court hours'} unsold in the next 7 days. These are the five worth the most.
           </p>
-          <div className="mt-3" style={{ borderTop: '1px solid var(--border)' }}>
+          <div className="mt-4" style={{ borderTop: '1px solid var(--border)' }}>
             {best.map(g => (
               <div key={`${g.date}-${g.from}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="best-slot-row">
                 <div className="min-w-0">
@@ -223,7 +225,7 @@ function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[
   }
   return (
     <div className="rounded-2xl p-5 lg:col-span-2" style={card} data-testid="offers-card">
-      <div className="text-[11px] font-extrabold uppercase" style={eyebrow}>Offers you&apos;ve sent</div>
+      <CardHeading className="">Offers you&apos;ve sent</CardHeading>
       <div className="mt-2">
         {offers.map(o => (
           <div key={o.id} className="py-3" style={{ borderBottom: '1px solid var(--border)' }} data-testid="offer-row">
