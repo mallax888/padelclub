@@ -449,7 +449,10 @@ function RegularCard({ series: r, bookings, onSkip, prepayOn = false }: { series
               <div key={w.date} className="flex items-center justify-between gap-2 py-2 text-sm" style={{ borderTop: '1px solid var(--border)', opacity: w.kind === 'skipped' || w.kind === 'taken' ? 0.65 : 1 }}>
                 <span style={{ color: 'var(--text-primary)' }}>{fmtShort(w.date)}</span>
                 {booking ? (
-                  <button onClick={() => startCheckout(booking)} aria-label={`Pay for ${fmtShort(w.date)}`} className="text-[11px] font-bold rounded-full px-2.5 py-1 whitespace-nowrap" style={{ background: p.bg, color: p.c }}>{p.t} · Pay</button>
+                  <span className="flex items-center justify-end gap-2 flex-wrap">
+                    {w.payBy && <span className="text-[11px] font-bold rounded-full px-2.5 py-1 whitespace-nowrap" style={{ background: p.bg, color: p.c }}>{p.t}</span>}
+                    <button onClick={() => startCheckout(booking)} aria-label={`Pay for ${fmtShort(w.date)}`} className="text-xs font-extrabold rounded-full px-3.5 py-1.5 whitespace-nowrap" style={{ background: '#DC2626', color: '#FFFFFF' }}>Pay now</button>
+                  </span>
                 ) : (
                   <span className="text-[11px] font-bold rounded-full px-2.5 py-1 whitespace-nowrap" style={{ background: p.bg, color: p.c }}>{p.t}</span>
                 )}
