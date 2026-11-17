@@ -1088,6 +1088,7 @@ function BoardView({
   // cell several times the width it had when the hours were columns.
   const DAY_ROW_HEIGHT = 50
 
+  const shortDay = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })
   const atNow = viewMode === 'day' ? boardDate === today : viewMode === 'week' ? weekDates.includes(today) : boardDate.slice(0, 7) === today.slice(0, 7)
   const nowLabel = viewMode === 'day' ? 'Today' : viewMode === 'week' ? 'This week' : 'This month'
   const title = viewMode === 'month'
@@ -1117,7 +1118,9 @@ function BoardView({
               {k === 'prev' ? '‹' : '›'}
             </button>
           ))}
-          <span className="text-base font-semibold ml-1 truncate" data-testid="board-title" style={{ color: 'var(--text-primary)', minWidth: viewMode === 'day' ? 0 : 200 }}>{title}</span>
+          <span className="text-base font-semibold ml-1 min-w-0 flex-1 sm:flex-none sm:truncate" data-testid="board-title" style={{ color: 'var(--text-primary)' }}>
+            {viewMode === 'week' ? (<><span className="sm:hidden">{shortDay(weekDates[0])} – {shortDay(weekDates[6])}</span><span className="hidden sm:inline">{title}</span></>) : title}
+          </span>
           {atNow
             ? <span className="text-xs font-bold rounded-full px-3 py-1.5 shrink-0" data-testid="board-now" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>{nowLabel}</span>
             : <button type="button" onClick={() => setBoardDate(today)} data-testid="board-today" className="text-xs font-bold rounded-full px-3 py-1.5 shrink-0"
