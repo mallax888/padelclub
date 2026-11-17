@@ -908,7 +908,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="w-full flex items-center gap-2 sm:gap-3 rounded-2xl px-3 sm:px-4 py-3 text-left transition-colors"
+        className="w-full flex items-center gap-2 sm:gap-3 rounded-2xl px-4 py-3 text-left transition-colors"
         style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
         <span className="text-xs font-bold shrink-0" style={{ color: 'var(--text-primary)', width: 52, fontVariantNumeric: 'tabular-nums' }}>
           {dateParts(b.date).weekday} {dateParts(b.date).day}

@@ -649,7 +649,7 @@ export default function AdminDashboard({
             </label>
           )}
           {tab === 'courts' && (
-            <button className="btn btn-primary btn-sm w-full sm:w-auto justify-center" onClick={openAddCourt}>+ Add court</button>
+            <button className="btn-main sm:!w-auto sm:!min-h-0 sm:!px-3 sm:!py-1.5 sm:!text-xs sm:!font-semibold sm:!rounded-lg" onClick={openAddCourt}>+ Add court</button>
           )}
         </div>
       ) : null}
