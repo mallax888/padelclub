@@ -129,7 +129,7 @@ export default function TodayView(p: TodayViewProps) {
 
       {p.briefing && <YesterdayStrip b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} brandNew={p.briefing.brandNew} />}
 
-      <div className="grid grid-cols-3 gap-4 mt-4">
+      <div className="grid grid-cols-3 gap-4 mt-6 order-3 lg:mt-4 lg:order-none">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />
         <Stat label="Courts booked today" value={p.courtDay.pct === null ? '–' : `${p.courtDay.pct}%`}
           note={p.courtDay.sellable === 0 ? 'Not on sale today' : `${p.courtDay.booked} of ${p.courtDay.sellable} court-hours · ${p.courtDay.openNow} still open`} />
@@ -138,9 +138,9 @@ export default function TodayView(p: TodayViewProps) {
           : <Stat label="Unpaid" value={String(unpaid.count)} note={unpaid.count === 1 ? 'share to chase' : 'shares to chase'} />}
       </div>
 
-      {/* On a computer: the courts on the left, needs attention and the next bookings on the right. On a phone it is one column: needs attention, courts, next up. */}
-      <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start">
-      <div className="lg:col-start-2 lg:row-start-1">
+      {/* On a computer: the courts on the left, needs attention and the next bookings on the right. On a phone it is one column: the courts first, then needs attention, the three numbers, next up. */}
+      <div className="contents lg:grid lg:mt-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start">
+      <div className="order-2 mt-6 lg:order-none lg:mt-0 lg:col-start-2 lg:row-start-1">
       <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
       <div className="rounded-[20px] overflow-hidden" style={card}>
         {attention.length > 0 ? attention : (
@@ -149,7 +149,7 @@ export default function TodayView(p: TodayViewProps) {
       </div>
       </div>
 
-      <div className="lg:col-start-1 lg:row-start-1 lg:row-span-2">
+      <div className="order-1 mt-6 lg:order-none lg:mt-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
       <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Your club right now</div>
       {noCourts ? (
         <div className="rounded-[20px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
@@ -163,7 +163,7 @@ export default function TodayView(p: TodayViewProps) {
       )}
       </div>
 
-      <div className="lg:col-start-2 lg:row-start-2">
+      <div className="order-4 mt-6 lg:order-none lg:mt-0 lg:col-start-2 lg:row-start-2">
       <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Next up</div>
       <div className="rounded-[20px] overflow-hidden" style={card}>
         {s.nextUp.length === 0 ? (
