@@ -1,4 +1,7 @@
 import { splitOn } from '@/lib/club-access'
+import { loadTeamCaller } from '@/lib/team-server'
+import { covers } from '@/lib/team'
+import { isManagerRole } from '@/lib/view-mode'
 ﻿import { createServerClient } from '@/lib/supabase-server'
 import PlayersDirectory from '@/components/players/PlayersDirectory'
 import Link from 'next/link'
@@ -8,16 +11,22 @@ export const metadata = { title: 'Players' }
 
 export default async function PlayersPage() {
   const supabase = createServerClient()
+  // A club's own people see only that club's players. Club accounts are never on a leaderboard.
+  const caller = await loadTeamCaller()
+  const managing = !!caller && isManagerRole(caller.role)
 
   let players: any[] = []
   try {
     const { data, error } = await supabase
       .from('profiles')
-      .select('id, full_name, nickname, member_number, skill_level, skill_rating, membership_tier, ranking_points, wins, losses, role')
+      .select('id, full_name, nickname, member_number, skill_level, skill_rating, membership_tier, ranking_points, wins, losses, role, home_venue_slug')
       .order('member_number', { ascending: true })
 
     if (!error && data) {
-      players = (data as any[]).filter((p: any) => (splitOn() ? p.role === 'member' : p.role !== 'staff'))
+      players = (data as any[]).filter((p: any) => {
+        if (managing) return p.role === 'member' && (p.home_venue_slug ? covers(caller!.reach, { kind: 'club', venueSlug: p.home_venue_slug }) : caller!.reach.venueSlug === null && caller!.reach.country === null)
+        return splitOn() ? p.role === 'member' : p.role !== 'staff'
+      })
     }
   } catch (e) {
     console.error('Players page error:', e)
@@ -29,7 +38,7 @@ export default async function PlayersPage() {
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Players</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Everyone on PadelClub, with their stats and ranking</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{managing ? 'Your club\u2019s players, with their stats and ranking' : 'Everyone on PadelClub, with their stats and ranking'}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">

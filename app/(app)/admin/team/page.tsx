@@ -47,7 +47,7 @@ export default async function TeamPage() {
   const defaultClub =
     (caller.reach.venueSlug && clubs.some(c => c.slug === caller.reach.venueSlug) ? caller.reach.venueSlug : null)
     ?? (caller.homeVenueSlug && clubs.some(c => c.slug === caller.homeVenueSlug) ? caller.homeVenueSlug : null)
-    ?? clubs[0]?.slug ?? ''
+    ?? (clubs.length === 1 ? clubs[0].slug : '')
 
   // Waiting invites inside this owner's reach. A missing table (database change 033 not run yet) just means "not switched on".
   const { data: inviteRows, error: inviteError } = await createAdminClient()
@@ -71,7 +71,7 @@ export default async function TeamPage() {
         <InviteTeam clubs={clubs} canGrantAll={canGrantAll} defaultClub={defaultClub} invites={invites} ready={!inviteError} />
       </div>
       <div className="lg:col-start-1 lg:row-start-1 min-w-0">
-        <TeamView members={members} clubs={clubs} countries={countries} canGrantAll={canGrantAll} defaultClub={defaultClub} />
+        <TeamView members={members} clubs={clubs} countries={countries} canGrantAll={canGrantAll} defaultClub={defaultClub || (clubs[0]?.slug ?? '')} />
       </div>
       </div>
     </div>

@@ -35,7 +35,7 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
   return (
     <section className="rounded-2xl p-5 mb-5" style={card} data-testid="invite-team">
       <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Invite a team member</h2>
-      <p className="text-xs mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>They get an email, set a password and go straight to the club dashboard. No player sign-up.</p>
+      <p className="text-xs mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>No account yet? They get an email, set a password and go straight to the club dashboard. No player sign-up.</p>
       {!ready ? (
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Inviting by email isn&apos;t switched on yet: the database change 033 has not been run.</p>
       ) : (
@@ -52,10 +52,11 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
           </div>
           <div><label className="label" htmlFor="invite-club">Their club</label>
             <select id="invite-club" className="input" value={club} onChange={e => setClub(e.target.value)}>
+              {club === '' && <option value="" disabled>Choose a club…</option>}
               {canGrantAll && <option value="__all">All clubs</option>}
               {clubs.map(c => <option key={c.slug} value={c.slug}>{c.name}</option>)}
             </select></div>
-          <button type="submit" disabled={busy} className="btn-main" data-testid="invite-send">{busy ? 'Sending…' : 'Send invite'}</button>
+          <button type="submit" disabled={busy || club === ''} className="btn-main" data-testid="invite-send">{busy ? 'Sending…' : 'Send invite'}</button>
         </form>
       )}
       <p className="text-[11.5px] mt-3" style={{ color: 'var(--text-subtle)' }}>Front desk runs the day: bookings, courts, check-ins. Money and reports stay with owners.</p>

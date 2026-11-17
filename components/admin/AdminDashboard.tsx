@@ -194,62 +194,6 @@ export default function AdminDashboard({
     setBoardDate(d => (d === (todayStr ?? t) ? t : d))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const todayBookings = bookings.filter(b => b.date === today && b.status !== 'cancelled')
-  const memberCount = members.filter(m => (m as any).membership_tier !== 'casual').length
-
-  // Trend comparisons for the stat cards -- same day last week for
-  // day-scoped figures, 7 days ago for the member count (which has no
-  // "today" of its own, just a running total). null means "not enough
-  // history to compare" (the prior period was zero) rather than a
-  // misleading divide-by-zero infinity.
-  const sevenDaysAgo = (() => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() - 7); return localDateStr(d) })()
-  const pctChange = (curr: number, prev: number): number | null => {
-    if (prev === 0) return curr > 0 ? null : 0
-    return Math.round(((curr - prev) / prev) * 100)
-  }
-
-  const lastWeekBookings = bookings.filter(b => b.date === sevenDaysAgo && b.status !== 'cancelled')
-  const bookingsTrend = pctChange(todayBookings.length, lastWeekBookings.length)
-
-  const todayConfirmed = todayBookings.filter(b => b.status === 'confirmed')
-  const lastWeekConfirmed = lastWeekBookings.filter(b => b.status === 'confirmed')
-  const playersTrend = pctChange(
-    new Set(todayConfirmed.map((b: any) => b.user_id).filter(Boolean)).size,
-    new Set(lastWeekConfirmed.map((b: any) => b.user_id).filter(Boolean)).size
-  )
-  const playersToday = new Set(todayConfirmed.map((b: any) => b.user_id).filter(Boolean)).size
-
-  const revenueTodayByCurrency = sumByCurrency(todayConfirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd)
-  const revenueTodayTotal = revenueTodayByCurrency.reduce((s, r) => s + r.amount, 0)
-  const revenueLastWeekTotal = sumByCurrency(lastWeekConfirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd)
-    .reduce((s, r) => s + r.amount, 0)
-  const revenueTrend = pctChange(revenueTodayTotal, revenueLastWeekTotal)
-
-  // Proxy for "how has the paying-member count moved" -- there's no
-  // historical snapshot of the count itself, so this compares today's
-  // count against what it would have been 7 days ago based on join dates
-  // alone (downgrades/upgrades since then aren't reflected, only growth).
-  const memberCountAsOf7DaysAgo = members.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= sevenDaysAgo).length
-  const membersTrend = pctChange(memberCount, memberCountAsOf7DaysAgo)
-
-  // Sparkline series for the stat cards -- same underlying figures as the
-  // trend badges above, just spread across the trailing 7 days instead of
-  // collapsed to a single day-over-day comparison.
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today + 'T00:00:00')
-    d.setDate(d.getDate() - (6 - i))
-    return localDateStr(d)
-  })
-  const bookingsSpark = last7Days.map(d => bookings.filter(b => b.date === d && b.status !== 'cancelled').length)
-  const playersSpark = last7Days.map(d => {
-    const confirmed = bookings.filter(b => b.date === d && b.status === 'confirmed')
-    return new Set(confirmed.map((b: any) => b.user_id).filter(Boolean)).size
-  })
-  const revenueSpark = last7Days.map(d => {
-    const confirmed = bookings.filter(b => b.date === d && b.status === 'confirmed')
-    return sumByCurrency(confirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd).reduce((s, r) => s + r.amount, 0)
-  })
-  const membersSpark = last7Days.map(d => members.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= d).length)
 
   // Deliberately not filtered by isLive. A venue with court rows in this
   // deployment is real whatever the flag says, and it may carry real bookings
@@ -310,6 +254,64 @@ export default function AdminDashboard({
   const venueCourtIds = new Set(venueCourts.map(c => c.id))
 
   const bookingsForVenue = bookings.filter((b: any) => venueCourtIds.has(b.court_id))
+  // The four stat cards describe the club on screen, not every club this owner can see.
+  const membersForVenue = members.filter((m: any) => m.home_venue_slug === activeVenue)
+  const todayBookings = bookingsForVenue.filter(b => b.date === today && b.status !== 'cancelled')
+  const memberCount = membersForVenue.filter(m => (m as any).membership_tier !== 'casual').length
+
+  // Trend comparisons for the stat cards -- same day last week for
+  // day-scoped figures, 7 days ago for the member count (which has no
+  // "today" of its own, just a running total). null means "not enough
+  // history to compare" (the prior period was zero) rather than a
+  // misleading divide-by-zero infinity.
+  const sevenDaysAgo = (() => { const d = new Date(today + 'T00:00:00'); d.setDate(d.getDate() - 7); return localDateStr(d) })()
+  const pctChange = (curr: number, prev: number): number | null => {
+    if (prev === 0) return curr > 0 ? null : 0
+    return Math.round(((curr - prev) / prev) * 100)
+  }
+
+  const lastWeekBookings = bookingsForVenue.filter(b => b.date === sevenDaysAgo && b.status !== 'cancelled')
+  const bookingsTrend = pctChange(todayBookings.length, lastWeekBookings.length)
+
+  const todayConfirmed = todayBookings.filter(b => b.status === 'confirmed')
+  const lastWeekConfirmed = lastWeekBookings.filter(b => b.status === 'confirmed')
+  const playersTrend = pctChange(
+    new Set(todayConfirmed.map((b: any) => b.user_id).filter(Boolean)).size,
+    new Set(lastWeekConfirmed.map((b: any) => b.user_id).filter(Boolean)).size
+  )
+  const playersToday = new Set(todayConfirmed.map((b: any) => b.user_id).filter(Boolean)).size
+
+  const revenueTodayByCurrency = sumByCurrency(todayConfirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd)
+  const revenueTodayTotal = revenueTodayByCurrency.reduce((s, r) => s + r.amount, 0)
+  const revenueLastWeekTotal = sumByCurrency(lastWeekConfirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd)
+    .reduce((s, r) => s + r.amount, 0)
+  const revenueTrend = pctChange(revenueTodayTotal, revenueLastWeekTotal)
+
+  // Proxy for "how has the paying-member count moved" -- there's no
+  // historical snapshot of the count itself, so this compares today's
+  // count against what it would have been 7 days ago based on join dates
+  // alone (downgrades/upgrades since then aren't reflected, only growth).
+  const memberCountAsOf7DaysAgo = membersForVenue.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= sevenDaysAgo).length
+  const membersTrend = pctChange(memberCount, memberCountAsOf7DaysAgo)
+
+  // Sparkline series for the stat cards -- same underlying figures as the
+  // trend badges above, just spread across the trailing 7 days instead of
+  // collapsed to a single day-over-day comparison.
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today + 'T00:00:00')
+    d.setDate(d.getDate() - (6 - i))
+    return localDateStr(d)
+  })
+  const bookingsSpark = last7Days.map(d => bookingsForVenue.filter(b => b.date === d && b.status !== 'cancelled').length)
+  const playersSpark = last7Days.map(d => {
+    const confirmed = bookingsForVenue.filter(b => b.date === d && b.status === 'confirmed')
+    return new Set(confirmed.map((b: any) => b.user_id).filter(Boolean)).size
+  })
+  const revenueSpark = last7Days.map(d => {
+    const confirmed = bookingsForVenue.filter(b => b.date === d && b.status === 'confirmed')
+    return sumByCurrency(confirmed, b => currencyForVenueSlug(b.courts?.venue_slug), b => b.price_nzd).reduce((s, r) => s + r.amount, 0)
+  })
+  const membersSpark = last7Days.map(d => membersForVenue.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= d).length)
   const visibleBookings = bookingsForVenue
     .filter(b => showPastBookings || b.date >= today)
     .sort((a, b) => (a.date === b.date ? a.start_time.localeCompare(b.start_time) : a.date.localeCompare(b.date)))
@@ -558,8 +560,8 @@ export default function AdminDashboard({
         </div>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      {/* Stat cards: today's numbers for the club on screen, on the two tabs about today */}
+      {(tab === 'board' || tab === 'bookings') && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
           { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week', spark: bookingsSpark },
           { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
@@ -583,7 +585,7 @@ export default function AdminDashboard({
             <Sparkline data={spark} color={color} />
           </div>
         ))}
-      </div>
+      </div>}
 
       {/* Tabs -- mobile only; md+ uses the sidebar instead */}
       <div className="flex gap-1 mb-4 md:hidden overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -648,7 +650,7 @@ export default function AdminDashboard({
               Show past bookings
             </label>
           )}
-          {tab === 'courts' && (
+          {tab === 'courts' && venueCourts.length > 0 && (
             <button className="btn-main sm:!w-auto sm:!min-h-0 sm:!px-3 sm:!py-1.5 sm:!text-xs sm:!font-semibold sm:!rounded-lg" onClick={openAddCourt}>+ Add court</button>
           )}
         </div>
@@ -823,10 +825,18 @@ export default function AdminDashboard({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {venueCourts.length === 0 ? (
             <div className="rounded-xl text-center py-12 text-sm sm:col-span-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-              No courts yet for this venue.
-              <div className="mt-3">
-                <button className="btn btn-primary btn-sm" onClick={openAddCourt}>+ Add the first court</button>
-              </div>
+              <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>No courts yet for this venue.</div>
+              {canSeeMoney && activeVenue ? (
+                <>
+                  <p className="mt-1 text-xs">Club settings sets up your hours, courts and prices together, so players can start booking.</p>
+                  <div className="mt-4 mx-auto max-w-xs">
+                    <Link href={`/admin/setup?venue=${encodeURIComponent(activeVenue)}`} className="btn-main" data-testid="courts-go-setup">Set up this club</Link>
+                  </div>
+                  <button type="button" className="mt-3 text-xs font-bold" style={{ color: 'var(--link-change)' }} onClick={openAddCourt}>or add a single court here</button>
+                </>
+              ) : (
+                <div className="mt-3 mx-auto max-w-xs"><button className="btn-main" onClick={openAddCourt}>+ Add the first court</button></div>
+              )}
             </div>
           ) : venueCourts.map(c => (
             <button key={c.id} onClick={() => openEditCourt(c)} className="text-left rounded-2xl p-5 transition-colors"

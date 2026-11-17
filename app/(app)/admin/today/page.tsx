@@ -121,11 +121,16 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const soonestLabel = soonest ? `${soonest.court} · ${soonest.date === clock.date ? 'today' : shortWeekday(soonest.date)} ${soonest.time.slice(0, 5)}` : null
 
   // Owners see yesterday at a glance; front desk never does (it has takings in it).
-  let briefing: { b: any; weekday: string; yesterdayLabel: string } | null = null
+  let briefing: { b: any; weekday: string; yesterdayLabel: string; brandNew?: boolean } | null = null
   if (isOwner) {
     try {
       const loaded = await loadBriefing(createAdminClient(), venueSlug, nowMs)
       if (loaded) briefing = { b: loaded.briefing, weekday: loaded.weekday, yesterdayLabel: `Yesterday, ${shortWeekday(loaded.yesterday)} ${new Intl.DateTimeFormat('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(loaded.yesterday + 'T12:00:00Z'))}` }
+      // A club that has never had a booking is brand new: "yesterday was quiet" would read like a failure.
+      if (briefing && briefing.b.bookings === 0) {
+        const { data: ever } = await supabase.from('bookings').select('id, courts!inner(venue_slug)').eq('courts.venue_slug', venueSlug).lt('date', clock.date).limit(1)
+        briefing.brandNew = (ever ?? []).length === 0
+      }
     } catch (err) { console.error('Could not load the morning briefing card', err) }
   }
 

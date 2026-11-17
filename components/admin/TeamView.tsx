@@ -209,7 +209,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
       <div className="rounded-[20px] overflow-hidden" style={card}>{desk.length > 0 ? desk.map(m => <Row key={m.id} m={m} />) : <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No front-desk staff yet. Add someone above.</div>}</div>
 
       <p className="text-xs mt-3 px-1 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
-        Owners see everything, including money and settings. Front desk runs the day but sees no money. People must already have a PadelClub account.
+        Owners see everything, including money and settings. Front desk runs the day but sees no money. Already have a PadelClub account? Use Add team member. No account yet? Send an invite.
       </p>
 
       {adding && (

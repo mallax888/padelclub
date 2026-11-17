@@ -71,14 +71,14 @@ function FormatCard({ name, blurb, note, tag, on, disabled, badge, onClick, test
 }
 
 export default function NewTournamentForm({
-  players, venueSlugs, defaultDate, formatsReady,
-}: { players: Player[]; venueSlugs: string[]; defaultDate: string; formatsReady: boolean }) {
+  players, venueSlugs, defaultVenue = '', defaultDate, formatsReady,
+}: { players: Player[]; venueSlugs: string[]; defaultVenue?: string; defaultDate: string; formatsReady: boolean }) {
   const router = useRouter()
   const venues = useMemo(() => VENUES.filter(v => venueSlugs.includes(v.slug)), [venueSlugs])
 
   const [step, setStep] = useState<Step>('where')
   const [showAll, setShowAll] = useState(false)
-  const [venueSlug, setVenueSlug] = useState(venues.length === 1 ? venues[0].slug : '')
+  const [venueSlug, setVenueSlug] = useState(venues.length === 1 ? venues[0].slug : venues.some(v => v.slug === defaultVenue) ? defaultVenue : '')
   const [date, setDate] = useState(defaultDate)
   const [courts, setCourts] = useState<string[]>([])
   // planning the day
@@ -199,7 +199,10 @@ export default function NewTournamentForm({
                   {venues.map(v => <option key={v.slug} value={v.slug}>{v.name}</option>)}
                 </select>
               ))}
-              {field('Date', <input type="date" className="input text-sm" value={date} onChange={e => setDate(e.target.value)} />)}
+              {field('Date', <>
+                <input type="date" className="input text-sm" value={date} onChange={e => setDate(e.target.value)} />
+                {/^\d{4}-\d{2}-\d{2}$/.test(date) && <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }} data-testid="date-words">{new Intl.DateTimeFormat('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(date + 'T12:00:00Z'))}</p>}
+              </>)}
             </div>
             {venue && (
               <div>
