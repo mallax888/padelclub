@@ -9,6 +9,7 @@ import { formatDate, addHours, localDateStr } from '@/lib/utils'
 import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes, toMinutes } from '@/lib/venue-hours'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { bookerShareCents, friendShareCents } from '@/lib/share-rules'
+import BookingTicket from '@/components/booking/BookingTicket'
 import { weeksPhrase } from '@/lib/regular-pay'
 import { planWeeks, seriesDates, weekdayPlural, WEEK_OPTIONS, type DatedBusy } from '@/lib/regulars-rules'
 import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
@@ -845,14 +846,27 @@ export default function BookingFlow({
   )
   const changeWhere = () => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }
   const answeredRows: React.ReactNode[] = []
-  if (!venuePickerSkipped && venue && done('where')) answeredRows.push(doneRow('where', 'Where', <>{venue.name} · {venue.region}</>, changeWhere, flagImg(venueCountry?.name) ?? undefined))
+  if (!venuePickerSkipped && venue && done('where') && step !== 'confirm') answeredRows.push(doneRow('where', 'Where', <>{venue.name} · {venue.region}</>, changeWhere, flagImg(venueCountry?.name) ?? undefined))
   if (step !== 'confirm' && date && done('date')) answeredRows.push(doneRow('date', 'When', formatDate(date), () => { setStep('date'); playBackSound() }))
   if (step !== 'confirm' && duration && done('duration')) answeredRows.push(doneRow('duration', 'How long', durationLabel(duration), () => { setStep('duration'); playBackSound() }))
   if (step !== 'confirm' && time && done('time')) answeredRows.push(doneRow('time', 'What time', `${time} — ${endTimeNow}`, () => { setStep('time'); playBackSound() }))
-  // On the confirm screen the three answers fold into one line, with the price.
-  if (step === 'confirm' && assignedCourt && date && time) answeredRows.push(doneRow('booking', 'Your booking', `${assignedCourt.name} · ${formatDate(date)} · ${time}–${endTimeNow} · ${venue?.name ?? ''}`, () => { setStep('time'); playBackSound() }, undefined, <span className="text-[15px] font-extrabold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(courtPrice, currency)}</span>))
-  if (step === 'confirm' && done('players')) answeredRows.push(doneRow('players', 'Playing with', seatCount > 0 ? `${withText || `${seatCount} other${seatCount === 1 ? '' : 's'}`} · you pay ${formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}` : 'Just me', () => { setConfirmStage('players'); playBackSound() }))
-  if (step === 'confirm' && askRegular && done('regular')) answeredRows.push(doneRow('regular', 'Every week', regular && date ? `Every ${weekdayPlural(date).slice(0, -1)} for ${regularWeeks} weeks${prepayActive ? ', all paid now' : ''}` : 'Just this once', () => { setConfirmStage('regular'); playBackSound() }))
+  // On the confirm screen the answers fold into one ticket: the court, the time, who is playing and what you pay.
+  if (step === 'confirm' && assignedCourt && date && time) {
+    const playersDone = done('players')
+    const regularDone = !!askRegular && done('regular')
+    const yourShare = seatCount > 0 ? bookerShareCents(courtPrice, seatCount + 1) / 100 : courtPrice
+    const friendWords = [...splitNames, ...(inviteSeats > 0 ? [`${inviteSeats} invite link${inviteSeats === 1 ? '' : 's'}`] : [])]
+    answeredRows.push(
+      <BookingTicket key="ticket" courtName={assignedCourt.name} dateLabel={formatDate(date)} time={time} endTime={endTimeNow} lengthLabel={durationLabel(duration!)}
+        venueName={venue?.name ?? ''} you={profile?.full_name ?? 'You'} friends={splitNames}
+        who={playersDone ? (seatCount > 0 ? `You + ${friendWords.join(', ') || `${seatCount} other${seatCount === 1 ? '' : 's'}`}` : 'Just you') : undefined}
+        weekly={regularDone ? (regular && date ? `Every ${weekdayPlural(date).slice(0, -1)} for ${regularWeeks} weeks${prepayActive ? ', all paid now' : ''}` : 'Just this once') : undefined}
+        priceLabel={playersDone && seatCount > 0 ? 'You pay' : 'Price'} price={formatPrice(playersDone ? yourShare : courtPrice, currency)}
+        courtTotal={playersDone && seatCount > 0 ? formatPrice(courtPrice, currency) : undefined}
+        onEdit={() => { setStep('time'); playBackSound() }} onChangeVenue={changeWhere}
+        onChangePlayers={() => { setConfirmStage('players'); playBackSound() }} onChangeWeekly={() => { setConfirmStage('regular'); playBackSound() }} />,
+    )
+  }
   const promptNo = groups.indexOf(groupNow) + 1
 
   // The open question's card. `back` is only for moving between the three Where screens.

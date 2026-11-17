@@ -17,6 +17,7 @@ import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import { shareSchedule, shareStage, coverCents, bookerShareCents } from '@/lib/share-rules'
 import { canSkipWeek, weekRows, upcomingWeeks, bookedWeekCount, weekdayPlural, seriesDates, type WeekRow } from '@/lib/regulars-rules'
 import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
+import BookedCelebration from '@/components/booking/BookedCelebration'
 import InviteShare from '@/components/invites/InviteShare'
 
 interface BookingWithCourt {
@@ -617,6 +618,11 @@ export default function MyBookingsList({
   const past = bookings.filter(b => b.status === 'cancelled' || hasEnded(b.date, b.end_time))
   const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time))
   const hasUpcoming = upcoming.length > 0 || upcomingJoined.length > 0
+  // "You're booked!" after paying for a booking: the booking just made is the newest upcoming one.
+  const paidBooking = searchParams?.get('payment') === 'success'
+    ? [...upcoming].sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))[0] ?? null
+    : null
+  const celebrate = searchParams?.get('payment') === 'success' && !!paidBooking
   // The most recent game actually played, for the "Same again?" card. A
   // cancelled booking was never a game, so it isn't a court to offer back.
   const lastPlayed = past
@@ -776,6 +782,18 @@ export default function MyBookingsList({
           Cancel under 24hrs and 50% comes back as account credit. Reschedule to a new date or time any time before the 24hr mark, no charge. Everyone else on a split booking is refunded in full, whatever the notice.
         </div>
       </details>
+
+      {celebrate && paidBooking && (() => {
+        const venueSlug = (paidBooking.courts as any)?.venue_slug
+        const currency = currencyForRegion(VENUES.find(v => v.slug === venueSlug)?.region)
+        const splits = outgoingSplits.filter(x => x.booking_id === paidBooking.id)
+        const share = bookerShareCents(paidBooking.price_nzd, splits.length + 1) / 100
+        return (
+          <BookedCelebration firstName={String(profile?.full_name ?? '').split(' ')[0]} onDone={() => router.replace('/mybookings')}
+            ticket={{ courtName: paidBooking.courts?.name ?? 'Court', dateLabel: formatDate(paidBooking.date), time: paidBooking.start_time.slice(0, 5), endTime: paidBooking.end_time.slice(0, 5),
+              lengthLabel: durationLabel(paidBooking.duration_minutes), venueName: VENUES.find(v => v.slug === venueSlug)?.name ?? '', you: profile?.full_name ?? 'You', price: formatPrice(share, currency) }} />
+        )
+      })()}
 
       {/* New booking — solid lime CTA card */}
       <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-6 py-5 mb-4 transition-all hover:scale-[1.01]"
