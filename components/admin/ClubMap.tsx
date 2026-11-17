@@ -180,8 +180,8 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
               className="text-left rounded-[20px] p-4 lg:p-5 transition-shadow"
               style={{ background: t.bg, border: `1.5px solid ${t.border}`, boxShadow: sel === c.id ? '0 0 0 3px var(--bg-surface), 0 0 0 5px var(--brand-primary-text)' : 'none' }}>
               <span className="flex items-center justify-between gap-2">
-                <span className="text-[19px] sm:text-[21px] font-black truncate" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }} data-testid="court-name">{c.name}</span>
-                <span className="text-[10.5px] font-black whitespace-nowrap" style={{ letterSpacing: '0.08em', color: t.text }}>● {st.state === 'playing' ? (isNow ? 'LIVE' : 'PLAYING') : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
+                <span className="text-[19px] sm:text-[21px] font-black shrink-0 whitespace-nowrap" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }} data-testid="court-name">{c.name}</span>
+                <span className="text-[10.5px] font-black whitespace-nowrap" style={{ letterSpacing: '0.08em', color: t.text }}>● {st.state === 'playing' ? (isNow ? 'LIVE' : <><span className="sm:hidden">BUSY</span><span className="hidden sm:inline">PLAYING</span></>) : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
               </span>
               <span className="flex items-center gap-2.5 mt-3 min-h-[38px]">
                 {st.state === 'playing' && st.people.length > 0 && <Avatars people={st.people} />}
