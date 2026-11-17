@@ -5,7 +5,8 @@ import ViewSwitch from '@/components/ui/ViewSwitch'
 import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
 import YesterdayStrip from '@/components/admin/YesterdayStrip'
 import { FillButton, OverdueRow } from '@/components/admin/TodayActionRows'
-import CourtDayCard from '@/components/admin/CourtDayCard'
+import ClubMap from '@/components/admin/ClubMap'
+import type { MapBooking } from '@/lib/club-map'
 import type { CourtDay } from '@/lib/court-day'
 import type { Briefing } from '@/lib/briefing'
 import type { FillGap, OverdueLine } from '@/lib/today-actions'
@@ -30,6 +31,7 @@ export type TodayViewProps = {
   emptyHoursToday: number
   courtDay: CourtDay // each court, hour by hour, for the card that replaces "Courts right now"
   nowMinutes: number // the club's own time, in minutes since midnight
+  map: { courts: { id: string; name: string; today: number; lastWeek: number }[]; bookings: MapBooking[]; takings: number; bounds: { from: string; to: string } | null; date: string }
   closeToday: string | null // when the club closes today (null = closed all day)
   notOpenYet: boolean // owners only: the club has courts but isn't open for booking
   showMoney: boolean // owners see money; front desk does not
@@ -148,13 +150,16 @@ export default function TodayView(p: TodayViewProps) {
       </div>
 
       <div className="lg:col-start-1 lg:row-start-1 lg:row-span-2">
-      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Court by court today</div>
+      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Your club right now</div>
       {noCourts ? (
         <div className="rounded-[20px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
           This club has no courts set up yet.{p.showMoney ? <> <Link href={`/admin/setup?${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up this club</Link>.</> : ' Ask the owner to add them.'}
         </div>
       ) : (
-        <CourtDayCard day={p.courtDay} boardHref={`/admin?tab=board&${q}`} currency={p.currency} showMoney={p.showMoney} nowMinutes={p.nowMinutes} fill={fillButton} />
+        <ClubMap venueSlug={p.venueSlug} date={p.map.date} day={p.courtDay} bookings={p.map.bookings} nowMinutes={p.nowMinutes} currency={p.currency} showMoney={p.showMoney}
+          offersOn={!!act?.offersOn} bounds={p.map.bounds} boardHref={`/admin?tab=board&${q}`} weekdayShort={p.lastWeekLabel} bookingsToday={s.bookings.today} bookingsLastWeek={s.bookings.lastWeek}
+          takings={s.revenue.today} fill={fillButton}
+          courts={p.courtDay.rows.map(r => ({ id: r.id, name: r.name, row: r, today: p.map.courts.find(c => c.id === r.id)?.today ?? 0, lastWeek: p.map.courts.find(c => c.id === r.id)?.lastWeek ?? 0 }))} />
       )}
       </div>
 
