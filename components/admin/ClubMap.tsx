@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import OfferSheet from '@/components/admin/OfferSheet'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import type { CourtDay, CourtDayCell, CourtDayRow } from '@/lib/court-day'
@@ -51,6 +51,28 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   const [sel, setSel] = useState<string | null>(null)
   const [offer, setOffer] = useState<{ from: string; to: string } | null>(null)
   const [sent, setSent] = useState<string[]>([])
+  // Phone: while the map is on screen the time slider rides just above the bottom bar, so you can drag it without scrolling back.
+  const rootRef = useRef<HTMLDivElement>(null)
+  const slotRef = useRef<HTMLDivElement>(null)
+  const [pinned, setPinned] = useState(false)
+  const [slotH, setSlotH] = useState(0)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)')
+    const update = () => {
+      const root = rootRef.current, slot = slotRef.current
+      if (!root || !slot || !mq.matches) { setPinned(false); return }
+      const vh = window.innerHeight
+      const r = root.getBoundingClientRect(), sl = slot.getBoundingClientRect()
+      setPinned(sl.bottom > vh - 84 && r.top < vh - 260)
+      setSlotH(h => (h === sl.height || pinnedRef.current ? h : sl.height))
+    }
+    update()
+    window.addEventListener('scroll', update, { passive: true })
+    window.addEventListener('resize', update)
+    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
+  }, [])
+  const pinnedRef = useRef(false)
+  pinnedRef.current = pinned
   const n = day.endHour - day.firstHour
   const isNow = at === nowMinutes
   const states = useMemo(() => new Map(courts.map(c => [c.id, courtAt(bookings, c.id, at)])), [courts, bookings, at])
@@ -141,7 +163,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   }
 
   return (
-    <div className="rounded-[20px] overflow-hidden" style={card} data-testid="court-day">
+    <div ref={rootRef} className="rounded-[20px] overflow-hidden" style={card} data-testid="court-day">
       <div className="flex items-start gap-3 px-4 pt-4 pb-1">
         <div className="min-w-0 flex-1">
           <div className="text-[19px] font-black" style={{ color: 'var(--text-primary)', letterSpacing: '-0.01em' }} data-testid="map-title">{isNow ? `${bookingsWord(bookingsToday)} today, ${comparison(bookingsToday - bookingsLastWeek, weekdayShort)}` : `Your club at ${hhmm(at)}`}</div>
@@ -212,7 +234,9 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
       </div>
 
       {/* the time slider */}
-      <div className="px-4 pt-4" data-testid="time-scrub">
+      <div ref={slotRef} style={pinned && slotH ? { height: slotH } : undefined}>
+      <div className={pinned ? 'px-4 pt-3 pb-2 rounded-[20px] lg:rounded-none' : 'px-4 pt-4'} data-testid="time-scrub" data-pinned={pinned ? 'true' : 'false'}
+        style={pinned ? { position: 'fixed', left: 12, right: 12, bottom: 'calc(80px + env(safe-area-inset-bottom))', zIndex: 30, background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 10px 30px rgba(0,0,0,0.28)' } : undefined}>
         <div className="flex items-center justify-between gap-3 mb-2.5">
           <span className="text-[12px] font-extrabold" style={{ color: 'var(--text-muted)' }}>Drag the ball to see another time today</span>
           <span className="flex gap-1.5 flex-wrap justify-end">
@@ -229,6 +253,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
         <div className="relative text-[10.5px] mt-1.5" style={{ height: 14, color: 'var(--text-subtle)' }} aria-hidden>
           {ticks.map(h => <span key={h} className="absolute -translate-x-1/2" style={{ left: `${((h - day.firstHour) / n) * 100}%` }}>{String(h).padStart(2, '0')}</span>)}
         </div>
+      </div>
       </div>
 
       {/* computer: the briefing opens under the map */}
