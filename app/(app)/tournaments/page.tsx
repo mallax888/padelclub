@@ -25,13 +25,13 @@ export default async function TournamentsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6 lg:flex-col lg:items-start lg:gap-6">
+      <div className="flex flex-col gap-5 mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Tournaments</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Tournament days at your club: Americano, round robin, groups and knockouts</p>
         </div>
         {isStaff && (
-          <Link href="/tournaments/new" className="btn btn-primary">+ New tournament</Link>
+          <Link href="/tournaments/new" className="btn-main" data-testid="new-tournament">+ New tournament</Link>
         )}
       </div>
 

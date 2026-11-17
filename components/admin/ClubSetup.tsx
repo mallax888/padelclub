@@ -37,7 +37,7 @@ async function post(url: string, body: object): Promise<string | null> {
 function Progress({ done }: { done: number }) {
   return (
     <div className="flex gap-1.5 mt-4" aria-hidden>
-      {[1, 2, 3, 4].map(i => <i key={i} style={{ flex: 1, height: 4, borderRadius: 4, background: i <= done ? 'var(--brand-primary)' : 'var(--bg-raised)' }} />)}
+      {[1, 2, 3].map(i => <i key={i} style={{ flex: 1, height: 4, borderRadius: 4, background: i <= done ? 'var(--brand-primary)' : 'var(--bg-raised)' }} />)}
     </div>
   )
 }
@@ -133,7 +133,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
       <div className="flex items-center justify-between gap-3 mt-4">
         {back
           ? <button type="button" onClick={() => setStep('home')} className="inline-flex items-center text-[13px] font-bold" style={{ minHeight: 40, color: 'var(--brand-primary-text)' }}>‹ Setup</button>
-          : <span className="text-[13px] font-bold" style={{ color: 'var(--text-subtle)' }}>Club settings</span>}
+          : <span aria-hidden />}
         <label className="relative inline-flex items-center min-w-0">
           <span className="sr-only">Club</span>
           <select value={venue.slug} onChange={e => router.push(`/admin/setup?venue=${encodeURIComponent(e.target.value)}`)}
@@ -144,7 +144,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           <span aria-hidden className="pointer-events-none absolute right-3 text-xs" style={{ color: 'var(--text-subtle)' }}>▾</span>
         </label>
       </div>
-      <Progress done={doneCount} />
+      <Progress done={doneCount - 1} />
     </>
   )
 

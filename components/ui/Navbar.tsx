@@ -301,7 +301,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
               )}
               {isPlatform && (
                 <>
-                  <SidebarGroupLabel>PadelClub</SidebarGroupLabel>
+                  <SidebarGroupLabel>Platform admin</SidebarGroupLabel>
                   <div className="flex flex-col gap-0.5">
                     <SidebarLink href="/platform" label="Clubs and fees" active={pathname === '/platform'} />
                   </div>
@@ -359,7 +359,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
                 <ThemeToggle />
                 <PushNotificationToggle />
                 <NotificationBell userId={profile.id} panelPosition="flyout" />
-                <button onClick={handleSignOut} className="btn btn-sm btn-danger ml-auto">
+                <button onClick={handleSignOut} className="btn btn-sm btn-danger ml-auto whitespace-nowrap shrink-0">
                   Sign out
                 </button>
               </div>
@@ -393,7 +393,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
                 ? [
                     { label: null as string | null, items: [...(isOwner ? OWNER_MORE_ITEMS : []), ...MANAGER_CLUB_ITEMS.map(i => ({ ...i, tab: null as string | null }))] },
                     ...(isOwner ? [{ label: 'Manage your club', items: OWNER_MANAGE_ITEMS }] : []),
-                    ...(isPlatform ? [{ label: 'PadelClub', items: [{ href: '/platform', label: 'Clubs and fees', tab: null as string | null }] }] : []),
+                    ...(isPlatform ? [{ label: 'Platform admin', items: [{ href: '/platform', label: 'Clubs and fees', tab: null as string | null }] }] : []),
                   ]
                 : [{ label: null as string | null, items: NAV_ITEMS as { href: string; label: string; tab?: string | null }[] }]
               ).map(section => (
@@ -471,7 +471,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
                         {whoLabel(profile)}
                       </div>
                     </div>
-                    <button onClick={handleSignOut} className="btn btn-sm btn-danger">
+                    <button onClick={handleSignOut} className="btn btn-sm btn-danger whitespace-nowrap shrink-0">
                       Sign out
                     </button>
                   </div>

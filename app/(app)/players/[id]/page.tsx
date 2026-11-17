@@ -90,10 +90,12 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
               style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
               {getInitials(player.full_name)}
             </div>
-            <div className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-xs font-bold"
-              style={{ background: 'var(--bg-base)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
-              #{player.member_number}
-            </div>
+            {player.member_number != null && (
+              <div className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-xs font-bold"
+                style={{ background: 'var(--bg-base)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>
+                #{player.member_number}
+              </div>
+            )}
           </div>
           <div className="flex-1">
             <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
@@ -241,7 +243,7 @@ export default async function PlayerDetailPage({ params }: { params: { id: strin
       <div className="rounded-xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Player details</div>
         {[
-          ['Member number', `#${player.member_number}`],
+          ['Member number', player.member_number != null ? `#${player.member_number}` : '—'],
           ['Skill level', skillLabelForRating(player.skill_rating)],
           ['Favourite court', player.favourite_court ?? '—'],
           ['Member since', player.created_at ? formatDateWithYear(player.created_at) : '—'],

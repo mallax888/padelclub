@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import ClubShell, { clubButton, clubCard } from '@/components/club/ClubShell'
+import ClubShell, { clubCard } from '@/components/club/ClubShell'
 
 const empty = { clubName: '', country: '', city: '', address: '', courts: '', phone: '', contactName: '', email: '', website: '' }
 
@@ -47,15 +47,15 @@ export default function StartClubForm() {
         <h1 className="text-xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Start your club</h1>
         <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>Tell us about your club. We check every new club and email you within one working day.</p>
         <form onSubmit={submit} className="space-y-4" noValidate>
-          {field('clubName', 'Club name', { autoComplete: 'organization', required: true })}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{field('country', 'Country', { required: true })}{field('city', 'City', { required: true })}</div>
-          {field('address', 'Club address')}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{field('courts', 'Number of courts', { inputMode: 'numeric' })}{field('phone', 'Your phone', { type: 'tel', autoComplete: 'tel' })}</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{field('contactName', 'Your name', { autoComplete: 'name', required: true })}{field('email', 'Work email', { type: 'email', autoComplete: 'email', required: true })}</div>
+          {field('clubName', 'Club name', { autoComplete: 'organization', required: true, placeholder: 'Pacific Padel Takapuna' })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{field('country', 'Country', { required: true, placeholder: 'New Zealand' })}{field('city', 'City', { required: true, placeholder: 'Auckland' })}</div>
+          {field('address', 'Club address', { autoComplete: 'street-address', placeholder: '12 Main Street, Takapuna' })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{field('courts', 'Number of courts', { inputMode: 'numeric', placeholder: '4' })}{field('phone', 'Your phone', { type: 'tel', autoComplete: 'tel', placeholder: '021 123 4567' })}</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{field('contactName', 'Your name', { autoComplete: 'name', required: true, placeholder: 'Jo Patel' })}{field('email', 'Work email', { type: 'email', autoComplete: 'email', required: true, placeholder: 'you@yourclub.com' })}</div>
           {/* A field only bots fill in. */}
           <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px' }}><label>Website<input tabIndex={-1} autoComplete="off" value={f.website} onChange={set('website')} /></label></div>
           {error && <p role="alert" className="text-sm" style={{ color: 'var(--brand-crimson)' }} data-testid="request-error">{error.message}</p>}
-          <button type="submit" disabled={busy} className="w-full py-3 rounded-lg text-sm font-bold disabled:opacity-60" style={clubButton}>{busy ? 'Sending…' : 'Send request'}</button>
+          <button type="submit" disabled={busy} className="btn-main">{busy ? 'Sending…' : 'Send request'}</button>
           <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>No password yet. You set it when we approve your club.</p>
         </form>
       </div>

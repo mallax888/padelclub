@@ -145,7 +145,7 @@ export default function FinancialReports({
         {kpis.map(k => (
           <div key={k.id} className="rounded-2xl p-4" data-testid={`report-kpi-${k.id}`} style={card}>
             <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{k.label}</div>
-            <div className="text-xl font-semibold" style={{ color: k.id === 'cancelled' ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>{k.value}</div>
+            <div className="text-xl font-semibold" style={{ color: k.id === 'cancelled' && summary.cancelled > 0 ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>{k.value}</div>
             <div className="mt-0.5"><Delta c={k.c} goodWhenUp={k.goodWhenUp} previousText={k.was} /></div>
           </div>
         ))}

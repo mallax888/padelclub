@@ -85,9 +85,11 @@ export default async function PlayersPage() {
                   <div className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                     {player.nickname ?? player.full_name ?? 'Unknown'}
                   </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>
-                    #{player.member_number}
-                  </div>
+                  {player.member_number != null && (
+                    <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>
+                      #{player.member_number}
+                    </div>
+                  )}
                 </div>
                 <div className="text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>
                   {player.ranking_points ?? 0}

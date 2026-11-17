@@ -540,26 +540,11 @@ export default function AdminDashboard({
   }
 
   const heroVenue = activeVenue ? getVenue(activeVenue) : null
-  // The greeting depends on the viewer's own clock, which the server doesn't know, so it is
-  // read after mount ("Hello" until then) instead of differing between server and browser.
-  const [heroHour, setHeroHour] = useState<number | null>(null)
-  useEffect(() => { setHeroHour(new Date().getHours()) }, [])
-  const heroGreeting = heroHour === null ? 'Hello' : heroHour < 12 ? 'Good morning' : heroHour < 18 ? 'Good afternoon' : 'Good evening'
 
   return (
     <div className="flex gap-6">
       <AdminSidebar tab={tab} setTab={setTab} canSeeMoney={canSeeMoney} venueName={heroVenue?.name ?? 'Your club'} venueRegion={heroVenue?.region ?? ''} staffName={staffName} />
       <div className="flex-1 min-w-0">
-      {/* Hero greeting */}
-      <div className="rounded-2xl p-5 mb-6" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <div className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: 'var(--brand-primary-text)' }}>{heroVenue?.name ?? 'Your club'}</div>
-        <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{heroGreeting}{staffName ? `, ${staffName}` : ''}</div>
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mt-1">
-          <div className="text-sm" style={{ color: 'var(--text-muted)' }}>Here's what's happening at your club today.</div>
-          <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>{formatDate(today)}</div>
-        </div>
-      </div>
-
       {/* Stat cards: today's numbers for the club on screen, on the two tabs about today */}
       {(tab === 'board' || tab === 'bookings') && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
@@ -576,7 +561,7 @@ export default function AdminDashboard({
                 <div className="text-xl font-semibold" style={{ color }}>{value}</div>
                 {trend !== null && (
                   <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
-                    {trend > 0 ? '↑' : trend < 0 ? '↓' : '–'}{Math.abs(trend)}%
+                    {trend === 0 ? 'no change' : `${trend > 0 ? '↑' : '↓'}${Math.abs(trend)}%`}
                   </span>
                 )}
               </div>
@@ -791,7 +776,7 @@ export default function AdminDashboard({
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
-                      #{(m as any).member_number ?? '—'}
+                      {(m as any).member_number != null ? `#${(m as any).member_number}` : '—'}
                     </td>
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
                       {(m as any).nickname ?? m.full_name ?? '—'}
@@ -802,8 +787,11 @@ export default function AdminDashboard({
                         <button type="button" onClick={() => setPlanFor({ id: m.id, name: (m as any).nickname ?? m.full_name ?? 'Member', tier: m.membership_tier, home: (m as any).home_venue_slug })}
                           className="ml-2 text-xs font-bold underline" style={{ color: 'var(--link-change)' }}>Change</button>
                       )}
+                      {plans && canSeeMoney && !(m as any).home_venue_slug && m.role === 'member' && (
+                        <span className="ml-2 text-xs" style={{ color: 'var(--text-subtle)' }}>no home club yet</span>
+                      )}
                     </td>
-                    <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits}</td>
+                    <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits ?? 0}</td>
                     <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
                       {(m as any).created_at ? formatDateWithYear((m as any).created_at) : '—'}
