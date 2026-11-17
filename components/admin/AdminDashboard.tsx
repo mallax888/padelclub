@@ -3,7 +3,7 @@
 import CardHeading from '@/components/ui/CardHeading'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatDate, formatDateCompact, formatDateWithYear, generateTimeSlots, getNextNDates, localDateStr } from '@/lib/utils'
 import type { Court, Profile } from '@/types/database'
@@ -149,6 +149,14 @@ export default function AdminDashboard({
   // Keep the address in step with the tab so the manager navigation can show
   // which one is open (history.replaceState is understood by the Next.js router).
   const allowedTabs: readonly AdminTab[] = canSeeMoney ? ADMIN_TABS : FRONT_DESK_TABS
+  // The bottom bar on a phone links to /admin?tab=..., which changes the address but not this page's own
+  // state, so the page now follows the address too. Without this the bar said Bookings while the page
+  // still showed Analytics.
+  const urlTab = useSearchParams()?.get('tab') ?? null
+  useEffect(() => {
+    if (urlTab && (allowedTabs as readonly string[]).includes(urlTab)) setTabState(urlTab as AdminTab)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlTab])
   const setTab = (t: AdminTab) => {
     if (!allowedTabs.includes(t)) return
     setTabState(t)
@@ -545,6 +553,31 @@ export default function AdminDashboard({
     <div className="flex gap-6">
       <AdminSidebar tab={tab} setTab={setTab} canSeeMoney={canSeeMoney} venueName={heroVenue?.name ?? 'Your club'} venueRegion={heroVenue?.region ?? ''} staffName={staffName} />
       <div className="flex-1 min-w-0">
+      {/* Tabs -- mobile only; md+ uses the sidebar instead */}
+      <div className="flex gap-1 mb-4 md:hidden overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
+        {ADMIN_TABS.filter(t => allowedTabs.includes(t)).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className="px-4 py-2 text-sm capitalize transition-colors"
+            style={{
+              borderBottom: `2px solid ${tab === t ? 'var(--brand-primary)' : 'transparent'}`,
+              color: tab === t ? 'var(--brand-primary-text)' : 'var(--text-muted)',
+              fontWeight: tab === t ? 500 : 400,
+              marginBottom: -1,
+            }}
+          >
+            {t}
+          </button>
+        ))}
+        <div className="flex-1" />
+        {tab === 'bookings' && (
+          <button className="btn btn-primary btn-sm mb-1" onClick={() => setShowBlock(true)}>
+            🔒 Block a court
+          </button>
+        )}
+      </div>
+
       {/* Stat cards: today's numbers for the club on screen, on the two tabs about today */}
       {(tab === 'board' || tab === 'bookings') && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {[
@@ -571,31 +604,6 @@ export default function AdminDashboard({
           </div>
         ))}
       </div>}
-
-      {/* Tabs -- mobile only; md+ uses the sidebar instead */}
-      <div className="flex gap-1 mb-4 md:hidden overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
-        {ADMIN_TABS.filter(t => allowedTabs.includes(t)).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className="px-4 py-2 text-sm capitalize transition-colors"
-            style={{
-              borderBottom: `2px solid ${tab === t ? 'var(--brand-primary)' : 'transparent'}`,
-              color: tab === t ? 'var(--brand-primary-text)' : 'var(--text-muted)',
-              fontWeight: tab === t ? 500 : 400,
-              marginBottom: -1,
-            }}
-          >
-            {t}
-          </button>
-        ))}
-        <div className="flex-1" />
-        {tab === 'bookings' && (
-          <button className="btn btn-primary btn-sm mb-1" onClick={() => setShowBlock(true)}>
-            🔒 Block a court
-          </button>
-        )}
-      </div>
 
       {/* Venue selector - shared across Board / Bookings / Courts */}
       {((tab === 'board' || tab === 'bookings' || tab === 'analytics' || tab === 'reports') && venuesWithCourts.length > 0) || (tab === 'courts' && courtTabVenues.length > 0) ? (
@@ -681,12 +689,14 @@ export default function AdminDashboard({
         </ClubAnalytics>
       )}
 
-      {tab === 'reports' && (
+      {tab === 'reports' && (<>
+        <CardHeading as="h2" size="section" className="mb-4">Reports</CardHeading>
         <FinancialReports rows={reportRows} creditTransactions={creditTransactions} todayStr={today} venueSlug={activeVenue} />
-      )}
+      </>)}
 
       {/* Bookings tab */}
-      {tab === 'bookings' && (
+      {tab === 'bookings' && (<>
+        <CardHeading as="h2" size="section" className="mb-4">Bookings</CardHeading>
         <div className="rounded-2xl overflow-x-auto scrollbar-thin"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-sm">
@@ -735,11 +745,12 @@ export default function AdminDashboard({
             </tbody>
           </table>
         </div>
-      )}
+      </>)}
 
       {/* Members tab */}
       {tab === 'members' && (
         <div>
+          <CardHeading as="h2" size="section" className="mb-4">Members</CardHeading>
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <input type="text" className="input text-sm w-auto flex-1 min-w-[180px]" placeholder="Search by name or member #…"
               value={memberSearch} onChange={e => setMemberSearch(e.target.value)} />
@@ -809,7 +820,8 @@ export default function AdminDashboard({
       )}
 
       {/* Courts tab */}
-      {tab === 'courts' && (
+      {tab === 'courts' && (<>
+        <CardHeading as="h2" size="section" className="mb-4">Courts</CardHeading>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {venueCourts.length === 0 ? (
             <div className="rounded-xl text-center py-12 text-sm sm:col-span-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
@@ -852,7 +864,7 @@ export default function AdminDashboard({
             </button>
           ))}
         </div>
-      )}
+      </>)}
 
       {tab === 'xero' && <XeroSettingsPanel />}
 
@@ -1099,8 +1111,8 @@ function BoardView({
     <div className="space-y-4">
       {/* Said "Today's Bookings" over a month of October 2026. It now names
           whatever the view is actually showing. */}
-      <CardHeading as="h2" size="section" className="">
-        {viewMode === 'day' ? "Today's Bookings" : viewMode === 'week' ? 'This Week\u2019s Bookings' : 'This Month\u2019s Bookings'}
+      <CardHeading as="h2" size="section" className="" sub={viewMode === 'day' ? "Today's bookings" : viewMode === 'week' ? 'This week\u2019s bookings' : 'This month\u2019s bookings'}>
+        Board
       </CardHeading>
       {/* One date control for Day, Week and Month, in the same place in all three: both arrows
           together on the left, stepping by whatever is on screen (a day, a week, a month), with
