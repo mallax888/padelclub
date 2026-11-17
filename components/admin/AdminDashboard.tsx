@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import CardHeading from '@/components/ui/CardHeading'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -1040,12 +1041,13 @@ function BoardView({
   // Was a local reimplementation of formatDate, character for character.
   const dayLabel = formatDate
 
+  // The arrows step by whatever the board is showing: a day, a week or a month.
   const shiftDate = (dir: 1 | -1) => {
     const base = new Date(boardDate + 'T00:00:00')
-    const days = viewMode === 'day' ? 1 : viewMode === 'week' ? 7 : 30
-    base.setDate(base.getDate() + dir * days)
-    setBoardDate(localDateStr(base))
+    if (viewMode === 'month') setBoardDate(localDateStr(new Date(base.getFullYear(), base.getMonth() + dir, 1)))
+    else { base.setDate(base.getDate() + dir * (viewMode === 'day' ? 1 : 7)); setBoardDate(localDateStr(base)) }
   }
+  const unitName = viewMode === 'day' ? 'day' : viewMode === 'week' ? 'week' : 'month'
 
   const getWeekDates = () => {
     const base = new Date(boardDate + 'T00:00:00')
@@ -1086,6 +1088,8 @@ function BoardView({
   // cell several times the width it had when the hours were columns.
   const DAY_ROW_HEIGHT = 50
 
+  const atNow = viewMode === 'day' ? boardDate === today : viewMode === 'week' ? weekDates.includes(today) : boardDate.slice(0, 7) === today.slice(0, 7)
+  const nowLabel = viewMode === 'day' ? 'Today' : viewMode === 'week' ? 'This week' : 'This month'
   const title = viewMode === 'month'
     ? new Date(boardDate + 'T00:00:00').toLocaleDateString('en-NZ', { month: 'long', year: 'numeric' })
     : viewMode === 'week'
@@ -1096,79 +1100,50 @@ function BoardView({
     <div className="space-y-4">
       {/* Said "Today's Bookings" over a month of October 2026. It now names
           whatever the view is actually showing. */}
-      <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
+      <CardHeading as="h2" size="section" className="">
         {viewMode === 'day' ? "Today's Bookings" : viewMode === 'week' ? 'This Week\u2019s Bookings' : 'This Month\u2019s Bookings'}
-      </div>
+      </CardHeading>
+      {/* One date control for Day, Week and Month, in the same place in all three: both arrows
+          together on the left, stepping by whatever is on screen (a day, a week, a month), with
+          the date beside them and a way back to now. Grid / List only applies to Day, so it sits
+          beside the day strip rather than up here. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Day view has the pill strip below, which both shows the date and
-            moves it — so the arrows here were a second way to do the same
-            thing, sitting one row above a near-identical pair that stepped a
-            week instead of a day. In Day the date stays as a heading you
-            read; the pills do the moving. Week and Month have no strip, so
-            they keep the boxed control. */}
-        {viewMode === 'day' ? (
-          <div className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</div>
-        ) : (
-        <div className="flex items-center gap-2">
-          <button onClick={() => shiftDate(-1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>←</button>
-          {/* Boxed in the same fill and border as the arrows either side so the
-              three read as one control, rather than a bare label with a pair of
-              buttons floating around it.
-
-              Fixed width, wide enough for the longest title this can hold (a
-              week range like "Mon, 14 Sept – Sun, 20 Sept"). Sizing to the
-              text instead would move the arrow either side of it every time
-              the date changed length. */}
-          <span className="h-9 px-2 rounded-lg text-base font-semibold shrink-0 flex items-center justify-center"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)', width: 240 }}>{title}</span>
-          <button onClick={() => shiftDate(1)} className="w-9 h-9 rounded-lg flex items-center justify-center"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>→</button>
+        <div className="flex items-center gap-2 min-w-0" data-testid="board-date-control">
+          {(['prev', 'next'] as const).map(k => (
+            <button key={k} type="button" onClick={() => shiftDate(k === 'prev' ? -1 : 1)} data-testid={`board-${k}`}
+              aria-label={`${k === 'prev' ? 'Previous' : 'Next'} ${unitName}`} title={`${k === 'prev' ? 'Previous' : 'Next'} ${unitName}`}
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 text-base"
+              style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              {k === 'prev' ? '‹' : '›'}
+            </button>
+          ))}
+          <span className="text-base font-semibold ml-1 truncate" data-testid="board-title" style={{ color: 'var(--text-primary)', minWidth: viewMode === 'day' ? 0 : 200 }}>{title}</span>
+          {atNow
+            ? <span className="text-xs font-bold rounded-full px-3 py-1.5 shrink-0" data-testid="board-now" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>{nowLabel}</span>
+            : <button type="button" onClick={() => setBoardDate(today)} data-testid="board-today" className="text-xs font-bold rounded-full px-3 py-1.5 shrink-0"
+                style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>{nowLabel}</button>}
         </div>
-        )}
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
-            {(['day', 'week', 'month'] as const).map(m => (
-              <button key={m} onClick={() => setViewMode(m)}
-                className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
-                style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
-                {m}
-              </button>
-            ))}
-          </div>
-          {viewMode === 'day' && (
-            <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
-              {(['grid', 'list'] as const).map(m => (
-                <button key={m} onClick={() => setDayLayout(m)}
-                  className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
-                  style={{ background: dayLayout === m ? 'var(--brand-primary)' : 'transparent', color: dayLayout === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
-                  {m}
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+          {(['day', 'week', 'month'] as const).map(m => (
+            <button key={m} onClick={() => setViewMode(m)}
+              className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+              style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
+              {m}
+            </button>
+          ))}
         </div>
       </div>
 
       {viewMode === 'day' && (
-        <div className="flex items-start gap-2">
-          <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() - 7); setBoardDate(localDateStr(d)) }}
-            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>‹</button>
-          <div className="flex gap-2 flex-wrap flex-1">
-            {/* Two days behind the selected one, four ahead. The strip used to
-                start at the selected day, so yesterday was only reachable by
-                jumping a whole week back and then forward again — while a
-                board is mostly read forwards, checking what just happened is
-                common enough to be one tap. */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Two days behind the selected one, four ahead, so yesterday is one tap. A fixed width
+              keeps every pill the same size and the row from reflowing as the dates change. */}
+          <div className="flex gap-2 flex-wrap">
             {Array.from({ length: 7 }, (_, i) => {
               const d = new Date(boardDate + 'T00:00:00')
               d.setDate(d.getDate() + i - 2)
               return localDateStr(d)
             }).map(d => (
-              // Fixed width rather than padding around the label, so a pill
-              // is the same size whether it reads "Tue 6" or "Mon 12" and
-              // the row never reflows as you page through dates.
               <button key={d} onClick={() => setBoardDate(d)}
                 className="py-2 rounded-lg text-sm font-medium whitespace-nowrap text-center shrink-0 transition-colors"
                 style={{
@@ -1181,9 +1156,15 @@ function BoardView({
               </button>
             ))}
           </div>
-          <button onClick={() => { const d = new Date(boardDate + 'T00:00:00'); d.setDate(d.getDate() + 7); setBoardDate(localDateStr(d)) }}
-            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>›</button>
+          <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+            {(['grid', 'list'] as const).map(m => (
+              <button key={m} onClick={() => setDayLayout(m)}
+                className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+                style={{ background: dayLayout === m ? 'var(--brand-primary)' : 'transparent', color: dayLayout === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
+                {m}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

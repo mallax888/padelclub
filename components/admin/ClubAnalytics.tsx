@@ -1,5 +1,6 @@
 'use client'
 
+import CardHeading from '@/components/ui/CardHeading'
 import { useState, Fragment, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
@@ -68,7 +69,7 @@ export default function ClubAnalytics({
   return (
     <div data-testid="analytics-tab">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Analytics</h2>
+        <CardHeading as="h2" size="section" className="">Analytics</CardHeading>
         <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }} role="radiogroup" aria-label="Period">
           {PERIODS.map(p => (
             <button key={p} type="button" role="radio" aria-checked={days === p} data-testid={`period-${p}`} onClick={() => setDays(p)}
@@ -97,7 +98,7 @@ export default function ClubAnalytics({
 
       {/* Busy and quiet hours */}
       <div className="rounded-2xl p-5 mb-5 overflow-x-auto scrollbar-thin" style={card} data-testid="heatmap">
-        <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Busy and quiet hours</div>
+        <CardHeading className="mb-2">Busy and quiet hours</CardHeading>
         <div className="text-xs mb-3" style={{ color: 'var(--text-subtle)' }}>How full the courts were by day and hour, last {days} days</div>
         {quiet && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-3 py-2.5 mb-4" data-testid="quiet-callout"
@@ -141,7 +142,7 @@ export default function ClubAnalytics({
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
         <div className="lg:col-span-3 rounded-2xl p-5" style={card} data-testid="trend">
-          <div className="text-sm font-medium mb-4" style={{ color: 'var(--text-primary)' }}>{days <= 7 ? 'Bookings per day' : 'Bookings per week'}</div>
+          <CardHeading>{days <= 7 ? 'Bookings per day' : 'Bookings per week'}</CardHeading>
           <div className="flex items-end gap-2" style={{ height: 140 }}>
             {stats.trend.map((w, i) => (
               <div key={i} className="flex-1 flex flex-col items-center justify-end h-full" title={`${w.bookings} bookings`}>
@@ -162,7 +163,7 @@ export default function ClubAnalytics({
 
         <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={card} data-testid="drifting">
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-            <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Members drifting away</div>
+            <CardHeading className="mb-2">Members drifting away</CardHeading>
             <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}><span className="px-1.5 py-0.5 rounded-md mr-1" style={{ background: 'var(--bg-surface)' }}>fixed</span>No booking in the last 30 days</div>
           </div>
           {stats.drifting.length === 0 ? (
@@ -183,7 +184,7 @@ export default function ClubAnalytics({
 
       <div className="rounded-2xl overflow-hidden mb-4" style={card}>
         <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Upcoming bookings</div>
+          <CardHeading className="">Upcoming bookings</CardHeading>
         </div>
         {upcomingBookings.length === 0 ? (
           <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--text-subtle)' }}>Nothing booked yet.</div>

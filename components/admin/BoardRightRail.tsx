@@ -1,5 +1,6 @@
 'use client'
 
+import CardHeading from '@/components/ui/CardHeading'
 import { formatDate } from '@/lib/utils'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { getVenue } from '@/lib/venues'
@@ -72,7 +73,7 @@ export default function BoardRightRail({
   return (
     <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <div className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>{overviewLabel} Overview</div>
+        <CardHeading>{overviewLabel} Overview</CardHeading>
         <div className="flex items-center gap-4">
           <Donut slices={slices} total={total} />
           <div className="space-y-2 flex-1 min-w-0">
@@ -88,7 +89,7 @@ export default function BoardRightRail({
       </div>
 
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>Quick Actions</div>
+        <CardHeading>Quick Actions</CardHeading>
         <div className="flex flex-col gap-4">
           <button onClick={onBlockCourt} className="btn-main !justify-between px-4">
             🔒 Block a court <span>→</span>
@@ -101,7 +102,7 @@ export default function BoardRightRail({
 
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-          <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Upcoming Bookings</div>
+          <CardHeading className="">Upcoming Bookings</CardHeading>
         </div>
         {upcomingBookings.length === 0 ? (
           <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--text-subtle)' }}>Nothing booked yet.</div>
