@@ -13,11 +13,16 @@ function Delta({ diff, money: isMoney, currency }: { diff: number | null; money:
   return <span style={{ color: up ? 'var(--success, #35c27a)' : 'var(--brand-crimson)' }} className="font-bold"> {up ? '▲' : '▼'} {isMoney ? money(n, currency) : n}</span>
 }
 
-export default function YesterdayStrip({ b, currency, weekday, label }: { b: Briefing; currency: CurrencyCode; weekday: string; label: string }) {
+export default function YesterdayStrip({ b, currency, weekday, label, brandNew }: { b: Briefing; currency: CurrencyCode; weekday: string; label: string; brandNew?: boolean }) {
   const compared = b.takingsDiff !== null
   return (
     <section className="rounded-2xl mt-4 p-4" style={card} data-testid="yesterday-strip">
-      {b.bookings === 0 ? (
+      {b.bookings === 0 && brandNew ? (
+        <>
+          <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }} data-testid="yesterday-new">Your first bookings will show up here</div>
+          <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Each morning this shows how yesterday went: takings, bookings and how full the courts were.</div>
+        </>
+      ) : b.bookings === 0 ? (
         <>
           <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>Yesterday was quiet</div>
           <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>No bookings on {label.replace(/^Yesterday, /, '')}</div>

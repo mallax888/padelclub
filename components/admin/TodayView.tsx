@@ -31,7 +31,7 @@ export type TodayViewProps = {
   showMoney: boolean // owners see money; front desk does not
   roleLabel: string | null
   // Owners only: yesterday at a glance, the same numbers as the morning message.
-  briefing?: { b: Briefing; weekday: string; yesterdayLabel: string } | null
+  briefing?: { b: Briefing; weekday: string; yesterdayLabel: string; brandNew?: boolean } | null
   // Owners only: what the Fill and Remind buttons act on.
   actions?: {
     overdue: { lines: OverdueLine[]; total: number; notDueCount: number; notDueTotal: number } | null
@@ -128,7 +128,7 @@ export default function TodayView(p: TodayViewProps) {
       </h1>
       <div className="order-first text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
 
-      {p.briefing && <YesterdayStrip b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} />}
+      {p.briefing && <YesterdayStrip b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} brandNew={p.briefing.brandNew} />}
 
       <div className="grid grid-cols-3 gap-4 mt-4">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />

@@ -25,8 +25,11 @@ export default async function NewTournamentPage() {
     .not('role', 'eq', 'staff')
     .order('full_name', { ascending: true })
 
+  // the club they usually work in comes pre-selected
+  const myClub = [caller.reach.venueSlug, caller.homeVenueSlug].find(s => s && venueSlugs.includes(s)) ?? ''
+
   // tomorrow at the club, worked out here so the server and browser agree
-  const defaultDate = venueClock(venueSlugs[0] ?? 'auckland-takapuna', Date.now() + 24 * 60 * 60 * 1000).date
+  const defaultDate = venueClock(myClub || venueSlugs[0] || 'auckland-takapuna', Date.now() + 24 * 60 * 60 * 1000).date
   const ready = await formatsReady(createAdminClient())
 
   return (
@@ -35,7 +38,7 @@ export default async function NewTournamentPage() {
         <h1 className="text-2xl font-semibold">New tournament</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Plan the day, pick a format, add your players</p>
       </div>
-      <NewTournamentForm players={players ?? []} venueSlugs={venueSlugs} defaultDate={defaultDate} formatsReady={ready} />
+      <NewTournamentForm players={players ?? []} venueSlugs={venueSlugs} defaultVenue={myClub} defaultDate={defaultDate} formatsReady={ready} />
     </div>
   )
 }
