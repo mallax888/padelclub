@@ -4,7 +4,9 @@ import type { TodaySummary } from '@/lib/today'
 import ViewSwitch from '@/components/ui/ViewSwitch'
 import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
 import YesterdayStrip from '@/components/admin/YesterdayStrip'
-import { FillRow, OverdueRow } from '@/components/admin/TodayActionRows'
+import { FillButton, OverdueRow } from '@/components/admin/TodayActionRows'
+import CourtDayCard from '@/components/admin/CourtDayCard'
+import type { CourtDay } from '@/lib/court-day'
 import type { Briefing } from '@/lib/briefing'
 import type { FillGap, OverdueLine } from '@/lib/today-actions'
 
@@ -26,6 +28,8 @@ export type TodayViewProps = {
   unpaid: { count: number; total: number | null; oldestDays: number | null }
   openSeats: { count: number; soonest: string | null }
   emptyHoursToday: number
+  courtDay: CourtDay // each court, hour by hour, for the card that replaces "Courts right now"
+  nowMinutes: number // the club's own time, in minutes since midnight
   closeToday: string | null // when the club closes today (null = closed all day)
   notOpenYet: boolean // owners only: the club has courts but isn't open for booking
   showMoney: boolean // owners see money; front desk does not
@@ -95,17 +99,10 @@ export default function TodayView(p: TodayViewProps) {
         text="Players see Courts coming soon. Open it when you're ready." />,
     )
   }
-  if (p.showMoney && p.emptyHoursToday > 0) {
-    if (act?.offersOn && act.fill) {
-      attention.push(<FillRow key="empty" venueSlug={p.venueSlug} emptyHours={p.emptyHoursToday} gap={act.fill.gap} bounds={act.fill.bounds} autoOpen={act.autoOpen === 'fill'} />)
-    } else {
-      attention.push(
-        <AttentionRow key="empty" href={`/admin?tab=analytics&${q}`} tone="blue" mark="◔"
-          title={`${p.emptyHoursToday} court-${p.emptyHoursToday === 1 ? 'hour' : 'hours'} still empty today`}
-          text={act?.offersOn ? "Too late to offer today: offers need 3 hours' notice." : `Between now and ${p.closeToday ?? '22:00'}`} />,
-      )
-    }
-  }
+  // Empty court time lives on the court card below (with the Fill them button), not in this list.
+  const fillButton = act?.offersOn && act.fill
+    ? <FillButton venueSlug={p.venueSlug} gap={act.fill.gap} bounds={act.fill.bounds} autoOpen={act.autoOpen === 'fill'} />
+    : null
 
   const noCourts = s.courts.length === 0
   return (
@@ -132,47 +129,37 @@ export default function TodayView(p: TodayViewProps) {
 
       <div className="grid grid-cols-3 gap-4 mt-4">
         <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />
-        <Stat label="Players" value={String(s.players.today)} note={`vs ${s.players.lastWeek} last ${p.lastWeekLabel}`} />
+        <Stat label="Courts booked today" value={p.courtDay.pct === null ? '–' : `${p.courtDay.pct}%`}
+          note={p.courtDay.sellable === 0 ? 'Not on sale today' : `${p.courtDay.booked} of ${p.courtDay.sellable} court-hours · ${p.courtDay.openNow} still open`} />
         {p.showMoney
           ? <Stat label="Revenue" value={formatPrice(Math.round(s.revenue.today), p.currency).replace(/\.00$/, '')} note={`vs ${formatPrice(Math.round(s.revenue.lastWeek), p.currency).replace(/\.00$/, '')}`} />
           : <Stat label="Unpaid" value={String(unpaid.count)} note={unpaid.count === 1 ? 'share to chase' : 'shares to chase'} />}
       </div>
 
-      {/* On a computer: needs attention and the courts on the left, next bookings on the right. On a phone it is one column, as before. */}
-      <div className="lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-6 lg:items-start lg:mt-6">
-      <div>
-      <div className="text-[11px] font-extrabold uppercase mt-6 lg:mt-0 mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
+      {/* On a computer: the courts on the left, needs attention and the next bookings on the right. On a phone it is one column: needs attention, courts, next up. */}
+      <div className="grid grid-cols-1 gap-6 mt-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start">
+      <div className="lg:col-start-2 lg:row-start-1">
+      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
       <div className="rounded-[20px] overflow-hidden" style={card}>
         {attention.length > 0 ? attention : (
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>All clear. Nothing needs your attention right now.</div>
         )}
       </div>
+      </div>
 
-      <div className="text-[11px] font-extrabold uppercase mt-6 mb-2 px-0.5" style={sectionLabel}>Courts right now</div>
+      <div className="lg:col-start-1 lg:row-start-1 lg:row-span-2">
+      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Court by court today</div>
       {noCourts ? (
         <div className="rounded-[20px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
           This club has no courts set up yet.{p.showMoney ? <> <Link href={`/admin/setup?${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up this club</Link>.</> : ' Ask the owner to add them.'}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {s.courts.map(c => (
-            <div key={c.id} className="rounded-xl px-4 py-3" style={card}>
-              <div className="text-[12.5px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
-              <div className="flex items-center gap-1.5 mt-1 text-[11.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
-                <span aria-hidden style={{ width: 8, height: 8, borderRadius: 999, display: 'inline-block', background: c.state === 'inUse' ? 'var(--brand-primary-text)' : c.state === 'blocked' ? 'var(--brand-crimson)' : 'var(--text-subtle)' }} />
-                {c.state === 'inUse' ? 'In use' : c.state === 'blocked' ? 'Blocked' : 'Free'}
-              </div>
-              <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                {c.state === 'free' ? (c.next ? `next booking ${c.next}` : 'nothing more today') : `until ${c.until}`}
-              </div>
-            </div>
-          ))}
-        </div>
+        <CourtDayCard day={p.courtDay} boardHref={`/admin?tab=board&${q}`} currency={p.currency} showMoney={p.showMoney} nowMinutes={p.nowMinutes} fill={fillButton} />
       )}
-
       </div>
-      <div>
-      <div className="text-[11px] font-extrabold uppercase mt-6 lg:mt-0 mb-2 px-0.5" style={sectionLabel}>Next up</div>
+
+      <div className="lg:col-start-2 lg:row-start-2">
+      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Next up</div>
       <div className="rounded-[20px] overflow-hidden" style={card}>
         {s.nextUp.length === 0 ? (
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No more bookings today.</div>
@@ -191,6 +178,11 @@ export default function TodayView(p: TodayViewProps) {
             </span>
           </div>
         ))}
+        {s.nextUpMore > 0 && (
+          <Link href={`/admin?tab=board&${q}`} data-testid="next-up-more" className="flex items-center justify-between gap-3 px-3.5 py-3.5 text-[13px] font-extrabold" style={{ color: 'var(--brand-primary-text)' }}>
+            <span>+ {s.nextUpMore} more today</span><span>See them on the Board ›</span>
+          </Link>
+        )}
       </div>
 
       <Link href={`/admin?tab=board&${q}`} className="btn-main btn-main-quiet mt-4">

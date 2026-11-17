@@ -56,6 +56,7 @@ export type TodaySummary = {
   revenue: { today: number; lastWeek: number }
   courts: CourtNow[]
   nextUp: NextUp[]
+  nextUpMore: number // bookings still to start today beyond the ones listed
 }
 
 // A person counts once per day however many courts they are on: the booker plus
@@ -94,9 +95,11 @@ export function computeToday(
   })
 
   const courtName = new Map(courts.map(c => [c.id, c.name]))
-  const nextUp: NextUp[] = todays
-    .filter(b => live(b) && minutesOf(b.end_time) > nowMinutes)
+  // Bookings that have not started yet: a game already under way is on the court card, not here.
+  const comingUp = todays
+    .filter(b => live(b) && minutesOf(b.start_time) > nowMinutes)
     .sort((a, b) => minutesOf(a.start_time) - minutesOf(b.start_time))
+  const nextUp: NextUp[] = comingUp
     .slice(0, maxNext)
     .map(b => {
       const joined = splits.filter(s => s.booking_id === b.id && s.user_id && s.status !== 'cancelled')
@@ -117,6 +120,7 @@ export function computeToday(
     revenue: { today: revenue(todays), lastWeek: revenue(lastWeeks) },
     courts: courtsNow,
     nextUp,
+    nextUpMore: Math.max(0, comingUp.length - maxNext),
   }
 }
 
