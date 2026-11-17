@@ -180,12 +180,6 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
       <div className="flex flex-col [&>*:first-child]:mt-4">{children}</div>
     </div>
   )
-  const later = (q: Q) => (
-    <div key={q} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5 text-[14px] font-bold" data-testid={`later-${q}`} style={{ border: '1px dashed var(--border)', color: 'var(--text-subtle)' }}>
-      <span className="rounded-full shrink-0" style={{ width: 26, height: 26, border: '1.5px dashed var(--border)' }} aria-hidden />
-      {qLabel[q]}
-    </div>
-  )
   const stack = 'flex flex-col gap-4 [&>*]:mt-0'
 
   return (
@@ -300,7 +294,6 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
           </>)}
         </>}
 
-        {order.filter(q => order.indexOf(q) > order.indexOf(eff)).map(later)}
 
         {eff !== 'live' && <div className="text-[11px] font-extrabold uppercase mt-2 px-0.5" style={sectionLabel}>More settings</div>}
       {regulars && (

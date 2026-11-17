@@ -9,7 +9,7 @@ export const metadata = { title: 'Membership' }
 
 export default async function MembershipPage() {
   const supabase = createServerClient()
-  await keepClubAccountsOut(supabase)
+  await keepClubAccountsOut(supabase, '/membership')
   const { data: { session } } = await supabase.auth.getSession()
 
   const { data: profile } = await supabase

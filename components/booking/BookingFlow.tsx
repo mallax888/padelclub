@@ -843,12 +843,6 @@ export default function BookingFlow({
       <button type="button" onClick={onChange} className="text-[13px] font-bold shrink-0" style={{ color: 'var(--link-change)' }} aria-label={`Change ${label}`}>Change</button>
     </div>
   )
-  const laterRow = (g: Group) => (
-    <div key={g} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5 text-[14px] font-bold" data-testid={`later-${g}`} style={{ border: '1px dashed var(--border)', color: 'var(--text-subtle)' }}>
-      <span className="rounded-full shrink-0" style={{ width: 26, height: 26, border: '1.5px dashed var(--border)' }} aria-hidden />
-      {groupLabel[g]}
-    </div>
-  )
   const changeWhere = () => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }
   const answeredRows: React.ReactNode[] = []
   if (!venuePickerSkipped && venue && done('where')) answeredRows.push(doneRow('where', 'Where', <>{venue.name} · {venue.region}</>, changeWhere, flagImg(venueCountry?.name) ?? undefined))
@@ -859,7 +853,6 @@ export default function BookingFlow({
   if (step === 'confirm' && assignedCourt && date && time) answeredRows.push(doneRow('booking', 'Your booking', `${assignedCourt.name} · ${formatDate(date)} · ${time}–${endTimeNow} · ${venue?.name ?? ''}`, () => { setStep('time'); playBackSound() }, undefined, <span className="text-[15px] font-extrabold shrink-0" style={{ color: 'var(--brand-primary-text)' }}>{formatPrice(courtPrice, currency)}</span>))
   if (step === 'confirm' && done('players')) answeredRows.push(doneRow('players', 'Playing with', seatCount > 0 ? `${withText || `${seatCount} other${seatCount === 1 ? '' : 's'}`} · you pay ${formatPrice(bookerShareCents(courtPrice, seatCount + 1) / 100, currency)}` : 'Just me', () => { setConfirmStage('players'); playBackSound() }))
   if (step === 'confirm' && askRegular && done('regular')) answeredRows.push(doneRow('regular', 'Every week', regular && date ? `Every ${weekdayPlural(date).slice(0, -1)} for ${regularWeeks} weeks${prepayActive ? ', all paid now' : ''}` : 'Just this once', () => { setConfirmStage('regular'); playBackSound() }))
-  const laterRows = groups.filter(g => groups.indexOf(g) > groups.indexOf(groupNow)).map(laterRow)
   const promptNo = groups.indexOf(groupNow) + 1
 
   // The open question's card. `back` is only for moving between the three Where screens.
@@ -1661,7 +1654,6 @@ export default function BookingFlow({
         </>
       )}
       </div>
-      {laterRows.length > 0 && <div className="flex flex-col gap-4 mt-4">{laterRows}</div>}
 
     </div>
   )

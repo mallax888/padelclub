@@ -62,15 +62,15 @@ export default function HomeView({ name, homeSlug, tz, nowMs, next, shares, usua
               )}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2.5 mt-4">
+          <div className="grid gap-2.5 mt-4" data-testid="next-game-actions" style={{ gridTemplateColumns: `repeat(${nextVenue ? 3 : 2}, minmax(0, 1fr))` }}>
             <a href={buildBookingIcsDataUri({
               uid: next.id, title: `Padel at ${nextVenue?.name ?? 'PadelClub'}`, description: `${next.courts?.name ?? 'Court'} · booked with PadelClub`,
               location: nextVenue ? `${nextVenue.name}, ${nextVenue.address}` : '', date: next.date, startTime: next.start_time, endTime: next.end_time ?? next.start_time,
             })} download={`padel-${next.date}.ics`} data-testid="add-to-calendar"
-              className="rounded-xl px-4 text-[13px] font-extrabold inline-flex items-center" style={{ minHeight: 44, background: 'var(--text-primary)', color: 'var(--bg-base)' }}>Add to calendar</a>
+              className="rounded-xl px-1 text-[13px] font-extrabold flex items-center justify-center text-center whitespace-nowrap" style={{ minHeight: 44, background: 'var(--text-primary)', color: 'var(--bg-base)' }} aria-label="Add to calendar"><span className="hidden min-[400px]:inline">Add to calendar</span><span className="min-[400px]:hidden">Calendar</span></a>
             {nextVenue && <a href={mapsUrl(nextVenue.address)} target="_blank" rel="noopener noreferrer" data-testid="directions"
-              className="rounded-xl px-4 text-[13px] font-extrabold inline-flex items-center" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Directions</a>}
-            <Link href="/mybookings" className="rounded-xl px-4 text-[13px] font-extrabold inline-flex items-center" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Manage booking</Link>
+              className="rounded-xl px-1 text-[13px] font-extrabold flex items-center justify-center text-center whitespace-nowrap" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Directions</a>}
+            <Link href="/mybookings" className="rounded-xl px-1 text-[13px] font-extrabold flex items-center justify-center text-center whitespace-nowrap" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Edit booking</Link>
           </div>
         </section>
       ) : (

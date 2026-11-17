@@ -348,7 +348,7 @@ function ShareDeadlineBox({ booking, shares }: { booking: BookingWithCourt; shar
           ? <>Friends pay by <b style={{ color: 'var(--text-primary)' }}>{fmtWhen(sched.deadline, tz)}</b>. After that you can cover what is left ({amount}), or the court is released.</>
           : <>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid. You can cover {pending.length === 1 ? 'it' : 'them'} ({amount}).</>}
       </div>
-      <button onClick={cover} disabled={busy} className="rounded-full px-3.5 text-xs font-bold disabled:opacity-50 shrink-0"
+      <button onClick={cover} disabled={busy} className="rounded-full px-3.5 text-xs font-bold disabled:opacity-50 shrink-0 w-full sm:w-auto"
         style={{ minHeight: 40, background: urgent ? 'var(--brand-primary)' : 'var(--bg-surface)', color: urgent ? 'var(--brand-primary-on)' : 'var(--text-primary)', border: urgent ? 'none' : '1px solid var(--border)' }}>
         {busy ? 'Opening…' : `Cover ${amount}`}
       </button>
@@ -908,7 +908,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition-colors"
+        className="w-full flex items-center gap-2 sm:gap-3 rounded-2xl px-4 py-3 text-left transition-colors"
         style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
         <span className="text-xs font-bold shrink-0" style={{ color: 'var(--text-primary)', width: 52, fontVariantNumeric: 'tabular-nums' }}>
           {dateParts(b.date).weekday} {dateParts(b.date).day}
@@ -1040,8 +1040,8 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
           <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
         </div>
       )}
-      <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 mt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 pt-2.5 mt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {splits.length > 0 && (
             <>
               {/* "Has Jonesy paid me back yet" is the real question behind a
@@ -1056,7 +1056,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
               const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
               const paid = s.status === 'paid'
               return (
-                <span key={s.id} className="inline-flex items-center gap-1.5">
+                <span key={s.id} className="flex items-center justify-between gap-1.5 sm:inline-flex sm:justify-start">
                   <PlayerChip name={name} paid={paid} />
                   {!paid && !past && (
                     <RemindButton
@@ -1073,7 +1073,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
             </>
           )}
         </div>
-        <div className="flex items-start gap-2 ml-auto">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-start sm:ml-auto [&>*:only-child]:col-span-2 sm:[&>*:only-child]:col-span-1">
           {past && b.status !== 'cancelled' && <RecordResultButton bookingId={b.id} />}
           {past && b.status !== 'cancelled' && <BookAgainButton courtId={b.court_id} durationMinutes={b.duration_minutes} />}
           {past && b.stripe_payment_id && (
@@ -1083,11 +1083,11 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
             </a>
           )}
           {canReschedule && (
-            <div className="flex flex-col items-center gap-1">
+            <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setShowReschedule(true)}
-                className="btn btn-sm"
+                className="btn btn-sm w-full sm:w-auto justify-center"
                 style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)', fontWeight: 600 }}
               >
                 Reschedule
@@ -1096,8 +1096,8 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
             </div>
           )}
           {canCancel && (
-            <div className="flex flex-col items-center gap-1">
-              <button className="btn btn-danger btn-sm" onClick={onCancel} disabled={cancelling}>
+            <div className="flex flex-col items-center gap-1 w-full sm:w-auto">
+              <button className="btn btn-danger btn-sm w-full sm:w-auto justify-center" onClick={onCancel} disabled={cancelling}>
                 {cancelling ? '…' : 'Cancel'}
               </button>
               <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{!isPaid ? 'No charge' : isLateCancel ? '50% credit' : 'Full refund'}</span>

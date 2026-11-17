@@ -70,10 +70,10 @@ export default function ClubAnalytics({
     <div data-testid="analytics-tab">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
         <CardHeading as="h2" size="section" className="">Analytics</CardHeading>
-        <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }} role="radiogroup" aria-label="Period">
+        <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto" style={{ background: 'var(--bg-raised)' }} role="radiogroup" aria-label="Period">
           {PERIODS.map(p => (
             <button key={p} type="button" role="radio" aria-checked={days === p} data-testid={`period-${p}`} onClick={() => setDays(p)}
-              className="px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+              className="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all"
               style={{ background: days === p ? 'var(--brand-primary)' : 'transparent', color: days === p ? 'var(--brand-primary-on, #fff)' : 'var(--text-muted)' }}>
               {p} days
             </button>

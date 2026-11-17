@@ -192,12 +192,12 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
           </p>
           <div className="mt-4" style={{ borderTop: '1px solid var(--border)' }}>
             {best.map(g => (
-              <div key={`${g.date}-${g.from}`} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="best-slot-row">
-                <div className="min-w-0">
+              <div key={`${g.date}-${g.from}`} className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="best-slot-row">
+                <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)} · <span className="whitespace-nowrap">{g.from}–{g.to}</span></div>
                   <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{g.fillPct}% full · {g.empty} of {g.courts} {g.courts === 1 ? 'court' : 'courts'} free · {g.kind === 'peak' ? 'peak' : 'quiet'}</div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2 shrink-0">
                   <div className="text-xs font-extrabold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>up to {formatPrice(g.potential, currency)}</div>
                   {onFill && (
                     <button type="button" onClick={() => onFill({ date: g.date, from: g.from, to: g.to })}

@@ -649,7 +649,7 @@ export default function AdminDashboard({
             </label>
           )}
           {tab === 'courts' && (
-            <button className="btn btn-primary btn-sm" onClick={openAddCourt}>+ Add court</button>
+            <button className="btn-main sm:!w-auto sm:!min-h-0 sm:!px-3 sm:!py-1.5 sm:!text-xs sm:!font-semibold sm:!rounded-lg" onClick={openAddCourt}>+ Add court</button>
           )}
         </div>
       ) : null}
@@ -1088,6 +1088,7 @@ function BoardView({
   // cell several times the width it had when the hours were columns.
   const DAY_ROW_HEIGHT = 50
 
+  const shortDay = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })
   const atNow = viewMode === 'day' ? boardDate === today : viewMode === 'week' ? weekDates.includes(today) : boardDate.slice(0, 7) === today.slice(0, 7)
   const nowLabel = viewMode === 'day' ? 'Today' : viewMode === 'week' ? 'This week' : 'This month'
   const title = viewMode === 'month'
@@ -1108,7 +1109,7 @@ function BoardView({
           the date beside them and a way back to now. Grid / List only applies to Day, so it sits
           beside the day strip rather than up here. */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0" data-testid="board-date-control">
+        <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto" data-testid="board-date-control">
           {(['prev', 'next'] as const).map(k => (
             <button key={k} type="button" onClick={() => shiftDate(k === 'prev' ? -1 : 1)} data-testid={`board-${k}`}
               aria-label={`${k === 'prev' ? 'Previous' : 'Next'} ${unitName}`} title={`${k === 'prev' ? 'Previous' : 'Next'} ${unitName}`}
@@ -1117,16 +1118,18 @@ function BoardView({
               {k === 'prev' ? '‹' : '›'}
             </button>
           ))}
-          <span className="text-base font-semibold ml-1 truncate" data-testid="board-title" style={{ color: 'var(--text-primary)', minWidth: viewMode === 'day' ? 0 : 200 }}>{title}</span>
+          <span className="text-base font-semibold ml-1 min-w-0 flex-1 sm:flex-none sm:truncate" data-testid="board-title" style={{ color: 'var(--text-primary)' }}>
+            {viewMode === 'week' ? (<><span className="sm:hidden">{shortDay(weekDates[0])} – {shortDay(weekDates[6])}</span><span className="hidden sm:inline">{title}</span></>) : title}
+          </span>
           {atNow
             ? <span className="text-xs font-bold rounded-full px-3 py-1.5 shrink-0" data-testid="board-now" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary)' }}>{nowLabel}</span>
             : <button type="button" onClick={() => setBoardDate(today)} data-testid="board-today" className="text-xs font-bold rounded-full px-3 py-1.5 shrink-0"
                 style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>{nowLabel}</button>}
         </div>
-        <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+        <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto" style={{ background: 'var(--bg-raised)' }}>
           {(['day', 'week', 'month'] as const).map(m => (
             <button key={m} onClick={() => setViewMode(m)}
-              className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+              className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
               style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
               {m}
             </button>
@@ -1156,10 +1159,10 @@ function BoardView({
               </button>
             ))}
           </div>
-          <div className="flex gap-1 rounded-lg p-1" style={{ background: 'var(--bg-raised)' }}>
+          <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto" style={{ background: 'var(--bg-raised)' }}>
             {(['grid', 'list'] as const).map(m => (
               <button key={m} onClick={() => setDayLayout(m)}
-                className="px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
+                className="flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
                 style={{ background: dayLayout === m ? 'var(--brand-primary)' : 'transparent', color: dayLayout === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
                 {m}
               </button>

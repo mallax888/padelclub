@@ -9,7 +9,7 @@ import {
   FORMATS, GROUP_LABEL, estimate, formatInfo, hm, isPairFormat, isRotationFormat, joinReasons, normalizeSettings, recommend,
   type FormatId, type Goal,
 } from '@/lib/tournament-formats'
-import { AnsweredRow, AskCard, FlowButton, FlowProgress, LaterRow, FLOW_FRAME } from '@/components/ui/PromptFlow'
+import { AnsweredRow, AskCard, FlowButton, FlowProgress, FLOW_FRAME } from '@/components/ui/PromptFlow'
 
 type Player = { id: string; full_name: string | null; nickname: string | null }
 type Step = 'where' | 'size' | 'format' | 'fine' | 'players'
@@ -398,7 +398,6 @@ export default function NewTournamentForm({
           </AskCard>
         )}
 
-        {STEPS.filter(s => STEPS.indexOf(s) > stepIndex).map(s => <LaterRow key={s} id={s} label={LABEL[s]} />)}
       </div>
     </div>
   )

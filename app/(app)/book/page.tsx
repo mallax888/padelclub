@@ -18,7 +18,7 @@ const RECENT_PARTNER_LIMIT = 12
 
 export default async function BookPage({ searchParams }: { searchParams?: { [key: string]: string | string[] | undefined } }) {
   const supabase = createServerClient()
-  await keepClubAccountsOut(supabase)
+  await keepClubAccountsOut(supabase, '/book')
   const [{ data: courts }, { data: { session } }, venueSettings] = await Promise.all([
     supabase.from('courts').select('*').eq('is_active', true),
     supabase.auth.getSession(),

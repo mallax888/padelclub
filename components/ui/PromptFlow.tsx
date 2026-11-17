@@ -47,15 +47,6 @@ export function AskCard({ n, total, title, subtitle, children }: { n: number; to
   )
 }
 
-export function LaterRow({ id, label }: { id: string; label: string }) {
-  return (
-    <div className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5 text-[14px] font-bold" data-testid={`later-${id}`} style={{ border: '1px dashed var(--border)', color: 'var(--text-subtle)' }}>
-      <span className="rounded-full shrink-0" style={{ width: 26, height: 26, border: '1.5px dashed var(--border)' }} aria-hidden />
-      {label}
-    </div>
-  )
-}
-
 // The full-width button that moves to the next question or finishes the page.
 export function FlowButton({ children, onClick, disabled, testId }: { children: ReactNode; onClick: () => void; disabled?: boolean; testId?: string }) {
   return (

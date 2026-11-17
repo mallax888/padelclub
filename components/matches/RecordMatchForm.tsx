@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { AnsweredRow, AskCard, FlowButton, FlowProgress, LaterRow, FLOW_FRAME } from '@/components/ui/PromptFlow'
+import { AnsweredRow, AskCard, FlowButton, FlowProgress, FLOW_FRAME } from '@/components/ui/PromptFlow'
 
 type Player = { id: string; full_name: string | null; nickname: string | null; ranking_points: number | null }
 type SetScore = { t1: number; t2: number }
@@ -245,7 +245,6 @@ export default function RecordMatchForm({
   const winnerName = matchWinner === 1 ? team1Name : matchWinner === 2 ? team2Name : ''
   const promptNo = STEPS.indexOf(step) + 1
   const goScore = () => setStep(matchWinner ? 'check' : 'score')
-  const later = STEPS.filter(s => STEPS.indexOf(s) > STEPS.indexOf(step))
 
   const teamBlock = (n: 1 | 2) => {
     const p1 = n === 1 ? team1p1 : team2p1
@@ -372,7 +371,6 @@ export default function RecordMatchForm({
           </AskCard>
         )}
 
-        {later.map(s => <LaterRow key={s} id={s} label={LABEL[s]} />)}
       </div>
     </div>
   )
