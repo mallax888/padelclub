@@ -12,7 +12,7 @@ export default async function RecordMatchPage({
   searchParams: { bookingId?: string }
 }) {
   const supabase = createServerClient()
-  await keepClubAccountsOut(supabase)
+  await keepClubAccountsOut(supabase, '/record-match')
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session!.user.id
 

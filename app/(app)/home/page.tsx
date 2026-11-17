@@ -13,7 +13,7 @@ export const metadata = { title: 'Home' }
 // and deals that suit them. Everything here is read-only; each card links to where it is done.
 export default async function HomePage() {
   const supabase = createServerClient()
-  await keepClubAccountsOut(supabase)
+  await keepClubAccountsOut(supabase, '/home')
   const { data: { session } } = await supabase.auth.getSession()
   const userId = session!.user.id
   const nowMs = Date.now()

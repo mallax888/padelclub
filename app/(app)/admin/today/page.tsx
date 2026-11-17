@@ -13,6 +13,8 @@ import { computeEmptyCourtTime, splitOverdueShares, summariseUnpaidShares } from
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
 import { splitOn } from '@/lib/club-access'
 import TodayView, { type TodayViewProps } from '@/components/admin/TodayView'
+import PlayerPageNotice from '@/components/admin/PlayerPageNotice'
+import { PLAYER_PAGES } from '@/lib/club-guard'
 import Link from 'next/link'
 import { loadVenueSettings, weekFor } from '@/lib/venue-settings'
 import { dayHours } from '@/lib/venue-hours'
@@ -26,7 +28,7 @@ const longDate = (d: string) =>
 const shortWeekday = (d: string) =>
   new Intl.DateTimeFormat('en-NZ', { weekday: 'short', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'))
 
-export default async function TodayPage({ searchParams }: { searchParams?: { venue?: string; act?: string } }) {
+export default async function TodayPage({ searchParams }: { searchParams?: { venue?: string; act?: string; player?: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
   const { data: profile } = await supabase
@@ -142,7 +144,10 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
     }
   }
 
+  const playerPath = searchParams?.player && PLAYER_PAGES[searchParams.player] ? searchParams.player : null
   return (
+    <>
+    {playerPath && <PlayerPageNotice path={playerPath} name={PLAYER_PAGES[playerPath]} />}
     <TodayView
       canSwitchView={!splitOn()}
       venueSlug={venueSlug}
@@ -163,5 +168,6 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       briefing={briefing}
       actions={actions}
     />
+    </>
   )
 }

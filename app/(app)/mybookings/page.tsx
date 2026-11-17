@@ -12,7 +12,7 @@ import { loadPlanRows } from '@/lib/club-plans'
 export const metadata = { title: 'My bookings' }
 export default async function MyBookingsPage() {
   const supabase = createServerClient()
-  await keepClubAccountsOut(supabase)
+  await keepClubAccountsOut(supabase, '/mybookings')
   const { data: { session } } = await supabase.auth.getSession()
   const [{ data: bookings }, { data: profile }, { data: splitRequests }, { data: outgoingSplits }, { data: joinedGames }, venueSettings] = await Promise.all([
     supabase
