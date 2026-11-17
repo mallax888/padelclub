@@ -115,7 +115,7 @@ export function change(current: number, previous: number): Change {
 // In words. A tiny starting figure makes a silly percentage (▲ 4600%), so past +200% the earlier figure is shown instead.
 export function describeChange(c: Change, previousText?: string): string {
   if (c.dir === 'none') return 'Nothing in either period'
-  if (c.dir === 'new') return 'New: nothing in the period before'
+  if (c.dir === 'new') return 'Up from nothing in the period before'
   if (c.dir === 'flat') return 'No change'
   if (c.dir === 'up' && (c.pct as number) > 200 && previousText) return `▲ from ${previousText}`
   return `${c.dir === 'up' ? '▲' : '▼'} ${Math.abs(c.pct as number)}%`

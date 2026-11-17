@@ -3,7 +3,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
-import ClubShell, { clubButton, clubCard } from '@/components/club/ClubShell'
+import ClubShell, { clubCard } from '@/components/club/ClubShell'
 
 // The club-side log in. Only club accounts (owner, front desk) get through: a player who
 // lands here is signed straight back out and pointed at the player log in.
@@ -41,7 +41,7 @@ export default function ClubLogin() {
               That is a player account, so it cannot open the club dashboard. Players log in <Link href="/auth/login" className="font-semibold underline">here</Link>.
             </p>
           )}
-          <button type="submit" disabled={busy} className="w-full py-3 rounded-lg text-sm font-bold disabled:opacity-60" style={clubButton}>{busy ? 'Signing in…' : 'Log in'}</button>
+          <button type="submit" disabled={busy} className="btn-main">{busy ? 'Signing in…' : 'Log in'}</button>
         </form>
       </div>
       <div className="text-center text-sm mt-4 space-y-1" style={{ color: 'var(--text-muted)' }}>

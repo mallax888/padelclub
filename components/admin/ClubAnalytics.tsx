@@ -90,7 +90,7 @@ export default function ClubAnalytics({
               <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{k.label}</div>
               <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{k.value}</div>
               {d && <div className="text-[11px] mt-1 font-semibold" style={{ color: TONE[d.tone] }}>{d.text}</div>}
-              {k.fixed && <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-subtle)' }}><span className="px-1.5 py-0.5 rounded-md mr-1" style={{ background: 'var(--bg-raised)' }}>fixed</span>{k.fixed}</div>}
+              {k.fixed && <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-subtle)' }}>{k.fixed} · doesn&apos;t change with the period</div>}
             </div>
           )
         })}
@@ -164,7 +164,7 @@ export default function ClubAnalytics({
         <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={card} data-testid="drifting">
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
             <CardHeading className="mb-2">Members drifting away</CardHeading>
-            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}><span className="px-1.5 py-0.5 rounded-md mr-1" style={{ background: 'var(--bg-surface)' }}>fixed</span>No booking in the last 30 days</div>
+            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>No booking in the last 30 days · doesn&apos;t change with the period</div>
           </div>
           {stats.drifting.length === 0 ? (
             <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--text-subtle)' }}>Nobody&apos;s drifting. Everyone has booked recently.</div>

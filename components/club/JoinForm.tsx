@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
-import ClubShell, { clubButton, clubCard } from '@/components/club/ClubShell'
+import ClubShell, { clubCard } from '@/components/club/ClubShell'
 
 export default function JoinForm({ token, email, role, where }: { token: string; email: string; role: string; where: string }) {
   const router = useRouter()
@@ -36,7 +36,7 @@ export default function JoinForm({ token, email, role, where }: { token: string;
           <div><label className="label" htmlFor="join-pw">Choose a password</label><input id="join-pw" type="password" className="input" value={password} onChange={e => setPassword(e.target.value)} autoComplete="new-password" required /></div>
           <div><label className="label" htmlFor="join-pw2">Confirm password</label><input id="join-pw2" type="password" className="input" value={confirm} onChange={e => setConfirm(e.target.value)} autoComplete="new-password" required /></div>
           {error && <p role="alert" className="text-sm" style={{ color: 'var(--brand-crimson)' }} data-testid="join-error">{error}</p>}
-          <button type="submit" disabled={busy} className="w-full py-3 rounded-lg text-sm font-bold disabled:opacity-60" style={clubButton}>{busy ? 'Setting up…' : 'Open the club dashboard'}</button>
+          <button type="submit" disabled={busy} className="btn-main">{busy ? 'Setting up…' : 'Open the club dashboard'}</button>
           <p className="text-xs" style={{ color: 'var(--text-subtle)' }}>This is a club login. It does not show player screens.</p>
         </form>
       </div>
