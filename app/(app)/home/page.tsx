@@ -4,7 +4,7 @@ import { loadOpenOffers } from '@/lib/offers'
 import { VENUES } from '@/lib/venues'
 import { timezoneForVenueSlug } from '@/lib/timezone'
 import { rankForYou, type GameLite } from '@/lib/matchmaking'
-import { distinctPeople, monthSummary, nextGame, savedLast30, shareSummary, usualOf, type HomeBooking } from '@/lib/home-rules'
+import { comingUp, distinctPeople, monthSummary, nextGame, savedLast30, shareSummary, usualOf, type HomeBooking } from '@/lib/home-rules'
 import HomeView from '@/components/home/HomeView'
 
 export const metadata = { title: 'Home' }
@@ -26,6 +26,7 @@ export default async function HomePage() {
   const next = nextGame(bookings, nowMs)
   const usual = usualOf(bookings, nowMs)
   const saved = savedLast30(bookings, nowMs)
+  const later = comingUp(bookings, next, nowMs)
 
   // Who has paid their share of the next game (only the booker can read these rows).
   let shares = { paid: [] as string[], waiting: [] as string[] }
@@ -80,5 +81,5 @@ export default async function HomePage() {
   const m = monthSummary(bookings, nowMs, localToday)
   const month = m.games > 0 || m.weeks > 0 || people > 0 ? { games: m.games, people, weeks: m.weeks } : null
   const first = ((profile as any)?.nickname ?? (profile as any)?.full_name ?? '').toString().split(' ')[0] || null
-  return <HomeView name={first} fullName={((profile as any)?.full_name ?? '').toString() || null} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} month={month} />
+  return <HomeView name={first} fullName={((profile as any)?.full_name ?? '').toString() || null} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} month={month} later={later as any} />
 }
