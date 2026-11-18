@@ -67,14 +67,14 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{today}{homeName ? ` · ${homeName}` : ''}</p>
         </div>
         <div className="hidden md:flex items-center gap-2.5 shrink-0">
-          <Link href="/book" data-testid="book-court" className="rounded-full px-5 text-[14px] font-black uppercase inline-flex items-center" style={{ minHeight: 44, letterSpacing: '0.04em', background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>Find a court →</Link>
+          <Link href="/book" data-testid="book-court" className="rounded-full px-5 text-[14px] font-black uppercase inline-flex items-center" style={{ minHeight: 44, letterSpacing: '0.04em', background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>Book a court →</Link>
           <Link href="/find-a-game" className="rounded-full px-5 text-[14px] font-extrabold inline-flex items-center" style={{ minHeight: 44, ...card, color: 'var(--text-primary)' }}>Open play →</Link>
         </div>
       </div>
 
       {next ? (
         <>
-          {/* Phones: the ticket, then the Find a court and usual tiles */}
+          {/* Phones: the ticket, then the Book a court and usual tiles */}
           <div className="md:hidden flex flex-col gap-4">
             <div>
               <section className="relative text-white" data-testid="next-game" style={{ background: TICKET, borderRadius: 24 }}>
@@ -115,7 +115,7 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
             <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4">
               <Link href="/book" data-testid="book-court" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
                 <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', opacity: 0.85 }}>Book a court</span>
-                <span className="text-[17px] font-black leading-tight">Pick a time in a minute</span>
+                <span className="text-[17px] font-black leading-tight">Book in seconds</span>
                 <span className="text-lg font-extrabold leading-none" aria-hidden>→</span>
               </Link>
               {usual && usualDate ? (
@@ -171,7 +171,7 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
           <div className="md:hidden grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4">
             <Link href="/book" data-testid="book-court" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
               <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', opacity: 0.85 }}>Book a court</span>
-              <span className="text-[17px] font-black leading-tight">Pick a time in a minute</span>
+              <span className="text-[17px] font-black leading-tight">Book in seconds</span>
               <span className="text-lg font-extrabold leading-none" aria-hidden>→</span>
             </Link>
             <Link href="/find-a-game" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
