@@ -81,9 +81,13 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
   const canRemove = !!current && !current.builtIn && members === 0
 
   return (
-    <div className="rounded-2xl mt-4 p-5" style={card} data-testid="membership-plans">
-      <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🏅 Memberships</div>
-      <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>The plans your players can join at your club. You set the price and what each plan includes.</div>
+    <div className="rounded-[20px] p-5" style={card} data-testid="membership-plans">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Memberships</div>
+          <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>The plans your players can join at your club. You set the price and what each plan includes.</div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-3 gap-2 mt-4">
         {[
@@ -98,26 +102,35 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
         ))}
       </div>
 
-      <div className="mt-4 space-y-2">
-        {plans.map(p => (
-          <button key={p.key} type="button" onClick={() => load(p.key)} data-testid={`plan-${p.key}`}
-            className="w-full text-left rounded-xl px-3 py-2.5"
-            style={{ background: 'var(--bg-surface)', border: sel === p.key ? '1px solid var(--brand-primary)' : '1px solid var(--border)', opacity: p.active ? 1 : 0.6 }}>
-            <span className="flex items-center justify-between gap-2">
-              <span className="text-[13.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
-                {p.name}
-                <span className="ml-2 text-[10px] font-bold rounded-full px-2 py-0.5" style={{ background: 'var(--bg-raised)', color: p.active ? 'var(--brand-green)' : 'var(--text-muted)' }}>{p.key === 'casual' ? 'Always on' : p.active ? 'On' : 'Off'}</span>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {plans.map(p => {
+          const on = sel === p.key
+          const gold = p.key !== 'casual' && p.active
+          // Casual is blue, Club is gold, Pro is green; any extra plan an owner adds takes gold
+          const face = !p.active ? 'linear-gradient(160deg, #3a4150, #2b313c)'
+            : p.key === 'pro' ? 'linear-gradient(160deg, #1f9a5f, #0f5c38)'
+            : gold ? 'linear-gradient(160deg, #c9a300, #8a6f00)' : 'linear-gradient(160deg, #2c5fc4, #1d3f8d)'
+          return (
+            <button key={p.key} type="button" onClick={() => load(p.key)} data-testid={`plan-${p.key}`} aria-pressed={on}
+              className="w-full text-left rounded-[20px] px-4 py-3.5 text-white"
+              style={{ background: face, boxShadow: on ? '0 0 0 3px var(--bg-surface), 0 0 0 5px var(--brand-primary-text)' : 'none', opacity: p.active ? 1 : 0.75 }}>
+              <span className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'rgba(255,255,255,0.8)' }}>
+                  {p.name} · {p.key === 'casual' ? 'Always on' : p.active ? 'On' : 'Off'}
+                </span>
               </span>
-              <span className="text-[13.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{p.price === 0 ? 'Free' : `${formatPrice(p.price, currency)} / month`}</span>
-            </span>
-            <span className="block text-[11.5px] mt-1" style={{ color: 'var(--text-muted)' }}>
-              {p.discountPercent > 0 ? `${p.discountPercent}% off` : 'No discount'} · book {p.windowDays} days ahead · {stats.counts[p.key] ?? 0} {(stats.counts[p.key] ?? 0) === 1 ? 'member' : 'members'}
-            </span>
-          </button>
-        ))}
+              <span className="block text-[26px] font-black leading-tight mt-1" style={{ letterSpacing: '-0.02em' }}>
+                {p.price === 0 ? 'Free' : <>{formatPrice(p.price, currency)}<span className="text-[13px] font-bold"> / month</span></>}
+              </span>
+              <span className="block text-[11.5px] mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                {p.discountPercent > 0 ? `${p.discountPercent}% off` : 'No discount'} · book {p.windowDays} days ahead · {stats.counts[p.key] ?? 0} {(stats.counts[p.key] ?? 0) === 1 ? 'member' : 'members'}
+              </span>
+            </button>
+          )
+        })}
         {plans.length < MAX_PLANS && (
           <button type="button" onClick={() => load(NEW)} data-testid="plan-add"
-            className="w-full rounded-xl py-2.5 text-[13px] font-bold" style={{ border: '1.5px dashed var(--text-subtle)', color: 'var(--text-muted)', background: 'transparent' }}>+ Add a plan</button>
+            className="w-full rounded-[20px] py-6 text-[13px] font-bold" style={{ border: '1.5px dashed var(--text-subtle)', color: 'var(--text-muted)', background: 'transparent' }}>+ Add a plan</button>
         )}
       </div>
 

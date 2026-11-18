@@ -44,9 +44,9 @@ export default function ClubPayouts({ venueSlug, returning }: { venueSlug: strin
   }
 
   const shell = (children: React.ReactNode, pill?: { text: string; tone: 'ok' | 'warn' | 'mute' }) => (
-    <div className="rounded-2xl mt-4 p-5" style={card} data-testid="club-payouts">
+    <div className="rounded-[20px] p-5" style={card} data-testid="club-payouts">
       <div className="flex items-center gap-3">
-        <span className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>💳 Get paid directly</span>
+        <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Get paid directly</span>
         {pill && (
           <span data-testid="payouts-pill" className="ml-auto text-[11px] font-extrabold rounded-full px-2.5 py-1"
             style={{ background: pill.tone === 'ok' ? 'var(--success-muted, rgba(53,194,122,.16))' : pill.tone === 'warn' ? 'rgba(240,169,59,.16)' : 'var(--bg-raised)', color: pill.tone === 'ok' ? 'var(--success, #35c27a)' : pill.tone === 'warn' ? '#f0a93b' : 'var(--text-muted)' }}>{pill.text}</span>

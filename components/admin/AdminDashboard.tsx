@@ -566,49 +566,41 @@ export default function AdminDashboard({
 
   const heroVenue = activeVenue ? getVenue(activeVenue) : null
 
+  // Today's numbers for the club on screen, on the two tabs about today. They sit under the page heading, like everything else.
+  const statCards = (tab === 'board' || tab === 'bookings') ? <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    {[
+      { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week', spark: bookingsSpark },
+      { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
+      { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week', spark: revenueSpark },
+      { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
+    ].filter(c => canSeeMoney || c.label !== 'Revenue today').map(({ label, value, color, trend, trendLabel, spark }) => (
+      <div key={label} className="rounded-2xl p-4 flex items-center justify-between gap-3"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <div className="min-w-0">
+          <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <div className="text-xl font-semibold" style={{ color }}>{value}</div>
+            {trend !== null && (
+              <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
+                {trend === 0 ? 'no change' : `${trend > 0 ? '↑' : '↓'}${Math.abs(trend)}%`}
+              </span>
+            )}
+          </div>
+          <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
+        </div>
+        <Sparkline data={spark} color={color} />
+      </div>
+    ))}
+  </div> : null
+
   return (
     <div className="flex gap-6">
       <AdminSidebar tab={tab} setTab={setTab} canSeeMoney={canSeeMoney} venueName={heroVenue?.name ?? 'Your club'} venueRegion={heroVenue?.region ?? ''} staffName={staffName} />
       <div className="flex-1 min-w-0">
       {/* No tab row on a phone: the bottom bar (and its More menu) opens every tab, so a second row only repeated it. md+ uses the sidebar. */}
-      {tab === 'bookings' && (
-        <div className="flex justify-end mb-4 md:hidden">
-          <button className="btn btn-primary btn-sm" onClick={() => setShowBlock(true)}>
-            🔒 Block a court
-          </button>
-        </div>
-      )}
-
-      {/* Stat cards: today's numbers for the club on screen, on the two tabs about today */}
-      {(tab === 'board' || tab === 'bookings') && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        {[
-          { label: "Today's bookings", value: todayBookings.length, color: 'var(--brand-primary-text)', trend: bookingsTrend, trendLabel: 'vs same day last week', spark: bookingsSpark },
-          { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
-          { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week', spark: revenueSpark },
-          { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
-        ].filter(c => canSeeMoney || c.label !== 'Revenue today').map(({ label, value, color, trend, trendLabel, spark }) => (
-          <div key={label} className="rounded-2xl p-4 flex items-center justify-between gap-3"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-            <div className="min-w-0">
-              <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-              <div className="flex items-baseline gap-2 flex-wrap">
-                <div className="text-xl font-semibold" style={{ color }}>{value}</div>
-                {trend !== null && (
-                  <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
-                    {trend === 0 ? 'no change' : `${trend > 0 ? '↑' : '↓'}${Math.abs(trend)}%`}
-                  </span>
-                )}
-              </div>
-              <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
-            </div>
-            <Sparkline data={spark} color={color} />
-          </div>
-        ))}
-      </div>}
-
       {/* Venue selector - shared across Board / Bookings / Courts */}
       {((tab === 'board' || tab === 'bookings' || tab === 'analytics' || tab === 'reports') && venuesWithCourts.length > 0) || (tab === 'courts' && courtTabVenues.length > 0) ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 min-h-[37px]">
           {managedVenueSlug ? (
             <div className="text-sm font-medium px-1" style={{ color: 'var(--text-primary)' }}>
               {(venuesWithCourts[0] ?? selectableVenues[0])?.name ?? managedVenueSlug} — {(venuesWithCourts[0] ?? selectableVenues[0])?.region ?? ''}
@@ -638,22 +630,22 @@ export default function AdminDashboard({
               )}
             </div>
           )}
-          {tab === 'bookings' && (
-            <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'var(--text-muted)' }}>
-              <input type="checkbox" checked={showPastBookings} onChange={e => setShowPastBookings(e.target.checked)} />
-              Show past bookings
-            </label>
-          )}
-          {tab === 'courts' && venueCourts.length > 0 && (
-            <button className="btn-main sm:!w-auto sm:!min-h-0 sm:!px-3 sm:!py-1.5 sm:!text-xs sm:!font-semibold sm:!rounded-lg" onClick={openAddCourt}>+ Add court</button>
-          )}
         </div>
       ) : null}
+
+{/* Members and Xero are not about one club's courts, but they open the same way as every other tab: a line saying whose they are. */}
+      {(tab === 'members' || tab === 'xero') && (
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4 min-h-[37px]">
+          <div className="text-sm font-medium px-1" style={{ color: 'var(--text-primary)' }}>
+            {managedVenueSlug ? `${getVenue(managedVenueSlug).name} — ${getVenue(managedVenueSlug).region}` : managedCountry ? `All ${managedCountry} clubs` : 'All clubs'}
+          </div>
+        </div>
+      )}
 
 {/* Board tab */}
       {tab === 'board' && (
         <div className="flex flex-col gap-4">
-          <BoardView today={today} setupHref={canSeeMoney && activeVenue ? `/admin/setup?venue=${encodeURIComponent(activeVenue)}` : null} week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
+          <BoardView stats={statCards} today={today} setupHref={canSeeMoney && activeVenue ? `/admin/setup?venue=${encodeURIComponent(activeVenue)}` : null} week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
           <BoardFooterStrip
             rangeLabel={boardRange.label}
             thisWeekCount={thisWeekVenueBookings.length}
@@ -697,7 +689,15 @@ export default function AdminDashboard({
 
       {/* Bookings tab */}
       {tab === 'bookings' && (<>
-        <CardHeading as="h2" size="section" className="mb-4">Bookings</CardHeading>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <CardHeading as="h2" size="section" className="">Bookings</CardHeading>
+          <button className="btn btn-primary btn-sm md:hidden shrink-0" onClick={() => setShowBlock(true)}>🔒 Block a court</button>
+        </div>
+        {statCards && <div className="mb-6">{statCards}</div>}
+        <label className="flex items-center gap-2 text-xs cursor-pointer mb-4" style={{ color: 'var(--text-muted)' }}>
+          <input type="checkbox" checked={showPastBookings} onChange={e => setShowPastBookings(e.target.checked)} />
+          Show past bookings
+        </label>
         <div className="rounded-2xl overflow-x-auto scrollbar-thin"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-sm">
@@ -822,7 +822,12 @@ export default function AdminDashboard({
 
       {/* Courts tab */}
       {tab === 'courts' && (<>
-        <CardHeading as="h2" size="section" className="mb-4">Courts</CardHeading>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <CardHeading as="h2" size="section" className="">Courts</CardHeading>
+          {venueCourts.length > 0 && (
+            <button className="btn btn-primary btn-sm shrink-0" onClick={openAddCourt}>+ Add court</button>
+          )}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {venueCourts.length === 0 ? (
             <div className="rounded-xl text-center py-12 text-sm sm:col-span-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
@@ -867,7 +872,10 @@ export default function AdminDashboard({
         </div>
       </>)}
 
-      {tab === 'xero' && <XeroSettingsPanel />}
+      {tab === 'xero' && (<>
+        <CardHeading as="h2" size="section" className="mb-4">Xero</CardHeading>
+        <XeroSettingsPanel />
+      </>)}
 
       {/* Block court modal */}
       {showBlock && (
@@ -988,8 +996,9 @@ export default function AdminDashboard({
 
 
 function BoardView({
-  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members, today, setupHref = null,
+  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members, today, setupHref = null, stats = null,
 }: {
+  stats?: React.ReactNode
   week: WeekHours
   bookings: any[]
   venueCourts: Court[]
@@ -1112,9 +1121,11 @@ function BoardView({
     <div className="space-y-4">
       {/* Said "Today's Bookings" over a month of October 2026. It now names
           whatever the view is actually showing. */}
-      <CardHeading as="h2" size="section" className="" sub={viewMode === 'day' ? "Today's bookings" : viewMode === 'week' ? 'This week\u2019s bookings' : 'This month\u2019s bookings'}>
+      <CardHeading as="h2" size="section" className="">
         Board
       </CardHeading>
+      {stats && <div className="pb-2">{stats}</div>}
+      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{viewMode === 'day' ? "Today's bookings" : viewMode === 'week' ? 'This week\u2019s bookings' : 'This month\u2019s bookings'}</p>
       {/* One date control for Day, Week and Month, in the same place in all three: both arrows
           together on the left, stepping by whatever is on screen (a day, a week, a month), with
           the date beside them and a way back to now. Grid / List only applies to Day, so it sits

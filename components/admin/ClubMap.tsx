@@ -49,7 +49,11 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   aside: React.ReactNode; yesterday: React.ReactNode; stillToPlay: number; bookedPct: number | null; unpaidChase: number | null
 }) {
   const router = useRouter()
-  const [at, setAt] = useState(nowMinutes)
+  // The time on show. Until someone moves the slider it simply follows the clock, so when the page refreshes itself each
+  // minute it stays on "now" instead of being left on the minute it first opened.
+  const [picked, setPicked] = useState<number | null>(null)
+  const at = picked ?? nowMinutes
+  const setAt = (m: number) => setPicked(m === nowMinutes ? null : m)
   const [sel, setSel] = useState<string | null>(null)
   const [offer, setOffer] = useState<{ from: string; to: string } | null>(null)
   const [sent, setSent] = useState<string[]>([])
@@ -164,7 +168,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
     )
   }
 
-  const goal = showMoney && potential > 0 && takings > 0
+  const goal = showMoney && potential > 0
   const soft = '#cfe0ff'
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start" data-testid="court-day">

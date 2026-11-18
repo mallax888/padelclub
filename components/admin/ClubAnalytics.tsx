@@ -68,7 +68,7 @@ export default function ClubAnalytics({
 
   return (
     <div data-testid="analytics-tab">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-1">
         <CardHeading as="h2" size="section" className="">Analytics</CardHeading>
         <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto" style={{ background: 'var(--bg-raised)' }} role="radiogroup" aria-label="Period">
           {PERIODS.map(p => (
