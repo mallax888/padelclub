@@ -62,7 +62,7 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
                 <CourtTile name={next.courts?.name ?? 'Court'} size={72} />
                 <div className="min-w-0 flex-1">
                   <div className="text-[11px] font-extrabold uppercase whitespace-nowrap truncate" style={{ letterSpacing: '0.12em', color: SOFT }}>Next game · {dateParts(next.date).short}</div>
-                  <h2 className="font-black leading-none" style={{ fontSize: 38, letterSpacing: '-0.03em' }}>{fmtClock(next.start_time)}</h2>
+                  <h2 className="font-black leading-none" style={{ fontSize: 38, letterSpacing: '-0.03em', color: '#ffffff' }}>{fmtClock(next.start_time)}</h2>
                   <div className="text-[14px] font-bold mt-1.5" style={{ color: SOFT }}>until {fmtUntil(next.start_time, next.end_time ?? next.start_time)}{next.duration_minutes ? ` · ${next.duration_minutes} min` : ''}</div>
                 </div>
               </div>
