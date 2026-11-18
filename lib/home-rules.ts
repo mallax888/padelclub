@@ -12,11 +12,15 @@ export type HomeBooking = {
   status: string
   price_nzd: number
   discount_applied?: number | null
+  regular_id?: string | null
+  stripe_payment_id?: string | null
+  pay_by?: string | null
   courts?: { id?: string; name?: string | null; type?: string | null; venue_slug?: string | null } | null
 }
 
 const hhmm = (t: string): string => String(t).slice(0, 5)
 const venueOf = (b: HomeBooking): string | null => b.courts?.venue_slug ?? null
+export const startsAtMs = (b: HomeBooking): number => startMs(b)
 const startMs = (b: HomeBooking): number => {
   const slug = venueOf(b)
   return venueInstant(b.date, `${hhmm(b.start_time)}:00`, slug ? timezoneForVenueSlug(slug) : 'UTC').getTime()
@@ -178,4 +182,12 @@ export function dayWord(date: string, today: string, startTime: string): string 
 export const levelText = (min: number, max: number): string => {
   const t = (n: number) => n.toFixed(1).replace(/\.0$/, '')
   return `${t(min)}–${t(max)}`
+}
+
+// The bookings after the next game, soonest first, for the "Coming up" list on desktop Home.
+export function comingUp<B extends HomeBooking>(bookings: B[], next: { id: string } | null, nowMs: number, limit = 3): B[] {
+  return bookings
+    .filter(b => b.status === 'confirmed' && b.id !== next?.id && startMs(b) > nowMs)
+    .sort((a, b) => startMs(a) - startMs(b))
+    .slice(0, limit)
 }
