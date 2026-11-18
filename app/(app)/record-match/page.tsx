@@ -1,4 +1,5 @@
-﻿import { keepClubAccountsOut } from '@/lib/club-guard'
+﻿import { fmtClock } from '@/lib/clock'
+import { keepClubAccountsOut } from '@/lib/club-guard'
 import { createServerClient } from '@/lib/supabase-server'
 import RecordMatchForm from '@/components/matches/RecordMatchForm'
 import { formatDate } from '@/lib/utils'
@@ -61,7 +62,7 @@ export default async function RecordMatchPage({
       }
 
       prefill = {
-        label: `${(booking.courts as any)?.name ?? 'Court'} · ${formatDate(booking.date)} · ${booking.start_time.slice(0, 5)}`,
+        label: `${(booking.courts as any)?.name ?? 'Court'} · ${formatDate(booking.date)} · ${fmtClock(booking.start_time)}`,
         playerIds: ids.slice(0, 4),
       }
     }

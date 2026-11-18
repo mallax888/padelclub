@@ -1,3 +1,4 @@
+import { fmtClockRange } from '@/lib/clock'
 import { randomBytes } from 'crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
@@ -137,7 +138,7 @@ export function invitePreview(r: InviteRecord): InvitePreview {
     venueName: venue?.name ?? 'the club',
     region: venue?.region ?? '',
     dateLabel: formatDate(r.booking.date),
-    timeLabel: `${r.booking.start_time.slice(0, 5)}–${r.booking.end_time.slice(0, 5)}`,
+    timeLabel: fmtClockRange(r.booking.start_time, r.booking.end_time),
     share: inviteShare(r),
     currency: currencyForRegion(venue?.region),
     seatCount: r.seatCount,

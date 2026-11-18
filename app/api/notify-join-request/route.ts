@@ -1,3 +1,4 @@
+import { fmtClockRange } from '@/lib/clock'
 import { resend, emailFrom } from '@/lib/resend'
 import { renderEmailShell } from '@/lib/email-template'
 import { NextResponse } from 'next/server'
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
   const venue = getVenue(match.venue_slug)
   const court = (match.courts as any)?.name ?? 'Court'
   const date = formatDate(match.date)
-  const time = `${match.start_time.slice(0, 5)}–${match.end_time.slice(0, 5)}`
+  const time = fmtClockRange(match.start_time, match.end_time)
   const playerName = me?.nickname ?? me?.full_name ?? 'A player'
   const organizerName = organizer.nickname ?? organizer.full_name ?? 'Organizer'
   const matchUrl = `${new URL(request.url).origin}/find-a-game`

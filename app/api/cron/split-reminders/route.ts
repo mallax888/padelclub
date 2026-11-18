@@ -1,3 +1,4 @@
+import { fmtClock } from '@/lib/clock'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendPushToUser } from '@/lib/push'
@@ -229,7 +230,7 @@ async function nudge(
   const player = firstName(split.profiles) ?? 'there'
   const court = booking.courts?.name ?? 'your court'
   const date = formatDate(booking.date)
-  const time = booking.start_time.slice(0, 5)
+  const time = fmtClock(booking.start_time)
   const isLastCall = stage === FINAL_STAGE
   const url = '/mybookings'
 

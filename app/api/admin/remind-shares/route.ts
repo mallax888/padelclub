@@ -1,3 +1,4 @@
+import { fmtClock } from '@/lib/clock'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { loadTeamCaller } from '@/lib/team-server'
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
   const court = split.bookings?.courts?.name ?? 'the court'
   const date = formatDate(split.bookings.date)
-  const time = String(split.bookings.start_time).slice(0, 5)
+  const time = fmtClock(String(split.bookings.start_time))
   const amount = formatPrice(Number(split.amount_nzd) || 0, currencyForVenueSlug(venueSlug))
   const url = `${getAppUrl(request)}/my-bookings`
 

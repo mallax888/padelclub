@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { fmtClock } from '@/lib/clock'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-browser'
@@ -456,7 +457,7 @@ export default function FindGameList({
                 <div key={g.id} className="rounded-2xl p-4 flex items-center justify-between gap-3" data-testid="for-you-game"
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted), var(--shadow-float)' }}>
                   <div className="min-w-0">
-                    <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{dayLabel(m.date)} · {m.start_time.slice(0, 5)} · {getVenue(m.venue_slug).name}</div>
+                    <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{dayLabel(m.date)} · {fmtClock(m.start_time)} · {getVenue(m.venue_slug).name}</div>
                     <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
                       {skillLabelForRange(m.skill_min, m.skill_max)}{m.venue_slug === homeVenueSlug ? ' · Your club' : ''} · {g.spotsLeft} {g.spotsLeft === 1 ? 'spot' : 'spots'} left
                     </div>
@@ -527,8 +528,8 @@ export default function FindGameList({
                   {/* When leads: it is the first thing anyone is deciding on. */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', color: 'var(--text-primary)' }}>
-                      <span className="text-[30px] font-extrabold" style={{ letterSpacing: '-0.02em' }}>{match.start_time.slice(0, 5)}</span>
-                      <span className="text-sm font-semibold ml-1" style={{ color: 'var(--text-muted)' }}>–{match.end_time.slice(0, 5)}</span>
+                      <span className="text-[30px] font-extrabold" style={{ letterSpacing: '-0.02em' }}>{fmtClock(match.start_time)}</span>
+                      <span className="text-sm font-semibold ml-1" style={{ color: 'var(--text-muted)' }}>–{fmtClock(match.end_time)}</span>
                     </div>
                     {fit && (
                       <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"

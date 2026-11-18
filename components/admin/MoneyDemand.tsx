@@ -1,5 +1,6 @@
 'use client'
 
+import { fmtClock, fmtClockRange } from '@/lib/clock'
 import CardHeading from '@/components/ui/CardHeading'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -97,7 +98,7 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
                 <div className="min-w-0">
                   <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{r.playerName} <span className="font-extrabold" style={{ color: 'var(--text-muted)' }}>· {formatPrice(r.amount, currency)}</span></div>
                   <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    {r.courtName} · {formatDate(r.date)} {r.startTime.slice(0, 5)}{r.organiserName ? ` · organised by ${r.organiserName}` : ''}
+                    {r.courtName} · {formatDate(r.date)} {fmtClock(r.startTime)}{r.organiserName ? ` · organised by ${r.organiserName}` : ''}
                   </div>
                 </div>
                 <div className="text-right shrink-0">
@@ -149,7 +150,7 @@ function WaitlistCard({ demand }: { demand: WaitDemand }) {
           <ul className="space-y-2">
             {demand.slots.map(s => (
               <li key={`${s.weekday}-${s.time}`} className="flex items-center gap-3 text-sm">
-                <span className="w-32 shrink-0" style={{ color: 'var(--text-primary)' }}>{WEEKDAY_NAMES[s.weekday]} {s.time}</span>
+                <span className="w-32 shrink-0" style={{ color: 'var(--text-primary)' }}>{WEEKDAY_NAMES[s.weekday]} {fmtClock(s.time)}</span>
                 <span className="h-2 rounded-full flex-1" style={{ background: 'var(--bg-raised)' }}>
                   <span className="block h-2 rounded-full" style={{ width: `${Math.round((s.waits / max) * 100)}%`, background: 'var(--brand-primary)' }} />
                 </span>
@@ -194,7 +195,7 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
             {best.map(g => (
               <div key={`${g.date}-${g.from}`} className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="best-slot-row">
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)} · <span className="whitespace-nowrap">{g.from}–{g.to}</span></div>
+                  <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)} · <span className="whitespace-nowrap">{fmtClockRange(g.from, g.to)}</span></div>
                   <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{g.fillPct}% full · {g.empty} of {g.courts} {g.courts === 1 ? 'court' : 'courts'} free · {g.kind === 'peak' ? 'peak' : 'quiet'}</div>
                 </div>
                 <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2 shrink-0">
@@ -231,7 +232,7 @@ function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[
           <div key={o.id} className="py-3" style={{ borderBottom: '1px solid var(--border)' }} data-testid="offer-row">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{o.discount_percent}% off · {formatDate(o.date)} · {o.start_time.slice(0, 5)}–{o.end_time.slice(0, 5)}</div>
+                <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{o.discount_percent}% off · {formatDate(o.date)} · {fmtClockRange(o.start_time, o.end_time)}</div>
                 <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
                   Told {o.told_count} {o.told_count === 1 ? 'player' : 'players'} · {o.status === 'cancelled' ? 'Ended early' : o.ended ? 'Closed' : 'Open now'}
                 </div>

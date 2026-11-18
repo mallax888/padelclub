@@ -1,3 +1,4 @@
+import { fmtClock } from '@/lib/clock'
 import Link from 'next/link'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import type { TodaySummary } from '@/lib/today'
@@ -114,7 +115,7 @@ export default function TodayView(p: TodayViewProps) {
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No more bookings today.</div>
         ) : s.nextUp.map(n => (
           <div key={n.id} className="flex items-center gap-3 px-3.5 py-3" style={{ minHeight: 60, borderBottom: '1px solid var(--border)' }}>
-            <div className="w-[50px] text-[17px] font-extrabold" style={{ ...display, color: 'var(--text-primary)' }}>{n.start}</div>
+            <div className="w-[84px] shrink-0 text-[17px] font-extrabold" style={{ ...display, color: 'var(--text-primary)' }}>{fmtClock(n.start)}</div>
             <div className="min-w-0">
               <div className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{n.courtName} · {n.bookerName ?? 'Booking'}</div>
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{n.players} {n.players === 1 ? 'player' : 'players'}</div>

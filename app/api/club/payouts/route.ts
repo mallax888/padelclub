@@ -7,7 +7,7 @@ import { VENUES, getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { currencyForVenueSlug } from '@/lib/currency'
 import { connectOn, connectState, describeDue, stripeCountry } from '@/lib/connect-rules'
-import { countryNameOfVenue, feeOf, loadClubAccount, syncAccount } from '@/lib/club-payments'
+import { countryNameOfVenue, feeOf, loadClubAccount, readAccount, syncAccount } from '@/lib/club-payments'
 
 // An owner connecting their club to Stripe, and seeing how payouts are going. Owners only,
 // inside their own reach. Stripe holds the identity and bank details; we only keep the
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
   // Ask Stripe for the truth every time the card is opened, so "Connected" is never stale.
   let live = true
   try {
-    const account = await stripe.accounts.retrieve(row.stripe_account_id)
+    const account = await readAccount(row.stripe_account_id)
     const patch = await syncAccount(admin, slug, account)
     row = { ...row, ...patch }
   } catch (err) {
@@ -91,9 +91,12 @@ export async function POST(request: Request) {
     if (row && row.charges_enabled) return NextResponse.json({ error: 'This club is already connected to Stripe.' }, { status: 409 })
     if (!row) {
       if (!country) return NextResponse.json({ error: `Stripe isn't available for clubs in ${countryNameOfVenue(slug) ?? 'this country'} yet. We will tell you when it is.` }, { status: 400 })
-      const account = await stripe.accounts.create({
-        type: 'standard', country,
-        business_profile: { name: getVenue(slug).name },
+      const account = await stripe.v2.core.accounts.create({
+        display_name: getVenue(slug).name,
+        dashboard: 'full',
+        identity: { country: country.toLowerCase() },
+        configuration: { merchant: { capabilities: { card_payments: { requested: true } } } },
+        defaults: { currency: currencyForVenueSlug(slug).toLowerCase(), responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } },
         metadata: { venue_slug: slug },
       })
       const { error } = await admin.from('club_stripe_accounts').insert({ venue_slug: slug, stripe_account_id: account.id })
@@ -105,9 +108,9 @@ export async function POST(request: Request) {
       row = row ?? (await loadClubAccount(admin, slug))
     }
     const back = `${getAppUrl(request)}/admin/setup?venue=${encodeURIComponent(slug)}`
-    const link = await stripe.accountLinks.create({
-      account: row!.stripe_account_id, type: 'account_onboarding',
-      return_url: `${back}&stripe=return`, refresh_url: `${back}&stripe=refresh`,
+    const link = await stripe.v2.core.accountLinks.create({
+      account: row!.stripe_account_id,
+      use_case: { type: 'account_onboarding', account_onboarding: { configurations: ['merchant'], return_url: `${back}&stripe=return`, refresh_url: `${back}&stripe=refresh` } },
     })
     return NextResponse.json({ url: link.url })
   } catch (err: any) {

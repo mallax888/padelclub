@@ -62,15 +62,39 @@ export function countryNameOfVenue(venueSlug: string): string | null {
   return COUNTRIES.find(c => c.regions.includes(region))?.name ?? null
 }
 
-// Copy what Stripe says about an account into our row. Returns the fresh row.
-export async function syncAccount(admin: any, venueSlug: string, account: Stripe.Account) {
-  const patch = {
-    details_submitted: !!account.details_submitted,
-    charges_enabled: !!account.charges_enabled,
-    payouts_enabled: !!account.payouts_enabled,
-    requirements_due: account.requirements?.currently_due ?? [],
-    updated_at: new Date().toISOString(),
+// What Stripe says about a club's account, in the few facts the app needs.
+export type AccountFacts = { details_submitted: boolean; charges_enabled: boolean; payouts_enabled: boolean; requirements_due: string[] }
+
+// Club accounts are made with Stripe's Accounts v2 API (Stripe no longer lets new Connect platforms create them the old way), so
+// they are read the same way: card payments "active" means the club can be paid, and whatever is still waiting on the club is
+// "due". An older account made the previous way is still read the previous way.
+export async function readAccount(accountId: string): Promise<AccountFacts> {
+  try {
+    const a = await stripe.v2.core.accounts.retrieve(accountId, { include: ['configuration.merchant', 'requirements'] })
+    const cap: any = (a as any).configuration?.merchant?.capabilities
+    const due = (((a as any).requirements?.entries ?? []) as any[])
+      .filter(e => e?.awaiting_action_from === 'user')
+      .map(e => String(e?.description ?? '')).filter(Boolean)
+    return {
+      details_submitted: due.length === 0,
+      charges_enabled: cap?.card_payments?.status === 'active',
+      payouts_enabled: cap?.stripe_balance?.payouts?.status === 'active',
+      requirements_due: due,
+    }
+  } catch (err: any) {
+    if (err?.statusCode && err.statusCode !== 404 && err.statusCode !== 400) throw err
+    const v1 = await stripe.accounts.retrieve(accountId)
+    return { details_submitted: !!v1.details_submitted, charges_enabled: !!v1.charges_enabled, payouts_enabled: !!v1.payouts_enabled, requirements_due: v1.requirements?.currently_due ?? [] }
   }
+}
+
+// Copy what Stripe says about an account into our row. Returns the fresh row.
+export async function syncAccount(admin: any, venueSlug: string, account: AccountFacts | Stripe.Account) {
+  const facts: AccountFacts = 'requirements_due' in account ? account : {
+    details_submitted: !!account.details_submitted, charges_enabled: !!account.charges_enabled,
+    payouts_enabled: !!account.payouts_enabled, requirements_due: account.requirements?.currently_due ?? [],
+  }
+  const patch = { ...facts, updated_at: new Date().toISOString() }
   await admin.from('club_stripe_accounts').update(patch).eq('venue_slug', venueSlug)
   return patch
 }

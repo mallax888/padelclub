@@ -1,4 +1,5 @@
-﻿import { NextResponse } from 'next/server'
+﻿import { fmtClockRange } from '@/lib/clock'
+import { NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendBookingConfirmationEmail } from '@/lib/emails'
@@ -292,7 +293,7 @@ export async function POST(request: Request) {
               name: recipient.nickname ?? recipient.full_name ?? 'there',
               court: `${(booking.courts as any)?.name ?? 'Court'} — ${(booking.courts as any)?.type ?? ''}`,
               date: formatDate(booking.date),
-              time: `${booking.start_time.slice(0, 5)} — ${booking.end_time.slice(0, 5)}`,
+              time: fmtClockRange(booking.start_time, booking.end_time),
               duration: `${booking.duration_minutes} min`,
               total: formatPrice(booking.price_nzd, currencyForRegion(venue?.region)),
               appUrl: getAppUrl(request),

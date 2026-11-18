@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { fmtClock, fmtClockRange, fmtHour } from '@/lib/clock'
 import CardHeading from '@/components/ui/CardHeading'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -727,7 +728,7 @@ export default function AdminDashboard({
                   </td>
                   <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{b.courts?.name}</td>
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDate(b.date)}</td>
-                  <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{b.start_time.slice(0,5)}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{fmtClock(b.start_time)}</td>
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
                     {b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug)) : '—'}
                   </td>
@@ -905,7 +906,7 @@ export default function AdminDashboard({
                   <label className="label">Time</label>
                   <select className="input" value={blockForm.time}
                     onChange={e => setBlockForm(f => ({...f, time: e.target.value}))}>
-                    {blockSlots.map(t => <option key={t}>{t}</option>)}
+                    {blockSlots.map(t => <option key={t} value={t}>{fmtClock(t)}</option>)}
                   </select>
                 </div>
               </div>
@@ -1267,7 +1268,7 @@ function BoardView({
                             onDragEnd={() => { setDraggedId(null); setDragOverDate(null) }}
                             title={!isPast ? 'Drag to another day to reschedule' : undefined}
                             style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: isPast ? 'rgba(170,170,170,0.3)' : color + '38', color: isPast ? 'rgba(255,255,255,0.8)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isPast ? 'line-through' : 'none', cursor: isPast ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
-                            {b.start_time.slice(0,5)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}
+                            {fmtClock(b.start_time)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}
                           </div>
                         )
                       })}
@@ -1357,11 +1358,11 @@ function BoardView({
                                     if (b.status === 'blocked') return
                                     setRosterBooking({
                                       id: b.id,
-                                      title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                                      title: `${court.name} · ${fmtClockRange(b.start_time, b.end_time)}`,
                                       subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
                                     })
                                   }}>
-                                  {b.start_time.slice(0, 5)} · {appearance.label}
+                                  {fmtClock(b.start_time)} · {appearance.label}
                                 </div>
                               )
                             })}
@@ -1423,11 +1424,11 @@ function BoardView({
                                       if (b.status === 'blocked') return
                                       setRosterBooking({
                                         id: b.id,
-                                        title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                                        title: `${court.name} · ${fmtClockRange(b.start_time, b.end_time)}`,
                                         subtitle: `${formatDate(d)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
                                       })
                                     }}>
-                                    {b.start_time.slice(0, 5)} · {appearance.label}
+                                    {fmtClock(b.start_time)} · {appearance.label}
                                   </div>
                                 )
                               })}
@@ -1469,11 +1470,11 @@ function BoardView({
                       if (b.status === 'blocked') return
                       setRosterBooking({
                         id: b.id,
-                        title: `${court?.name ?? 'Court'} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                        title: `${court?.name ?? 'Court'} · ${fmtClockRange(b.start_time, b.end_time)}`,
                         subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
                       })
                     }}>
-                    <div className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-primary)', width: 44 }}>{b.start_time.slice(0, 5)}</div>
+                    <div className="text-xs font-semibold shrink-0" style={{ color: 'var(--text-primary)', width: 64 }}>{fmtClock(b.start_time)}</div>
                     <div style={{ width: 8, height: 8, borderRadius: 999, background: colorMap[b.court_id] ?? 'var(--brand-primary)', flexShrink: 0 }} />
                     <div className="text-xs shrink-0 truncate" style={{ color: 'var(--text-muted)', width: 70 }}>{court?.name ?? 'Court'}</div>
                     <div className="text-xs font-semibold rounded-md px-2 py-1 truncate flex-1" style={{ background: appearance.background, color: appearance.color }}>
@@ -1534,7 +1535,7 @@ function BoardView({
                   return TIME_ROWS.map((t, rowIdx) => (
                     <tr key={t}>
                       <td className="px-2 font-medium whitespace-nowrap align-top" style={{ paddingTop: 6, height: DAY_ROW_HEIGHT, fontSize: 11, background: 'var(--bg-surface)', color: 'var(--text-muted)', borderBottom: rowIdx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                        {t}
+                        {fmtHour(t)}
                       </td>
                       {venueCourts.map((court: any, colIdx: number) => {
                         const slot = plans[colIdx][rowIdx]
@@ -1592,7 +1593,7 @@ function BoardView({
                                 if (b.status === 'blocked') return
                                 setRosterBooking({
                                   id: b.id,
-                                  title: `${court.name} · ${b.start_time.slice(0, 5)}–${b.end_time.slice(0, 5)}`,
+                                  title: `${court.name} · ${fmtClockRange(b.start_time, b.end_time)}`,
                                   subtitle: `${formatDate(boardDate)} · ${publicBookingIdSet.has(b.id) ? 'Open play' : 'Regular booking'}`,
                                 })
                               }}
@@ -1606,7 +1607,7 @@ function BoardView({
                               style={{ height: DAY_ROW_HEIGHT * slot.span - 8, fontSize: 12, fontWeight: 600, borderRadius: 6, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                               <span className="truncate max-w-full">{appearance.label}</span>
                               <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.72 }}>
-                                {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)}
+                                {fmtClockRange(b.start_time, b.end_time)}
                               </span>
                             </div>
                           </td>
@@ -1662,7 +1663,7 @@ function BoardView({
                           </div>
                         </div>
                         <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                          {b.courts?.name} · {b.start_time.slice(0, 5)}–{b.end_time.slice(0, 5)}
+                          {b.courts?.name} · {fmtClockRange(b.start_time, b.end_time)}
                         </div>
                         <div className="flex items-center gap-2 mt-1.5">
                           <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"

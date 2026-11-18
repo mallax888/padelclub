@@ -1,5 +1,6 @@
 ﻿'use client'
 
+import { fmtClock, fmtClockRange, fmtUntil } from '@/lib/clock'
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -341,7 +342,7 @@ export default function BookingFlow({
       setMyWaits(prev => prev.some(w => w.venue_slug === venue.slug && w.date === date && w.start_time.slice(0, 5) === t) ? prev : [...prev, {
         id: `new-${venue.slug}-${date}-${t}`, venue_slug: venue.slug, date, start_time: `${t}:00`, duration_minutes: Math.round(duration * 60), status: 'waiting',
       }])
-      toast.success(`We'll tell you if ${t} opens up.`)
+      toast.success(`We'll tell you if ${fmtClock(t)} opens up.`)
       setWaitSheet(null)
       router.refresh()
     } catch {
@@ -849,7 +850,7 @@ export default function BookingFlow({
   if (!venuePickerSkipped && venue && done('where') && step !== 'confirm') answeredRows.push(doneRow('where', 'Where', <>{venue.name} · {venue.region}</>, changeWhere, flagImg(venueCountry?.name) ?? undefined))
   if (step !== 'confirm' && date && done('date')) answeredRows.push(doneRow('date', 'When', formatDate(date), () => { setStep('date'); playBackSound() }))
   if (step !== 'confirm' && duration && done('duration')) answeredRows.push(doneRow('duration', 'How long', durationLabel(duration), () => { setStep('duration'); playBackSound() }))
-  if (step !== 'confirm' && time && done('time')) answeredRows.push(doneRow('time', 'What time', `${time} — ${endTimeNow}`, () => { setStep('time'); playBackSound() }))
+  if (step !== 'confirm' && time && done('time')) answeredRows.push(doneRow('time', 'What time', fmtClockRange(time, endTimeNow), () => { setStep('time'); playBackSound() }))
   // On the confirm screen the answers fold into one ticket: the court, the time, who is playing and what you pay.
   if (step === 'confirm' && assignedCourt && date && time) {
     const playersDone = done('players')
@@ -857,7 +858,7 @@ export default function BookingFlow({
     const yourShare = seatCount > 0 ? bookerShareCents(courtPrice, seatCount + 1) / 100 : courtPrice
     const friendWords = [...splitNames, ...(inviteSeats > 0 ? [`${inviteSeats} invite link${inviteSeats === 1 ? '' : 's'}`] : [])]
     answeredRows.push(
-      <BookingTicket key="ticket" courtName={assignedCourt.name} dateLabel={formatDate(date)} time={time} endTime={endTimeNow} lengthLabel={durationLabel(duration!)}
+      <BookingTicket key="ticket" courtName={assignedCourt.name} dateLabel={formatDate(date)} time={fmtClock(time)} endTime={fmtUntil(time, endTimeNow)} lengthLabel={durationLabel(duration!)}
         venueName={venue?.name ?? ''} you={profile?.full_name ?? 'You'} friends={splitNames}
         who={playersDone ? (seatCount > 0 ? `You + ${friendWords.join(', ') || `${seatCount} other${seatCount === 1 ? '' : 's'}`}` : 'Just you') : undefined}
         weekly={regularDone ? (regular && date ? `Every ${weekdayPlural(date).slice(0, -1)} for ${regularWeeks} weeks${prepayActive ? ', all paid now' : ''}` : 'Just this once') : undefined}
@@ -1197,7 +1198,7 @@ export default function BookingFlow({
           </div>
           {venue && date && offers.some(o => o.venue_slug === venue.slug && o.date === date) && (
             <div className="rounded-xl px-3 py-2.5 mb-3 text-sm" data-testid="deal-banner" style={{ background: 'var(--brand-green-muted, var(--brand-primary-muted))', color: 'var(--text-primary)' }}>
-              🏷️ <b>Deals on {formatDate(date)}</b> — {offers.filter(o => o.venue_slug === venue.slug && o.date === date).map(o => `${o.discount_percent}% off ${o.start_time.slice(0, 5)}–${o.end_time.slice(0, 5)}`).join(', ')}. Look for the tag on the times.
+              🏷️ <b>Deals on {formatDate(date)}</b> — {offers.filter(o => o.venue_slug === venue.slug && o.date === date).map(o => `${o.discount_percent}% off ${fmtClockRange(o.start_time, o.end_time)}`).join(', ')}. Look for the tag on the times.
             </div>
           )}
           {closedOnDate && (
@@ -1217,14 +1218,14 @@ export default function BookingFlow({
               if (waitable) {
                 return (
                   <button key={t} onClick={() => { setWaitSheet(t); playSelectionSound() }}
-                    aria-label={waiting ? `${t}, you are waiting for this time` : `${t} is full. Notify me if it opens up`}
+                    aria-label={waiting ? `${fmtClock(t)}, you are waiting for this time` : `${fmtClock(t)} is full. Notify me if it opens up`}
                     className="rounded-xl p-3 text-center transition-all"
                     style={{
                       background: waiting ? 'var(--brand-primary-muted)' : 'transparent',
                       border: `1.5px dashed ${waiting ? 'var(--brand-primary)' : 'var(--border-strong, var(--border))'}`,
                       color: 'var(--text-primary)', cursor: 'pointer',
                     }}>
-                    <div className="text-sm font-semibold" style={{ opacity: 0.7 }}>{t}</div>
+                    <div className="text-sm font-semibold" style={{ opacity: 0.7 }}>{fmtClock(t)}</div>
                     <div className="text-[10px] mt-0.5 font-bold" style={{ color: 'var(--brand-primary-text)' }}>
                       {waiting ? '🔔 Waiting' : '🔔 Notify me'}
                     </div>
@@ -1245,7 +1246,7 @@ export default function BookingFlow({
                   onMouseEnter={e => { if (available) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
                   onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
-                  <div className="text-sm font-semibold">{t}</div>
+                  <div className="text-sm font-semibold">{fmtClock(t)}</div>
                   {deal ? (
                     <div className="text-[10px] mt-0.5 font-bold" data-testid="deal-tile" style={{ color: 'var(--brand-green, var(--brand-primary-text))' }}>
                       🏷️ Deal {formatPrice(deal.price, currency)} <s style={{ opacity: 0.6 }}>{formatPrice(dealList, currency)}</s>
@@ -1274,18 +1275,18 @@ export default function BookingFlow({
                 {waitFor(waitSheet) ? (
                   <>
                     <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>You&apos;re on the list</div>
-                    <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>We&apos;ll tell you the moment a court at {waitSheet} opens up. First to book it gets it.</p>
+                    <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>We&apos;ll tell you the moment a court at {fmtClock(waitSheet)} opens up. First to book it gets it.</p>
                   </>
                 ) : (
                   <>
-                    <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Tell me if {waitSheet} opens up</div>
+                    <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Tell me if {fmtClock(waitSheet)} opens up</div>
                     <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>If someone cancels, we&apos;ll tell you straight away. First to book it gets it.</p>
                   </>
                 )}
                 <div className="rounded-xl mb-4" style={{ background: 'var(--bg-raised)' }}>
                   {[
                     ['Club', venue.name],
-                    ['When', `${formatDate(date)}, ${waitSheet}–${addHoursDecimal(waitSheet, (waitFor(waitSheet)?.duration_minutes ?? duration * 60) / 60)}`],
+                    ['When', `${formatDate(date)}, ${fmtClockRange(waitSheet, addHoursDecimal(waitSheet, (waitFor(waitSheet)?.duration_minutes ?? duration * 60) / 60))}`],
                     ['Court', 'Any court'],
                     ['Tell me by', 'Notification + bell'],
                   ].map(([k, v]) => (

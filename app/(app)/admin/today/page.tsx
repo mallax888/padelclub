@@ -1,3 +1,4 @@
+import { fmtClock } from '@/lib/clock'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
@@ -148,7 +149,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
     .filter(r => r.at > nowMs && r.at <= nowMs + 24 * 3600 * 1000)
     .sort((a, b) => a.at - b.at)
   const soonest = seats[0]
-  const soonestLabel = soonest ? `${soonest.court} · ${soonest.date === clock.date ? 'today' : shortWeekday(soonest.date)} ${soonest.time.slice(0, 5)}` : null
+  const soonestLabel = soonest ? `${soonest.court} · ${soonest.date === clock.date ? 'today' : shortWeekday(soonest.date)} ${fmtClock(soonest.time)}` : null
 
   // Owners see yesterday at a glance; front desk never does (it has takings in it).
   let briefing: { b: any; weekday: string; yesterdayLabel: string; brandNew?: boolean } | null = null
