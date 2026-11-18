@@ -4,7 +4,7 @@ import { loadOpenOffers } from '@/lib/offers'
 import { VENUES } from '@/lib/venues'
 import { timezoneForVenueSlug } from '@/lib/timezone'
 import { rankForYou, type GameLite } from '@/lib/matchmaking'
-import { nextGame, savedLast30, shareSummary, usualOf, type HomeBooking } from '@/lib/home-rules'
+import { distinctPeople, monthSummary, nextGame, savedLast30, shareSummary, usualOf, type HomeBooking } from '@/lib/home-rules'
 import HomeView from '@/components/home/HomeView'
 
 export const metadata = { title: 'Home' }
@@ -38,6 +38,17 @@ export default async function HomePage() {
     shares = shareSummary(((rows ?? []) as any[]).map(r => ({ status: r.status as string, name: (r.profiles?.nickname ?? r.profiles?.full_name?.split(' ')[0] ?? 'A friend') as string })))
   }
 
+  // Who they have shared a court with: friends who joined their bookings, and the others in the open games they played.
+  const [{ data: paidSplits }, { data: myGames }] = await Promise.all([
+    supabase.from('booking_splits').select('user_id').eq('invited_by', userId).eq('status', 'paid'),
+    supabase.from('open_match_players').select('match_id').eq('player_id', userId).eq('status', 'accepted'),
+  ])
+  const matchIds = ((myGames ?? []) as any[]).map(r => r.match_id).filter(Boolean) as string[]
+  const { data: mates } = matchIds.length
+    ? await supabase.from('open_match_players').select('player_id').in('match_id', matchIds).eq('status', 'accepted')
+    : { data: [] as any[] }
+  const people = distinctPeople([...((paidSplits ?? []) as any[]).map(r => r.user_id), ...((mates ?? []) as any[]).map(r => r.player_id)], userId)
+
   // Games that fit this player's level, evenly matched first, home club ahead of the rest.
   const homeSlug: string | null = (profile as any)?.home_venue_slug ?? null
   const rating = (profile as any)?.skill_rating
@@ -65,6 +76,9 @@ export default async function HomePage() {
   const offer = (mineOffers.length ? mineOffers : offers).slice().sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))[0] ?? null
 
   const tz = timezoneForVenueSlug(homeSlug ?? next?.courts?.venue_slug ?? VENUES[0].slug)
+  const localToday = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(nowMs))
+  const m = monthSummary(bookings, nowMs, localToday)
+  const month = m.games > 0 || m.weeks > 0 || people > 0 ? { games: m.games, people, weeks: m.weeks } : null
   const first = ((profile as any)?.nickname ?? (profile as any)?.full_name ?? '').toString().split(' ')[0] || null
-  return <HomeView name={first} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} />
+  return <HomeView name={first} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} month={month} />
 }
