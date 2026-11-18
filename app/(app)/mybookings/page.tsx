@@ -1,6 +1,7 @@
 ﻿import { keepClubAccountsOut } from '@/lib/club-guard'
 import { prepayReady } from '@/lib/regulars'
 import { createServerClient } from '@/lib/supabase-server'
+import Link from 'next/link'
 import MyBookingsList from '@/components/booking/MyBookingsList'
 import { stripeDashboardBase } from '@/lib/stripe'
 import { loadVenueSettings } from '@/lib/venue-settings'
@@ -80,9 +81,12 @@ export default async function MyBookingsPage() {
 
   return (
     <div>
-      <div className="mb-6" style={{ userSelect: 'none' }}>
-        <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your upcoming and past court reservations</p>
+      <div className="mb-6 flex items-start justify-between gap-3" style={{ userSelect: 'none' }}>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Your courts, in order</p>
+        </div>
+        <Link href="/book" data-testid="new-booking" className="shrink-0 rounded-full px-4 text-[13px] font-extrabold inline-flex items-center" style={{ minHeight: 40, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>+ New booking</Link>
       </div>
       <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} />
     </div>

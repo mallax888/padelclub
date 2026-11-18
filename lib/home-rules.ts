@@ -125,3 +125,42 @@ export const mapsUrl = (address: string): string => `https://www.google.com/maps
 // time left as the one tap.
 export const usualLink = (u: Usual, date: string): string =>
   `/book?wl=1&u=${encodeURIComponent(u.venueSlug)}&ud=${date}&um=${u.durationMin}`
+
+// "In 21 hrs", "In 40 min", "In 3 days": how long until a game starts, for the next-game ticket.
+export function countdownLabel(b: HomeBooking, nowMs: number): string {
+  const mins = Math.max(0, Math.round((startMs(b) - nowMs) / 60000))
+  if (mins < 60) return `In ${Math.max(1, mins)} min`
+  const hrs = Math.round(mins / 60)
+  if (hrs < 36) return `In ${hrs} ${hrs === 1 ? 'hr' : 'hrs'}`
+  const days = Math.round(mins / 1440)
+  return `In ${days} days`
+}
+
+// Whole days since 1970-01-01 for a YYYY-MM-DD date, and the Monday-to-Sunday week it falls in.
+const dayNumber = (date: string): number => Math.floor(new Date(date + 'T00:00:00Z').getTime() / 86400000)
+const weekNumber = (date: string): number => Math.floor((dayNumber(date) + 3) / 7)
+
+// The "Your month" tiles on Home: games played so far this calendar month, and how many weeks
+// in a row they have played (this week counts when they have already played in it; if they
+// have not yet, the run is judged up to last week, so a quiet Monday does not reset it).
+// `today` is the player's local date (YYYY-MM-DD) at their club.
+export function monthSummary(bookings: HomeBooking[], nowMs: number, today: string): { games: number; weeks: number } {
+  const played = bookings.filter(b => (b.status === 'confirmed' || b.status === 'completed') && startMs(b) <= nowMs)
+  const games = played.filter(b => b.date.slice(0, 7) === today.slice(0, 7)).length
+  const weeksPlayed = new Set(played.map(b => weekNumber(b.date)))
+  let w = weekNumber(today)
+  if (!weeksPlayed.has(w)) w -= 1
+  let weeks = 0
+  while (weeksPlayed.has(w)) { weeks++; w-- }
+  return { games, weeks }
+}
+
+// How many different people the player has been on court with.
+export const distinctPeople = (ids: (string | null | undefined)[], selfId: string): number =>
+  new Set(ids.filter((x): x is string => !!x && x !== selfId)).size
+
+// Which heading a booking sits under on My bookings: this week (Monday to Sunday), next week, or later.
+export function weekGroup(date: string, today: string): 'This week' | 'Next week' | 'Later' {
+  const d = weekNumber(date) - weekNumber(today)
+  return d <= 0 ? 'This week' : d === 1 ? 'Next week' : 'Later'
+}

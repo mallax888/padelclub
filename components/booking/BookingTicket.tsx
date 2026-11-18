@@ -7,19 +7,22 @@ import { initialsOf } from '@/lib/club-map'
 const FACE = 'linear-gradient(160deg, #2c5fc4, #1d3f8d)'
 const INK = '#ffffff'
 const SOFT = '#cfe0ff'
-function Ball({ name }: { name: string }) {
+// The white square court tile used on every ticket. `size` is the tile's width in pixels.
+export function CourtTile({ name, size = 78 }: { name: string; size?: number }) {
   const bare = name.replace(/^court\s*/i, '').trim()
   const short = bare.length > 0 && bare.length <= 3 ? bare : bare.slice(0, 1).toUpperCase()
+  const k = size / 78
   return (
     <div className="shrink-0 flex flex-col items-center justify-center" aria-hidden
-      style={{ width: 78, height: 78, borderRadius: 20, background: '#ffffff', color: '#1d3f8d', boxShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>
-      <span className="text-[9.5px] font-black" style={{ letterSpacing: '0.14em', color: '#667085' }}>COURT</span>
-      <span className="font-black leading-[0.95]" style={{ fontSize: short.length > 2 ? 26 : 36 }} data-testid="ticket-court">{short}</span>
+      style={{ width: size, height: size, borderRadius: size >= 60 ? 20 : 16, background: '#ffffff', color: '#1d3f8d', boxShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>
+      <span className="font-black" style={{ fontSize: Math.max(8, 9.5 * k), letterSpacing: '0.14em', color: '#667085' }}>COURT</span>
+      <span className="font-black leading-[0.95]" style={{ fontSize: (short.length > 2 ? 26 : 36) * k }} data-testid="ticket-court">{short}</span>
     </div>
   )
 }
+const Ball = CourtTile
 
-function Avatars({ names }: { names: string[] }) {
+export function Avatars({ names }: { names: string[] }) {
   const shown = names.slice(0, 3)
   return (
     <span className="flex shrink-0">

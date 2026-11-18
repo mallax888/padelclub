@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatDate } from '@/lib/utils'
+import { cn, formatDate, localDateStr } from '@/lib/utils'
+import { weekGroup } from '@/lib/home-rules'
 import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
@@ -165,16 +166,20 @@ function dateParts(dateStr: string) {
   }
 }
 
-const DateBlock = ({ dateStr, muted }: { dateStr: string; muted?: boolean }) => {
-  const { month, day, weekday } = dateParts(dateStr)
+// The blue court tile at the left of every booking: same look as the ticket in Book a court, just smaller.
+const MiniCourt = ({ name, muted }: { name: string | null | undefined; muted?: boolean }) => {
+  const bare = String(name ?? '').replace(/^court\s*/i, '').trim()
+  const short = bare.length > 0 && bare.length <= 3 ? bare : bare.slice(0, 1).toUpperCase() || '?'
   return (
-    <div className="w-12 rounded-xl overflow-hidden text-center shrink-0" style={{ border: '1px solid var(--border)' }}>
-      <div className="text-[9px] font-extrabold uppercase tracking-wide py-0.5" style={muted ? { background: 'var(--bg-raised)', color: 'var(--text-muted)' } : { background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{month}</div>
-      <div className="text-lg font-extrabold leading-tight pt-0.5" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>{day}</div>
-      <div className="text-[9px] font-bold pb-1" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{weekday}</div>
+    <div aria-hidden className="shrink-0 flex flex-col items-center justify-center text-white" data-testid="booking-court"
+      style={{ width: 52, height: 52, borderRadius: 16, background: muted ? 'linear-gradient(160deg, #3a4150, #2b313c)' : 'linear-gradient(160deg, #2c5fc4, #1d3f8d)' }}>
+      <span className="font-black" style={{ fontSize: 8, letterSpacing: '0.12em', color: '#cfe0ff' }}>COURT</span>
+      <span className="font-black leading-none" style={{ fontSize: short.length > 2 ? 15 : 22 }}>{short}</span>
     </div>
   )
 }
+
+const longDate = (dateStr: string) => { const p = dateParts(dateStr); return `${p.weekday} ${p.day} ${p.month}` }
 
 const DirectionsButton = ({ address }: { address: string }) => (
   <a
@@ -757,32 +762,6 @@ export default function MyBookingsList({
         </div>
       )}
 
-      {/* Stat row — flat label/value pairs, no icon badges */}
-      <div className="flex mb-5 pb-4" style={{ borderBottom: '1px solid var(--border)', gap: 28 }}>
-        {[
-          { label: 'Upcoming', value: upcoming.length },
-          { label: 'Credits', value: '$' + (profile?.credits ?? 0) },
-          { label: 'Membership', value: mem.name },
-        ].map(({ label, value }) => (
-          <div key={label} className="min-w-0">
-            <div className="text-[10.5px] font-semibold truncate" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-            <div className="text-xl truncate" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{value}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* The full policy was a permanent four-line paragraph sitting above
-          every booking — read once, scrolled past forever after. The line
-          that matters stays visible; the rest opens on demand. */}
-      <details className="mb-4 text-xs rounded-2xl px-4 py-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-        <summary className="cursor-pointer select-none" style={{ listStyle: 'none' }}>
-          Cancel 24hrs+ before for a full refund. <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
-        </summary>
-        <div className="mt-2 pt-2 leading-relaxed" style={{ borderTop: '1px solid var(--border)' }}>
-          Cancel under 24hrs and 50% comes back as account credit. Reschedule to a new date or time any time before the 24hr mark, no charge. Everyone else on a split booking is refunded in full, whatever the notice.
-        </div>
-      </details>
-
       {celebrate && paidBooking && (() => {
         const venueSlug = (paidBooking.courts as any)?.venue_slug
         const currency = currencyForRegion(VENUES.find(v => v.slug === venueSlug)?.region)
@@ -795,31 +774,27 @@ export default function MyBookingsList({
         )
       })()}
 
-      {/* New booking — solid lime CTA card */}
-      <Link href="/book" className="flex items-center justify-between gap-3 rounded-2xl px-6 py-5 mb-4 transition-all hover:scale-[1.01]"
-        style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
-        <div className="min-w-0">
-          <div className="text-2xl" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.01em' }}>+ New booking</div>
-          <div className="text-[13px] mt-0.5" style={{ fontWeight: 600, opacity: 0.75 }}>Book a court in seconds</div>
+      {/* A quiet line for the two things worth knowing up top: credit to spend, and a paid plan. */}
+      {((profile?.credits ?? 0) > 0 || (mem.name && !/casual/i.test(String(mem.name)))) && (
+        <div className="flex flex-wrap gap-2 mb-4" data-testid="my-summary">
+          {(profile?.credits ?? 0) > 0 && <span className="text-xs font-extrabold rounded-full px-3 py-1.5" style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)' }}>{'$' + (profile?.credits ?? 0)} credit to spend</span>}
+          {mem.name && !/casual/i.test(String(mem.name)) && <span className="text-xs font-extrabold rounded-full px-3 py-1.5" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>{mem.name} member</span>}
         </div>
-        <div className="shrink-0" style={{ fontSize: '1.7rem' }}>🎾</div>
-      </Link>
+      )}
 
-      {/* Only worth asking once there's actually something to be reminded
-          about -- a court in the diary, or a share someone has just paid. */}
-      {hasUpcoming && <PushRemindersPrompt highlight={justPaid} />}
+      {hasUpcoming && justPaid && <PushRemindersPrompt highlight />}
 
       {/* One tab bar that actually switches. "Upcoming" used to appear twice
           on this screen: as the heading of a list that never hid, and again
           on a pill below it that only revealed past bookings — so tapping
           "Upcoming" did nothing visible. */}
-      <div className="inline-flex gap-1 p-1 rounded-full mb-3" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+      <div className="inline-flex gap-1 p-1 rounded-full mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <button onClick={() => setShowHistory(false)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
-          style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
+          style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>
           Upcoming ({upcoming.length + upcomingJoined.length})
         </button>
         <button onClick={() => setShowHistory(true)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
-          style={showHistory ? { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,0.15)' } : { color: 'var(--text-subtle)' }}>
+          style={showHistory ? { background: 'var(--bg-raised)', color: 'var(--text-primary)' } : { color: 'var(--text-subtle)' }}>
           Past ({past.length})
         </button>
       </div>
@@ -844,16 +819,32 @@ export default function MyBookingsList({
              member's side they're the same thing — somewhere to be this week
              — and keeping them apart meant checking two places to see what
              was on. The row's own badge says which is which. */
-          <div className="space-y-4">
-            {upcoming.map((b, i) => (
-              <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
-            ))}
-            {upcomingJoined.map(j => <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} />)}
+          <div className="space-y-5" data-testid="upcoming-list">
+            {(() => {
+              const today = localDateStr(now)
+              const items = [
+                ...upcoming.map((b, i) => ({ key: b.id, date: b.date, time: b.start_time, node: (
+                  <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
+                ) })),
+                ...upcomingJoined.map(j => ({ key: j.id, date: j.bookings!.date, time: j.bookings!.start_time, node: <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} /> })),
+              ].sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))
+              return (['This week', 'Next week', 'Later'] as const).map(g => {
+                const rows = items.filter(it => weekGroup(it.date, today) === g)
+                return rows.length === 0 ? null : (
+                  <section key={g} data-testid="week-group">
+                    <h3 className="text-[10.5px] font-extrabold uppercase mb-2.5 px-0.5" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{g}</h3>
+                    <div className="space-y-4">{rows.map(r => r.node)}</div>
+                  </section>
+                )
+              })
+            })()}
           </div>
         )
       )}
 
       {!showHistory && waits.length > 0 && <WaitingCard waits={waits} />}
+
+      {hasUpcoming && !justPaid && !showHistory && <div className="mt-5"><PushRemindersPrompt highlight={false} /></div>}
 
       {showHistory && (
         past.length === 0 ? (
@@ -866,6 +857,16 @@ export default function MyBookingsList({
           </div>
         )
       )}
+
+      {/* The line that matters stays visible; the rest opens on demand. */}
+      <details className="mt-6 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+        <summary className="cursor-pointer select-none" style={{ listStyle: 'none' }}>
+          Cancel 24hrs+ before for a full refund. <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
+        </summary>
+        <div className="mt-2 pt-2 leading-relaxed mx-auto max-w-md" style={{ borderTop: '1px solid var(--border)' }}>
+          Cancel under 24hrs and 50% comes back as account credit. Reschedule to a new date or time any time before the 24hr mark, no charge. Everyone else on a split booking is refunded in full, whatever the notice.
+        </div>
+      </details>
     </div>
   )
 }
@@ -923,60 +924,32 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   // line each until you ask for more.
   if (collapsible && !expanded) {
     const unpaidCount = splits.filter(s => s.status !== 'paid').length
+    const needsPay = !b.stripe_payment_id && !!b.pay_by
+    // One chip says the thing worth knowing: friends still owe you, a week is waiting to be paid, it repeats, or it is paid.
+    const chip = unpaidCount > 0 ? { text: `${unpaidCount} to pay`, kind: 'owe' }
+      : needsPay ? { text: 'Pay by ' + fmtPayBy(b.pay_by as string, timezoneForVenueSlug((b.courts as any)?.venue_slug)), kind: 'owe' }
+      : b.regular_id ? { text: 'Every week', kind: 'reg' }
+      : b.stripe_payment_id ? { text: 'Paid', kind: 'paid' } : null
+    const chipStyle = chip?.kind === 'owe' ? { background: '#d4f53c', color: '#17240a' }
+      : chip?.kind === 'reg' ? { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }
+      : { background: 'var(--brand-green-muted)', color: 'var(--brand-green)' }
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="w-full flex items-center gap-2 sm:gap-3 rounded-2xl px-4 py-3 text-left transition-colors"
-        style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-        <span className="text-xs font-bold shrink-0" style={{ color: 'var(--text-primary)', width: 52, fontVariantNumeric: 'tabular-nums' }}>
-          {dateParts(b.date).weekday} {dateParts(b.date).day}
-        </span>
-        <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)', width: 42, fontVariantNumeric: 'tabular-nums' }}>
-          {b.start_time.slice(0, 5)}
-        </span>
-        <span className="text-xs truncate min-w-0 flex-1" style={{ color: 'var(--text-primary)' }}>
-          {b.courts?.name}{venue ? ` — ${venue.name.split(' ').slice(-2).join(' ')}` : ''}
-        </span>
-        {splits.length > 0 && (
-          <span className="flex shrink-0 items-center">
-            {members.slice(0, 4).map((s, i) => {
-              const name = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Player'
-              return (
-                <span key={s.id}
-                  title={`${name} — ${s.status === 'paid' ? 'paid' : 'not paid yet'}`}
-                  className="inline-flex items-center justify-center rounded-full text-[9px] font-bold"
-                  style={{
-                    width: 18, height: 18, marginLeft: i === 0 ? 0 : -5,
-                    background: avatarColor(name), color: '#fff',
-                    border: `1.5px solid ${s.status === 'paid' ? 'var(--brand-primary)' : 'var(--brand-yellow)'}`,
-                  }}>
-                  {getInitial(name)}
-                </span>
-              )
-            })}
-            {openSeats.slice(0, Math.max(0, 4 - members.length)).map((s, i) => (
-              <span key={s.id} title="Spot waiting for a friend to join"
-                className="inline-flex items-center justify-center rounded-full text-[10px] font-bold"
-                style={{
-                  width: 18, height: 18, marginLeft: members.length + i === 0 ? 0 : -5,
-                  background: 'var(--bg-raised)', color: 'var(--text-subtle)',
-                  border: '1.5px dashed var(--text-subtle)',
-                }}>
-                +
-              </span>
-            ))}
+        data-testid="booking-row"
+        className="w-full flex items-center gap-3 rounded-[20px] p-4 text-left transition-colors"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <MiniCourt name={b.courts?.name} muted />
+        <span className="min-w-0 flex-1">
+          <span className="block text-[10.5px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{longDate(b.date)}</span>
+          <span className="block text-[19px] font-black leading-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{b.start_time.slice(0, 5)}</span>
+          <span className="block text-[11.5px] truncate" style={{ color: 'var(--text-muted)' }}>
+            {b.courts?.name}{venue ? ` · ${venue.name.split(' ').slice(-1)[0]}` : ''} · {durationLabel(b.duration_minutes)}{splits.length > 0 ? ' · split' : ''}
           </span>
-        )}
-        {/* The one thing worth saying out loud on a closed row: somebody still
-            owes you for this court. */}
-        {unpaidCount > 0 && (
-          <span className="text-[10px] font-bold shrink-0 px-2 py-0.5 rounded-full whitespace-nowrap"
-            style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)' }}>
-            {unpaidCount} to pay
-          </span>
-        )}
-        <span className="text-xs font-bold shrink-0 text-right" style={{ color: 'var(--text-primary)', width: 56, fontFamily: 'var(--font-display), Manrope, sans-serif' }}>
-          {formatPrice(Math.round(yourShare ?? b.price_nzd), bookingCurrency)}
+        </span>
+        <span className="shrink-0 flex flex-col items-end gap-1.5">
+          <span className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>{formatPrice(Math.round(yourShare ?? b.price_nzd), bookingCurrency)}</span>
+          {chip && <span className="text-[10px] font-black rounded-full px-2 py-0.5 whitespace-nowrap" style={chipStyle}>{chip.text}</span>}
         </span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-subtle)', flexShrink: 0 }}><path d="M6 9l6 6 6-6"/></svg>
       </button>
@@ -984,8 +957,8 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   }
 
   return (
-    <div className="rounded-2xl p-5" style={{
-      background: isNext ? 'var(--bg-surface)' : 'var(--bg-raised)',
+    <div className="rounded-[20px] p-5" style={{
+      background: 'var(--bg-surface)',
       border: '1px solid var(--border)',
       boxShadow: isNext ? '0 0 0 1px var(--ring-primary), 0 30px 70px -20px var(--ring-primary)' : 'var(--shadow-float)',
       opacity: muted ? 0.72 : 1,
@@ -1006,8 +979,9 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
       )}
       <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
-          <DateBlock dateStr={b.date} muted={muted} />
+          <MiniCourt name={b.courts?.name} muted={muted} />
           <div className="min-w-0">
+            <div className="text-[10.5px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{longDate(b.date)}</div>
             <div className="text-[15px]" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
               {b.courts?.name} — {b.courts?.type}
               {b.regular_id && <span className="ml-2 align-middle text-[10px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>🔁 Regular</span>}
@@ -1168,11 +1142,12 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
   const coPlayers = (b.booking_splits ?? []).filter(s => s.user_id && s.user_id !== currentUserId)
 
   return (
-    <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+    <div className="rounded-[20px] p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
       <div className="flex flex-col sm:flex-row sm:items-start gap-2.5">
         <div className="flex items-start gap-3 min-w-0 sm:flex-1">
-          <DateBlock dateStr={b.date} />
+          <MiniCourt name={b.courts?.name} />
           <div className="min-w-0">
+            <div className="text-[10.5px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{longDate(b.date)}</div>
             <div className="text-[15px] flex items-center gap-2 flex-wrap" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>
               <span>{b.courts?.name} — {b.courts?.type}</span>
               {/* Marks this row out now that joined games share a list with
