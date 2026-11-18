@@ -31,17 +31,18 @@ export default function BriefingSettings({ venueSlug, settings }: { venueSlug: s
   )
 
   return (
-    <div className="rounded-2xl mt-4 p-5" style={card} data-testid="briefing-settings">
+    <div className="rounded-[20px] p-5" style={card} data-testid="briefing-settings">
       <div className="flex items-center gap-3">
         <span className="min-w-0">
-          <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>☀️ Morning briefing</span>
+          <span className="block text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Morning briefing</span>
+          {s && <span className="block text-[26px] font-black leading-tight mt-1" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{s.enabled ? hourLabel(s.hour) : 'Off'}</span>}
           <span className="block text-xs mt-0.5" style={muted}>{s ? (s.enabled ? `Owners get yesterday's numbers at ${hourLabel(s.hour)}` : 'Off: owners get nothing') : "Not switched on yet. Run the 035 database change."}</span>
         </span>
         {s && (
           <button type="button" role="switch" aria-checked={s.enabled} aria-label="Morning briefing" disabled={busy} onClick={() => void save({ enabled: !s.enabled })}
             className="ml-auto shrink-0 relative rounded-full disabled:opacity-60" data-testid="briefing-switch"
-            style={{ width: 46, height: 28, background: s.enabled ? 'var(--brand-primary)' : 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            <span aria-hidden className="absolute rounded-full" style={{ top: 3, left: s.enabled ? 21 : 3, width: 20, height: 20, background: '#fff', transition: 'left .15s' }} />
+            style={{ width: 46, height: 28, background: s.enabled ? '#d4f53c' : 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+            <span aria-hidden className="absolute rounded-full" style={{ top: 3, left: s.enabled ? 21 : 3, width: 20, height: 20, background: s.enabled ? '#17240a' : 'var(--text-subtle)', transition: 'left .15s' }} />
           </button>
         )}
       </div>

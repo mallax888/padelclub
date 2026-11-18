@@ -54,8 +54,8 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   return (
     <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={onClick} disabled={disabled}
       className="shrink-0 relative rounded-full disabled:opacity-60"
-      style={{ width: 46, height: 26, background: on ? 'var(--brand-primary)' : 'var(--bg-raised)', border: on ? 'none' : '1px solid var(--border)' }}>
-      <span style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: on ? '#fff' : 'var(--text-subtle)', transition: 'left 120ms' }} />
+      style={{ width: 46, height: 26, background: on ? '#d4f53c' : 'var(--bg-raised)', border: on ? 'none' : '1px solid var(--border)' }}>
+      <span style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: on ? '#17240a' : 'var(--text-subtle)', transition: 'left 120ms' }} />
     </button>
   )
 }
@@ -181,6 +181,37 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
     </div>
   )
   const stack = 'flex flex-col gap-4 [&>*]:mt-0'
+  // A club that is open gets the bento board. Setting one up (or closed) keeps the one-question-at-a-time flow.
+  const bento = eff === 'live' && isOpen
+  const regularsCard = regulars ? (
+<div className="rounded-[20px] p-5" style={card} data-testid="regulars-rules">
+          <div className="flex items-center gap-3">
+            <span className="min-w-0">
+              <span className="block text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Weekly regulars</span>
+              <span className="block text-[26px] font-black leading-tight mt-1" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{!regulars.enabled ? 'Off' : regulars.peakCap != null ? `Up to ${regulars.peakCap}` : 'No limit'}</span>
+              <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{regulars.enabled ? 'Players can book the same time every week' : 'Players can only book one court at a time'}</span>
+            </span>
+            <span className="ml-auto">
+              <Switch on={regulars.enabled} label="Weekly regulars" disabled={busy}
+                onClick={() => { void run('/api/admin/regulars-settings', { venueSlug: venue.slug, enabled: !regulars.enabled }, !regulars.enabled ? 'Regulars are on' : 'Regulars are off') }} />
+            </span>
+          </div>
+          {regulars.enabled && (
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+              <label className="block text-xs font-bold" htmlFor="regular-cap" style={{ color: 'var(--text-muted)' }}>Most courts regulars can hold at one peak time</label>
+              <div className="flex gap-2 mt-2">
+                <input id="regular-cap" inputMode="numeric" value={capText} onChange={e => setCapText(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No limit"
+                  className="flex-1 rounded-xl px-3 text-sm" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
+                <button type="button" disabled={busy} className="rounded-xl px-4 text-sm font-bold disabled:opacity-50" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  onClick={() => { void run('/api/admin/regulars-settings', { venueSlug: venue.slug, peakCap: capText === '' ? null : Number(capText) }, capText === '' ? 'No limit on regulars at peak' : `Regulars can hold up to ${capText} ${capText === '1' ? 'court' : 'courts'} at peak`) }}>
+                  Save
+                </button>
+              </div>
+              <p className="text-[11px] mt-2 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Peak is weekday evenings (5 to 9pm) and weekends. Leave it blank for no limit, so regulars could hold every court. Walk-ins always have what is left.</p>
+            </div>
+          )}
+        </div>
+  ) : null
 
   return (
     <div className="w-full flex flex-col">
@@ -192,9 +223,11 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
         {liveDone ? 'Change any of it below, any time.' : "A few quick questions and players can book courts. You can change any of it later."}
       </p>
       <div className={`${stack} mt-4`}>
-        {answered('club', 'Your club', <>{venue.name} · {venue.address}</>)}
-        {hoursDone && eff !== 'hours' && answered('hours', 'Opening hours', hoursText, () => setStep('hours'))}
-        {courtsDone && eff !== 'courts' && answered('courts', 'Courts and prices', courtsText, () => setStep('courts'))}
+        {bento
+          ? <p data-testid="answered-club" className="text-sm -mt-2" style={{ color: 'var(--text-muted)' }}>{venue.name} · {venue.address}</p>
+          : answered('club', 'Your club', <>{venue.name} · {venue.address}</>)}
+        {!bento && hoursDone && eff !== 'hours' && answered('hours', 'Opening hours', hoursText, () => setStep('hours'))}
+        {!bento && courtsDone && eff !== 'courts' && answered('courts', 'Courts and prices', courtsText, () => setStep('courts'))}
 
         {eff === 'hours' && ask(qLabel.hours, "The hours players can book. Times outside them aren't offered.", <>
         <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
@@ -264,7 +297,63 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
         <Primary disabled={courts.length === 0} onClick={() => setStep('home')}>Continue</Primary>
         </>)}
 
-        {eff === 'live' && <>
+        {bento && (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.8fr)] lg:items-start">
+            <div className="flex flex-col gap-4 min-w-0">
+              {/* Open for booking: the big blue card */}
+              <section className="rounded-[20px] p-5 lg:p-6 flex items-center gap-4" data-testid="open-hero" style={{ background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', color: '#fff' }}>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: '#cfe0ff' }}>Open for booking</div>
+                  <div className="font-black leading-tight mt-1.5 text-[30px]" style={{ letterSpacing: '-0.03em' }}>{isOpen ? "You're open" : 'Not open yet'}</div>
+                  <div className="text-[13px] mt-1" style={{ color: '#cfe0ff' }}>{isOpen ? 'Players can see and book your courts' : 'Players see "Courts coming soon" until you switch this on'}</div>
+                </div>
+                <Switch on={isOpen} label="Open for booking" disabled={busy || courts.length === 0}
+                  onClick={() => { void run('/api/admin/venue-settings', { venueSlug: venue.slug, isOpen: !isOpen }, !isOpen ? `${venue.name} is open for booking` : 'Closed to players') }} />
+              </section>
+
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+                {/* Opening hours: the week at a glance */}
+                <div className="rounded-[20px] p-5" style={card} data-testid="answered-hours">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Opening hours</div>
+                    <button type="button" onClick={() => setStep('hours')} className="text-[13px] font-bold" style={{ color: 'var(--link-change)' }} aria-label="Change Opening hours">Change</button>
+                  </div>
+                  <div className="flex items-end gap-1.5 mt-3" style={{ height: 56 }} aria-hidden>
+                    {DAY_KEYS.map(d => {
+                      const h = savedHours?.[d] ?? null
+                      const hours = h ? Math.max(0, (toMinutes(h.close) - toMinutes(h.open)) / 60) : 0
+                      return <div key={d} className="flex-1" style={{ height: h ? `${Math.max(18, Math.min(100, (hours / 16) * 100))}%` : '12%', borderRadius: '6px 6px 3px 3px', background: h ? 'linear-gradient(180deg, #5b8fe6, var(--brand-primary))' : 'var(--bg-raised)' }} />
+                    })}
+                  </div>
+                  <div className="flex gap-1.5 mt-1" aria-hidden>{DAY_KEYS.map(d => <span key={d} className="flex-1 text-center text-[10px]" style={{ color: 'var(--text-subtle)' }}>{DAY_NAMES[d].slice(0, 1)}</span>)}</div>
+                  <div className="text-[12.5px] mt-2 font-bold" style={{ color: 'var(--text-primary)' }}>{hoursDone ? hoursText : 'Not set (07:00–22:00)'}</div>
+                </div>
+                {/* Courts and prices */}
+                <div className="rounded-[20px] p-5" style={card} data-testid="answered-courts">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Courts and prices</div>
+                    <button type="button" onClick={() => setStep('courts')} className="text-[13px] font-bold" style={{ color: 'var(--link-change)' }} aria-label="Change Courts and prices">Change</button>
+                  </div>
+                  <div className="font-black leading-none mt-3 text-[34px]" style={{ letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{courts.length} <span className="text-[15px] font-extrabold" style={{ color: 'var(--text-muted)' }}>{courts.length === 1 ? 'court' : 'courts'}</span></div>
+                  <div className="text-[12.5px] mt-2 font-bold" style={{ color: 'var(--text-primary)' }}>{courtsText.replace(/^\d+ courts? · /, '')}</div>
+                </div>
+              </div>
+
+              {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
+            </div>
+
+            <div className="flex flex-col gap-4 min-w-0">
+              {regularsCard}
+              <BriefingSettings venueSlug={venue.slug} settings={briefing} />
+              <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
+            </div>
+            <div className="lg:col-span-2 flex justify-end">
+              <button type="button" onClick={() => router.push(`/admin/today?venue=${encodeURIComponent(venue.slug)}`)} className="btn btn-primary btn-sm">Done</button>
+            </div>
+          </div>
+        )}
+
+        {eff === 'live' && !isOpen && <>
           {ask(qLabel.live, 'Check it over. You can change any of this later.', <>
       <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
         {[
@@ -296,39 +385,14 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
 
 
         {eff !== 'live' && <div className="text-[11px] font-extrabold uppercase mt-2 px-0.5" style={sectionLabel}>More settings</div>}
-      {regulars && (
-        <div className="rounded-2xl mt-4 p-5" style={card} data-testid="regulars-rules">
-          <div className="flex items-center gap-3">
-            <span className="min-w-0">
-              <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>🔁 Weekly regulars</span>
-              <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{regulars.enabled ? 'Players can book the same time every week' : 'Players can only book one court at a time'}</span>
-            </span>
-            <span className="ml-auto">
-              <Switch on={regulars.enabled} label="Weekly regulars" disabled={busy}
-                onClick={() => { void run('/api/admin/regulars-settings', { venueSlug: venue.slug, enabled: !regulars.enabled }, !regulars.enabled ? 'Regulars are on' : 'Regulars are off') }} />
-            </span>
-          </div>
-          {regulars.enabled && (
-            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
-              <label className="block text-xs font-bold" htmlFor="regular-cap" style={{ color: 'var(--text-muted)' }}>Most courts regulars can hold at one peak time</label>
-              <div className="flex gap-2 mt-2">
-                <input id="regular-cap" inputMode="numeric" value={capText} onChange={e => setCapText(e.target.value.replace(/[^0-9]/g, '').slice(0, 2))} placeholder="No limit"
-                  className="flex-1 rounded-xl px-3 text-sm" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }} />
-                <button type="button" disabled={busy} className="rounded-xl px-4 text-sm font-bold disabled:opacity-50" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                  onClick={() => { void run('/api/admin/regulars-settings', { venueSlug: venue.slug, peakCap: capText === '' ? null : Number(capText) }, capText === '' ? 'No limit on regulars at peak' : `Regulars can hold up to ${capText} ${capText === '1' ? 'court' : 'courts'} at peak`) }}>
-                  Save
-                </button>
-              </div>
-              <p className="text-[11px] mt-2 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Peak is weekday evenings (5 to 9pm) and weekends. Leave it blank for no limit, so regulars could hold every court. Walk-ins always have what is left.</p>
-            </div>
-          )}
-        </div>
-      )}
-          <BriefingSettings venueSlug={venue.slug} settings={briefing} />
-          <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
-          {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
+      {!bento && regularsCard}
+          {!bento && <>
+            <BriefingSettings venueSlug={venue.slug} settings={briefing} />
+            <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
+            {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
+          </>}
 
-        {eff === 'live' && <>
+        {eff === 'live' && !bento && <>
           <Primary onClick={() => router.push(isOpen ? `/admin/today?venue=${encodeURIComponent(venue.slug)}` : '/admin/setup?venue=' + encodeURIComponent(venue.slug))}>
             {isOpen ? 'Done' : 'Save for later'}
           </Primary>
