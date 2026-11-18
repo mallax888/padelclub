@@ -16,7 +16,8 @@ export const isOwnerRole = (role: string | null | undefined): boolean => role ==
 export const roleLabel = (role: string | null | undefined): string | null =>
   role === 'admin' ? 'Owner' : role === 'staff' ? 'Front desk' : null
 
-export const ADMIN_TABS = ['board', 'analytics', 'reports', 'bookings', 'members', 'courts', 'xero'] as const
+// The order of the tabs at the top of the dashboard matches the phone's bottom bar (Board, Bookings, Analytics), so the two read the same.
+export const ADMIN_TABS = ['board', 'bookings', 'analytics', 'reports', 'members', 'courts', 'xero'] as const
 export type AdminTab = typeof ADMIN_TABS[number]
 export const FRONT_DESK_TABS: readonly AdminTab[] = ['board', 'bookings', 'members']
 export const canOpenTab = (role: string | null | undefined, tab: string): boolean =>

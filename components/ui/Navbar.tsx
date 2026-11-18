@@ -8,7 +8,7 @@ import PushNotificationToggle from '@/components/ui/PushNotificationToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
 import SpecialsMenu from '@/components/ui/SpecialsMenu'
 import { SPECIALS, cadencePill } from '@/lib/specials'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ViewSwitch from '@/components/ui/ViewSwitch'
 import { homePathFor, roleLabel, type ViewMode } from '@/lib/view-mode'
 import { tierLabel } from '@/lib/plan-rules'
@@ -179,7 +179,15 @@ function SidebarGroupLabel({ children }: { children: React.ReactNode }) {
 export default function Navbar({ viewMode = 'player', isOwner = false, canSwitchView = true, isPlatform = false }: { viewMode?: ViewMode; isOwner?: boolean; canSwitchView?: boolean; isPlatform?: boolean }) {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
-  const tabParam = useSearchParams()?.get('tab') ?? 'board'
+  const urlTab = useSearchParams()?.get('tab') ?? 'board'
+  // The dashboard's own tabs change the address without a page load, so they also say so directly: the bar never lags behind.
+  const [tabParam, setTabParam] = useState(urlTab)
+  useEffect(() => { setTabParam(urlTab) }, [urlTab])
+  useEffect(() => {
+    const on = (e: Event) => { const t = (e as CustomEvent).detail; if (typeof t === 'string') setTabParam(t) }
+    window.addEventListener('padelclub:tab', on)
+    return () => window.removeEventListener('padelclub:tab', on)
+  }, [])
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
 

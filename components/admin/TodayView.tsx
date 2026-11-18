@@ -47,16 +47,6 @@ export type TodayViewProps = {
   } | null
 }
 
-function Stat({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="rounded-2xl p-4" style={card}>
-      <div className="text-[10.5px] font-bold" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-      <div className="text-[22px] leading-tight font-extrabold mt-1 truncate" style={{ ...display, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{value}</div>
-      <div className="text-[10.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{note}</div>
-    </div>
-  )
-}
-
 function AttentionRow({ href, tone, mark, title, text }: { href: string; tone: 'red' | 'yellow' | 'blue'; mark: string; title: string; text: string }) {
   const color = tone === 'red' ? 'var(--brand-crimson)' : tone === 'yellow' ? 'var(--text-primary)' : 'var(--brand-primary-text)'
   const bg = tone === 'red' ? 'var(--brand-crimson-muted)' : tone === 'yellow' ? 'var(--brand-yellow-muted)' : 'var(--brand-primary-muted)'
@@ -103,68 +93,22 @@ export default function TodayView(p: TodayViewProps) {
   }
   // Empty court time lives on the court card below (with the Fill them button), not in this list.
   const fillButton = act?.offersOn && act.fill
-    ? <FillButton venueSlug={p.venueSlug} gap={act.fill.gap} bounds={act.fill.bounds} autoOpen={act.autoOpen === 'fill'} />
+    ? <FillButton venueSlug={p.venueSlug} gap={act.fill.gap} bounds={act.fill.bounds} autoOpen={act.autoOpen === 'fill'} hero />
     : null
 
   const noCourts = s.courts.length === 0
-  return (
-    <div className="w-full flex flex-col">
-      <AutoRefresh />
-      {/* On a computer the page title is the first thing on the page; the club picker sits under it, and the Manager switch is in the sidebar. */}
-      <div className="flex items-center justify-between gap-3 mt-4">
-        <VenuePicker venues={p.venues} value={p.venueSlug} />
-        {p.canSwitchView !== false && <div className="lg:hidden"><ViewSwitch mode="manager" /></div>}
-      </div>
-
-      <h1 className="order-first text-2xl font-semibold">
-        {p.greeting}{p.staffName ? `, ${p.staffName}` : ''}
-        {p.roleLabel && (
-          <span className="ml-2.5 align-middle text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-full"
-            style={{ letterSpacing: '0.06em', fontFamily: 'Inter, sans-serif', ...(p.showMoney
-              ? { color: 'var(--brand-primary-text)', background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }
-              : { color: 'var(--text-muted)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }) }}>{p.roleLabel}</span>
-        )}
-      </h1>
-      <div className="order-first text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
-
-      {p.briefing && <YesterdayStrip b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} brandNew={p.briefing.brandNew} />}
-
-      <div className="grid grid-cols-3 gap-4 mt-6 order-3 lg:mt-4 lg:order-none">
-        <Stat label="Bookings" value={String(s.bookings.today)} note={`${s.bookings.remaining} still to play`} />
-        <Stat label="Courts booked today" value={p.courtDay.pct === null ? '–' : `${p.courtDay.pct}%`}
-          note={p.courtDay.sellable === 0 ? 'Not on sale today' : `${p.courtDay.booked} of ${p.courtDay.sellable} court-hours · ${p.courtDay.openNow} still open`} />
-        {p.showMoney
-          ? <Stat label="Revenue" value={formatPrice(Math.round(s.revenue.today), p.currency).replace(/\.00$/, '')} note={`vs ${formatPrice(Math.round(s.revenue.lastWeek), p.currency).replace(/\.00$/, '')}`} />
-          : <Stat label="Unpaid" value={String(unpaid.count)} note={unpaid.count === 1 ? 'share to chase' : 'shares to chase'} />}
-      </div>
-
-      {/* On a computer: the courts on the left, needs attention and the next bookings on the right. On a phone it is one column: the courts first, then needs attention, the three numbers, next up. */}
-      <div className="contents lg:grid lg:mt-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start">
-      <div className="order-2 mt-6 lg:order-none lg:mt-0 lg:col-start-2 lg:row-start-1">
-      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
+  const aside = (
+    <>
+      <div>
+        <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
       <div className="rounded-[20px] overflow-hidden" style={card}>
         {attention.length > 0 ? attention : (
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>All clear. Nothing needs your attention right now.</div>
         )}
       </div>
       </div>
-
-      <div className="order-1 mt-6 lg:order-none lg:mt-0 lg:col-start-1 lg:row-start-1 lg:row-span-2">
-      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Your club right now</div>
-      {noCourts ? (
-        <div className="rounded-[20px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
-          This club has no courts set up yet.{p.showMoney ? <> <Link href={`/admin/setup?${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up this club</Link>.</> : ' Ask the owner to add them.'}
-        </div>
-      ) : (
-        <ClubMap venueSlug={p.venueSlug} date={p.map.date} day={p.courtDay} bookings={p.map.bookings} nowMinutes={p.nowMinutes} currency={p.currency} showMoney={p.showMoney}
-          offersOn={!!act?.offersOn} bounds={p.map.bounds} boardHref={`/admin?tab=board&${q}`} weekdayShort={p.lastWeekLabel} bookingsToday={s.bookings.today} bookingsLastWeek={s.bookings.lastWeek}
-          takings={s.revenue.today} fill={fillButton}
-          courts={p.courtDay.rows.map(r => ({ id: r.id, name: r.name, row: r, today: p.map.courts.find(c => c.id === r.id)?.today ?? 0, lastWeek: p.map.courts.find(c => c.id === r.id)?.lastWeek ?? 0 }))} />
-      )}
-      </div>
-
-      <div className="order-4 mt-6 lg:order-none lg:mt-0 lg:col-start-2 lg:row-start-2">
-      <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Next up</div>
+      <div>
+        <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Next up</div>
       <div className="rounded-[20px] overflow-hidden" style={card}>
         {s.nextUp.length === 0 ? (
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No more bookings today.</div>
@@ -193,8 +137,48 @@ export default function TodayView(p: TodayViewProps) {
       <Link href={`/admin?tab=board&${q}`} className="btn-main btn-main-quiet mt-4">
         Open the full dashboard
       </Link>
+
       </div>
+    </>
+  )
+  return (
+    <div className="w-full flex flex-col">
+      <AutoRefresh />
+      {/* On a computer the page title is the first thing on the page; the club picker sits under it, and the Manager switch is in the sidebar. */}
+      <div className="flex items-center justify-between gap-3 mt-4">
+        <VenuePicker venues={p.venues} value={p.venueSlug} />
+        {p.canSwitchView !== false && <div className="lg:hidden"><ViewSwitch mode="manager" /></div>}
       </div>
+
+      <h1 className="order-first text-2xl font-semibold">
+        {p.greeting}{p.staffName ? `, ${p.staffName}` : ''}
+        {p.roleLabel && (
+          <span className="ml-2.5 align-middle text-[11px] font-extrabold uppercase px-2.5 py-1 rounded-full"
+            style={{ letterSpacing: '0.06em', fontFamily: 'Inter, sans-serif', ...(p.showMoney
+              ? { color: 'var(--brand-primary-text)', background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)' }
+              : { color: 'var(--text-muted)', background: 'var(--bg-raised)', border: '1px solid var(--border)' }) }}>{p.roleLabel}</span>
+        )}
+      </h1>
+      <div className="order-first text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{p.dateLabel}</div>
+
+      {/* Phone: one column, the courts first, then needs attention and next up. Computer: the big blue card and the two side cards in a row, the courts underneath. */}
+      {noCourts ? (
+        <div className="grid gap-6 mt-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start">
+          <div className="rounded-[20px] px-3.5 py-4 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>
+            This club has no courts set up yet.{p.showMoney ? <> <Link href={`/admin/setup?${q}`} style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up this club</Link>.</> : ' Ask the owner to add them.'}
+          </div>
+          <div className="flex flex-col gap-6">{aside}</div>
+        </div>
+      ) : (
+        <div className="mt-6">
+          <ClubMap venueSlug={p.venueSlug} date={p.map.date} day={p.courtDay} bookings={p.map.bookings} nowMinutes={p.nowMinutes} currency={p.currency} showMoney={p.showMoney}
+            offersOn={!!act?.offersOn} bounds={p.map.bounds} boardHref={`/admin?tab=board&${q}`} weekdayShort={p.lastWeekLabel} bookingsToday={s.bookings.today} bookingsLastWeek={s.bookings.lastWeek}
+            takings={s.revenue.today} fill={fillButton} aside={aside}
+            yesterday={p.briefing ? <YesterdayStrip hero b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} brandNew={p.briefing.brandNew} /> : null}
+            stillToPlay={s.bookings.remaining} bookedPct={p.courtDay.pct} unpaidChase={p.showMoney ? null : unpaid.count}
+            courts={p.courtDay.rows.map(r => ({ id: r.id, name: r.name, row: r, today: p.map.courts.find(c => c.id === r.id)?.today ?? 0, lastWeek: p.map.courts.find(c => c.id === r.id)?.lastWeek ?? 0 }))} />
+        </div>
+      )}
     </div>
   )
 }

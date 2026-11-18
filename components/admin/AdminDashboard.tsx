@@ -173,6 +173,7 @@ export default function AdminDashboard({
       const url = new URL(window.location.href)
       url.searchParams.set('tab', t)
       window.history.replaceState(null, '', url.toString())
+      window.dispatchEvent(new CustomEvent('padelclub:tab', { detail: t }))
     }
   }
   const initialRegion = initialVenue ? getVenue(initialVenue).region : ''
@@ -562,30 +563,14 @@ export default function AdminDashboard({
     <div className="flex gap-6">
       <AdminSidebar tab={tab} setTab={setTab} canSeeMoney={canSeeMoney} venueName={heroVenue?.name ?? 'Your club'} venueRegion={heroVenue?.region ?? ''} staffName={staffName} />
       <div className="flex-1 min-w-0">
-      {/* Tabs -- mobile only; md+ uses the sidebar instead */}
-      <div className="flex gap-1 mb-4 md:hidden overflow-x-auto" style={{ borderBottom: '1px solid var(--border)' }}>
-        {ADMIN_TABS.filter(t => allowedTabs.includes(t)).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className="px-4 py-2 text-sm capitalize transition-colors"
-            style={{
-              borderBottom: `2px solid ${tab === t ? 'var(--brand-primary)' : 'transparent'}`,
-              color: tab === t ? 'var(--brand-primary-text)' : 'var(--text-muted)',
-              fontWeight: tab === t ? 500 : 400,
-              marginBottom: -1,
-            }}
-          >
-            {t}
-          </button>
-        ))}
-        <div className="flex-1" />
-        {tab === 'bookings' && (
-          <button className="btn btn-primary btn-sm mb-1" onClick={() => setShowBlock(true)}>
+      {/* No tab row on a phone: the bottom bar (and its More menu) opens every tab, so a second row only repeated it. md+ uses the sidebar. */}
+      {tab === 'bookings' && (
+        <div className="flex justify-end mb-4 md:hidden">
+          <button className="btn btn-primary btn-sm" onClick={() => setShowBlock(true)}>
             🔒 Block a court
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Stat cards: today's numbers for the club on screen, on the two tabs about today */}
       {(tab === 'board' || tab === 'bookings') && <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">

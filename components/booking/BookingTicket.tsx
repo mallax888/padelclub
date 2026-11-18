@@ -2,7 +2,7 @@
 
 import { initialsOf } from '@/lib/club-map'
 
-// The booking summary on the last screens of Book a court: a ticket for the game. The court is a tennis ball, the time is the
+// The booking summary on the last screens of Book a court: a ticket for the game. The court is a white tile, the time is the
 // hero, and under the tear line sit who is playing and what you pay. One colour for every amount: white.
 const FACE = 'linear-gradient(160deg, #2c5fc4, #1d3f8d)'
 const INK = '#ffffff'
@@ -11,23 +11,10 @@ function Ball({ name }: { name: string }) {
   const bare = name.replace(/^court\s*/i, '').trim()
   const short = bare.length > 0 && bare.length <= 3 ? bare : bare.slice(0, 1).toUpperCase()
   return (
-    <div className="relative shrink-0" style={{ width: 78, height: 78 }} aria-hidden>
-      <svg width="78" height="78" viewBox="0 0 78 78" className="absolute inset-0">
-        <defs>
-          <radialGradient id="bt-ball" cx="35%" cy="30%" r="75%"><stop offset="0" stopColor="#eaff7a" /><stop offset="0.55" stopColor="#d4f53c" /><stop offset="1" stopColor="#a8c81d" /></radialGradient>
-        </defs>
-        <clipPath id="bt-clip"><circle cx="39" cy="39" r="39" /></clipPath>
-        <circle cx="39" cy="39" r="39" fill="url(#bt-ball)" />
-        {/* the seams stay inside the ball, in a soft pale yellow instead of white, so they never fight the ball or the blue behind it */}
-        <g clipPath="url(#bt-clip)" fill="none" stroke="#f3ffa8" strokeOpacity="0.9" strokeWidth="2.4" strokeLinecap="round">
-          <path d="M-4 10 C 20 24, 20 54, -4 68" />
-          <path d="M82 10 C 58 24, 58 54, 82 68" />
-        </g>
-      </svg>
-      <div className="relative flex flex-col items-center justify-center h-full" style={{ color: '#17240a' }}>
-        <span className="text-[9.5px] font-black" style={{ letterSpacing: '0.14em' }}>COURT</span>
-        <span className="font-black leading-[0.95]" style={{ fontSize: short.length > 2 ? 26 : 36 }} data-testid="ticket-court">{short}</span>
-      </div>
+    <div className="shrink-0 flex flex-col items-center justify-center" aria-hidden
+      style={{ width: 78, height: 78, borderRadius: 20, background: '#ffffff', color: '#1d3f8d', boxShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>
+      <span className="text-[9.5px] font-black" style={{ letterSpacing: '0.14em', color: '#667085' }}>COURT</span>
+      <span className="font-black leading-[0.95]" style={{ fontSize: short.length > 2 ? 26 : 36 }} data-testid="ticket-court">{short}</span>
     </div>
   )
 }

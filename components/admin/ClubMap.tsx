@@ -40,11 +40,13 @@ const tone = {
   blocked: { bg: 'var(--brand-crimson-muted)', border: 'var(--brand-crimson)', text: 'var(--brand-crimson)' },
 } as const
 
-export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMinutes, currency, showMoney, offersOn, bounds, boardHref, weekdayShort, bookingsToday, bookingsLastWeek, takings, fill }: {
+export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMinutes, currency, showMoney, offersOn, bounds, boardHref, weekdayShort, bookingsToday, bookingsLastWeek, takings, fill, aside, yesterday, stillToPlay, bookedPct, unpaidChase }: {
   venueSlug: string; date: string; courts: CourtProp[]; day: CourtDay; bookings: MapBooking[]; nowMinutes: number
   currency: CurrencyCode; showMoney: boolean; offersOn: boolean; bounds: { from: string; to: string } | null; boardHref: string
   weekdayShort: string; bookingsToday: number; bookingsLastWeek: number; takings: number
   fill: React.ReactNode
+  // the cards that sit beside the big blue card on a computer (Needs attention, Next up), and the Yesterday line inside it
+  aside: React.ReactNode; yesterday: React.ReactNode; stillToPlay: number; bookedPct: number | null; unpaidChase: number | null
 }) {
   const router = useRouter()
   const [at, setAt] = useState(nowMinutes)
@@ -162,117 +164,128 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
     )
   }
 
+  const goal = showMoney && potential > 0 && takings > 0
+  const soft = '#cfe0ff'
   return (
-    <div ref={rootRef} className="rounded-[20px] overflow-hidden" style={card} data-testid="court-day">
-      <div className="flex items-start gap-3 px-4 pt-4 pb-1">
-        <div className="min-w-0 flex-1">
-          <div className="text-[19px] font-black" style={{ color: 'var(--text-primary)', letterSpacing: '-0.01em' }} data-testid="map-title">{isNow ? `${bookingsWord(bookingsToday)} today, ${comparison(bookingsToday - bookingsLastWeek, weekdayShort)}` : `Your club at ${hhmm(at)}`}</div>
-          <div className="text-[12.5px] mt-0.5" style={{ color: 'var(--text-muted)' }} data-testid="map-sub">
-            {isNow
-              ? `${clock12(nowMinutes)} · ${playing} ${playing === 1 ? 'court' : 'courts'} playing · ${free} free`
-              : `${playing} of ${courts.length} courts booked at ${hhmm(at)}${playing === courts.length ? ': your courts are full' : ''}`}
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start" data-testid="court-day">
+      {/* the day in one blue card */}
+      <section className="order-1 lg:col-start-1 lg:row-start-1 rounded-[22px] p-4 lg:p-6" style={{ background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', color: '#ffffff' }} aria-label="Today so far">
+        <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: soft }}>{isNow ? 'Today so far' : 'Your club at'}</div>
+        {isNow ? (
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mt-1.5" data-testid="map-title">
+            <span className="font-black leading-none text-[44px] lg:text-[56px]" style={{ letterSpacing: '-0.04em' }} data-testid="map-number">{bookingsToday}</span>
+            <span className="text-[19px] font-extrabold">{bookingsToday === 1 ? 'booking' : 'bookings'}</span>
+            <span className="text-[13px] font-bold rounded-full px-3 py-1" style={{ background: '#ffffff26' }} data-testid="map-compare">{comparison(bookingsToday - bookingsLastWeek, weekdayShort)}</span>
           </div>
+        ) : (
+          <div className="font-black leading-none mt-1.5" style={{ fontSize: 44, letterSpacing: '-0.03em' }} data-testid="map-title">{hhmm(at)}</div>
+        )}
+        <div className="text-[12.5px] lg:text-[13px] mt-2" style={{ color: soft }} data-testid="map-sub">
+          {isNow
+            ? `${clock12(nowMinutes)} · ${playing} ${playing === 1 ? 'court' : 'courts'} playing · ${free} free${stillToPlay > 0 ? ` · ${stillToPlay} still to play` : ''}${bookedPct !== null ? ` · ${bookedPct}% of court-hours booked` : ''}`
+            : `${playing} of ${courts.length} courts booked at ${hhmm(at)}${playing === courts.length ? ': your courts are full' : ''}`}
         </div>
-        {fill}
-      </div>
+        {goal && (
+          <div className="mt-4">
+            <div className="h-[10px] rounded-full overflow-hidden" style={{ background: '#ffffff30' }} aria-hidden><div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: '#d4f53c' }} /></div>
+            <div className="text-[13px] font-bold mt-2" style={{ color: soft }}><b className="text-[15px]" style={{ color: '#ffffff' }}>{money(takings, currency)}</b> of {money(potential, currency)} possible today</div>
+          </div>
+        )}
+        <div className="text-[13px] font-bold mt-3" style={{ color: day.openValue > 0 ? '#ffe566' : soft }} data-testid="court-day-summary">{summary}</div>
+        {unpaidChase !== null && unpaidChase > 0 && <div className="text-[13px] font-bold mt-1" style={{ color: soft }}>{unpaidChase} {unpaidChase === 1 ? 'share' : 'shares'} to chase</div>}
+        {fill && <div className="mt-4 flex flex-wrap gap-2.5">{fill}</div>}
+        {yesterday && <div className="mt-3 pt-3 lg:mt-4" style={{ borderTop: '1px solid #ffffff30' }}>{yesterday}</div>}
+      </section>
 
-      {showMoney && potential > 0 && takings > 0 ? (
-        <div className="px-4 pt-3">
-          <div className="flex justify-between gap-3 text-[12.5px] mb-1.5" style={{ color: 'var(--text-muted)' }}>
-            <span><b className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>{money(takings, currency)}</b> of {money(potential, currency)} possible today</span>
-            <span className="font-bold text-right" style={{ color: day.openValue > 0 ? 'var(--open-text)' : 'var(--brand-green)' }} data-testid="court-day-summary">{summary}</span>
-          </div>
-          <div className="relative rounded-full" style={{ height: 10, background: 'var(--bg-raised)' }} aria-hidden>
-            <div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: 'linear-gradient(90deg, var(--brand-primary), var(--brand-primary-text))' }} />
-          </div>
+      <div className="order-3 lg:col-start-2 lg:row-start-1 flex flex-col gap-6">{aside}</div>
+
+      {/* the courts */}
+      <section ref={rootRef} className="order-2 lg:col-span-2 lg:row-start-2" aria-label="Courts right now">
+        <div className="flex items-baseline justify-between gap-3 mb-2.5 px-0.5">
+          <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Courts right now</div>
+          <div className="text-[12px]" style={{ color: 'var(--text-subtle)' }}>Tap a court for its briefing</div>
         </div>
-      ) : (
-        <div className="px-4 pt-2 text-[12.5px] font-bold" style={{ color: day.openValue > 0 ? 'var(--open-text)' : 'var(--text-muted)' }} data-testid="court-day-summary">{summary}</div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3 px-4 pt-4 lg:grid-cols-3">
-        {courts.map(c => {
-          const st = states.get(c.id)!
-          const r = c.row
-          const t = tone[st.state]
-          const soldOut = r.sellable > 0 && r.openNow === 0 && !day.finished
-          return (
-            <button key={c.id} type="button" onClick={() => setSel(sel === c.id ? null : c.id)} data-testid="court-tile" aria-pressed={sel === c.id}
-              aria-label={`${c.name}: ${st.state === 'playing' ? `${st.who ?? 'booked'} until ${hhmm(st.until!)}` : st.state === 'blocked' ? 'blocked' : 'free'}${r.openNow > 0 ? `, ${r.openNow} ${r.openNow === 1 ? 'hour' : 'hours'} to sell` : ''}`}
-              className="text-left rounded-[20px] p-4 lg:p-5 transition-shadow"
-              style={{ background: t.bg, border: `1.5px solid ${t.border}`, boxShadow: sel === c.id ? '0 0 0 3px var(--bg-surface), 0 0 0 5px var(--brand-primary-text)' : 'none' }}>
-              <span className="flex items-center justify-between gap-2">
-                <span className="text-[19px] sm:text-[21px] font-black shrink-0 whitespace-nowrap" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }} data-testid="court-name">{c.name}</span>
-                <span className="text-[10.5px] font-black whitespace-nowrap" style={{ letterSpacing: '0.08em', color: t.text }}>● {st.state === 'playing' ? (isNow ? 'LIVE' : <><span className="sm:hidden">BUSY</span><span className="hidden sm:inline">PLAYING</span></>) : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
-              </span>
-              <span className="flex items-center gap-2.5 mt-3 min-h-[38px]">
-                {st.state === 'playing' && st.people.length > 0 && <Avatars people={st.people} />}
-                <span className="min-w-0">
-                  <span className="block text-[13.5px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>
-                    {st.state === 'playing' ? (st.who ?? 'Booked') : st.state === 'blocked' ? 'Blocked' : st.next ? `${st.next.who ?? 'Next booking'}` : 'Free'}
-                  </span>
-                  <span className="block text-[12px]" style={{ color: 'var(--text-muted)' }}>
-                    {st.state === 'playing' || st.state === 'blocked' ? `until ${hhmm(st.until!)}` : st.next ? `next ${hhmm(st.next.start)}` : 'nothing more today'}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+          {courts.map(c => {
+            const st = states.get(c.id)!
+            const r = c.row
+            const t = tone[st.state]
+            const soldOut = r.sellable > 0 && r.openNow === 0 && !day.finished
+            return (
+              <button key={c.id} type="button" onClick={() => setSel(sel === c.id ? null : c.id)} data-testid="court-tile" aria-pressed={sel === c.id}
+                aria-label={`${c.name}: ${st.state === 'playing' ? `${st.who ?? 'booked'} until ${hhmm(st.until!)}` : st.state === 'blocked' ? 'blocked' : 'free'}${r.openNow > 0 ? `, ${r.openNow} ${r.openNow === 1 ? 'hour' : 'hours'} to sell` : ''}`}
+                className="text-left rounded-[20px] p-4 lg:p-5 transition-shadow"
+                style={{ background: 'var(--bg-surface)', border: sel === c.id ? '2px solid var(--brand-primary)' : '2px solid var(--border)', boxShadow: sel === c.id ? '0 0 0 4px var(--brand-primary-muted)' : 'none' }}>
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[19px] sm:text-[21px] font-black shrink-0 whitespace-nowrap" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }} data-testid="court-name">{c.name}</span>
+                  <span className="text-[10.5px] font-black whitespace-nowrap" style={{ letterSpacing: '0.08em', color: t.text }}>● {st.state === 'playing' ? (isNow ? 'LIVE' : <><span className="sm:hidden">BUSY</span><span className="hidden sm:inline">PLAYING</span></>) : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
+                </span>
+                <span className="flex items-center gap-2.5 mt-3 min-h-[38px]">
+                  {st.state === 'playing' && st.people.length > 0 && <Avatars people={st.people} />}
+                  <span className="min-w-0">
+                    <span className="block text-[13.5px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>
+                      {st.state === 'playing' ? (st.who ?? 'Booked') : st.state === 'blocked' ? 'Blocked' : st.next ? `${st.next.who ?? 'Next booking'}` : 'Free'}
+                    </span>
+                    <span className="block text-[12px]" style={{ color: 'var(--text-muted)' }}>
+                      {st.state === 'playing' || st.state === 'blocked' ? `until ${hhmm(st.until!)}` : st.next ? `next ${hhmm(st.next.start)}` : 'nothing more today'}
+                    </span>
                   </span>
                 </span>
-              </span>
-              <span className="grid gap-[2px] mt-3" style={{ gridTemplateColumns: `repeat(${Math.max(n, 1)}, minmax(0,1fr))` }} aria-hidden>
-                {r.cells.map(cell => <i key={cell.hour} style={{ height: 6, borderRadius: 2, display: 'block', ...cellStyle(cell) }} />)}
-              </span>
-              <span className="flex mt-2.5">
-                {r.openNow > 0 ? (
-                  <span className="text-[11px] font-black rounded-full px-2.5 py-1" style={{ background: 'var(--brand-yellow-muted)', border: '1.5px dashed var(--brand-yellow)', color: 'var(--text-primary)' }} data-testid="court-coin">{r.openNow}h to sell{showMoney && r.openValue > 0 ? ` · ${money(r.openValue, currency)}` : ''}</span>
-                ) : soldOut ? (
-                  <span className="text-[10.5px] font-black rounded-full px-2.5 py-1" style={{ background: 'var(--brand-green-muted)', color: 'var(--brand-green)', letterSpacing: '0.04em' }} data-testid="court-soldout">SOLD OUT ✓</span>
-                ) : (
-                  <span className="text-[11px] font-bold py-1" style={{ color: 'var(--text-subtle)' }}>{day.finished ? 'Done for today' : r.sellable === 0 ? 'Not on sale' : ''}&nbsp;</span>
-                )}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* the time slider */}
-      <div ref={slotRef} style={pinned && slotH ? { height: slotH } : undefined}>
-      <div className={pinned ? 'px-4 pt-3 pb-2 rounded-[20px] lg:rounded-none' : 'px-4 pt-4'} data-testid="time-scrub" data-pinned={pinned ? 'true' : 'false'}
-        style={pinned ? { position: 'fixed', left: 12, right: 12, bottom: 'calc(80px + env(safe-area-inset-bottom))', zIndex: 30, background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 10px 30px rgba(0,0,0,0.28)' } : undefined}>
-        <div className="flex items-center justify-between gap-3 mb-2.5">
-          <span className="text-[12px] font-extrabold" style={{ color: 'var(--text-muted)' }}>Drag the ball to see another time today</span>
-          <span className="flex gap-1.5 flex-wrap justify-end">
-            <button type="button" onClick={() => setAt(nowMinutes)} data-testid="time-now" aria-pressed={isNow} className="text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
-              style={isNow ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)', border: '1.5px solid var(--brand-primary)' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>Now</button>
-            {chips.map(m => (
-              <button key={m} type="button" onClick={() => setAt(m)} data-testid="time-chip" aria-pressed={at === m} className="hidden sm:inline-block text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
-                style={at === m ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)', border: '1.5px solid var(--brand-primary)' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>{hhmm(m)}</button>
-            ))}
-          </span>
+                <span className="grid gap-[3px] mt-3" style={{ gridTemplateColumns: `repeat(${Math.max(n, 1)}, minmax(0,1fr))` }} aria-hidden>
+                  {r.cells.map(cell => <i key={cell.hour} style={{ height: 12, borderRadius: 4, display: 'block', ...cellStyle(cell) }} />)}
+                </span>
+                <span className="flex mt-3">
+                  {r.openNow > 0 ? (
+                    <span className="text-[11.5px] font-black rounded-full px-3 py-1" style={{ background: 'var(--brand-yellow-muted)', border: '1.5px dashed var(--brand-yellow)', color: 'var(--text-primary)' }} data-testid="court-coin">{r.openNow}h to sell{showMoney && r.openValue > 0 ? ` · ${money(r.openValue, currency)}` : ''}</span>
+                  ) : soldOut ? (
+                    <span className="text-[10.5px] font-black rounded-full px-2.5 py-1" style={{ background: 'var(--brand-green-muted)', color: 'var(--brand-green)', letterSpacing: '0.04em' }} data-testid="court-soldout">SOLD OUT ✓</span>
+                  ) : (
+                    <span className="text-[11px] font-bold py-1" style={{ color: 'var(--text-subtle)' }}>{day.finished ? 'Done for today' : r.sellable === 0 ? 'Not on sale' : ''}&nbsp;</span>
+                  )}
+                </span>
+              </button>
+            )
+          })}
         </div>
-        <input type="range" className="time-slider" data-testid="time-slider" aria-label="Time of day" min={day.firstHour * 60} max={day.endHour * 60 - 15} step={15} value={at}
-          onChange={e => setAt(Number(e.target.value))} style={{ background: `linear-gradient(90deg, var(--brand-primary-muted) ${nowPct}%, var(--bg-raised) ${nowPct}%)` }} />
-        <div className="relative text-[10.5px] mt-1.5" style={{ height: 14, color: 'var(--text-subtle)' }} aria-hidden>
-          {ticks.map(h => <span key={h} className="absolute -translate-x-1/2" style={{ left: `${((h - day.firstHour) / n) * 100}%` }}>{String(h).padStart(2, '0')}</span>)}
-        </div>
-      </div>
-      </div>
 
-      {/* computer: the briefing opens under the map */}
-      <div className="hidden lg:block">
-        {selected
-          ? <div className="mt-2 px-4 pt-4 pb-3" style={{ borderTop: '1px solid var(--border)', background: 'linear-gradient(180deg, var(--brand-primary-muted), transparent 140px)' }}>{briefing({ c: selected, testid: 'court-briefing' })}</div>
-          : <div className="px-4 pt-2 pb-4 text-[12px]" style={{ color: 'var(--text-subtle)' }}>Tap a court for its briefing.</div>}
-      </div>
-      {/* phone: the briefing is a sheet */}
-      <div className="lg:hidden pb-4" aria-hidden />
-      {selected && (
-        <div className="lg:hidden fixed inset-0 z-[70] flex items-end" role="dialog" aria-modal="true" aria-label={`${selected.name} briefing`}>
-          <div className="absolute inset-0" style={{ background: 'rgba(8,10,14,0.55)' }} onClick={() => setSel(null)} />
-          <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-[26px] px-4 pt-3" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(22px + env(safe-area-inset-bottom))' }}>
-            <div className="mx-auto mb-3" style={{ width: 42, height: 4, borderRadius: 4, background: 'var(--text-subtle)', opacity: 0.6 }} />
-            {briefing({ c: selected, testid: 'court-briefing-m' })}
+        {/* the time slider */}
+        <div ref={slotRef} style={pinned && slotH ? { height: slotH } : undefined}>
+        <div className={pinned ? 'px-4 pt-3 pb-2 rounded-[20px] lg:rounded-none' : 'pt-4'} data-testid="time-scrub" data-pinned={pinned ? 'true' : 'false'}
+          style={pinned ? { position: 'fixed', left: 12, right: 12, bottom: 'calc(80px + env(safe-area-inset-bottom))', zIndex: 30, background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 10px 30px rgba(0,0,0,0.28)' } : undefined}>
+          <div className="flex items-center justify-between gap-3 mb-2.5">
+            <span className="text-[12px] font-extrabold" style={{ color: 'var(--text-muted)' }}>Drag the ball to see another time today</span>
+            <span className="flex gap-1.5 flex-wrap justify-end">
+              <button type="button" onClick={() => setAt(nowMinutes)} data-testid="time-now" aria-pressed={isNow} className="text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
+                style={isNow ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)', border: '1.5px solid var(--brand-primary)' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>Now</button>
+              {chips.map(m => (
+                <button key={m} type="button" onClick={() => setAt(m)} data-testid="time-chip" aria-pressed={at === m} className="hidden sm:inline-block text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
+                  style={at === m ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)', border: '1.5px solid var(--brand-primary)' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>{hhmm(m)}</button>
+              ))}
+            </span>
+          </div>
+          <input type="range" className="time-slider" data-testid="time-slider" aria-label="Time of day" min={day.firstHour * 60} max={day.endHour * 60 - 15} step={15} value={at}
+            onChange={e => setAt(Number(e.target.value))} style={{ background: `linear-gradient(90deg, var(--brand-primary-muted) ${nowPct}%, var(--bg-raised) ${nowPct}%)` }} />
+          <div className="relative text-[10.5px] mt-1.5" style={{ height: 14, color: 'var(--text-subtle)' }} aria-hidden>
+            {ticks.map(h => <span key={h} className="absolute -translate-x-1/2" style={{ left: `${((h - day.firstHour) / n) * 100}%` }}>{String(h).padStart(2, '0')}</span>)}
           </div>
         </div>
-      )}
+        </div>
+
+        {/* computer: the briefing opens under the courts */}
+        <div className="hidden lg:block">
+          {selected && <div className="mt-4 rounded-[20px] px-5 pt-5 pb-3" style={{ ...card, background: 'linear-gradient(180deg, var(--brand-primary-muted), var(--bg-surface) 180px)' }}>{briefing({ c: selected, testid: 'court-briefing' })}</div>}
+        </div>
+        {/* phone: the briefing is a sheet */}
+        {selected && (
+          <div className="lg:hidden fixed inset-0 z-[70] flex items-end" role="dialog" aria-modal="true" aria-label={`${selected.name} briefing`}>
+            <div className="absolute inset-0" style={{ background: 'rgba(8,10,14,0.55)' }} onClick={() => setSel(null)} />
+            <div className="relative w-full max-h-[85vh] overflow-y-auto rounded-t-[26px] px-4 pt-3" style={{ background: 'var(--bg-surface)', borderTop: '1px solid var(--border)', paddingBottom: 'calc(22px + env(safe-area-inset-bottom))' }}>
+              <div className="mx-auto mb-3" style={{ width: 42, height: 4, borderRadius: 4, background: 'var(--text-subtle)', opacity: 0.6 }} />
+              {briefing({ c: selected, testid: 'court-briefing-m' })}
+            </div>
+          </div>
+        )}
+      </section>
 
       {offer && (
         <OfferSheet venueSlug={venueSlug} date={date} from={offer.from} to={offer.to} bounds={bounds ?? undefined} onClose={() => setOffer(null)}
