@@ -148,9 +148,9 @@ function SidebarLink({ href, label, active }: { href: string; label: string; act
   )
 }
 
-function TabBarLink({ href, label, active, icon }: { href: string; label: string; active: boolean; icon?: JSX.Element }) {
+function TabBarLink({ href, label, active, icon, onClick }: { href: string; label: string; active: boolean; icon?: JSX.Element; onClick?: (e: React.MouseEvent) => void }) {
   return (
-    <Link href={href} className="flex items-center justify-center transition-all" style={{
+    <Link href={href} onClick={onClick} className="flex items-center justify-center transition-all" style={{
       flexDirection: 'column',
       gap: 2,
       padding: '6px 12px',
@@ -205,6 +205,17 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
   const whoLabel = (p: any) => manager ? (roleLabel(p?.role) ?? 'Manager') : `${tierLabel(p?.membership_tier)} member`
   const isStaff = manager || profile?.role === 'staff' || profile?.role === 'admin'
   const homeHref = homePathFor(viewMode)
+  // On the dashboard every tab's data is already on the page, so switching tab is instant: change the address and tell the page,
+  // no trip to the server. (From any other page it is a normal link.)
+  const quickTab = (e: React.MouseEvent, href: string) => {
+    const m = href.match(/^\/admin\?tab=([a-z]+)$/)
+    if (pathname !== '/admin' || !m || e.metaKey || e.ctrlKey || e.shiftKey) return
+    e.preventDefault()
+    const url = new URL(window.location.href); url.searchParams.set('tab', m[1])
+    window.history.replaceState(null, '', url.toString())
+    window.dispatchEvent(new CustomEvent('padelclub:tab', { detail: m[1] }))
+    setMenuOpen(false)
+  }
   const managerTabActive = (item: { href: string; tab: string | null }) =>
     item.tab === null ? pathname === '/admin/today' : pathname === '/admin' && tabParam === item.tab
 
@@ -253,7 +264,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
         }}>
         {manager
           ? (isOwner ? OWNER_TAB_ITEMS : DESK_TAB_ITEMS).map(item => (
-              <TabBarLink key={item.href} href={item.href} label={item.label} active={managerTabActive(item)} icon={ICONS[item.href]} />
+              <TabBarLink key={item.href} href={item.href} label={item.label} active={managerTabActive(item)} icon={ICONS[item.href]} onClick={e => quickTab(e, item.href)} />
             ))
           : TAB_BAR_ITEMS.map(item => (
               <TabBarLink key={item.href} href={item.href} label={item.label} active={pathname.startsWith(item.href)} />
@@ -413,7 +424,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
                     const active = manager && item.tab ? pathname === '/admin' && tabParam === item.tab : pathname.startsWith(item.href)
                     return (
                       <Link key={item.href} href={item.href}
-                        onClick={() => setMenuOpen(false)}
+                        onClick={e => { setMenuOpen(false); if (manager) quickTab(e, item.href) }}
                         className="flex items-center px-3 py-3 rounded-lg text-base transition-colors"
                         style={{
                           background: active ? 'var(--bg-raised)' : 'transparent',

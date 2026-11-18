@@ -38,28 +38,29 @@ export default async function MyBookingsPage() {
       .eq('status', 'paid'),
     loadVenueSettings(supabase),
   ])
-  // Times the player is waiting on. If the waitlist table isn't there yet this is
-  // simply empty and the card never shows.
-  const waitRes: any = await (supabase as any)
-    .from('waitlist')
-    .select('id, venue_slug, date, start_time, duration_minutes, status')
-    .eq('user_id', session!.user.id)
-    .in('status', ['waiting', 'notified'])
-    .gte('date', localDateStr(new Date(Date.now() - 24 * 3600 * 1000)))
-    .order('date', { ascending: true })
-    .order('start_time', { ascending: true })
-  // Active weekly regulars. Empty (and the card never shows) if the table isn't there yet.
-  const regRes: any = await (supabase as any)
-    .from('regulars')
-    .select('id, venue_slug, start_time, duration_minutes, start_date, weeks, clash_dates, status')
-    .eq('user_id', session!.user.id)
-    .eq('status', 'active')
-    .order('start_date', { ascending: true })
+  // Times the player is waiting on (empty if the waitlist table isn't there yet), their active weekly regulars (empty if
+  // the table isn't there yet), whether unpaid shares have a deadline (once the share-deadline change is run) and whether
+  // pay-ahead is on. Four independent reads, so they go out together.
+  const [waitRes, regRes, sharesProbe, prepayOn] = await Promise.all([
+    (supabase as any)
+      .from('waitlist')
+      .select('id, venue_slug, date, start_time, duration_minutes, status')
+      .eq('user_id', session!.user.id)
+      .in('status', ['waiting', 'notified'])
+      .gte('date', localDateStr(new Date(Date.now() - 24 * 3600 * 1000)))
+      .order('date', { ascending: true })
+      .order('start_time', { ascending: true }),
+    (supabase as any)
+      .from('regulars')
+      .select('id, venue_slug, start_time, duration_minutes, start_date, weeks, clash_dates, status')
+      .eq('user_id', session!.user.id)
+      .eq('status', 'active')
+      .order('start_date', { ascending: true }),
+    (supabase as any).from('booking_splits').select('covered_by').limit(1),
+    prepayReady(supabase as any),
+  ]) as [any, any, any, boolean]
   const regulars = regRes.error ? [] : (regRes.data ?? [])
-  // Unpaid shares have a deadline once the share-deadline database change is run.
-  const sharesProbe: any = await (supabase as any).from('booking_splits').select('covered_by').limit(1)
   const sharesOn = !sharesProbe.error
-  const prepayOn = await prepayReady(supabase as any)
   // Bookings made before the share deadline existed are exempt from it. That flag is
   // read separately (not in the main query above) so a database without the column
   // can't break the list of shares you owe.

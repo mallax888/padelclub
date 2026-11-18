@@ -151,6 +151,16 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     reportQuery = reportQuery.in('courts.venue_slug', managedCountryVenueSlugs)
   }
 
+  // These four do not depend on the big read below, so they load while it does.
+  const scopeSlugs = managedVenueSlug ? [managedVenueSlug] : managedCountryVenueSlugs ?? null
+  const extrasP = Promise.all([
+    isOwner ? loadWaitlistDemand(createAdminClient(), scopeSlugs) : Promise.resolve(null),
+    isOwner ? loadOfferRows(createAdminClient(), scopeSlugs) : Promise.resolve(null),
+    loadPlanRows(createAdminClient(), scopeSlugs),
+    loadVenueSettings(supabase),
+  ])
+  extrasP.catch(() => {})
+
   const [{ data: bookings }, { data: members }, { data: courts }, { data: analyticsBookings }, { data: courtPerfRows }, { data: creditTxRows }, { data: openMatchRows }, { data: unpaidShareRows }, { data: reportRows }] = await Promise.all([
     bookingsQuery,
     membersQuery,
@@ -165,24 +175,10 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
 
   const unpaidShares = isOwner ? mapUnpaidShares(unpaidShareRows) : []
 
-  // Owners only: how many people waited for full times, scoped to the clubs this
-  // owner covers. null (table not set up yet) hides the card.
-  const waitDemand = isOwner
-    ? await loadWaitlistDemand(createAdminClient(), managedVenueSlug ? [managedVenueSlug] : managedCountryVenueSlugs ?? null)
-    : null
-
-  // Owners only: offers they've sent and what came of them. null (table not set up
-  // yet) hides the Fill it buttons.
-  const offers = isOwner
-    ? await loadOfferRows(createAdminClient(), managedVenueSlug ? [managedVenueSlug] : managedCountryVenueSlugs ?? null)
-    : null
-
-  // Membership plans for the clubs this person covers, so the Members tab can show real
-  // plan names (plan names are public; only owners get the Change button). null before
-  // the club plans database change.
-  const plans = await loadPlanRows(createAdminClient(), managedVenueSlug ? [managedVenueSlug] : managedCountryVenueSlugs ?? null)
-
-  const venueSettings = await loadVenueSettings(supabase)
+  // Owners only: how many people waited for full times (null hides the card), the offers they have sent and what came of them
+  // (null hides the Fill it buttons), the membership plans for the clubs this person covers (null before the club plans change),
+  // and the clubs' opening hours.
+  const [waitDemand, offers, plans, venueSettings] = await extrasP
 
   const publicBookingIds = (openMatchRows ?? []).map((m: any) => m.booking_id as string)
 
