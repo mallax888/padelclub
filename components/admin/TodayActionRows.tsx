@@ -25,8 +25,9 @@ function Shell({ tone, mark, title, text, children, done, testid }: { tone: 'red
     </div>
   )
 }
-const Action = ({ children, onClick, testid }: { children: React.ReactNode; onClick: () => void; testid: string }) => (
-  <button type="button" onClick={onClick} data-testid={testid} className="shrink-0 rounded-[10px] px-3.5 text-[12.5px] font-extrabold" style={{ minHeight: 38, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{children}</button>
+const Action = ({ children, onClick, testid, hero }: { children: React.ReactNode; onClick: () => void; testid: string; hero?: boolean }) => (
+  <button type="button" onClick={onClick} data-testid={testid} className={hero ? 'shrink-0 rounded-[12px] px-4 text-[13px] font-extrabold' : 'shrink-0 rounded-[10px] px-3.5 text-[12.5px] font-extrabold'}
+    style={hero ? { minHeight: 42, background: '#d4f53c', color: '#17240a' } : { minHeight: 38, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{children}</button>
 )
 
 function Dialog({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {
@@ -105,8 +106,8 @@ export function OverdueRow({ currency, lines, total, notDueCount, notDueTotal, a
   )
 }
 
-export function FillButton({ venueSlug, gap, bounds, autoOpen }: {
-  venueSlug: string; gap: FillGap; bounds: { from: string; to: string }; autoOpen: boolean
+export function FillButton({ venueSlug, gap, bounds, autoOpen, hero }: {
+  venueSlug: string; gap: FillGap; bounds: { from: string; to: string }; autoOpen: boolean; hero?: boolean
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(autoOpen)
@@ -115,8 +116,8 @@ export function FillButton({ venueSlug, gap, bounds, autoOpen }: {
   return (
     <>
       {sent
-        ? <span data-testid="fill-row" data-done="true" className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-extrabold" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>✓ Offer sent · {gap.from}–{gap.to}</span>
-        : <span data-testid="fill-row" data-done="false" className="shrink-0"><Action testid="fill-them" onClick={() => setOpen(true)}>Fill them</Action></span>}
+        ? <span data-testid="fill-row" data-done="true" className="shrink-0 rounded-full px-3 py-1.5 text-[12px] font-extrabold" style={hero ? { background: '#ffffff26', color: '#ffffff' } : { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>✓ Offer sent · {gap.from}–{gap.to}</span>
+        : <span data-testid="fill-row" data-done="false" className="shrink-0"><Action testid="fill-them" hero={hero} onClick={() => setOpen(true)}>Fill them</Action></span>}
       {open && <OfferSheet venueSlug={venueSlug} date={gap.date} from={gap.from} to={gap.to} bounds={bounds} onClose={() => setOpen(false)} onSent={() => { setOpen(false); setSent(true); router.refresh() }} />}
     </>
   )

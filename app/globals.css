@@ -395,3 +395,6 @@ h1, h2, h3, h4, h5, h6 {
 .time-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; border: 0; background: radial-gradient(circle at 35% 28%, #F7FFD6, #D4FF3D 45%, #8FAE1E); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
 .time-slider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; border: 0; background: radial-gradient(circle at 35% 28%, #F7FFD6, #D4FF3D 45%, #8FAE1E); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
 .time-slider:focus-visible { outline: 2px solid var(--brand-primary-text); outline-offset: 6px; }
+
+/* the "Yesterday" line when it sits inside the blue card at the top of Today: same words, light colours */
+.yesterday-hero{--text-primary:#ffffff;--text-muted:#cfe0ff;--text-subtle:#cfe0ff;--brand-crimson:#ffc2c2;--success:#a6f3cb}

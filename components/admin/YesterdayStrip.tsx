@@ -13,10 +13,11 @@ function Delta({ diff, money: isMoney, currency }: { diff: number | null; money:
   return <span style={{ color: up ? 'var(--success, #35c27a)' : 'var(--brand-crimson)' }} className="font-bold"> {up ? '▲' : '▼'} {isMoney ? money(n, currency) : n}</span>
 }
 
-export default function YesterdayStrip({ b, currency, weekday, label, brandNew }: { b: Briefing; currency: CurrencyCode; weekday: string; label: string; brandNew?: boolean }) {
+export default function YesterdayStrip({ b, currency, weekday, label, brandNew, hero }: { b: Briefing; currency: CurrencyCode; weekday: string; label: string; brandNew?: boolean; hero?: boolean }) {
   const compared = b.takingsDiff !== null
+  // hero: the same line, sitting inside the blue card at the top of Today instead of in a card of its own
   return (
-    <section className="rounded-2xl mt-4 p-4" style={card} data-testid="yesterday-strip">
+    <section className={hero ? 'yesterday-hero' : 'rounded-2xl mt-4 p-4'} style={hero ? undefined : card} data-testid="yesterday-strip">
       {b.bookings === 0 && brandNew ? (
         <>
           <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }} data-testid="yesterday-new">Your first bookings will show up here</div>
