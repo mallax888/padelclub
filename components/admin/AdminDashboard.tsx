@@ -159,6 +159,13 @@ export default function AdminDashboard({
     if (urlTab && (allowedTabs as readonly string[]).includes(urlTab)) setTabState(urlTab as AdminTab)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlTab])
+  // The phone's bottom bar changes the tab without a page load, and says so here.
+  useEffect(() => {
+    const on = (e: Event) => { const t = (e as CustomEvent).detail; if (typeof t === 'string' && (allowedTabs as readonly string[]).includes(t)) setTabState(t as AdminTab) }
+    window.addEventListener('padelclub:tab', on)
+    return () => window.removeEventListener('padelclub:tab', on)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // A link from Today's club map (Block the court) arrives with ?block=<court>: open that dialog ready to use.
   useEffect(() => {
     if (blockCourtParam && courts.some((c: any) => c.id === blockCourtParam)) {

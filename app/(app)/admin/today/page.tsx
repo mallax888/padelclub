@@ -48,8 +48,11 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       : managedCountry ? !!COUNTRIES.find(c => c.name === managedCountry)?.regions.includes(getVenue(slug).region)
       : true
 
-  const venueSettings = await loadVenueSettings(supabase)
-  const { data: courtRows } = await supabase.from('courts').select('id, name, venue_slug, is_active, price_per_hour, price_per_hour_peak').eq('is_active', true)
+  // Independent reads go out together instead of one after another: each round trip to the database costs real time on a phone.
+  const [venueSettings, { data: courtRows }] = await Promise.all([
+    loadVenueSettings(supabase),
+    supabase.from('courts').select('id, name, venue_slug, is_active, price_per_hour, price_per_hour_peak').eq('is_active', true),
+  ])
   const withCourts = new Set((courtRows ?? []).map((c: any) => c.venue_slug as string))
   const venues = VENUES.filter(v => withCourts.has(v.slug) && inScope(v.slug)).map(v => ({ slug: v.slug, name: v.name }))
 
@@ -74,6 +77,11 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
 
   const nowMs = Date.now()
   const clock = venueClock(venueSlug, nowMs)
+  // Owners also see yesterday and the fill-gap offer. Neither depends on today's bookings, so they load while those do.
+  const ownerNow = isOwnerRole((profile as any).role)
+  const briefingP = ownerNow ? loadBriefing(createAdminClient(), venueSlug, nowMs).then(v => ({ ok: true as const, v }), (err: unknown) => ({ ok: false as const, err })) : null
+  const offersP = ownerNow ? offersReady(createAdminClient()) : null
+  offersP?.catch(() => {})
   const lastWeek = addDaysStr(clock.date, -7)
   const courts = (courtRows ?? []).filter((c: any) => c.venue_slug === venueSlug)
   const courtIds = courts.map((c: any) => c.id as string)
@@ -146,7 +154,9 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   let briefing: { b: any; weekday: string; yesterdayLabel: string; brandNew?: boolean } | null = null
   if (isOwner) {
     try {
-      const loaded = await loadBriefing(createAdminClient(), venueSlug, nowMs)
+      const got = await briefingP!
+      if (got.ok === false) throw got.err
+      const loaded = got.v
       if (loaded) briefing = { b: loaded.briefing, weekday: loaded.weekday, yesterdayLabel: `Yesterday, ${shortWeekday(loaded.yesterday)} ${new Intl.DateTimeFormat('en-NZ', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(loaded.yesterday + 'T12:00:00Z'))}` }
       // A club that has never had a booking is brand new: "yesterday was quiet" would read like a failure.
       if (briefing && briefing.b.bookings === 0) {
@@ -160,7 +170,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   let actions: TodayViewProps['actions'] = null
   if (isOwner) {
     const split = splitOverdueShares(mapUnpaidShares(unpaidRows), venueSlug, nowMs)
-    const offersOn = await offersReady(createAdminClient())
+    const offersOn = await offersP!
     const hours = dayHours(week, clock.date)
     const gap = offersOn ? pickFillSlot(empty.slots, nowMs, tz) : null
     actions = {
