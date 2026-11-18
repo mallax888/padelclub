@@ -2,6 +2,7 @@
 // setting a regular up, stopping one, and the two things the unpaid-booking cron
 // does for held weeks -- remind, then release. The rules live in
 // lib/regulars-rules.ts so the booking screen, this file and My bookings agree.
+import { clockAt, fmtClock } from '@/lib/clock'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { VENUES } from '@/lib/venues'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
@@ -234,7 +235,7 @@ export async function stopRegular(admin: Admin, input: { userId: string; regular
 }
 
 const fmtPayBy = (iso: string, tz: string): string =>
-  new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
+  `${new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(iso))}, ${clockAt(iso, tz)}`
 
 // Held weeks nobody paid for by their deadline go back on sale. Returns how many.
 export async function releaseOverdueRegularWeeks(admin: Admin, nowMs: number = Date.now()): Promise<number> {
@@ -254,7 +255,7 @@ export async function releaseOverdueRegularWeeks(admin: Admin, nowMs: number = D
     }
     try {
       const tz = timezoneForVenueSlug(b.courts?.venue_slug)
-      const message = `Your ${formatDate(b.date)}, ${hhmm(b.start_time)} court was released because it wasn't paid by ${fmtPayBy(b.pay_by, tz)}. Your regular carries on with the other weeks.`
+      const message = `Your ${formatDate(b.date)}, ${fmtClock(b.start_time)} court was released because it wasn't paid by ${fmtPayBy(b.pay_by, tz)}. Your regular carries on with the other weeks.`
       await db.from('notifications').insert({ user_id: b.user_id, type: 'booking_released', message })
     } catch { /* best effort */ }
   }
@@ -280,7 +281,7 @@ export async function sendRegularReminders(admin: Admin, nowMs: number = Date.no
     // Claim it first so two overlapping cron runs can't both send it.
     const { data: claimed } = await db.from('bookings').update({ pay_reminded_at: new Date(nowMs).toISOString() }).eq('id', b.id).is('pay_reminded_at', null).select('id').maybeSingle()
     if (!claimed) continue
-    const message = `Your regular on ${formatDate(b.date)}, ${hhmm(b.start_time)} needs paying by ${fmtPayBy(b.pay_by, tz)}. Tap to pay.`
+    const message = `Your regular on ${formatDate(b.date)}, ${fmtClock(b.start_time)} needs paying by ${fmtPayBy(b.pay_by, tz)}. Tap to pay.`
     try {
       await db.from('notifications').insert({ user_id: b.user_id, type: 'regular_payment', message })
       await sendPushToUser(admin as any, b.user_id, { title: 'Pay for your regular', body: message, url: '/mybookings' })

@@ -68,6 +68,22 @@ export default function PushRemindersPrompt({ highlight = false }: {
 
   const needsInstall = support.state === 'needs-install'
 
+  // The everyday ask is one quiet line: a nudge before you play, and a button to turn it on.
+  if (!needsInstall) {
+    return (
+      <div className="rounded-full pl-4 pr-2 py-2 mb-4 flex items-center gap-2" data-testid="reminders-pill"
+        style={{ background: 'var(--bg-surface)', border: `1px solid ${highlight ? 'var(--brand-primary)' : 'var(--border)'}` }}>
+        <span className="min-w-0 flex-1 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>Get a nudge before you play</span>
+        <button type="button" onClick={turnOn} disabled={loading}
+          className="text-[12px] font-black px-3.5 py-2 rounded-full whitespace-nowrap disabled:opacity-60"
+          style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+          {loading ? 'Turning on…' : 'Turn on'}
+        </button>
+        <button type="button" onClick={close} aria-label="Dismiss" className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs" style={{ color: 'var(--text-subtle)' }}>✕</button>
+      </div>
+    )
+  }
+
   return (
     <div
       className="rounded-2xl p-5 mb-4 flex items-start gap-3"

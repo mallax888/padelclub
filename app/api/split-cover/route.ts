@@ -1,3 +1,4 @@
+import { fmtClock } from '@/lib/clock'
 import { NextResponse } from 'next/server'
 import { createCheckout, paymentTarget } from '@/lib/club-payments'
 import { createServerClient } from '@/lib/supabase-server'
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
           currency: currencyForRegion(region),
           product_data: {
             name: `Cover unpaid ${quote.splitIds.length === 1 ? 'share' : 'shares'} — ${b.courts?.name ?? 'Court'}`,
-            description: `${formatDate(b.date)} · ${String(b.start_time).slice(0, 5)} · ${quote.splitIds.length} unpaid ${quote.splitIds.length === 1 ? 'share' : 'shares'}`,
+            description: `${formatDate(b.date)} · ${fmtClock(String(b.start_time))} · ${quote.splitIds.length} unpaid ${quote.splitIds.length === 1 ? 'share' : 'shares'}`,
           },
           unit_amount: quote.cents,
         },

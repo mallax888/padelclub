@@ -63,11 +63,11 @@ export default async function HomePage() {
     const players = (m.open_match_players ?? []) as any[]
     const accepted = players.filter(p => p.status === 'accepted')
     return {
-      id: m.id, date: m.date, start_time: m.start_time, venue_slug: m.venue_slug, skill_min: Number(m.skill_min), skill_max: Number(m.skill_max),
+      id: m.id, date: m.date, start_time: m.start_time, venue_slug: m.venue_slug, court: (m.courts?.name ?? null) as string | null, skill_min: Number(m.skill_min), skill_max: Number(m.skill_max),
       spotsLeft: m.spots_total - accepted.length, spotsTotal: m.spots_total, filled: accepted.length,
       ratings: accepted.map(p => Number(p.profiles?.skill_rating)).filter(r => Number.isFinite(r)),
       mine: m.organizer_id === userId || players.some(p => p.player_id === userId),
-    } as GameLite & { spotsTotal: number; filled: number }
+    } as GameLite & { spotsTotal: number; filled: number; court: string | null }
   }), viewerRating, homeSlug, 3)
 
   // A deal open right now: at the home club if there is one, else the newest.
@@ -80,5 +80,5 @@ export default async function HomePage() {
   const m = monthSummary(bookings, nowMs, localToday)
   const month = m.games > 0 || m.weeks > 0 || people > 0 ? { games: m.games, people, weeks: m.weeks } : null
   const first = ((profile as any)?.nickname ?? (profile as any)?.full_name ?? '').toString().split(' ')[0] || null
-  return <HomeView name={first} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} month={month} />
+  return <HomeView name={first} fullName={((profile as any)?.full_name ?? '').toString() || null} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} month={month} />
 }

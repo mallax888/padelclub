@@ -164,3 +164,18 @@ export function weekGroup(date: string, today: string): 'This week' | 'Next week
   const d = weekNumber(date) - weekNumber(today)
   return d <= 0 ? 'This week' : d === 1 ? 'Next week' : 'Later'
 }
+
+// "Tonight", "Today", "Tomorrow" or "Sat 21 Nov" for a game on the Home screen. `today` is the player's local date.
+export function dayWord(date: string, today: string, startTime: string): string {
+  const d = dayNumber(date) - dayNumber(today)
+  if (d === 0) return Number(String(startTime).slice(0, 2)) >= 17 ? 'Tonight' : 'Today'
+  if (d === 1) return 'Tomorrow'
+  const f = (o: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', ...o }).format(new Date(date + 'T12:00:00Z'))
+  return `${f({ weekday: 'short' })} ${f({ day: 'numeric' })} ${f({ month: 'short' })}`
+}
+
+// A level range as short as it can be written: 2.5 and 4.0 -> "2.5–4".
+export const levelText = (min: number, max: number): string => {
+  const t = (n: number) => n.toFixed(1).replace(/\.0$/, '')
+  return `${t(min)}–${t(max)}`
+}

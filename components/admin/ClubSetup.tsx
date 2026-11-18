@@ -1,5 +1,6 @@
 'use client'
 
+import { fmtClock } from '@/lib/clock'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -137,7 +138,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
         <label className="relative inline-flex items-center min-w-0">
           <span className="sr-only">Club</span>
           <select value={venue.slug} onChange={e => router.push(`/admin/setup?venue=${encodeURIComponent(e.target.value)}`)}
-            className="rounded-full pl-3.5 pr-8 text-[12.5px] font-bold min-w-0 max-w-[230px] appearance-none"
+            className="rounded-full pl-3.5 pr-8 text-[12.5px] font-bold min-w-0 max-w-[320px] appearance-none"
             style={{ minHeight: 40, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
             {clubs.map(c => <option key={c.slug} value={c.slug}>{c.name} · {STATUS_TEXT[c.status]}</option>)}
           </select>
@@ -238,12 +239,12 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
                   <span className="w-10 text-[13px] font-extrabold shrink-0" style={{ color: 'var(--text-primary)' }}>{DAY_NAMES[d]}</span>
                   {h ? (
                     <>
-                      <select aria-label={`${DAY_NAMES[d]} opens`} value={h.open} onChange={e => setOpenTime(d, e.target.value)} className="rounded-[10px] px-2 text-[13.5px] font-bold" style={selectStyle}>
-                        {TIME_CHOICES.filter(t => t !== '24:00').map(t => <option key={t}>{t}</option>)}
+                      <select aria-label={`${DAY_NAMES[d]} opens`} value={h.open} onChange={e => setOpenTime(d, e.target.value)} className="min-w-0 flex-1 rounded-[10px] px-1.5 text-[13px] font-bold" style={selectStyle}>
+                        {TIME_CHOICES.filter(t => t !== '24:00').map(t => <option key={t} value={t}>{fmtClock(t)}</option>)}
                       </select>
                       <span aria-hidden style={{ color: 'var(--text-subtle)' }}>–</span>
-                      <select aria-label={`${DAY_NAMES[d]} closes`} value={h.close} onChange={e => setDay(d, { open: h.open, close: e.target.value })} className="rounded-[10px] px-2 text-[13.5px] font-bold" style={selectStyle}>
-                        {TIME_CHOICES.filter(t => toMinutes(t) > toMinutes(h.open)).map(t => <option key={t}>{t}</option>)}
+                      <select aria-label={`${DAY_NAMES[d]} closes`} value={h.close} onChange={e => setDay(d, { open: h.open, close: e.target.value })} className="min-w-0 flex-1 rounded-[10px] px-1.5 text-[13px] font-bold" style={selectStyle}>
+                        {TIME_CHOICES.filter(t => toMinutes(t) > toMinutes(h.open)).map(t => <option key={t} value={t}>{fmtClock(t)}</option>)}
                       </select>
                     </>
                   ) : <span className="text-[12.5px] font-semibold" style={{ color: 'var(--text-subtle)' }}>Closed</span>}
@@ -318,15 +319,15 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
                     <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Opening hours</div>
                     <button type="button" onClick={() => setStep('hours')} className="text-[13px] font-bold" style={{ color: 'var(--link-change)' }} aria-label="Change Opening hours">Change</button>
                   </div>
-                  <div className="flex items-end gap-1.5 mt-3" style={{ height: 56 }} aria-hidden>
+                  <div className="flex items-end gap-2 mt-4" style={{ height: 64 }} aria-hidden>
                     {DAY_KEYS.map(d => {
                       const h = savedHours?.[d] ?? null
                       const hours = h ? Math.max(0, (toMinutes(h.close) - toMinutes(h.open)) / 60) : 0
                       return <div key={d} className="flex-1" style={{ height: h ? `${Math.max(18, Math.min(100, (hours / 16) * 100))}%` : '12%', borderRadius: '6px 6px 3px 3px', background: h ? 'linear-gradient(180deg, #5b8fe6, var(--brand-primary))' : 'var(--bg-raised)' }} />
                     })}
                   </div>
-                  <div className="flex gap-1.5 mt-1" aria-hidden>{DAY_KEYS.map(d => <span key={d} className="flex-1 text-center text-[10px]" style={{ color: 'var(--text-subtle)' }}>{DAY_NAMES[d].slice(0, 1)}</span>)}</div>
-                  <div className="text-[12.5px] mt-2 font-bold" style={{ color: 'var(--text-primary)' }}>{hoursDone ? hoursText : 'Not set (07:00–22:00)'}</div>
+                  <div className="flex gap-2 mt-2.5" aria-hidden>{DAY_KEYS.map(d => <span key={d} className="flex-1 text-center text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>{DAY_NAMES[d].slice(0, 3)}</span>)}</div>
+                  <div className="text-[12.5px] mt-4 font-bold leading-relaxed" style={{ color: 'var(--text-primary)' }}>{hoursDone ? describeWeek(savedHours).map(l => <div key={l} className="whitespace-nowrap">{l}</div>) : 'Not set (7:00 am–10:00 pm)'}</div>
                 </div>
                 {/* Courts and prices */}
                 <div className="rounded-[20px] p-5" style={card} data-testid="answered-courts">
@@ -358,7 +359,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
       <div className="rounded-[20px] overflow-hidden mt-4" style={card}>
         {[
           ['Club', venue.name],
-          ['Hours', hoursDone ? describeWeek(savedHours).join('\n') : 'Not set (07:00–22:00)'],
+          ['Hours', hoursDone ? describeWeek(savedHours).join('\n') : 'Not set (7:00 am–10:00 pm)'],
           ['Courts', courts.length > 0 ? `${courts.length} ${courts.length === 1 ? 'court' : 'courts'}` : 'None yet'],
           ['Prices', first ? `${formatPrice(first.pricePerHour, currency)}/hr${first.pricePerHourPeak != null ? ` · ${formatPrice(first.pricePerHourPeak, currency)} peak` : ''}` : '—'],
         ].map(([k, v]) => (

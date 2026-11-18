@@ -1,5 +1,6 @@
 'use client'
 
+import { fmtClock } from '@/lib/clock'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import OfferSheet from '@/components/admin/OfferSheet'
@@ -110,7 +111,7 @@ export function OverdueRow({ currency, lines, total, notDueCount, notDueTotal, a
               <div key={l.id} className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="remind-line">
                 <div className="min-w-0 flex-1">
                   <div className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{l.playerName}</div>
-                  <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{l.courtName} · {formatDate(l.date)} {String(l.startTime).slice(0, 5)}{l.organiserName ? ` · booked by ${l.organiserName}` : ''}</div>
+                  <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{l.courtName} · {formatDate(l.date)} {fmtClock(String(l.startTime))}{l.organiserName ? ` · booked by ${l.organiserName}` : ''}</div>
                 </div>
                 <div className="text-[13px] font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>{money(l.amount)}</div>
                 {one[l.id] === 'sent'

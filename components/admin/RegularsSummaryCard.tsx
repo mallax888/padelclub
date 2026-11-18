@@ -1,5 +1,6 @@
 'use client'
 
+import { fmtClock } from '@/lib/clock'
 import { useEffect, useState } from 'react'
 import { summariseRegulars, type SummaryBooking } from '@/lib/regulars-rules'
 import { timezoneForVenueSlug } from '@/lib/timezone'
@@ -27,7 +28,7 @@ export default function RegularsSummaryCard({ venueSlug, bookings, courtCount }:
       <div className="mt-3">
         {s.slots.map(slot => (
           <div key={`${slot.weekday}-${slot.time}`} className="flex items-center justify-between py-2 text-sm" style={{ borderTop: '1px solid var(--border)' }}>
-            <span style={{ color: 'var(--text-primary)' }}>{WEEKDAYS[slot.weekday]} {slot.time}</span>
+            <span style={{ color: 'var(--text-primary)' }}>{WEEKDAYS[slot.weekday]} {fmtClock(slot.time)}</span>
             <span className="font-semibold" style={{ color: slot.courts >= courtCount ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>
               {slot.courts} {slot.courts === 1 ? 'court' : 'courts'} held{slot.courts >= courtCount ? ' · full' : ''}
             </span>

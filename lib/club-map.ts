@@ -1,6 +1,7 @@
 // The numbers behind "Your club right now" on Today: who is on each court at any time of day, the wording that
 // compares today with the same weekday last week, and the plain-English line about what is left to sell. Pure
 // functions of their inputs (the clock is passed in), so the cases that matter are tested without a browser.
+import { fmtClockRange, fmtMinutes } from '@/lib/clock'
 import type { CourtDayRow } from '@/lib/court-day'
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -25,8 +26,7 @@ export type CourtAt = {
 
 export const hhmm = (m: number): string => `${pad(Math.floor(m / 60))}:${pad(m % 60)}`
 export function clock12(m: number): string {
-  const h = Math.floor(m / 60) % 24, min = m % 60
-  return `${h % 12 === 0 ? 12 : h % 12}:${pad(min)}${h < 12 ? 'am' : 'pm'}`
+  return fmtMinutes(m)
 }
 export function initialsOf(name: string | null | undefined): string {
   const w = (name ?? '').trim().split(/\s+/).filter(Boolean)
@@ -67,7 +67,7 @@ export function gapSentence(row: CourtDayRow, finished: boolean): string {
   if (finished) return 'Today is finished.'
   if (row.sellable === 0) return 'It is not on sale today.'
   if (row.openNow === 0) return 'It is full from now on.'
-  const r = row.openRanges.map(g => `${g.from}–${g.to}`)
+  const r = row.openRanges.map(g => fmtClockRange(g.from, g.to))
   if (r.length === 1) return `The only gap left is ${r[0]}.`
   return `There are ${r.length} gaps left: ${r.length === 2 ? r.join(' and ') : `${r.slice(0, -1).join(', ')} and ${r[r.length - 1]}`}.`
 }

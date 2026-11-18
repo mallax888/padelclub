@@ -3,6 +3,7 @@
 // themselves live in lib/waitlist-rules.ts. Everything here is best effort: a
 // waitlist problem must never get in the way of the cancellation, release or
 // reschedule that triggered it.
+import { fmtClock } from '@/lib/clock'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { VENUES, getVenue } from '@/lib/venues'
 import { formatDate } from '@/lib/utils'
@@ -60,7 +61,7 @@ export async function notifyWaitlistForSlot(admin: SupabaseClient<any>, slot: Fr
       if (!claimed) continue
       told++
 
-      const message = `A court just opened at ${venue.name} on ${formatDate(w.date)}, ${hhmm(w.start_time)}. Tap to book it before someone else does.`
+      const message = `A court just opened at ${venue.name} on ${formatDate(w.date)}, ${fmtClock(w.start_time)}. Tap to book it before someone else does.`
       const { error: nError } = await db.from('notifications').insert({ user_id: w.user_id, type: 'waitlist_open', message })
       if (nError) console.error('Could not create waitlist notification', w.user_id, nError)
       try {

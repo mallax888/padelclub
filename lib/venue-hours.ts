@@ -3,6 +3,7 @@
 // the empty-hours numbers and the setup screen, so they all agree on what "open"
 // means. A club that has never set hours is read as 07:00-22:00 every day, which
 // is what the whole app assumed before hours existed.
+import { fmtClockRange } from '@/lib/clock'
 
 export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 export type DayKey = typeof DAY_KEYS[number]
@@ -88,7 +89,7 @@ export function weekBounds(w: WeekHours | null | undefined): { firstHour: number
 // identical hours are grouped.
 export function describeWeek(w: WeekHours | null | undefined): string[] {
   const week = weekOrDefault(w)
-  const label = (h: DayHours) => (h ? `${h.open}–${h.close}` : 'closed')
+  const label = (h: DayHours) => (h ? fmtClockRange(h.open, h.close) : 'closed')
   const lines: string[] = []
   let i = 0
   while (i < DAY_KEYS.length) {

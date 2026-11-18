@@ -1,5 +1,6 @@
 'use client'
 
+import { fmtClock } from '@/lib/clock'
 import { useEffect, useMemo, useState } from 'react'
 import { formatDate } from '@/lib/utils'
 import { currencyForVenueSlug, formatPrice } from '@/lib/currency'
@@ -88,12 +89,12 @@ export default function OfferSheet({ venueSlug, date, from, to, bounds, onClose,
         <div className="mt-4 flex items-center gap-2 flex-wrap text-sm" style={{ color: 'var(--text-muted)' }}>
           <label className="flex items-center gap-1.5">From
             <select aria-label="From" className={select} style={selectStyle} value={start} onChange={e => setStart(e.target.value)}>
-              {times.slice(0, -1).map(t => <option key={t} value={t}>{t}</option>)}
+              {times.slice(0, -1).map(t => <option key={t} value={t}>{fmtClock(t)}</option>)}
             </select>
           </label>
           <label className="flex items-center gap-1.5">to
             <select aria-label="To" className={select} style={selectStyle} value={end} onChange={e => setEnd(e.target.value)}>
-              {times.slice(1).map(t => <option key={t} value={t}>{t}</option>)}
+              {times.slice(1).map(t => <option key={t} value={t}>{fmtClock(t)}</option>)}
             </select>
           </label>
         </div>

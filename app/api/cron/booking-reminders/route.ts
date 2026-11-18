@@ -1,3 +1,4 @@
+import { fmtClock } from '@/lib/clock'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendPushToUser } from '@/lib/push'
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
     const court = b.courts as any
     await sendPushToUser(admin, b.user_id!, {
       title: 'Court time in 2 hours',
-      body: `${court?.name ?? 'Your court'}${court?.type ? ' — ' + court.type : ''} at ${b.start_time.slice(0, 5)}`,
+      body: `${court?.name ?? 'Your court'}${court?.type ? ' — ' + court.type : ''} at ${fmtClock(b.start_time)}`,
       url: '/mybookings',
     })
     await admin.from('bookings').update({ reminder_sent_at: new Date().toISOString() }).eq('id', b.id)

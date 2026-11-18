@@ -22,14 +22,18 @@ export function CourtTile({ name, size = 78 }: { name: string; size?: number }) 
 }
 const Ball = CourtTile
 
-export function Avatars({ names }: { names: string[] }) {
+export function Avatars({ names, plus = false, size = 38 }: { names: string[]; plus?: boolean; size?: number }) {
   const shown = names.slice(0, 3)
   return (
     <span className="flex shrink-0">
       {shown.map((n, i) => (
         <span key={i} className="flex items-center justify-center rounded-full font-black"
-          style={{ width: 38, height: 38, fontSize: 11, marginLeft: i ? -5 : 0, border: '2px solid #2352b3', background: i === 0 ? '#ffffff' : '#d4f53c', color: i === 0 ? '#1d3f8d' : '#17240a' }}>{initialsOf(n)}</span>
+          style={{ width: size, height: size, fontSize: size < 32 ? 9 : 11, marginLeft: i ? -5 : 0, border: '2px solid #2352b3', background: i === 0 ? '#ffffff' : '#d4f53c', color: i === 0 ? '#1d3f8d' : '#17240a' }}>{initialsOf(n)}</span>
       ))}
+      {plus && (
+        <span aria-hidden className="flex items-center justify-center rounded-full font-black"
+          style={{ width: size, height: size, fontSize: size < 32 ? 12 : 14, marginLeft: shown.length ? -5 : 0, border: '2px dashed #ffffff88', color: '#ffffff' }}>+</span>
+      )}
     </span>
   )
 }

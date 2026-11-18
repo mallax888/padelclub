@@ -1,5 +1,6 @@
 'use client'
 
+import { fmtClock } from '@/lib/clock'
 import CardHeading from '@/components/ui/CardHeading'
 import { formatDate } from '@/lib/utils'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
@@ -114,7 +115,7 @@ export default function BoardRightRail({
                 <div key={b.id} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
                   <div className="min-w-0">
                     <div className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{b.member_name}</div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>{b.court_name} · {formatDate(b.date)} · {b.start_time.slice(0, 5)}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>{b.court_name} · {formatDate(b.date)} · {fmtClock(b.start_time)}</div>
                   </div>
                   <div className="text-xs font-semibold shrink-0 pl-2" style={{ color: 'var(--brand-primary-text)' }}>
                     {b.price_nzd > 0 ? formatPrice(b.price_nzd, currency) : '—'}

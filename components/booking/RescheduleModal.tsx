@@ -1,5 +1,6 @@
 'use client'
 
+import { fmtClock } from '@/lib/clock'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
@@ -146,7 +147,7 @@ export default function RescheduleModal({
                   cursor: available ? 'pointer' : 'not-allowed',
                 }}
               >
-                {t}
+                {fmtClock(t)}
               </button>
             )
           })}

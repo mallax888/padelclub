@@ -2,6 +2,7 @@
 // and what that is worth. Pure functions of their inputs (the clock is passed in) so the cases that matter are
 // tested without a browser or a database. The hours counted are the same ones "Fill empty courts" counts: whole
 // hours inside the club's opening hours, where an hour that has already started can no longer be sold.
+import { fmtClock, fmtClockRange } from '@/lib/clock'
 import { isPeakTime } from '@/lib/pricing'
 import { dayHours, toMinutes, type WeekHours } from '@/lib/venue-hours'
 import { OPEN_HOUR } from '@/lib/money-demand'
@@ -82,10 +83,10 @@ export function computeCourtDay(
   }
 }
 
-// "1 open from 18:00" or "2 open · 15:00–17:00" (two ranges at most, then an ellipsis).
+// "1 open from 6:00 pm" or "2 open · 3:00–5:00 pm" (two ranges at most, then an ellipsis).
 export function describeOpen(row: CourtDayRow): string | null {
   if (row.openNow === 0) return null
-  if (row.openNow === 1) return `1 open from ${row.openRanges[0].from}`
-  const shown = row.openRanges.slice(0, 2).map(r => `${r.from}–${r.to}`).join(', ')
+  if (row.openNow === 1) return `1 open from ${fmtClock(row.openRanges[0].from)}`
+  const shown = row.openRanges.slice(0, 2).map(r => fmtClockRange(r.from, r.to)).join(', ')
   return `${row.openNow} open · ${shown}${row.openRanges.length > 2 ? '…' : ''}`
 }

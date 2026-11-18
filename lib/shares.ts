@@ -3,6 +3,7 @@
 // still unpaid, and if they don't in time the court is released and everyone who
 // paid is refunded. Everything here is best effort around the cron that calls it:
 // one booking's trouble must not stop the rest.
+import { clockAt, fmtClock } from '@/lib/clock'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { currencyForVenueSlug, formatPrice } from '@/lib/currency'
@@ -27,7 +28,7 @@ export async function shareDeadlineReady(admin: Admin): Promise<boolean> {
 }
 
 const fmtWhen = (ms: number, tz: string) =>
-  new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms))
+  `${new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short' }).format(new Date(ms))} ${clockAt(ms, tz)}`
 
 // Release a booking because shares were still unpaid after the cover window.
 // Everyone who paid, the booker included, is refunded in full (it is the club's
@@ -48,7 +49,7 @@ export async function releaseForUnpaidShares(admin: Admin, booking: any, unpaidC
   try {
     const { data: paid } = await db.from('booking_splits').select('user_id').eq('booking_id', booking.id).in('status', ['paid', 'refunded'])
     const who = new Set<string>([booking.user_id, ...((paid ?? []) as any[]).map(p => p.user_id).filter(Boolean)])
-    const message = `Your ${formatDate(booking.date)}, ${hhmm(booking.start_time)} court was released because ${unpaidCount === 1 ? 'a share was' : `${unpaidCount} shares were`} not paid in time. Everyone who had paid is being refunded in full.`
+    const message = `Your ${formatDate(booking.date)}, ${fmtClock(booking.start_time)} court was released because ${unpaidCount === 1 ? 'a share was' : `${unpaidCount} shares were`} not paid in time. Everyone who had paid is being refunded in full.`
     await db.from('notifications').insert(Array.from(who).map(user_id => ({ user_id, type: 'booking_released', message })))
   } catch { /* best effort */ }
   return true
@@ -105,7 +106,7 @@ export async function processShareDeadlines(admin: Admin, nowMs: number = Date.n
       const names = shares.map(s => (s.user_id ? firstName((profs ?? []).find((p: any) => p.id === s.user_id)) : null) ?? 'A friend you invited')
       const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
       const owed = shares.reduce((sum, s) => sum + (Number(s.amount_nzd) || 0), 0)
-      const message = `${list} ${names.length === 1 ? "hasn't" : "haven't"} paid their share (${formatPrice(owed, currencyForVenueSlug(slug))}). Cover it by ${fmtWhen(coverBy, tz)} or the ${formatDate(booking.date)}, ${hhmm(booking.start_time)} court is released and everyone is refunded. Tap to cover it.`
+      const message = `${list} ${names.length === 1 ? "hasn't" : "haven't"} paid their share (${formatPrice(owed, currencyForVenueSlug(slug))}). Cover it by ${fmtWhen(coverBy, tz)} or the ${formatDate(booking.date)}, ${fmtClock(booking.start_time)} court is released and everyone is refunded. Tap to cover it.`
       await db.from('notifications').insert({ user_id: booking.user_id, type: 'share_cover_due', message })
       try { await sendPushToUser(admin as any, booking.user_id, { title: 'Cover the unpaid share?', body: message, url: '/mybookings' }) } catch { /* best effort */ }
       out.asked++

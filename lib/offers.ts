@@ -1,3 +1,4 @@
+import { clockAt, fmtClockRange } from '@/lib/clock'
 import { splitOn } from '@/lib/club-access'
 // Server side of "fill my empty courts" (see supabase/migrations/029_court_offers.sql
 // and lib/offer-rules.ts): previewing an offer for the owner, creating it and telling
@@ -115,8 +116,8 @@ export async function createOffer(admin: Admin, input: OfferWindow & { audience:
   const busyUsers = new Set(((taken ?? []) as any[]).filter(b => b.user_id && overlaps(toMin(b.start_time), b.duration_minutes ?? 60, s, dur)).map(b => b.user_id as string))
   const audience = ids.filter(id => !busyUsers.has(id)).slice(0, MAX_RECIPIENTS)
 
-  const closes = new Intl.DateTimeFormat('en-NZ', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(offer.closes_at))
-  const message = `${input.percent}% off ${formatDate(input.date)}, ${input.startTime}–${input.endTime} at ${getVenue(input.venueSlug).name}. Book before ${closes}.`
+  const closes = clockAt(offer.closes_at, tz)
+  const message = `${input.percent}% off ${formatDate(input.date)}, ${fmtClockRange(input.startTime, input.endTime)} at ${getVenue(input.venueSlug).name}. Book before ${closes}.`
   for (let i = 0; i < audience.length; i += 100) {
     await db.from('notifications').insert(audience.slice(i, i + 100).map(user_id => ({ user_id, type: 'court_offer', message })))
   }

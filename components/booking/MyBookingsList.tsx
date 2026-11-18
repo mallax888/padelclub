@@ -1,5 +1,6 @@
 'use client'
 
+import { clockAt, fmtClock, fmtClockRange, fmtUntil } from '@/lib/clock'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -257,7 +258,7 @@ const PlayAgainCard = ({ booking }: { booking: BookingWithCourt }) => {
             Same again?
           </div>
           <div className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-            You last played {court} on {weekday} at {booking.start_time.slice(0, 5)}. Pick a date and we&apos;ll keep the court and the {booking.duration_minutes} minutes.
+            You last played {court} on {weekday} at {fmtClock(booking.start_time)}. Pick a date and we&apos;ll keep the court and the {booking.duration_minutes} minutes.
           </div>
           <Link
             href={`/book?courtId=${booking.court_id}&duration=${booking.duration_minutes}`}
@@ -290,7 +291,7 @@ const RecordResultButton = ({ bookingId }: { bookingId: string }) => (
 export type RegularSeries = { id: string; venue_slug: string; start_time: string; duration_minutes: number; start_date: string; weeks: number; clash_dates: string[] | null; status: string }
 
 const fmtWhen = (ms: number, tz: string) =>
-  new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(ms))
+  `${new Intl.DateTimeFormat('en-NZ', { timeZone: tz, weekday: 'short' }).format(new Date(ms))} ${clockAt(ms, tz)}`
 
 // "Now" only exists in the browser, so these render nothing until the page has loaded.
 function useNow(): number | null {
@@ -367,7 +368,7 @@ async function startCheckout(b: BookingWithCourt): Promise<void> {
   try {
     const res = await fetch('/api/create-checkout', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId: b.id, courtName: `${b.courts?.name ?? 'Court'} — ${b.courts?.type ?? ''}`, date: formatDate(b.date), time: `${b.start_time.slice(0, 5)} — ${b.end_time.slice(0, 5)}` }),
+      body: JSON.stringify({ bookingId: b.id, courtName: `${b.courts?.name ?? 'Court'} — ${b.courts?.type ?? ''}`, date: formatDate(b.date), time: fmtClockRange(b.start_time, b.end_time) }),
     })
     const body = await res.json().catch(() => ({}))
     if (!res.ok || body.error || !body.url) { toast.error(body.error ?? 'Could not open payment. Please try again.'); return }
@@ -441,7 +442,7 @@ function RegularCard({ series: r, bookings, onSkip, prepayOn = false }: { series
     <div className="rounded-2xl p-4" data-testid="regular-series" style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: 'var(--shadow-float)' }}>
       <span className="inline-block text-[10px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', letterSpacing: '0.06em' }}>🔁 REGULAR</span>
       <div className="text-lg mt-2" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 700 }}>
-        Every {weekdayPlural(r.start_date).slice(0, -1)} · {startLabel}–{endLabel}
+        Every {weekdayPlural(r.start_date).slice(0, -1)} · {fmtClockRange(startLabel, endLabel)}
       </div>
       <div className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
         {club}<br />Held until {fmtShort(lastDate)} · {bookedWeekCount(rows)} of {r.weeks} weeks booked
@@ -552,7 +553,7 @@ function WaitingCard({ waits }: { waits: WaitingFor[] }) {
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{clubName(w.venue_slug)}</div>
                 <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  {formatDate(w.date)}, {w.start_time.slice(0, 5)}–{endLabel} · {opened ? 'A court opened. Book it now.' : 'We will tell you if it opens'}
+                  {formatDate(w.date)}, {fmtClockRange(w.start_time, endLabel)} · {opened ? 'A court opened. Book it now.' : 'We will tell you if it opens'}
                 </div>
               </div>
               {opened && <Link href="/book?wl=1" className="rounded-full px-3 text-xs font-bold flex items-center" style={{ minHeight: 40, background: 'var(--brand-primary)', color: '#fff' }}>Book</Link>}
@@ -718,7 +719,7 @@ export default function MyBookingsList({
               const who = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
               const court = s.bookings?.courts?.name ?? 'a court'
               const date = s.bookings?.date ? formatDate(s.bookings.date) : ''
-              const time = s.bookings?.start_time?.slice(0,5) ?? ''
+              const time = s.bookings?.start_time ? fmtClock(s.bookings.start_time) : ''
               // A share is a slice of the court fee, which is already in the
               // venue's own currency -- and pay-split charges it in that
               // currency. Formatting as NZD showed a South African "$37.00"
@@ -741,7 +742,7 @@ export default function MyBookingsList({
                       setPayingSplit(s.id)
                       const court = s.bookings?.courts?.name ?? 'Court'
                       const date = s.bookings?.date ?? ''
-                      const time = s.bookings?.start_time?.slice(0,5) ?? ''
+                      const time = s.bookings?.start_time ? fmtClock(s.bookings.start_time) : ''
                       const invitedByName = s.profiles?.nickname ?? s.profiles?.full_name ?? 'Someone'
                       const res = await fetch('/api/pay-split', {
                         method: 'POST',
@@ -769,7 +770,7 @@ export default function MyBookingsList({
         const share = bookerShareCents(paidBooking.price_nzd, splits.length + 1) / 100
         return (
           <BookedCelebration firstName={String(profile?.full_name ?? '').split(' ')[0]} onDone={() => router.replace('/mybookings')}
-            ticket={{ courtName: paidBooking.courts?.name ?? 'Court', dateLabel: formatDate(paidBooking.date), time: paidBooking.start_time.slice(0, 5), endTime: paidBooking.end_time.slice(0, 5),
+            ticket={{ courtName: paidBooking.courts?.name ?? 'Court', dateLabel: formatDate(paidBooking.date), time: fmtClock(paidBooking.start_time), endTime: fmtUntil(paidBooking.start_time, paidBooking.end_time),
               lengthLabel: durationLabel(paidBooking.duration_minutes), venueName: VENUES.find(v => v.slug === venueSlug)?.name ?? '', you: profile?.full_name ?? 'You', price: formatPrice(share, currency) }} />
         )
       })()}
@@ -791,11 +792,11 @@ export default function MyBookingsList({
       <div className="inline-flex gap-1 p-1 rounded-full mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <button onClick={() => setShowHistory(false)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
           style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>
-          Upcoming ({upcoming.length + upcomingJoined.length})
+          Upcoming · {upcoming.length + upcomingJoined.length}
         </button>
         <button onClick={() => setShowHistory(true)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
           style={showHistory ? { background: 'var(--bg-raised)', color: 'var(--text-primary)' } : { color: 'var(--text-subtle)' }}>
-          Past ({past.length})
+          Past · {past.length}
         </button>
       </div>
 
@@ -824,7 +825,7 @@ export default function MyBookingsList({
               const today = localDateStr(now)
               const items = [
                 ...upcoming.map((b, i) => ({ key: b.id, date: b.date, time: b.start_time, node: (
-                  <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible={i > 0} onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
+                  <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
                 ) })),
                 ...upcomingJoined.map(j => ({ key: j.id, date: j.bookings!.date, time: j.bookings!.start_time, node: <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} /> })),
               ].sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))
@@ -861,7 +862,7 @@ export default function MyBookingsList({
       {/* The line that matters stays visible; the rest opens on demand. */}
       <details className="mt-6 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
         <summary className="cursor-pointer select-none" style={{ listStyle: 'none' }}>
-          Cancel 24hrs+ before for a full refund. <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
+          Cancel 24 hrs+ before for a full refund · <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
         </summary>
         <div className="mt-2 pt-2 leading-relaxed mx-auto max-w-md" style={{ borderTop: '1px solid var(--border)' }}>
           Cancel under 24hrs and 50% comes back as account credit. Reschedule to a new date or time any time before the 24hr mark, no charge. Everyone else on a split booking is refunded in full, whatever the notice.
@@ -925,9 +926,11 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   if (collapsible && !expanded) {
     const unpaidCount = splits.filter(s => s.status !== 'paid').length
     const needsPay = !b.stripe_payment_id && !!b.pay_by
+    const bareCourt = String(b.courts?.name ?? '').replace(/^court\s*/i, '').trim()
+    const namedCourt = !(bareCourt.length > 0 && bareCourt.length <= 3)
     // One chip says the thing worth knowing: friends still owe you, a week is waiting to be paid, it repeats, or it is paid.
     const chip = unpaidCount > 0 ? { text: `${unpaidCount} to pay`, kind: 'owe' }
-      : needsPay ? { text: 'Pay by ' + fmtPayBy(b.pay_by as string, timezoneForVenueSlug((b.courts as any)?.venue_slug)), kind: 'owe' }
+      : needsPay ? { text: splits.length > 0 ? 'Pay your share' : 'Pay by ' + fmtPayBy(b.pay_by as string, timezoneForVenueSlug((b.courts as any)?.venue_slug)), kind: 'owe' }
       : b.regular_id ? { text: 'Every week', kind: 'reg' }
       : b.stripe_payment_id ? { text: 'Paid', kind: 'paid' } : null
     const chipStyle = chip?.kind === 'owe' ? { background: '#d4f53c', color: '#17240a' }
@@ -939,12 +942,12 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
         data-testid="booking-row"
         className="w-full flex items-center gap-3 rounded-[20px] p-4 text-left transition-colors"
         style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-        <MiniCourt name={b.courts?.name} muted />
+        <MiniCourt name={b.courts?.name} />
         <span className="min-w-0 flex-1">
           <span className="block text-[10.5px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{longDate(b.date)}</span>
-          <span className="block text-[19px] font-black leading-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{b.start_time.slice(0, 5)}</span>
+          <span className="block text-[19px] font-black leading-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmtClock(b.start_time)}</span>
           <span className="block text-[11.5px] truncate" style={{ color: 'var(--text-muted)' }}>
-            {b.courts?.name}{venue ? ` · ${venue.name.split(' ').slice(-1)[0]}` : ''} · {durationLabel(b.duration_minutes)}{splits.length > 0 ? ' · split' : ''}
+            {[namedCourt ? b.courts?.name : null, venue ? venue.name.split(' ').slice(-1)[0] : null, durationLabel(b.duration_minutes)].filter(Boolean).join(' · ')}{splits.length > 0 ? ' · split' : ''}
           </span>
         </span>
         <span className="shrink-0 flex flex-col items-end gap-1.5">
@@ -993,7 +996,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
               </div>
             )}
             <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+              {fmtClockRange(b.start_time, b.end_time)} · {durationLabel(b.duration_minutes)}
             </div>
           </div>
         </div>
@@ -1056,7 +1059,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
                       amount={formatPrice(Math.round(yourShare ?? b.price_nzd), bookingCurrency)}
                       court={b.courts?.name ?? 'the court'}
                       venueName={venue?.name ?? 'the club'}
-                      when={`${formatDate(b.date)} at ${b.start_time.slice(0, 5)}`}
+                      when={`${formatDate(b.date)} at ${fmtClock(b.start_time)}`}
                     />
                   )}
                 </span>
@@ -1109,7 +1112,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
                 token={seat.invite_token as string}
                 court={b.courts?.name ?? 'the court'}
                 venueName={venue?.name ?? 'the club'}
-                when={`${formatDate(b.date)} at ${b.start_time.slice(0, 5)}`}
+                when={`${formatDate(b.date)} at ${fmtClock(b.start_time)}`}
                 amount={formatPrice(bookerShareCents(b.price_nzd, shareCount) / 100, bookingCurrency)}
               />
             </div>
@@ -1167,7 +1170,7 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
               </div>
             )}
             <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {b.start_time.slice(0,5)}–{b.end_time.slice(0,5)} · {durationLabel(b.duration_minutes)}
+              {fmtClockRange(b.start_time, b.end_time)} · {durationLabel(b.duration_minutes)}
             </div>
           </div>
         </div>
