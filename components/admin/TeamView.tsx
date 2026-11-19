@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { getInitials } from '@/lib/utils'
 import type { TeamScope } from '@/lib/team'
+import type { PendingInvite } from './InviteTeam'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)' } as const
@@ -117,8 +118,8 @@ async function send(body: object): Promise<string | null> {
   }
 }
 
-export default function TeamView({ members, clubs, countries, canGrantAll, defaultClub }: {
-  members: Member[]; clubs: Club[]; countries: string[]; canGrantAll: boolean; defaultClub: string
+export default function TeamView({ members, clubs, countries, canGrantAll, defaultClub, invites, aside }: {
+  members: Member[]; clubs: Club[]; countries: string[]; canGrantAll: boolean; defaultClub: string; invites: PendingInvite[]; aside: React.ReactNode
 }) {
   const router = useRouter()
   const defaultScope: TeamScope = clubs.length > 0 ? { kind: 'club', venueSlug: defaultClub } : canGrantAll ? { kind: 'all' } : { kind: 'country', country: countries[0] ?? '' }
@@ -165,6 +166,18 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
     router.refresh()
   }
 
+  const openAdd = (r: Role) => { closeAll(); setRole(r); setAdding(true) }
+  const cancelInvite = async (id: string) => {
+    await fetch('/api/admin/team/invite/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    router.refresh()
+  }
+  const resendInvite = async (id: string, email: string) => {
+    const res = await fetch('/api/admin/team/invite/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { toast.error(d.error ?? 'Could not send that again.'); return }
+    toast.success(d.emailed ? `Invite sent again to ${email}` : 'We could not email them. Copy the new link from the invite box instead.')
+    router.refresh()
+  }
   const owners = members.filter(m => m.role === 'admin')
   const desk = members.filter(m => m.role === 'staff')
 
@@ -195,8 +208,55 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
       : <button type="button" className={cls} style={style} onClick={() => { setEditing(m); setRole(m.role); setScope(m.scope); setConfirmRemove(false) }}>{inner}</button>
   }
 
+  const tile = 'rounded-[20px] p-5 flex items-center justify-between gap-4'
+  const addBtn = 'shrink-0 rounded-full px-4 py-2.5 text-[13px] font-extrabold whitespace-nowrap'
   return (
     <div className="w-full">
+      {/* on a computer: the two roles first, as tiles with a count and their own add button */}
+      <div className="hidden lg:grid grid-cols-2 gap-4 mb-4">
+        <div className={`${tile} text-white`} style={{ background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)' }} data-testid="role-owners">
+          <div className="min-w-0">
+            <div className="text-[11px] font-extrabold" style={{ letterSpacing: '0.14em', opacity: 0.8 }}>OWNERS</div>
+            <div className="flex items-baseline gap-2 mt-1"><span className="text-[44px] font-extrabold leading-none">{owners.length}</span><span className="text-base font-bold" style={{ opacity: 0.9 }}>{owners.length === 1 ? 'person' : 'people'}</span></div>
+            <div className="text-[13px] mt-1.5" style={{ opacity: 0.85 }}>Everything, including money and settings</div>
+          </div>
+          <button type="button" className={addBtn} style={{ background: '#ffffff', color: '#1d3f8d' }} onClick={() => openAdd('admin')}>+ Add owner</button>
+        </div>
+        <div className={tile} style={{ background: 'linear-gradient(160deg, var(--bg-raised), var(--bg-surface))', border: '1px solid var(--border)' }} data-testid="role-desk">
+          <div className="min-w-0">
+            <div className="text-[11px] font-extrabold" style={{ letterSpacing: '0.14em', color: 'var(--text-muted)' }}>FRONT DESK</div>
+            <div className="flex items-baseline gap-2 mt-1"><span className="text-[44px] font-extrabold leading-none" style={{ color: 'var(--text-primary)' }}>{desk.length}</span><span className="text-base font-bold" style={{ color: 'var(--text-muted)' }}>{desk.length === 1 ? 'person' : 'people'}</span></div>
+            <div className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>Runs the day. No money, no settings</div>
+          </div>
+          <button type="button" className={addBtn} style={{ background: '#d4f53c', color: '#17240a' }} onClick={() => openAdd('staff')}>+ Add front desk</button>
+        </div>
+      </div>
+
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-4 lg:items-start">
+      <div className="lg:col-start-2 lg:row-start-1">{aside}</div>
+      <div className="lg:col-start-1 lg:row-start-1 min-w-0">
+
+      {/* computer: everyone in one card */}
+      <div className="hidden lg:block rounded-[20px] overflow-hidden" style={card} data-testid="team-everyone">
+        <div className="text-[11px] font-extrabold uppercase px-5 pt-5 pb-1" style={sectionLabel}>Everyone on your team</div>
+        {[...owners, ...desk].map(m => <Row key={m.id} m={m} />)}
+        {desk.length === 0 && <div className="px-5 py-4 text-sm" style={{ color: 'var(--text-muted)', borderBottom: '1px solid var(--border)' }}>No front desk yet. They run the day without seeing any money.</div>}
+        {invites.map(i => (
+          <div key={i.id} className="flex items-center gap-3 px-3.5 py-3" style={{ minHeight: 68, borderBottom: '1px solid var(--border)' }} data-testid="team-invite-row">
+            <span aria-hidden className="inline-flex items-center justify-center rounded-full text-[13px] font-extrabold shrink-0" style={{ width: 40, height: 40, border: '1.5px solid var(--border)', color: 'var(--text-subtle)' }}>{getInitials(i.email)}</span>
+            <span className="min-w-0 text-left">
+              <span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{i.email}</span>
+              <span className="block text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{ROLE_TEXT[i.role].title} · {i.scopeLabel}</span>
+            </span>
+            <span className="ml-auto shrink-0 text-[10.5px] font-extrabold uppercase px-2.5 py-1 rounded-full whitespace-nowrap" style={{ letterSpacing: '0.04em', background: 'var(--brand-yellow-muted)', color: 'var(--text-primary)' }}>Invite sent</span>
+            <button type="button" onClick={() => resendInvite(i.id, i.email)} className="shrink-0 text-xs font-bold px-1" style={{ color: 'var(--brand-primary-text)' }} data-testid="resend-invite">Resend</button>
+            <button type="button" onClick={() => cancelInvite(i.id)} className="shrink-0 text-xs font-semibold px-1" style={{ color: 'var(--text-muted)' }}>Cancel</button>
+          </div>
+        ))}
+        <p className="text-xs px-5 py-3.5 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Already have a PadelClub account? Use Add owner or Add front desk and search by name. No account yet? Send an invite by email.</p>
+      </div>
+
+      <div className="lg:hidden">
       <button type="button" onClick={() => { closeAll(); setAdding(true) }}
         className="btn-main mt-4">
         + Add team member
@@ -211,6 +271,9 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
       <p className="text-xs mt-3 px-1 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
         Owners see everything, including money and settings. Front desk runs the day but sees no money. Already have a PadelClub account? Use Add team member. No account yet? Send an invite.
       </p>
+      </div>
+      </div>
+      </div>
 
       {adding && (
         <Sheet title="Add team member" onClose={closeAll}>

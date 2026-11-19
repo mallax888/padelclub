@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 export type PendingInvite = { id: string; email: string; role: 'admin' | 'staff'; scopeLabel: string; expiresAt: string }
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
@@ -32,8 +33,16 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
     router.refresh()
   }
 
+  async function resend(id: string, to: string) {
+    const res = await fetch('/api/admin/team/invite/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { toast.error(d.error ?? 'Could not send that again.'); return }
+    toast.success(d.emailed ? `Invite sent again to ${to}` : 'We could not email them. Send them the new link yourself.')
+    router.refresh()
+  }
+
   return (
-    <section className="rounded-2xl p-5 mb-5" style={card} data-testid="invite-team">
+    <section className="rounded-2xl p-5 mb-5 lg:mb-0" style={card} data-testid="invite-team">
       <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Invite a team member</h2>
       <p className="text-xs mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>No account yet? They get an email, set a password and go straight to the club dashboard. No player sign-up.</p>
       {!ready ? (
@@ -67,11 +76,12 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
         </div>
       )}
       {invites.length > 0 && (
-        <div className="mt-4" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="mt-4 lg:hidden" style={{ borderTop: '1px solid var(--border)' }}>
           {invites.map(i => (
             <div key={i.id} className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="pending-invite">
               <div className="min-w-0"><div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{i.email}</div><div className="text-xs" style={{ color: 'var(--text-muted)' }}>{i.role === 'admin' ? 'Owner' : 'Front desk'} · {i.scopeLabel}</div></div>
               <div className="flex items-center gap-2 shrink-0"><span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,212,0,.15)', color: 'var(--brand-yellow)' }}>Invite sent</span>
+                <button type="button" onClick={() => resend(i.id, i.email)} className="text-xs font-bold" style={{ color: 'var(--brand-primary-text)' }} data-testid="resend-invite-phone">Resend</button>
                 <button type="button" onClick={() => cancel(i.id)} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }} data-testid="cancel-invite">Cancel</button></div>
             </div>
           ))}
