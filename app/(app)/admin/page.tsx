@@ -16,7 +16,7 @@ import { loadPlanRows } from '@/lib/club-plans'
 
 export const metadata = { title: 'Club dashboard' }
 
-export default async function AdminPage({ searchParams }: { searchParams?: { tab?: string; venue?: string } }) {
+export default async function AdminPage({ searchParams }: { searchParams?: { tab?: string; venue?: string; plan?: string } }) {
   const supabase = createServerClient()
   const { data: { session } } = await supabase.auth.getSession()
 
@@ -212,6 +212,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   }))
 
   return (
-    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} reportBookings={isOwner ? (reportRows ?? []) : []} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} offers={offers} plans={plans} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} todayStr={localDateStr()} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
+    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} reportBookings={isOwner ? (reportRows ?? []) : []} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} offers={offers} plans={plans} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} initialPlan={/^[a-z0-9_-]{1,40}$/i.test(searchParams?.plan ?? '') ? searchParams!.plan : undefined} todayStr={localDateStr()} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }
