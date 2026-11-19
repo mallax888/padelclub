@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Manrope } from 'next/font/google'
 import styles from './Landing.module.css'
+import { BUSINESS, LEGAL_LINKS } from '@/lib/business'
 
 const manrope = Manrope({ subsets: ['latin'], weight: ['500', '700', '800'] })
 
@@ -203,6 +204,11 @@ export default function Landing() {
           <div className={styles.trustItem}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0110 0v3"/></svg> Secure, encrypted payments</div>
           <div className={styles.trustItem}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> Live chat support</div>
         </div>
+
+        <footer data-testid="landing-legal" style={{ marginTop: 28, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.18)', display: 'flex', flexWrap: 'wrap', gap: '8px 20px', fontSize: 13, fontWeight: 600, opacity: 0.9 }}>
+          {LEGAL_LINKS.map(l => <Link key={l.href} href={l.href}>{l.label}</Link>)}
+          <span style={{ opacity: 0.75, fontWeight: 500 }}>© {BUSINESS.legalName}</span>
+        </footer>
       </div>
     </div>
   )
