@@ -112,6 +112,7 @@ export default function AdminDashboard({
   plans = null,
   initialTab,
   initialVenue,
+  initialPlan,
   venueSettings = {},
   staffName,
   todayStr,
@@ -138,6 +139,8 @@ export default function AdminDashboard({
   // Where to open (from the manager navigation and the Today screen's links).
   initialTab?: AdminTab
   initialVenue?: string
+  // A membership plan to show on the Members tab (the plan tiles in Club settings link here).
+  initialPlan?: string
   // Each club's opening hours (default 07:00-22:00 when a club hasn't set any).
   venueSettings?: VenueSettingsMap
   staffName: string | null
@@ -193,7 +196,7 @@ export default function AdminDashboard({
   const [showBlock, setShowBlock] = useState(false)
   const [showPastBookings, setShowPastBookings] = useState(false)
   const [memberSearch, setMemberSearch] = useState('')
-  const [memberTierFilter, setMemberTierFilter] = useState<'all' | string>('all')
+  const [memberTierFilter, setMemberTierFilter] = useState<'all' | string>(initialPlan ?? 'all')
   const [planFor, setPlanFor] = useState<{ id: string; name: string; tier: string; home: string } | null>(null)
   const [blockForm, setBlockForm] = useState({
     courtId: courts[0]?.id ?? '',
@@ -753,6 +756,18 @@ export default function AdminDashboard({
       {tab === 'members' && (
         <div>
           <CardHeading as="h2" size="section" className="mb-4">Members</CardHeading>
+          {memberTierFilter !== 'all' && (
+            <div className="flex flex-wrap items-center gap-3 mb-4" data-testid="plan-filter-tag">
+              {initialPlan && (managedVenueSlug ?? initialVenue) && (
+                <Link href={`/admin/setup?venue=${encodeURIComponent((managedVenueSlug ?? initialVenue) as string)}`} className="text-[13px] font-extrabold" style={{ color: 'var(--brand-primary-text)' }}>‹ Back to Club settings</Link>
+              )}
+              <span className="inline-flex items-center gap-2 rounded-full pl-4 pr-2 py-2 text-[13px] font-black" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
+                Showing the {tierLabel(memberTierFilter)} plan · {visibleMembers.length} {visibleMembers.length === 1 ? 'member' : 'members'}
+                <button type="button" onClick={() => setMemberTierFilter('all')} aria-label="Show everyone" className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[11px]" style={{ background: 'rgba(255,255,255,0.25)' }}>✕</button>
+              </span>
+              <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Tap ✕ to see everyone</span>
+            </div>
+          )}
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <input type="text" className="input text-sm w-auto flex-1 min-w-[180px]" placeholder="Search by name or member #…"
               value={memberSearch} onChange={e => setMemberSearch(e.target.value)} />

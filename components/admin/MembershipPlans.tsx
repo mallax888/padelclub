@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -110,22 +111,34 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
           const face = !p.active ? 'linear-gradient(160deg, #3a4150, #2b313c)'
             : p.key === 'pro' ? 'linear-gradient(160deg, #1f9a5f, #0f5c38)'
             : gold ? 'linear-gradient(160deg, #c9a300, #8a6f00)' : 'linear-gradient(160deg, #2c5fc4, #1d3f8d)'
+          const n = stats.counts[p.key] ?? 0
           return (
-            <button key={p.key} type="button" onClick={() => load(p.key)} data-testid={`plan-${p.key}`} aria-pressed={on}
-              className="w-full text-left rounded-[20px] px-4 py-3.5 text-white"
+            <div key={p.key} className="w-full rounded-[20px] p-5 text-white"
               style={{ background: face, boxShadow: on ? '0 0 0 3px var(--bg-surface), 0 0 0 5px var(--brand-primary-text)' : 'none', opacity: p.active ? 1 : 0.75 }}>
-              <span className="flex items-center justify-between gap-2">
-                <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'rgba(255,255,255,0.8)' }}>
-                  {p.name} · {p.key === 'casual' ? 'Always on' : p.active ? 'On' : 'Off'}
+              <button type="button" onClick={() => load(p.key)} data-testid={`plan-${p.key}`} aria-pressed={on} className="block w-full text-left">
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'rgba(255,255,255,0.8)' }}>
+                    {p.name} · {p.key === 'casual' ? 'Always on' : p.active ? 'On' : 'Off'}
+                  </span>
                 </span>
-              </span>
-              <span className="block text-[26px] font-black leading-tight mt-1" style={{ letterSpacing: '-0.02em' }}>
-                {p.price === 0 ? 'Free' : <>{formatPrice(p.price, currency)}<span className="text-[13px] font-bold"> / month</span></>}
-              </span>
-              <span className="block text-[11.5px] mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                {p.discountPercent > 0 ? `${p.discountPercent}% off` : 'No discount'} · book {p.windowDays} days ahead · {stats.counts[p.key] ?? 0} {(stats.counts[p.key] ?? 0) === 1 ? 'member' : 'members'}
-              </span>
-            </button>
+                <span className="block text-[26px] font-black leading-tight mt-1" style={{ letterSpacing: '-0.02em' }}>
+                  {p.price === 0 ? 'Free' : <>{formatPrice(p.price, currency)}<span className="text-[13px] font-bold"> / month</span></>}
+                </span>
+                <span className="block text-[11.5px] mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
+                  {p.discountPercent > 0 ? `${p.discountPercent}% off` : 'No discount'} · book {p.windowDays} days ahead
+                </span>
+              </button>
+              <div className="mt-3">
+                {n > 0 ? (
+                  <Link href={`/admin?tab=members&venue=${encodeURIComponent(venueSlug)}&plan=${encodeURIComponent(p.key)}`} data-testid={`plan-members-${p.key}`}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-black" style={{ background: '#ffffff', color: '#1d3f8d' }}>
+                    <span aria-hidden>👥</span> {n} {n === 1 ? 'member' : 'members'} →
+                  </Link>
+                ) : (
+                  <span data-testid={`plan-members-${p.key}`} className="inline-flex rounded-full px-3 py-1.5 text-[11.5px] font-extrabold" style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)' }}>No members yet</span>
+                )}
+              </div>
+            </div>
           )
         })}
         {plans.length < MAX_PLANS && (
