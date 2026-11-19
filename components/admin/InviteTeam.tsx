@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { copyText } from '@/lib/copy-text'
 
 export type PendingInvite = { id: string; email: string; role: 'admin' | 'staff'; scopeLabel: string; expiresAt: string }
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
@@ -33,6 +34,14 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
     router.refresh()
   }
 
+  async function copyLink(id: string) {
+    const res = await fetch('/api/admin/team/invite/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, email: false }) })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { toast.error(d.error ?? 'Could not make a link.'); return }
+    if (await copyText(d.link)) toast.success('New link copied. The link in the earlier email no longer works.')
+    else window.prompt('Copy this link and send it to them (the earlier link no longer works):', d.link)
+    router.refresh()
+  }
   async function resend(id: string, to: string) {
     const res = await fetch('/api/admin/team/invite/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
     const d = await res.json().catch(() => ({}))
@@ -81,6 +90,7 @@ export default function InviteTeam({ clubs, canGrantAll, defaultClub, invites, r
             <div key={i.id} className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="pending-invite">
               <div className="min-w-0"><div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{i.email}</div><div className="text-xs" style={{ color: 'var(--text-muted)' }}>{i.role === 'admin' ? 'Owner' : 'Front desk'} · {i.scopeLabel}</div></div>
               <div className="flex items-center gap-2 shrink-0"><span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(255,212,0,.15)', color: 'var(--brand-yellow)' }}>Invite sent</span>
+                <button type="button" onClick={() => copyLink(i.id)} className="text-xs font-bold" style={{ color: 'var(--brand-primary-text)' }} data-testid="copy-invite-link-phone">Copy link</button>
                 <button type="button" onClick={() => resend(i.id, i.email)} className="text-xs font-bold" style={{ color: 'var(--brand-primary-text)' }} data-testid="resend-invite-phone">Resend</button>
                 <button type="button" onClick={() => cancel(i.id)} className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }} data-testid="cancel-invite">Cancel</button></div>
             </div>

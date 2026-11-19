@@ -7,7 +7,7 @@ import { VENUES } from '@/lib/venues'
 import { formatDate } from '@/lib/utils'
 import { formatName, isPairFormat, isRotationFormat, normalizeSettings } from '@/lib/tournament-formats'
 import {
-  bracketRounds, champion, matchTeams, nextStep, pairTable, pairViews, playerName, progressLabel,
+  bracketRounds, canEditResult, champion, matchTeams, nextStep, pairTable, pairViews, playerName, progressLabel,
   type VMatch, type VPlayer, type VTournament,
 } from '@/lib/tournament-view'
 import MatchCard, { type MatchCardData } from './MatchCard'
@@ -90,6 +90,12 @@ export default function TournamentHub({
     if (!ok) { toast.error(data.error ?? 'Could not change the players'); return false }
     router.refresh()
     return true
+  }
+  const editScoreFn = async (matchId: string, s1: number, s2: number) => {
+    const { ok, data } = await post('/api/tournament-match-score', { matchId, team1Score: s1, team2Score: s2, edit: true })
+    if (!ok) { toast.error(data.error ?? 'Could not change the score'); return }
+    toast.success('Score corrected')
+    router.refresh()
   }
   const submitScore = async (matchId: string, s1: number, s2: number) => {
     setSubmitting(matchId)
@@ -275,7 +281,7 @@ export default function TournamentHub({
               <summary className="text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>
                 {ms[0].stage === 'group' ? `Group stage, round ${round}` : ms.some(m => stage(m) === 'ko') ? ms.find(m => stage(m) === 'ko')?.label ?? `Round ${round}` : `Round ${round}`} ({ms.length})
               </summary>
-              <div className="space-y-2 mt-2">{ms.map(m => <MatchCard key={m.id} m={toCard(m)} canScore={false} noTies={false} submitting={false} onSubmit={submitScore} />)}</div>
+              <div className="space-y-2 mt-2">{ms.map(m => <MatchCard key={m.id} m={toCard(m)} canScore={false} noTies={noTies(m)} submitting={false} onSubmit={submitScore} canEdit={canManage && canEditResult(t.format, m, matches)} onEdit={editScoreFn} />)}</div>
             </details>
           ))}
         </div>

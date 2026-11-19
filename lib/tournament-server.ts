@@ -12,6 +12,7 @@ import {
   standings, type KoMatch, type Result, type Standing,
 } from '@/lib/tournament-engine'
 import { formatInfo, isPairFormat, isRotationFormat, normalizeSettings, startProblems, type Settings } from '@/lib/tournament-formats'
+import { canEditResult } from '@/lib/tournament-view'
 
 type Db = SupabaseClient<any>
 export type Caller = { id: string; role: string; reach: Reach }
@@ -493,6 +494,45 @@ export async function recordScore(
 
   const after = await afterScore(db, t.id)
   return { ok: true, finished: after.finished, message: after.message }
+}
+
+// Correct a score that was already confirmed (a typo). Club team only, and only while nothing has been
+// built on it (see canEditResult). A rotation format works its leaderboard out again from every match.
+export async function editScore(
+  db: Db, caller: Caller, input: { matchId: string; team1Score: number; team2Score: number },
+): Promise<{ ok: true } | Fail> {
+  const { matchId, team1Score: s1, team2Score: s2 } = input
+  if (!matchId || !Number.isInteger(s1) || !Number.isInteger(s2)) return fail('Enter both scores as whole numbers.')
+  if (s1 < 0 || s2 < 0) return fail('Scores cannot be negative.')
+  if (s1 > 999 || s2 > 999) return fail('That score looks too high.')
+  const { data: match } = await (db as any).from('tournament_matches').select('*').eq('id', matchId).maybeSingle()
+  if (!match) return fail('Match not found.', 404)
+  const all = await loadAll(db, match.tournament_id)
+  if (!all) return fail('Tournament not found.', 404)
+  const { t, matches } = all
+  if (!canManage(caller, t)) return fail('Only the club team can change a confirmed score.', 403)
+  if (match.status !== 'completed') return fail('That match has not been scored yet.', 409)
+  if (!canEditResult(t.format, match, matches)) return fail('The next matches are already built on this score, so it cannot be changed now.', 409)
+  if ((stageOf(match) === 'ko' || stageOf(match) === 'third_place') && s1 === s2) return fail('A knockout match needs a winner. Check the score.')
+  const { error } = await (db as any).from('tournament_matches').update({ team1_score: s1, team2_score: s2 }).eq('id', matchId).eq('status', 'completed')
+  if (error) return fail('Could not save the score. Please try again.', 500)
+  if (isRotationFormat(t.format)) await recomputeRotationStats(db, t.id)
+  return { ok: true }
+}
+
+// Points, games and wins for every player, worked out again from the matches that have a score.
+async function recomputeRotationStats(db: Db, tournamentId: string): Promise<void> {
+  const { data: ms } = await (db as any).from('tournament_matches').select('*').eq('tournament_id', tournamentId).eq('status', 'completed')
+  const { data: ps } = await (db as any).from('tournament_players').select('id').eq('tournament_id', tournamentId)
+  const tot = new Map<string, { points: number; played: number; won: number }>((ps ?? []).map((p: any) => [p.id, { points: 0, played: 0, won: 0 }]))
+  for (const m of (ms ?? []) as MRow[]) {
+    const a = m.team1_score ?? 0, b = m.team2_score ?? 0
+    for (const [id, pts, won] of [[m.team1_player1_id, a, a > b], [m.team1_player2_id, a, a > b], [m.team2_player1_id, b, b > a], [m.team2_player2_id, b, b > a]] as [string, number, boolean][]) {
+      const x = tot.get(id); if (!x) continue
+      x.points += pts; x.played += 1; if (won) x.won += 1
+    }
+  }
+  for (const [id, x] of Array.from(tot.entries())) await (db as any).from('tournament_players').update({ total_points: x.points, games_played: x.played, games_won: x.won }).eq('id', id)
 }
 
 // After a score: finish the tournament if that was the last match, and move a knockout on by itself.

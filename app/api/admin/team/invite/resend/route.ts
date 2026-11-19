@@ -7,7 +7,9 @@ import { covers, scopeLabel, scopeOf } from '@/lib/team'
 import { roleLabel } from '@/lib/view-mode'
 
 // Send an invite that is still waiting again (they lost the email, or it went to spam). The link in the
-// first email stops working and a fresh one, good for another 7 days, goes out in its place.
+// first email stops working and a fresh one, good for another 7 days, goes out in its place. With
+// `email: false` nothing is emailed: the new link just comes back so the owner can send it themselves
+// (WhatsApp, text) -- the link of an invite is only ever known at the moment it is made.
 export async function POST(request: Request) {
   const caller = await loadTeamCaller()
   if (!caller) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -30,6 +32,7 @@ export async function POST(request: Request) {
   await admin.from('team_invites').update({ cancelled_at: new Date().toISOString() }).eq('id', inv.id)
 
   const link = joinLink(request, token)
+  if (b?.email === false) return NextResponse.json({ ok: true, emailed: false, link })
   const where = scopeLabel(scopeOf(inv))
   const emailed = await sendClubEmail({
     to: inv.email, subject: `${caller.name ?? 'An owner'} invited you to PadelClub`, heading: 'You have been invited',
