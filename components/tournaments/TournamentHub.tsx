@@ -57,6 +57,8 @@ export default function TournamentHub({
   const pending = matches.filter(m => m.status !== 'completed')
   const active = pending.length ? Math.min(...pending.map(m => m.round_number)) : 0
   const toPlay = pending.filter(m => m.round_number === active)
+  const roundTotal = matches.filter(m => m.round_number === active).length
+  const roundScored = roundTotal - toPlay.length
   const doneByRound = useMemo(() => {
     const out = new Map<number, VMatch[]>()
     for (const m of matches.filter(x => x.status === 'completed')) out.set(m.round_number, [...(out.get(m.round_number) ?? []), m])
@@ -122,7 +124,7 @@ export default function TournamentHub({
   const noTies = (m: VMatch) => stage(m) === 'ko' || stage(m) === 'third_place'
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full max-w-[1100px] mx-auto space-y-4">
       <div>
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold" data-testid="title">{t.name}</h1>
@@ -132,6 +134,14 @@ export default function TournamentHub({
           {formatName(t.format)} · {venue?.name ?? t.venue_slug} · {formatDate(t.date)}
         </p>
         <p className="text-sm mt-0.5 font-semibold" style={{ color: 'var(--text-primary)' }} data-testid="progress">{progress}</p>
+        {isRotationFormat(t.format) && t.status !== 'completed' && active > 0 && (
+          <div className="hidden md:flex items-center gap-4 mt-3 rounded-[20px] px-5 py-4" style={card} data-testid="round-bar">
+            <div className="flex gap-1.5" aria-hidden>
+              {Array.from({ length: t.total_rounds }, (_, i) => <span key={i} className="h-2 w-6 rounded-full" style={{ background: i + 1 <= active ? 'var(--brand-primary)' : 'var(--border)' }} />)}
+            </div>
+            <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{roundScored} of {roundTotal} {roundTotal === 1 ? 'match' : 'matches'} scored</span>
+          </div>
+        )}
       </div>
 
       {winner && (
@@ -209,6 +219,7 @@ export default function TournamentHub({
         </details>
       )}
 
+      <div className={`space-y-4 empty:hidden${isRotationFormat(t.format) ? ' xl:space-y-0 xl:grid xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-4 xl:items-start' : ''}`}>
       {toPlay.length > 0 && (
         <div data-testid="to-play">
           <h2 className={`${h2} mb-2`} style={{ color: 'var(--text-primary)' }}>To play{isRotationFormat(t.format) ? `: round ${active}` : ''}</h2>
@@ -234,20 +245,27 @@ export default function TournamentHub({
       )}
 
       {isRotationFormat(t.format) && leaderboard.length > 0 && matches.length > 0 && (
-        <div className="rounded-2xl p-4" style={card} data-testid="leaderboard">
+        <div className={`rounded-2xl p-4 ${toPlay.length > 0 ? 'xl:col-start-2 xl:row-start-1' : 'xl:col-span-2'}`} style={card} data-testid="leaderboard">
           <h2 className={`${h2} mb-3`} style={{ color: 'var(--text-primary)' }}>Leaderboard</h2>
+          <div className="hidden md:flex items-center gap-3 pb-1.5 text-[10px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }} aria-hidden>
+            <span className="w-5" /><span className="flex-1">Player</span><span className="w-14 text-right">Played</span><span className="w-12 text-right">Won</span><span className="w-10 text-right">Pts</span>
+          </div>
           <div className="space-y-1.5">
             {leaderboard.map((p, i) => (
               <div key={p.id} className="flex items-center gap-3 text-sm">
-                <span className="w-5 text-center font-bold" style={{ color: i < 3 ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{i + 1}</span>
+                <span className="w-5 text-center font-bold" style={{ color: i < 3 ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{i === 0 && p.games_played > 0 ? <><span className="md:hidden">1</span><span className="hidden md:inline" aria-label="Leader">👑</span></> : i + 1}</span>
                 <span className="flex-1 font-medium" style={{ color: 'var(--text-primary)' }}>{playerName(p)}</span>
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{p.games_won}/{p.games_played} won</span>
-                <span className="tabular-nums" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{p.total_points}</span>
+                <span className="text-xs md:hidden" style={{ color: 'var(--text-muted)' }}>{p.games_won}/{p.games_played} won</span>
+                <span className="hidden md:block w-14 text-right text-sm tabular-nums" style={{ color: 'var(--text-muted)' }}>{p.games_played}</span>
+                <span className="hidden md:block w-12 text-right text-sm tabular-nums" style={{ color: 'var(--text-muted)' }}>{p.games_won}</span>
+                <span className="tabular-nums md:w-10 md:text-right" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 500 }}>{p.total_points}</span>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      </div>
 
       {doneByRound.length > 0 && (
         <div className="space-y-2" data-testid="results">

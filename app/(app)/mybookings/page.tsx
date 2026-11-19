@@ -80,7 +80,7 @@ export default async function MyBookingsPage() {
   const memberPlan = mp ? { name: mp.name, windowDays: mp.windowDays } : null
 
   return (
-    <div>
+    <div className="max-w-[880px] mx-auto">
       <div className="mb-6 flex items-start justify-between gap-3" style={{ userSelect: 'none' }}>
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>My bookings</h1>

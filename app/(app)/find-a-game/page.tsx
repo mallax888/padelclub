@@ -49,7 +49,7 @@ export default async function FindGamePage() {
   const matchCounts = await loadMatchCounts(supabase, playerIds)
 
   return (
-    <div>
+    <div className="max-w-[880px] mx-auto">
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Open play</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
