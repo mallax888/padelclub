@@ -250,7 +250,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
             </span>
             <span className="ml-auto shrink-0 text-[10.5px] font-extrabold uppercase px-2.5 py-1 rounded-full whitespace-nowrap" style={{ letterSpacing: '0.04em', background: 'var(--brand-yellow-muted)', color: 'var(--text-primary)' }}>Invite sent</span>
             <button type="button" onClick={() => resendInvite(i.id, i.email)} className="shrink-0 text-xs font-bold px-1" style={{ color: 'var(--brand-primary-text)' }} data-testid="resend-invite">Resend</button>
-            <button type="button" onClick={() => cancelInvite(i.id)} className="shrink-0 text-xs font-semibold px-1" style={{ color: 'var(--text-muted)' }}>Cancel</button>
+            <button type="button" onClick={() => cancelInvite(i.id)} className="shrink-0 text-xs font-semibold px-1" style={{ color: 'var(--text-muted)' }} data-testid="cancel-invite-row">Cancel</button>
           </div>
         ))}
         <p className="text-xs px-5 py-3.5 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Already have a PadelClub account? Use Add owner or Add front desk and search by name. No account yet? Send an invite by email.</p>
