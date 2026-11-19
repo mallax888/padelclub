@@ -66,13 +66,9 @@ export default async function TeamPage() {
     <div className="w-full">
       <h1 className="text-2xl font-semibold">Team</h1>
       <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Who can run your clubs in the app</p>
-      <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_380px] lg:gap-6 lg:items-start">
-      <div className="lg:col-start-2 lg:row-start-1">
-        <InviteTeam clubs={clubs} canGrantAll={canGrantAll} defaultClub={defaultClub} invites={invites} ready={!inviteError} />
-      </div>
-      <div className="lg:col-start-1 lg:row-start-1 min-w-0">
-        <TeamView members={members} clubs={clubs} countries={countries} canGrantAll={canGrantAll} defaultClub={defaultClub || (clubs[0]?.slug ?? '')} />
-      </div>
+      <div className="mt-6">
+        <TeamView members={members} clubs={clubs} countries={countries} canGrantAll={canGrantAll} defaultClub={defaultClub || (clubs[0]?.slug ?? '')} invites={invites}
+          aside={<InviteTeam clubs={clubs} canGrantAll={canGrantAll} defaultClub={defaultClub} invites={invites} ready={!inviteError} />} />
       </div>
     </div>
   )

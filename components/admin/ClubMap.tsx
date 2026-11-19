@@ -20,7 +20,7 @@ const money = (n: number, c: CurrencyCode) => formatPrice(n, c).replace(/\.00$/,
 function cellStyle(c: CourtDayCell): React.CSSProperties {
   if (c.state === 'booked') return { background: 'var(--brand-primary)', opacity: c.past ? 0.38 : 1 }
   if (c.state === 'blocked') return { background: 'var(--brand-crimson-muted)', border: '1px solid var(--brand-crimson)', opacity: c.past ? 0.55 : 1 }
-  return c.past ? { background: 'var(--bg-raised)', opacity: 0.8 } : { background: 'var(--brand-yellow-muted)', border: '1px dashed var(--brand-yellow)' }
+  return { background: 'var(--bg-raised)', opacity: c.past ? 0.5 : 1 }
 }
 
 function Avatars({ people }: { people: string[] }) {
@@ -217,9 +217,9 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
             const t = tone[st.state]
             const soldOut = r.sellable > 0 && r.openNow === 0 && !day.finished
             return (
-              <button key={c.id} type="button" onClick={() => setSel(sel === c.id ? null : c.id)} data-testid="court-tile" aria-pressed={sel === c.id}
+              <div key={c.id} role="button" tabIndex={0} onClick={() => setSel(sel === c.id ? null : c.id)} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); setSel(sel === c.id ? null : c.id) } }} data-testid="court-tile" aria-pressed={sel === c.id}
                 aria-label={`${c.name}: ${st.state === 'playing' ? `${st.who ?? 'booked'} until ${fmtMinutes(st.until!)}` : st.state === 'blocked' ? 'blocked' : 'free'}${r.openNow > 0 ? `, ${r.openNow} ${r.openNow === 1 ? 'hour' : 'hours'} to sell` : ''}`}
-                className="text-left rounded-[20px] p-4 lg:p-5 transition-shadow"
+                className="text-left rounded-[20px] p-4 lg:p-5 transition-shadow cursor-pointer"
                 style={{ background: 'var(--bg-surface)', border: sel === c.id ? '2px solid var(--brand-primary)' : '2px solid var(--border)', boxShadow: sel === c.id ? '0 0 0 4px var(--brand-primary-muted)' : 'none' }}>
                 <span className="flex items-center justify-between gap-2">
                   <span className="text-[19px] sm:text-[21px] font-black shrink-0 whitespace-nowrap" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }} data-testid="court-name">{c.name}</span>
@@ -239,16 +239,31 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                 <span className="grid gap-[3px] mt-3" style={{ gridTemplateColumns: `repeat(${Math.max(n, 1)}, minmax(0,1fr))` }} aria-hidden>
                   {r.cells.map(cell => <i key={cell.hour} style={{ height: 12, borderRadius: 4, display: 'block', ...cellStyle(cell) }} />)}
                 </span>
-                <span className="flex mt-3">
+                <span className="flex mt-3.5">
                   {r.openNow > 0 ? (
-                    <span className="text-[11.5px] font-black rounded-full px-3 py-1" style={{ background: 'var(--brand-yellow-muted)', border: '1.5px dashed var(--brand-yellow)', color: 'var(--text-primary)' }} data-testid="court-coin">{r.openNow}h to sell{showMoney && r.openValue > 0 ? ` · ${money(r.openValue, currency)}` : ''}</span>
+                    <span className="flex w-full items-center justify-between gap-3">
+                    <span className="min-w-0" data-testid="court-coin">
+                      {showMoney && r.openValue > 0 ? (
+                        <>
+                          <span className="block text-[20px] sm:text-[24px] font-black leading-none" style={{ color: 'var(--ball-text)', letterSpacing: '-0.02em' }}>{money(r.openValue, currency)}</span>
+                          <span className="block text-[11.5px] mt-1" style={{ color: 'var(--text-muted)' }}>{r.openNow} {r.openNow === 1 ? 'hour' : 'hours'} still to sell</span>
+                        </>
+                      ) : (
+                        <span className="block text-[12.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{r.openNow} {r.openNow === 1 ? 'hour' : 'hours'} open</span>
+                      )}
+                    </span>
+                    {showMoney && offersOn && (
+                      <button type="button" data-testid="court-fill" onClick={e => { e.stopPropagation(); setSel(c.id) }} className="hidden sm:inline-flex shrink-0 rounded-full px-4 py-2 text-[12px] font-black"
+                        style={{ background: '#d4f53c', color: '#17240a' }}>Fill it</button>
+                    )}
+                    </span>
                   ) : soldOut ? (
                     <span className="text-[10.5px] font-black rounded-full px-2.5 py-1" style={{ background: 'var(--brand-green-muted)', color: 'var(--brand-green)', letterSpacing: '0.04em' }} data-testid="court-soldout">SOLD OUT ✓</span>
                   ) : (
                     <span className="text-[11px] font-bold py-1" style={{ color: 'var(--text-subtle)' }}>{day.finished ? 'Done for today' : r.sellable === 0 ? 'Not on sale' : ''}&nbsp;</span>
                   )}
                 </span>
-              </button>
+              </div>
             )
           })}
         </div>
