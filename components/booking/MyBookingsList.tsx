@@ -352,7 +352,7 @@ function ShareDeadlineBox({ booking, shares }: { booking: BookingWithCourt; shar
   }
   const urgent = stage !== 'before'
   return (
-    <div className="rounded-2xl mt-2.5 p-4 flex flex-wrap items-center justify-between gap-3" data-testid="share-deadline"
+    <div className="rounded-[20px] mt-2.5 p-5 flex flex-wrap items-center justify-between gap-4" data-testid="share-deadline"
       style={{ background: (urgent || !sched) ? 'var(--brand-yellow-muted)' : 'var(--bg-raised)', border: `${(urgent || !sched) ? 1.5 : 1}px solid ${(urgent || !sched) ? 'var(--brand-yellow)' : 'var(--border)'}` }}>
       <div className="min-w-0 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
         {urgent && sched
