@@ -10,6 +10,7 @@ import ClubMap from '@/components/admin/ClubMap'
 import type { MapBooking } from '@/lib/club-map'
 import type { CourtDay } from '@/lib/court-day'
 import type { Briefing } from '@/lib/briefing'
+import AnnouncementCard from '@/components/admin/AnnouncementCard'
 import type { FillGap, OverdueLine } from '@/lib/today-actions'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
@@ -138,6 +139,9 @@ export default function TodayView(p: TodayViewProps) {
       <Link href={`/admin?tab=board&${q}`} className="btn-main btn-main-quiet mt-4">
         Open the full dashboard
       </Link>
+
+      {/* owners only: front desk does not message players */}
+      {p.showMoney && !noCourts && <div className="mt-4"><AnnouncementCard venueSlug={p.venueSlug} venueName={p.venues.find(v => v.slug === p.venueSlug)?.name ?? 'your club'} /></div>}
 
       </div>
     </>

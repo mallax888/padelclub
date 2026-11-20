@@ -26,7 +26,7 @@ type Offer = { venue_slug: string; date: string; start_time: string; end_time: s
 
 // Phones show the ticket, two tiles and cards. From tablet width up Home becomes the scoreboard: a flip clock counting down to the
 // next game beside a court that shows who is in, then fixtures to join, what is coming up, and the numbers.
-export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, shares, usual, games, offer, saved, month, later }: {
+export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, shares, usual, games, offer, saved, month, later, notices = [] }: {
   name: string | null; fullName?: string | null; homeSlug: string | null; tz: string; nowMs: number
   next: (HomeBooking & { id: string }) | null
   shares: { paid: string[]; waiting: string[] }
@@ -35,6 +35,8 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
   month: { games: number; people: number; weeks: number } | null
   // The bookings after the next game (desktop "Coming up").
   later: (HomeBooking & { id: string })[]
+  // Messages from the player's club (an owner's announcement), still within their week on Home.
+  notices?: { id: string; club: string; title: string; body: string; age: string }[]
 }) {
   const hour = Number(new Intl.DateTimeFormat('en-NZ', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date(nowMs)).replace(/\D/g, '')) % 24
   const todayDate = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(nowMs))
@@ -71,6 +73,14 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
           <Link href="/find-a-game" className="rounded-full px-5 text-[14px] font-extrabold inline-flex items-center" style={{ minHeight: 44, ...card, color: 'var(--text-primary)' }}>Open play →</Link>
         </div>
       </div>
+
+      {notices.map(n => (
+        <div key={n.id} data-testid="club-notice" className="rounded-[20px] p-4" style={{ border: '1px solid var(--brand-primary)', background: 'linear-gradient(160deg, var(--brand-primary-muted), var(--bg-surface))' }}>
+          <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--brand-primary-text)' }}>From {n.club} · {n.age}</div>
+          <div className="text-[17px] font-extrabold mt-1.5" style={{ color: 'var(--text-primary)' }}>{n.title}</div>
+          {n.body && <div className="text-sm mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>{n.body}</div>}
+        </div>
+      ))}
 
       {next ? (
         <>

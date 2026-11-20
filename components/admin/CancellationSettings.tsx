@@ -26,8 +26,8 @@ export default function CancellationSettings({ venueSlug, rule }: { venueSlug: s
     setBusy(false)
   }
   const Seg = ({ on, label, onClick, id }: { on: boolean; label: string; onClick: () => void; id: string }) => (
-    <button type="button" aria-pressed={on} disabled={busy} onClick={onClick} data-testid={id} className="flex-1 rounded-[9px] px-2 text-[13px] font-semibold disabled:opacity-60"
-      style={{ minHeight: 40, background: on ? 'var(--brand-primary)' : 'transparent', color: on ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>{label}</button>
+    <button type="button" aria-pressed={on} disabled={busy} onClick={onClick} data-testid={id} className="flex-1 rounded-full px-2 text-[13px] font-semibold disabled:opacity-60"
+      style={{ minHeight: 36, background: on ? 'var(--brand-primary-muted)' : 'transparent', color: on ? 'var(--brand-primary-text)' : 'var(--text-muted)', border: `1px solid ${on ? 'var(--brand-primary)' : 'transparent'}` }}>{label}</button>
   )
 
   return (
@@ -47,7 +47,7 @@ export default function CancellationSettings({ venueSlug, rule }: { venueSlug: s
             </div>
             <div>
               <span className="block text-xs font-bold mb-1.5" style={muted}>After that, if they cancel</span>
-              <div className="flex gap-1 rounded-xl p-1" style={{ background: 'var(--bg-raised)' }} role="group" aria-label="After that, if they cancel">
+              <div className="flex gap-1 rounded-full p-1" style={{ background: 'var(--bg-raised)' }} role="group" aria-label="After that, if they cancel">
                 <Seg id="after-keep" on={r.after === 'keep'} label="Keep it all" onClick={() => void save({ after: 'keep' })} />
                 <Seg id="after-half" on={r.after === 'half'} label="Half back" onClick={() => void save({ after: 'half' })} />
               </div>
