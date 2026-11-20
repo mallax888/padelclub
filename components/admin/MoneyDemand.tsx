@@ -21,6 +21,25 @@ const MAX_ROWS = 6
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
 const eyebrow = { letterSpacing: '0.14em', color: 'var(--text-subtle)' } as const
 
+// The same lime as the Fill them button: the colour of money and of the next thing to do.
+const LIME = { background: '#d4f53c', color: '#17240a' } as const
+const cardEyebrow = { fontSize: 11, letterSpacing: '0.14em', fontWeight: 800, color: 'var(--text-subtle)' } as const
+const bigTotal = { fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' } as const
+const WK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
+const MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+
+// A small blue tile for a date, like the court tile on a booking: SAT / 24 / OCT.
+function DateTile({ date, month = false }: { date: string; month?: boolean }) {
+  const d = new Date(`${date}T12:00:00Z`)
+  return (
+    <span aria-hidden className="shrink-0 inline-flex flex-col items-center justify-center text-white text-center" style={{ width: 52, height: 52, borderRadius: 15, background: 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' }}>
+      <span style={{ fontSize: 9, letterSpacing: '0.1em', fontWeight: 700, lineHeight: 1.1 }}>{WK[d.getUTCDay()]}</span>
+      <span style={{ fontSize: 20, fontWeight: 800, lineHeight: 1 }}>{d.getUTCDate()}</span>
+      {month && <span style={{ fontSize: 9, letterSpacing: '0.1em', fontWeight: 700, lineHeight: 1.1 }}>{MON[d.getUTCMonth()]}</span>}
+    </span>
+  )
+}
+
 export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares, week, waitDemand = null, offers = null }: {
   venueSlug: string
   week?: WeekHours | null
@@ -77,48 +96,50 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
       setSent(p => ({ ...p, [id]: res.ok ? 'sent' : 'error' }))
     } catch { setSent(p => ({ ...p, [id]: 'error' })) }
   }
+  const none = s.overdue.length === 0
   return (
-    <div className="rounded-2xl p-5" style={card} data-testid="overdue-card">
-      <CardHeading className="">Overdue shares</CardHeading>
-      {s.overdue.length === 0 ? (
-        <div className="py-6">
-          <div className="text-2xl font-extrabold" style={{ ...display, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Nothing overdue</div>
+    <div className="rounded-[20px] p-5" style={card} data-testid="overdue-card">
+      <div style={cardEyebrow}>OVERDUE SHARES</div>
+      {none ? (
+        <div className="py-3">
+          <div className="text-2xl font-extrabold" style={{ ...bigTotal }}>Nothing overdue</div>
           <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Every friend is either paid up or still inside their time to pay.</p>
         </div>
       ) : (
         <>
-          <div className="mt-2.5 flex items-baseline gap-2 flex-wrap">
-            <span className="text-[38px] leading-none font-extrabold" style={{ ...display, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{formatPrice(s.overdueTotal, currency)}</span>
+          <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+            <span className="text-[40px] leading-none" style={bigTotal}>{formatPrice(s.overdueTotal, currency)}</span>
             <span className="text-sm" style={{ color: 'var(--text-muted)' }}>across {s.overdue.length} {s.overdue.length === 1 ? 'share' : 'shares'}</span>
           </div>
-          <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Friends who joined a game and are past the time they had to pay their part.</p>
-          <div className="mt-4" style={{ borderTop: '1px solid var(--border)' }}>
-            {shown.map(r => (
-              <div key={r.id} className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="overdue-row">
-                <div className="min-w-0">
-                  <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{r.playerName} <span className="font-extrabold" style={{ color: 'var(--text-muted)' }}>· {formatPrice(r.amount, currency)}</span></div>
-                  <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    {r.courtName} · {formatDate(r.date)} {fmtClock(r.startTime)}{r.organiserName ? ` · organised by ${r.organiserName}` : ''}
-                  </div>
-                </div>
-                <div className="text-right shrink-0">
-                  <button type="button" disabled={sent[r.id] === 'busy' || sent[r.id] === 'sent'} onClick={() => remind(r.id)}
-                    className="text-xs font-extrabold px-3 py-1.5 rounded-full disabled:opacity-60" style={{ background: 'var(--brand-primary)', color: '#fff' }} data-testid="remind-both">
-                    {sent[r.id] === 'sent' ? 'Reminded' : sent[r.id] === 'busy' ? 'Sending…' : 'Remind both'}
-                  </button>
-                  {sent[r.id] === 'error' && <div className="text-[10.5px] mt-1" style={{ color: 'var(--brand-crimson)' }}>Could not send. Try again.</div>}
-                </div>
-              </div>
-            ))}
-          </div>
+          <p className="text-xs mt-2 mb-1" style={{ color: 'var(--text-muted)' }}>Friends who joined a game and are past the time they had to pay their part.</p>
         </>
       )}
-      {s.notDueCount > 0 && (
-        <p className="text-[11.5px] mt-3" data-testid="not-due-note" style={{ color: 'var(--text-subtle)' }}>
-          {s.notDueCount} more {s.notDueCount === 1 ? 'share' : 'shares'} ({formatPrice(s.notDueTotal, currency)}) {s.notDueCount === 1 ? 'is' : 'are'} not due yet. Reminders for those go out automatically.
-          {s.overdue.length > shown.length ? ` Showing the ${shown.length} oldest overdue.` : ''}
-        </p>
-      )}
+      <div>
+        {!none && shown.map((r, i) => (
+          <div key={r.id} className="flex items-center gap-3.5 py-3" style={{ borderTop: '1px solid var(--border)' }} data-testid="overdue-row">
+            <DateTile date={r.date} month />
+            <div className="min-w-0 flex-1">
+              <div className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{r.playerName} <span className="font-extrabold whitespace-nowrap" style={{ color: 'var(--ball-text)' }}>· {formatPrice(r.amount, currency)}</span></div>
+              <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                {r.courtName} · {formatDate(r.date)} {fmtClock(r.startTime)}{r.organiserName ? ` · organised by ${r.organiserName}` : ''}
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <button type="button" disabled={sent[r.id] === 'busy' || sent[r.id] === 'sent'} onClick={() => remind(r.id)}
+                className="text-xs font-extrabold px-3.5 py-2 rounded-full disabled:opacity-60" style={LIME} data-testid="remind-both">
+                {sent[r.id] === 'sent' ? 'Reminded' : sent[r.id] === 'busy' ? 'Sending…' : 'Remind both'}
+              </button>
+              {sent[r.id] === 'error' && <div className="text-[10.5px] mt-1" style={{ color: 'var(--brand-crimson)' }}>Could not send. Try again.</div>}
+            </div>
+          </div>
+        ))}
+        {s.notDueCount > 0 && (
+          <p className="text-[11.5px] mt-3" data-testid="not-due-note" style={{ color: 'var(--text-subtle)' }}>
+            {s.notDueCount} more {s.notDueCount === 1 ? 'share' : 'shares'} ({formatPrice(s.notDueTotal, currency)}) {s.notDueCount === 1 ? 'is' : 'are'} not due yet. Reminders for those go out automatically.
+            {s.overdue.length > shown.length ? ` Showing the ${shown.length} oldest overdue.` : ''}
+          </p>
+        )}
+      </div>
     </div>
   )
 }
@@ -130,10 +151,15 @@ const WEEKDAY_NAMES = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Friday
 function WaitlistCard({ demand }: { demand: WaitDemand }) {
   const max = Math.max(1, ...demand.slots.map(s => s.waits))
   return (
-    <div className="rounded-2xl p-5 lg:col-span-2" style={card} data-testid="waitlist-demand">
+    <div className="rounded-[20px] p-5 lg:col-span-2" style={card} data-testid="waitlist-demand">
       <CardHeading className="">Waitlist demand · last 14 days</CardHeading>
       {demand.total === 0 ? (
-        <p className="text-sm py-6" style={{ color: 'var(--text-muted)' }}>Nobody has waited for a full time yet. When your busy times fill up, the times people can&apos;t get will show here.</p>
+        <div className="flex items-center gap-4 mt-3">
+          <span aria-hidden className="shrink-0 inline-flex items-end gap-1.5" style={{ height: 44 }}>
+            {[14, 24, 34, 20].map((h, i) => <i key={i} style={{ width: 12, height: h, borderRadius: 4, background: 'var(--bg-raised)', display: 'block' }} />)}
+          </span>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Nobody has waited for a full time yet. When your busy times fill up, the times people can&apos;t get will show here.</p>
+        </div>
       ) : (
         <>
           <div className="flex flex-wrap gap-x-8 gap-y-2 mt-2">
@@ -142,7 +168,7 @@ function WaitlistCard({ demand }: { demand: WaitDemand }) {
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{demand.total === 1 ? 'wait joined' : 'waits joined'}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold" style={{ ...display, color: 'var(--brand-primary-text)' }}>{demand.bookedAfter}</div>
+              <div className="text-3xl font-bold" style={{ ...display, color: 'var(--ball-text)' }}>{demand.bookedAfter}</div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>booked after being told</div>
             </div>
           </div>
@@ -152,7 +178,7 @@ function WaitlistCard({ demand }: { demand: WaitDemand }) {
               <li key={`${s.weekday}-${s.time}`} className="flex items-center gap-3 text-sm">
                 <span className="w-32 shrink-0" style={{ color: 'var(--text-primary)' }}>{WEEKDAY_NAMES[s.weekday]} {fmtClock(s.time)}</span>
                 <span className="h-2 rounded-full flex-1" style={{ background: 'var(--bg-raised)' }}>
-                  <span className="block h-2 rounded-full" style={{ width: `${Math.round((s.waits / max) * 100)}%`, background: 'var(--brand-primary)' }} />
+                  <span className="block h-2 rounded-full" style={{ width: `${Math.round((s.waits / max) * 100)}%`, background: '#d4f53c' }} />
                 </span>
                 <span className="w-16 text-right tabular-nums" style={{ color: 'var(--text-muted)' }}>{s.waits} {s.waits === 1 ? 'person' : 'people'}</span>
               </li>
@@ -170,7 +196,7 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
   const e = computeEmptyCourtTime(courts, bookings, venueSlug, now, 7, week)
   if (e.courtCount === 0) {
     return (
-      <div className="rounded-2xl p-5" style={card}>
+      <div className="rounded-[20px] p-5" style={card}>
         <CardHeading className="">Best slots to fill</CardHeading>
         <p className="text-sm py-6" style={{ color: 'var(--text-muted)' }}>This club has no courts set up yet. Add them in the Courts tab and the slots worth filling will show here.</p>
       </div>
@@ -178,41 +204,42 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
   }
   const best = bestSlotsToFill(e.slots, 5)
   return (
-    <div className="rounded-2xl p-5" style={card} data-testid="best-slots">
-      <CardHeading className="">Best slots to fill · next 7 days</CardHeading>
+    <div className="rounded-[20px] p-5" style={card} data-testid="best-slots">
+      <div style={cardEyebrow}>BEST SLOTS TO FILL · NEXT 7 DAYS</div>
       {best.length === 0 ? (
         <p className="text-sm py-6" style={{ color: 'var(--text-muted)' }}>Nothing left to sell in the next 7 days. Every open hour is booked or blocked.</p>
       ) : (
         <>
-          <div className="mt-2.5 flex items-baseline gap-2 flex-wrap">
-            <span className="text-[38px] leading-none font-extrabold" style={{ ...display, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>{formatPrice(e.potential, currency)}</span>
+          <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+            <span className="text-[40px] leading-none" style={bigTotal}>{formatPrice(e.potential, currency)}</span>
             <span className="text-sm" style={{ color: 'var(--text-muted)' }}>if they all filled</span>
           </div>
-          <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs mt-2 mb-1" style={{ color: 'var(--text-muted)' }}>
             {e.emptyHours} {e.emptyHours === 1 ? 'court hour' : 'court hours'} unsold in the next 7 days. These are the five worth the most.
           </p>
-          <div className="mt-4" style={{ borderTop: '1px solid var(--border)' }}>
-            {best.map(g => (
-              <div key={`${g.date}-${g.from}`} className="flex items-center justify-between gap-3 py-2.5" style={{ borderBottom: '1px solid var(--border)' }} data-testid="best-slot-row">
-                <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)} · <span className="whitespace-nowrap">{fmtClockRange(g.from, g.to)}</span></div>
-                  <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{g.fillPct}% full · {g.empty} of {g.courts} {g.courts === 1 ? 'court' : 'courts'} free · {g.kind === 'peak' ? 'peak' : 'quiet'}</div>
-                </div>
-                <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2 shrink-0">
-                  <div className="text-xs font-extrabold whitespace-nowrap" style={{ color: 'var(--brand-primary-text)' }}>up to {formatPrice(g.potential, currency)}</div>
-                  {onFill && (
-                    <button type="button" onClick={() => onFill({ date: g.date, from: g.from, to: g.to })}
-                      className="text-xs font-extrabold px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary)', color: '#fff' }}>Fill it</button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
         </>
       )}
-      <p className="text-[11.5px] mt-3" style={{ color: 'var(--text-subtle)' }}>
-        Ranked by what a full slot could earn. Counted within your opening hours{week ? '' : ' (07:00 to 22:00 until you set them)'}. Hours already started and blocked courts are not counted.
-      </p>
+      <div>
+        {best.map((g, i) => (
+          <div key={`${g.date}-${g.from}`} className="flex items-center gap-3.5 py-3" style={{ borderTop: '1px solid var(--border)' }} data-testid="best-slot-row">
+            <DateTile date={g.date} />
+            <div className="min-w-0 flex-1">
+              <div className="text-[14px] font-bold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{fmtClockRange(g.from, g.to)}</div>
+              <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatDate(g.date)} · {g.fillPct}% full · {g.empty} of {g.courts} {g.courts === 1 ? 'court' : 'courts'} free · {g.kind === 'peak' ? 'peak' : 'quiet'}</div>
+            </div>
+            <div className="flex flex-col items-end gap-1.5 shrink-0">
+              <div className="text-xs font-extrabold whitespace-nowrap" style={{ color: 'var(--ball-text)' }}>up to {formatPrice(g.potential, currency)}</div>
+              {onFill && (
+                <button type="button" onClick={() => onFill({ date: g.date, from: g.from, to: g.to })}
+                  className="text-xs font-extrabold px-3.5 py-2 rounded-full" style={LIME}>Fill it</button>
+              )}
+            </div>
+          </div>
+        ))}
+        <p className="text-[11.5px] mt-3" style={{ color: 'var(--text-subtle)' }}>
+          Ranked by what a full slot could earn. Counted within your opening hours{week ? '' : ' (07:00 to 22:00 until you set them)'}. Hours already started and blocked courts are not counted.
+        </p>
+      </div>
     </div>
   )
 }
@@ -225,16 +252,17 @@ function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[
     try { await fetch('/api/admin/offers/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }) } finally { setBusy(null); onChanged() }
   }
   return (
-    <div className="rounded-2xl p-5 lg:col-span-2" style={card} data-testid="offers-card">
+    <div className="rounded-[20px] p-5 lg:col-span-2" style={card} data-testid="offers-card">
       <CardHeading className="">Offers you&apos;ve sent</CardHeading>
       <div className="mt-2">
-        {offers.map(o => (
-          <div key={o.id} className="py-3" style={{ borderBottom: '1px solid var(--border)' }} data-testid="offer-row">
-            <div className="flex items-start justify-between gap-3 flex-wrap">
-              <div>
-                <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{o.discount_percent}% off · {formatDate(o.date)} · {fmtClockRange(o.start_time, o.end_time)}</div>
+        {offers.map((o, i) => (
+          <div key={o.id} className="py-3.5" style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }} data-testid="offer-row">
+            <div className="flex items-start gap-3.5 flex-wrap">
+              <span className="shrink-0 rounded-full px-3.5 py-2 text-[13px] font-black whitespace-nowrap" style={o.ended ? { background: 'var(--bg-raised)', color: 'var(--text-muted)' } : { background: 'linear-gradient(160deg,#1f9a5f,#0f5c38)', color: '#ffffff' }}>{o.discount_percent}% off</span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[14px] font-bold" style={{ color: o.ended ? 'var(--text-muted)' : 'var(--text-primary)' }}>{formatDate(o.date)} · {fmtClockRange(o.start_time, o.end_time)}</div>
                 <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  Told {o.told_count} {o.told_count === 1 ? 'player' : 'players'} · {o.status === 'cancelled' ? 'Ended early' : o.ended ? 'Closed' : 'Open now'}
+                  Told {o.told_count} {o.told_count === 1 ? 'player' : 'players'} · {o.status === 'cancelled' ? 'Ended early' : o.ended ? 'Closed' : <span style={{ color: 'var(--brand-green)', fontWeight: 800 }}>Open now</span>}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -248,7 +276,7 @@ function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
               <span><b style={{ color: 'var(--text-primary)' }}>{o.results.courtsBooked}</b> {o.results.courtsBooked === 1 ? 'court' : 'courts'} booked</span>
-              <span>Earned <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.earned, currency)}</b></span>
+              <span>Earned <b style={{ color: 'var(--ball-text)' }}>{formatPrice(o.results.earned, currency)}</b></span>
               <span>Given away <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.givenAway, currency)}</b></span>
               <span><b style={{ color: 'var(--text-primary)' }}>{o.results.newPlayers}</b> new · <b style={{ color: 'var(--text-primary)' }}>{o.results.returning}</b> returning</span>
             </div>
