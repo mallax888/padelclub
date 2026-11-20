@@ -60,6 +60,17 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 // Day and Week colour a booking by what it is, so their key names those
 // categories. Month colours by court instead and carries its own key listing
 // the courts -- each view's key describes that view's own colouring.
+// A small blue tile for a court, like the court tile on a booking: COURT / 3. A court with a name
+// that is not "Court N" keeps its name, in the same tile shape.
+function CourtTile({ name }: { name: string }) {
+  const m = /^Court\s+(\d+)$/i.exec(name.trim())
+  return (
+    <span className="inline-flex flex-col items-center justify-center text-white text-center align-middle" style={{ minWidth: 44, height: 36, padding: m ? 0 : '0 8px', borderRadius: 11, background: 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' }}>
+      {m ? (<><span style={{ fontSize: 8, letterSpacing: '0.1em', fontWeight: 700, lineHeight: 1 }}>COURT</span><span style={{ fontSize: 16, fontWeight: 800, lineHeight: 1 }}>{m[1]}</span></>) : <span style={{ fontSize: 11, fontWeight: 800 }}>{name}</span>}
+    </span>
+  )
+}
+
 function BoardCategoryLegend() {
   const items = [
     { label: 'Booking', color: 'var(--brand-primary)' },
@@ -67,10 +78,10 @@ function BoardCategoryLegend() {
     { label: 'Blocked', color: 'var(--brand-crimson)' },
   ]
   return (
-    <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
       {items.map(item => (
-        <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
-          <div style={{ width: 10, height: 10, borderRadius: 2, background: item.color }} />
+        <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 99, padding: '4px 11px' }}>
+          <div style={{ width: 9, height: 9, borderRadius: 99, background: item.color }} />
           {item.label}
         </div>
       ))}
@@ -577,24 +588,30 @@ export default function AdminDashboard({
       { label: 'Players today',    value: playersToday, color: 'var(--text-primary)', trend: playersTrend, trendLabel: 'vs same day last week', spark: playersSpark },
       { label: 'Revenue today',    value: formatMultiCurrency(revenueTodayByCurrency), color: 'var(--brand-primary-text)', trend: revenueTrend, trendLabel: 'vs same day last week', spark: revenueSpark },
       { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
-    ].filter(c => canSeeMoney || c.label !== 'Revenue today').map(({ label, value, color, trend, trendLabel, spark }) => (
-      <div key={label} className="rounded-2xl p-4 flex items-center justify-between gap-3"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <div className="min-w-0">
-          <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{label}</div>
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <div className="text-xl font-semibold" style={{ color }}>{value}</div>
-            {trend !== null && (
-              <span className="text-[11px] font-bold" style={{ color: trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
-                {trend === 0 ? 'no change' : `${trend > 0 ? '↑' : '↓'}${Math.abs(trend)}%`}
-              </span>
-            )}
+    ].filter(c => canSeeMoney || c.label !== 'Revenue today').map(({ label, value, trend, trendLabel, spark }) => {
+      // The four numbers wear the plan-tile colours: blue, green, gold, and a quiet grey for members.
+      const fill = label === "Today's bookings" ? 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' : label === 'Players today' ? 'linear-gradient(160deg,#1f9a5f,#0f5c38)' : label === 'Revenue today' ? 'linear-gradient(160deg,#c9a300,#8a6f00)' : null
+      const ink = fill ? '#ffffff' : 'var(--text-primary)'
+      const sub = fill ? 'rgba(255,255,255,0.85)' : 'var(--text-subtle)'
+      return (
+        <div key={label} className="rounded-[20px] p-4 flex items-center justify-between gap-3"
+          style={fill ? { background: fill, color: '#ffffff' } : { background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <div className="min-w-0">
+            <div className="text-xs font-bold mb-1.5" style={{ color: sub }}>{label}</div>
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <div className="text-[26px] sm:text-[28px] leading-none font-extrabold" style={{ color: ink, letterSpacing: '-0.02em' }}>{value}</div>
+              {trend !== null && (
+                <span className="text-[11px] font-extrabold" style={{ color: fill ? '#ffffff' : trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
+                  {trend === 0 ? 'no change' : `${trend > 0 ? '↑' : '↓'}${Math.abs(trend)}%`}
+                </span>
+              )}
+            </div>
+            <div className="text-[10.5px] mt-1.5" style={{ color: sub }}>{trendLabel}</div>
           </div>
-          <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>{trendLabel}</div>
+          <Sparkline data={spark} color={fill ? '#ffffff' : 'var(--brand-accent)'} />
         </div>
-        <Sparkline data={spark} color={color} />
-      </div>
-    ))}
+      )
+    })}
   </div> : null
 
   return (
@@ -1035,6 +1052,9 @@ function BoardView({
   const [dragOverCell, setDragOverCell] = useState<string | null>(null)
   const [moving, setMoving] = useState(false)
   const [dayLayout, setDayLayout] = useState<'grid' | 'list'>('grid')
+  // The hour it is now, for the lime marker on today's grid. Set in the browser only, so the server and the page agree on first paint.
+  const [nowHour, setNowHour] = useState<number | null>(null)
+  useEffect(() => { setNowHour(new Date().getHours()); const t = setInterval(() => setNowHour(new Date().getHours()), 60000); return () => clearInterval(t) }, [])
   const [rosterBooking, setRosterBooking] = useState<{ id: string; title: string; subtitle: string } | null>(null)
   const publicBookingIdSet = new Set(publicBookingIds)
   const venueCurrency = currencyForVenueSlug(venueCourts[0]?.venue_slug)
@@ -1052,9 +1072,9 @@ function BoardView({
       return { background: 'var(--brand-crimson-muted)', color: 'var(--brand-crimson)', label: 'Blocked' }
     }
     if (publicBookingIdSet.has(b.id)) {
-      return { background: '#10B98133', color: '#10B981', label: regularMark(b) + (b.profiles?.full_name?.split(' ')[0] ?? 'Open play') }
+      return { background: 'linear-gradient(160deg,#1f9a5f,#0f5c38)', color: '#ffffff', label: regularMark(b) + (b.profiles?.full_name?.split(' ')[0] ?? 'Open play') }
     }
-    return { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', label: regularMark(b) + (b.profiles?.full_name?.split(' ')[0] ?? '—') }
+    return { background: 'linear-gradient(160deg,#2c5fc4,#1d3f8d)', color: '#ffffff', label: regularMark(b) + (b.profiles?.full_name?.split(' ')[0] ?? '—') }
   }
 
   const moveBooking = async (bookingId: string, changes: { newDate?: string; newCourtId?: string; newStartTime?: string }) => {
@@ -1267,8 +1287,8 @@ function BoardView({
                         if (dragged && dragged.date === date) return // dropped back on its own day, nothing to do
                         moveBooking(id, { newDate: date })
                       }}
-                      style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
-                      <div style={{ fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? 'var(--brand-primary-text)' : 'var(--text-primary)', marginBottom: 3 }}>{dayNum}</div>
+                      style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : isToday ? 'rgba(212,245,60,0.09)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : isToday ? 'inset 0 0 0 2px #d4f53c' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
+                      <div style={{ marginBottom: 3 }}><span style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#17240a' : 'var(--text-primary)', background: isToday ? '#d4f53c' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span></div>
                       {show.map((b: any) => {
                         const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
                         return (
@@ -1282,7 +1302,7 @@ function BoardView({
                             }}
                             onDragEnd={() => { setDraggedId(null); setDragOverDate(null) }}
                             title={!isPast ? 'Drag to another day to reschedule' : undefined}
-                            style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: isPast ? 'rgba(170,170,170,0.3)' : color + '38', color: isPast ? 'rgba(255,255,255,0.8)' : color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isPast ? 'line-through' : 'none', cursor: isPast ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                            style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: isPast ? 'rgba(170,170,170,0.3)' : color, color: isPast ? 'rgba(255,255,255,0.8)' : '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isPast ? 'line-through' : 'none', cursor: isPast ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                             {fmtClock(b.start_time)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}
                           </div>
                         )
@@ -1293,10 +1313,10 @@ function BoardView({
                 })
               })()}
             </div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
               {venueCourts.map((court: any, i: number) => (
-                <div key={court.id} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 600, color: 'var(--text-primary)' }}>
-                  <div style={{ width: 10, height: 10, borderRadius: 2, background: courtColors[i % courtColors.length] }} />
+                <div key={court.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 99, padding: '4px 11px' }}>
+                  <div style={{ width: 9, height: 9, borderRadius: 99, background: courtColors[i % courtColors.length] }} />
                   {court.name}
                 </div>
               ))}
@@ -1310,7 +1330,7 @@ function BoardView({
                   <tr>
                     <th className="px-3 py-2 text-left whitespace-nowrap" style={{ width: 110, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                     {weekDates.map(d => (
-                      <th key={d} className="px-2 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: d === today ? 'var(--brand-primary-text)' : 'var(--text-primary)', background: d === today ? 'rgba(0,255,135,0.14)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                      <th key={d} className="px-2 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: d === today ? 'var(--ball-text)' : 'var(--text-primary)', background: d === today ? 'rgba(212,245,60,0.09)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                         {formatDateCompact(d)}
                       </th>
                     ))}
@@ -1320,7 +1340,7 @@ function BoardView({
                   {venueCourts.map((court: any, rowIdx: number) => (
                     <tr key={court.id}>
                       <td className="px-3 font-medium whitespace-nowrap align-top" style={{ paddingTop: 6, height: MONTH_CELL_HEIGHT, fontSize: 12, background: 'var(--bg-surface)', color: 'var(--text-primary)', borderBottom: rowIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                        {court.name}
+                        <CourtTile name={court.name} />
                       </td>
                       {weekDates.map((d, colIdx) => {
                         const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
@@ -1351,8 +1371,8 @@ function BoardView({
                             padding: 4,
                             background: dragOverCell === `${court.id}-${d}` && d >= today
                               ? 'var(--brand-primary-muted)'
-                              : isToday ? 'rgba(0,255,135,0.14)' : 'var(--bg-surface)',
-                            boxShadow: isToday ? 'inset 0 0 0 1px var(--brand-primary)' : 'none',
+                              : isToday ? 'rgba(212,245,60,0.09)' : 'var(--bg-surface)',
+                            boxShadow: isToday ? 'inset 0 0 0 2px #d4f53c' : 'none',
                             borderBottom: rowIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)',
                             borderRight: colIdx === weekDates.length - 1 ? 'none' : '1px solid var(--border)',
                           }}>
@@ -1408,7 +1428,7 @@ function BoardView({
                     <th style={{ width: 62, background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }} />
                     {venueCourts.map((court: any, idx: number) => (
                       <th key={court.id} className="px-1 py-2 text-center truncate" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.2, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}>
-                        {court.name}
+                        <CourtTile name={court.name} />
                       </th>
                     ))}
                   </tr>
@@ -1518,7 +1538,7 @@ function BoardView({
                 <tr>
                   <th className="px-2 py-2 text-left" style={{ width: 68, position: 'sticky', top: 0, zIndex: 2, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Time</th>
                   {venueCourts.map((court: any, idx: number) => (
-                    <th key={court.id} className="px-2 py-2 text-center" style={{ position: 'sticky', top: 0, zIndex: 2, fontSize: 12, fontWeight: 700, letterSpacing: 0.2, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}>{court.name}</th>
+                    <th key={court.id} className="px-2 py-2 text-center" style={{ position: 'sticky', top: 0, zIndex: 2, fontSize: 12, fontWeight: 700, letterSpacing: 0.2, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}><CourtTile name={court.name} /></th>
                   ))}
                 </tr>
               </thead>
@@ -1549,7 +1569,7 @@ function BoardView({
 
                   return TIME_ROWS.map((t, rowIdx) => (
                     <tr key={t}>
-                      <td className="px-2 font-medium whitespace-nowrap align-top" style={{ paddingTop: 6, height: DAY_ROW_HEIGHT, fontSize: 11, background: 'var(--bg-surface)', color: 'var(--text-muted)', borderBottom: rowIdx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                      <td className="px-2 font-medium whitespace-nowrap align-top" data-now={boardDate === today && nowHour === parseInt(t) ? 'true' : undefined} style={{ paddingTop: 6, height: DAY_ROW_HEIGHT, fontSize: 11, fontWeight: boardDate === today && nowHour === parseInt(t) ? 800 : undefined, background: boardDate === today && nowHour === parseInt(t) ? '#d4f53c' : 'var(--bg-surface)', color: boardDate === today && nowHour === parseInt(t) ? '#17240a' : 'var(--text-muted)', borderBottom: rowIdx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                         {fmtHour(t)}
                       </td>
                       {venueCourts.map((court: any, colIdx: number) => {

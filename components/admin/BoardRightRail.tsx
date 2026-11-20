@@ -92,7 +92,7 @@ export default function BoardRightRail({
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <CardHeading>Quick Actions</CardHeading>
         <div className="flex flex-col gap-4">
-          <button onClick={onBlockCourt} className="btn-main !justify-between px-4">
+          <button onClick={onBlockCourt} className="btn-main !justify-between px-4" style={{ background: '#d4f53c', color: '#17240a' }}>
             🔒 Block a court <span>→</span>
           </button>
           <button onClick={onAddCourt} className="btn-main btn-main-quiet !justify-between px-4">
@@ -111,13 +111,18 @@ export default function BoardRightRail({
           <div>
             {upcomingBookings.map(b => {
               const currency = currencyForRegion(b.venue_slug ? getVenue(b.venue_slug).region : undefined)
+              const dt = new Date(`${b.date}T12:00:00Z`)
               return (
-                <div key={b.id} className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{b.member_name}</div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>{b.court_name} · {formatDate(b.date)} · {fmtClock(b.start_time)}</div>
+                <div key={b.id} className="flex items-center gap-3 px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+                  <span aria-hidden className="shrink-0 inline-flex flex-col items-center justify-center text-white text-center" style={{ width: 44, height: 44, borderRadius: 13, background: 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' }}>
+                    <span style={{ fontSize: 8, letterSpacing: '0.1em', fontWeight: 700, lineHeight: 1.1 }}>{['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'][dt.getUTCDay()]}</span>
+                    <span style={{ fontSize: 17, fontWeight: 800, lineHeight: 1 }}>{dt.getUTCDate()}</span>
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>{b.member_name}</div>
+                    <div className="text-[10.5px]" style={{ color: 'var(--text-subtle)' }}>{b.court_name} · {formatDate(b.date)} · {fmtClock(b.start_time)}</div>
                   </div>
-                  <div className="text-xs font-semibold shrink-0 pl-2" style={{ color: 'var(--brand-primary-text)' }}>
+                  <div className="text-xs font-extrabold shrink-0 pl-2" style={{ color: 'var(--ball-text)' }}>
                     {b.price_nzd > 0 ? formatPrice(b.price_nzd, currency) : '—'}
                   </div>
                 </div>
