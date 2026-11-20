@@ -59,12 +59,28 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
 
   const firstName = ((profile as any).nickname ?? (profile as any).full_name ?? '').toString().split(' ')[0] || null
   if (venues.length === 0) {
+    const owner = isOwnerRole((profile as any).role)
+    const setupSlug = managedVenueSlug ?? ((profile as any).home_venue_slug as string | null)
+    const clubName = setupSlug ? getVenue(setupSlug).name : null
     return (
-      <div className="w-full">
+      <div className="w-full max-w-[880px] mx-auto">
         <h1 className="text-2xl font-extrabold">Today</h1>
-        <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>
-          None of your clubs have courts set up yet.{isOwnerRole((profile as any).role) ? <> <Link href="/admin/setup" style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Set up your club</Link> and today&apos;s bookings will show here.</> : ' Ask the owner to set up the club.'}
-        </p>
+        {owner ? (
+          <div className="rounded-[20px] p-6 mt-4 text-white" data-testid="welcome-setup" style={{ background: 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' }}>
+            <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: '#cfe0ff' }}>Welcome{firstName ? `, ${firstName}` : ''}</div>
+            <h2 className="text-[26px] font-black leading-tight mt-1" style={{ letterSpacing: '-0.02em' }}>{clubName ? `Let's get ${clubName} ready for bookings` : "Let's get your club ready for bookings"}</h2>
+            <p className="text-sm mt-2" style={{ color: '#dbe7ff' }}>None of your clubs have courts set up yet. It takes about five minutes, and today&apos;s bookings will show here as soon as you are done.</p>
+            <ol className="mt-4 flex flex-col gap-2 text-[14px] font-bold">
+              {['Opening hours', 'Courts and prices', 'Invite your team'].map((t, i) => (
+                <li key={t} className="flex items-center gap-3"><span className="flex items-center justify-center rounded-full text-[12px] font-extrabold shrink-0" style={{ width: 26, height: 26, background: '#ffffff', color: '#1d3f8d' }}>{i + 1}</span>{t}</li>
+              ))}
+            </ol>
+            <Link href={setupSlug ? `/admin/setup?venue=${encodeURIComponent(setupSlug)}` : '/admin/setup'} data-testid="welcome-setup-go"
+              className="mt-5 flex items-center justify-center rounded-xl text-[15px] font-extrabold w-full sm:w-auto sm:inline-flex sm:px-8" style={{ minHeight: 52, background: '#ffffff', color: '#1d3f8d' }}>Set up your club</Link>
+          </div>
+        ) : (
+          <p className="text-sm mt-3" style={{ color: 'var(--text-muted)' }}>None of your clubs have courts set up yet. Ask the owner to set up the club.</p>
+        )}
       </div>
     )
   }
