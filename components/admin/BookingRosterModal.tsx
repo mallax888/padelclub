@@ -16,9 +16,10 @@ type RosterPlayer = {
   joinStatus?: string | null
 }
 
+type NoShow = { available: boolean; at: string | null; started: boolean }
 type RosterResponse =
-  | { type: 'split'; players: RosterPlayer[]; priceNzd: number; paidTotal: number }
-  | { type: 'open_play'; players: RosterPlayer[]; priceNzd: number }
+  | { type: 'split'; players: RosterPlayer[]; priceNzd: number; paidTotal: number; noShow?: NoShow }
+  | { type: 'open_play'; players: RosterPlayer[]; priceNzd: number; noShow?: NoShow }
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
   paid: { label: 'Paid', bg: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' },
@@ -45,12 +46,24 @@ export default function BookingRosterModal({
   inline?: boolean
 }) {
   const [data, setData] = useState<RosterResponse | null>(null)
+  const [noShowBusy, setNoShowBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [replacingRowId, setReplacingRowId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [results, setResults] = useState<{ id: string; full_name: string | null; nickname: string | null }[]>([])
   const [searching, setSearching] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  const setNoShow = async (value: boolean) => {
+    setNoShowBusy(true)
+    try {
+      const res = await fetch('/api/admin/booking-no-show', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookingId, noShow: value }) })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) toast.error(d.error ?? 'Could not save.')
+      else { toast.success(value ? 'Marked as a no-show' : 'No-show mark removed'); await load() }
+    } catch { toast.error('Could not save. Check your connection and try again.') }
+    setNoShowBusy(false)
+  }
 
   const load = useCallback(async () => {
     try {
@@ -223,6 +236,23 @@ export default function BookingRosterModal({
             })
           )}
         </div>
+
+        {data?.noShow?.available && data.noShow.started && (
+          <div className="flex items-center justify-between gap-3 px-5 py-3" style={{ borderTop: '1px solid var(--border)' }} data-testid="no-show-row">
+            {data.noShow.at ? (
+              <>
+                <span className="text-xs font-semibold" style={{ color: 'var(--brand-crimson)' }}>Didn&apos;t turn up. The payment was kept.</span>
+                <button type="button" disabled={noShowBusy} onClick={() => void setNoShow(false)} className="text-xs font-bold shrink-0" style={{ color: 'var(--brand-primary-text)' }} data-testid="no-show-undo">Undo</button>
+              </>
+            ) : (
+              <>
+                <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>Nobody came?</span>
+                <button type="button" disabled={noShowBusy} onClick={() => void setNoShow(true)} className="text-xs font-bold rounded-full px-3.5 py-2 shrink-0 disabled:opacity-60"
+                  style={{ border: '1px solid var(--border)', color: 'var(--text-muted)' }} data-testid="no-show-mark">Didn&apos;t turn up</button>
+              </>
+            )}
+          </div>
+        )}
 
         {data && data.type === 'split' && (
           <div className="flex items-center justify-between px-5 py-3" style={{ borderTop: '1px solid var(--border)' }}>

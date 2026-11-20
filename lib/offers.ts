@@ -46,14 +46,14 @@ async function venueCourts(db: any, slug: string) {
 }
 
 // Players who booked at this club recently (not blocks), who haven't a booking in the window.
-async function pastPlayerIds(db: any, courtIds: string[], nowMs: number): Promise<string[]> {
+export async function pastPlayerIds(db: any, courtIds: string[], nowMs: number): Promise<string[]> {
   if (courtIds.length === 0) return []
   const { data } = await db.from('bookings').select('user_id, date, status').in('court_id', courtIds).in('status', ['confirmed', 'completed'])
   const since = isoDaysAgo(nowMs, PAST_PLAYER_DAYS)
   return Array.from(new Set(((data ?? []) as any[]).filter(b => b.user_id && b.date >= since).map(b => b.user_id as string)))
 }
 
-async function homeClubIds(db: any, slug: string): Promise<string[]> {
+export async function homeClubIds(db: any, slug: string): Promise<string[]> {
   let homeQ = db.from('profiles').select('id').eq('home_venue_slug', slug)
   if (splitOn()) homeQ = homeQ.eq('role', 'member') // club accounts do not get player offers
   const { data } = await homeQ

@@ -12,6 +12,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { effectivePlans } from '@/lib/plan-rules'
 import { loadPlanRows, planStats } from '@/lib/club-plans'
 import { loadBriefingSettings } from '@/lib/briefing-server'
+import { loadRule, rulesAvailable } from '@/lib/cancellation-server'
 
 export const metadata = { title: 'Club settings' }
 
@@ -84,6 +85,7 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       regulars={regRules}
       memberships={memberships}
       briefing={await loadBriefingSettings(admin, slug)}
+      cancellation={(await rulesAvailable(admin)) ? await loadRule(admin, slug) : null}
       stripeReturn={searchParams?.stripe === 'return' || searchParams?.stripe === 'refresh' ? searchParams.stripe : null}
     />
   )

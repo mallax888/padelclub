@@ -14,6 +14,7 @@ import MatchCard, { type MatchCardData } from './MatchCard'
 import PairsEditor from './PairsEditor'
 import Bracket from './Bracket'
 import StandingsTable from './StandingsTable'
+import ShareMenu from './ShareMenu'
 
 type Person = { id: string; full_name: string | null; nickname: string | null }
 type Tournament = VTournament & { name: string; venue_slug: string; date: string }
@@ -134,7 +135,10 @@ export default function TournamentHub({
       <div>
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold" data-testid="title">{t.name}</h1>
-          <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0 mt-1.5" style={{ background: statusChip.bg, color: statusChip.fg }} data-testid="status">{statusChip.label}</span>
+          <span className="flex items-center gap-2 shrink-0 mt-1">
+            {t.status !== 'draft' && <ShareMenu tournamentId={t.id} name={t.name} club={venue?.name ?? t.venue_slug} />}
+            <span className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full" style={{ background: statusChip.bg, color: statusChip.fg }} data-testid="status">{statusChip.label}</span>
+          </span>
         </div>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }} data-testid="subtitle">
           {formatName(t.format)} · {venue?.name ?? t.venue_slug} · {formatDate(t.date)}

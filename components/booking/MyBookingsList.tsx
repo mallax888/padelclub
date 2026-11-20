@@ -1,7 +1,7 @@
 'use client'
 
 import { clockAt, fmtClock, fmtClockRange, fmtUntil } from '@/lib/clock'
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { cn, formatDate, localDateStr } from '@/lib/utils'
@@ -10,6 +10,11 @@ import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/tim
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
 import { tierLabel } from '@/lib/plan-rules'
+import { DEFAULT_RULE, cancelOutcome, hoursWord, isFree, policyDetail, policySummary, type CancellationRule } from '@/lib/cancellation-rules'
+
+// Each club's cancellation rule, from the server page. A club that has not changed it keeps the default.
+const RulesCtx = createContext<Record<string, CancellationRule>>({})
+const useRule = (slug?: string | null): CancellationRule => useContext(RulesCtx)[slug ?? ''] ?? DEFAULT_RULE
 import type { Profile } from '@/types/database'
 import Link from 'next/link'
 import { VENUES } from '@/lib/venues'
@@ -390,11 +395,12 @@ function RegularCard({ series: r, bookings, onSkip, prepayOn = false }: { series
   const [showAll, setShowAll] = useState(false)
   const [payingAll, setPayingAll] = useState(false)
   const tz = timezoneForVenueSlug(r.venue_slug)
+  const rule = useRule(r.venue_slug)
   const nowMs = Date.now()
   const rows = weekRows(r, bookings.filter(b => b.regular_id === r.id) as any, tz, nowMs)
   const coming = upcomingWeeks(rows)
   const shown = showAll ? coming : coming.slice(0, 4)
-  const skippable = coming.filter(w => w.bookingId && (w.kind === 'paid' || w.kind === 'due') && canSkipWeek(w.date, r.start_time, tz, nowMs))
+  const skippable = coming.filter(w => w.bookingId && (w.kind === 'paid' || w.kind === 'due') && canSkipWeek(w.date, r.start_time, tz, nowMs, rule.freeHours))
   const club = VENUES.find(v => v.slug === r.venue_slug)?.name ?? r.venue_slug
   const startLabel = r.start_time.slice(0, 5)
   const endMin = Number(startLabel.slice(0, 2)) * 60 + Number(startLabel.slice(3, 5)) + r.duration_minutes
@@ -505,7 +511,7 @@ function RegularCard({ series: r, bookings, onSkip, prepayOn = false }: { series
                 </button>
               ))}
             </div>
-            <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-subtle)' }}>You can skip a week up to 24 hours before it starts, the same as cancelling. A week you have already paid for is refunded.</p>
+            <p className="text-xs mt-3 text-center" style={{ color: 'var(--text-subtle)' }}>You can skip a week up to {hoursWord(rule.freeHours)} before it starts, the same as cancelling. A week you have already paid for is refunded.</p>
             <button onClick={() => setSheet(false)} className="w-full mt-2 py-2.5 text-sm" style={{ color: 'var(--text-subtle)' }}>Close</button>
           </div>
         </div>
@@ -568,7 +574,7 @@ function WaitingCard({ waits }: { waits: WaitingFor[] }) {
   )
 }
 
-export default function MyBookingsList({
+function MyBookingsListInner({
   bookings,
   profile,
   splitRequests = [],
@@ -606,6 +612,7 @@ export default function MyBookingsList({
   plan?: { name: string; windowDays: number } | null
 }) {
   const router = useRouter()
+  const rules = useContext(RulesCtx)
   const searchParams = useSearchParams()
   // Stripe sends the booker back here with ?payment=success. That is the one
   // moment a reminder is obviously worth having, so the permission ask leans
@@ -621,6 +628,9 @@ export default function MyBookingsList({
   const now = new Date()
   const hasEnded = (date: string, endTime: string) => new Date(`${date}T${endTime}`) <= now
   const upcoming = bookings.filter(b => b.status !== 'cancelled' && !hasEnded(b.date, b.end_time))
+  // One rule line under the list: the clubs these bookings are at, when they all share a rule.
+  const footerRules = Array.from(new Set(upcoming.map(b => (b.courts as any)?.venue_slug as string | undefined))).map(slug => rules[slug ?? ''] ?? DEFAULT_RULE)
+  const footerRule = footerRules.length > 0 && footerRules.every(x => x.freeHours === footerRules[0].freeHours && x.after === footerRules[0].after) ? footerRules[0] : footerRules.length === 0 ? DEFAULT_RULE : null
   const past = bookings.filter(b => b.status === 'cancelled' || hasEnded(b.date, b.end_time))
   const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time))
   const hasUpcoming = upcoming.length > 0 || upcomingJoined.length > 0
@@ -660,11 +670,15 @@ export default function MyBookingsList({
     const othersNote = bookingSplits.some(s => s.status === 'paid')
       ? '\n\nEveryone else on this booking is refunded in full.'
       : ''
+    const rule = rules[(booking.courts as any)?.venue_slug] ?? DEFAULT_RULE
+    const outcome = cancelOutcome(hoursUntil, rule)
     const policy = !isPaid
       ? 'Cancel this booking?\n\nNo payment has been charged yet, so this will simply be cancelled with no charge or credit.' + othersNote
-      : hoursUntil >= 24
-      ? 'Cancel this booking?\n\nSince it is more than 24 hours away you will receive a FULL REFUND to your card within 5-10 business days.' + othersNote
-      : 'Cancel this booking?\n\nSince it is less than 24 hours away you will only receive 50% back (' + formatPrice(yourShare * 0.5, currency) + ') as account credit.' + othersNote
+      : outcome === 'full'
+      ? 'Cancel this booking?\n\nSince it is more than ' + hoursWord(rule.freeHours) + ' away you will receive a FULL REFUND to your card within 5-10 business days.' + othersNote
+      : outcome === 'half'
+      ? 'Cancel this booking?\n\nSince it is less than ' + hoursWord(rule.freeHours) + ' away you will only receive 50% back (' + formatPrice(yourShare * 0.5, currency) + ') as account credit.' + othersNote
+      : 'Cancel this booking?\n\nSince it is less than ' + hoursWord(rule.freeHours) + ' away the club keeps the payment, so nothing comes back.' + othersNote
     if (!confirm(policy)) return
     setCancelling(id)
     const res = await fetch('/api/cancel-booking', {
@@ -684,8 +698,8 @@ export default function MyBookingsList({
         ? 'Booking cancelled, but your refund could not be processed automatically — please contact support so we can sort it out.'
         : !data.isPaid
         ? 'Booking cancelled.' + othersRefunded
-        : data.hoursUntil < 24
-        ? 'Booking cancelled. ' + formatPrice(data.creditAmount, currency) + ' credit added to your account.' + othersRefunded
+        : !isFree(data.hoursUntil, rule)
+        ? (data.creditAmount > 0 ? 'Booking cancelled. ' + formatPrice(data.creditAmount, currency) + ' credit added to your account.' : "Booking cancelled. Under the club's cancellation rule the payment was kept.") + othersRefunded
         : 'Booking cancelled. Full refund will appear on your card in 5-10 business days.' + othersRefunded
       if (data.refundFailed) {
         toast.error(message, { duration: 8000 })
@@ -862,10 +876,10 @@ export default function MyBookingsList({
       {/* The line that matters stays visible; the rest opens on demand. */}
       <details className="mt-6 text-xs text-center" style={{ color: 'var(--text-muted)' }}>
         <summary className="cursor-pointer select-none" style={{ listStyle: 'none' }}>
-          Cancel 24 hrs+ before for a full refund · <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
+          {footerRule ? policySummary(footerRule) : 'Each club sets its own cancellation rule'} · <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>Full policy</span>
         </summary>
         <div className="mt-2 pt-2 leading-relaxed mx-auto max-w-md" style={{ borderTop: '1px solid var(--border)' }}>
-          Cancel under 24hrs and 50% comes back as account credit. Reschedule to a new date or time any time before the 24hr mark, no charge. Everyone else on a split booking is refunded in full, whatever the notice.
+          {footerRule ? policyDetail(footerRule) : 'The rule for each booking is shown when you cancel or reschedule it. Everyone else on a split booking is refunded in full, whatever the notice.'}
         </div>
       </details>
     </div>
@@ -885,8 +899,9 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   const now = new Date()
   const hoursUntil = (bookingDateTime.getTime() - now.getTime()) / (1000 * 60 * 60)
   const canCancel = !past && b.status === 'confirmed' && bookingDateTime > now
-  const canReschedule = canCancel && hoursUntil >= 24
-  const isLateCancel = hoursUntil < 24
+  const rule = useRule((b.courts as any)?.venue_slug)
+  const canReschedule = canCancel && isFree(hoursUntil, rule)
+  const isLateCancel = !isFree(hoursUntil, rule)
   const isPaid = !!b.stripe_payment_id
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
@@ -1095,7 +1110,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
               <button className="btn btn-danger btn-sm w-full sm:w-auto justify-center" onClick={onCancel} disabled={cancelling}>
                 {cancelling ? '…' : 'Cancel'}
               </button>
-              <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{!isPaid ? 'No charge' : isLateCancel ? '50% credit' : 'Full refund'}</span>
+              <span className="text-xs text-center" style={{ color: 'var(--text-muted)', fontWeight: 600 }}>{!isPaid ? 'No charge' : isLateCancel ? (rule.after === 'half' ? '50% credit' : 'No refund') : 'Full refund'}</span>
             </div>
           )}
         </div>
@@ -1199,4 +1214,10 @@ function JoinedGameRow({ game: j, currentUserId }: { game: JoinedGame; currentUs
       )}
     </div>
   )
+}
+
+// The page passes each club's cancellation rule; every row and the regular cards read theirs from here.
+export default function MyBookingsList(props: Parameters<typeof MyBookingsListInner>[0] & { rules?: Record<string, CancellationRule> }) {
+  const { rules = {}, ...rest } = props
+  return <RulesCtx.Provider value={rules}><MyBookingsListInner {...rest} /></RulesCtx.Provider>
 }

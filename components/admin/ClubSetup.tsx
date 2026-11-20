@@ -9,6 +9,8 @@ import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import MembershipPlans from '@/components/admin/MembershipPlans'
 import ClubPayouts from '@/components/admin/ClubPayouts'
 import BriefingSettings from '@/components/admin/BriefingSettings'
+import CancellationSettings from '@/components/admin/CancellationSettings'
+import type { CancellationRule } from '@/lib/cancellation-rules'
 import type { BriefingSettings as BriefingSettingsValue } from '@/lib/briefing'
 import type { Plan } from '@/lib/plan-rules'
 import type { PlanStats } from '@/lib/club-plans'
@@ -61,7 +63,7 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   )
 }
 
-export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null, stripeReturn = null, briefing = null }: {
+export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null, stripeReturn = null, cancellation = null, briefing = null }: {
   clubs: SetupClub[]
   venue: { slug: string; name: string; address: string; region: string }
   listed: Listed[]
@@ -77,6 +79,8 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   stripeReturn?: 'return' | 'refresh' | null
   // This club's morning briefing settings. Null when the 035 database change hasn't been run.
   briefing?: BriefingSettingsValue | null
+  // This club's cancellation rule. Null when the 037 database change hasn't been run.
+  cancellation?: CancellationRule | null
   // Where this club is on the map for "clubs near me". Null when the 031 database change hasn't been run.
 }) {
   const router = useRouter()
@@ -346,6 +350,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
             <div className="flex flex-col gap-4 min-w-0">
               {regularsCard}
               <BriefingSettings venueSlug={venue.slug} settings={briefing} />
+              <CancellationSettings venueSlug={venue.slug} rule={cancellation} />
               <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
             </div>
             <div className="lg:col-span-2 flex justify-end">
@@ -389,6 +394,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
       {!bento && regularsCard}
           {!bento && <>
             <BriefingSettings venueSlug={venue.slug} settings={briefing} />
+            <CancellationSettings venueSlug={venue.slug} rule={cancellation} />
             <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
             {memberships && <MembershipPlans venueSlug={venue.slug} currency={currency} plans={memberships.plans} stats={memberships.stats} examplePrice={memberships.examplePrice} />}
           </>}

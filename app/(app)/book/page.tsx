@@ -8,6 +8,8 @@ import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { localDateStr } from '@/lib/utils'
 import { loadOpenOffers } from '@/lib/offers'
 import { loadPlanRows } from '@/lib/club-plans'
+import { loadRules } from '@/lib/cancellation-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 export const metadata = { title: 'Book a court' }
 
@@ -107,7 +109,7 @@ export default async function BookPage({ searchParams }: { searchParams?: { [key
     <div>
       <BookingFlow
         header={<div className="mb-6"><h1 className="text-2xl font-semibold">Book a court</h1><p className="text-sm text-gray-500 mt-1">Select a date, court and time to make your booking</p></div>}
-        courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings}
+        courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings} rules={await loadRules(createAdminClient())}
         waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill}
         regularsOn={regularsOn} prepayOn={prepayOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} todayStr={localDateStr()} />
     </div>

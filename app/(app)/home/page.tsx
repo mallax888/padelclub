@@ -1,6 +1,9 @@
 import { keepClubAccountsOut } from '@/lib/club-guard'
 import { createServerClient } from '@/lib/supabase-server'
 import { loadOpenOffers } from '@/lib/offers'
+import { loadNotices } from '@/lib/announcements-server'
+import { ageLabel } from '@/lib/announcements'
+import { createAdminClient } from '@/lib/supabase-admin'
 import { VENUES } from '@/lib/venues'
 import { timezoneForVenueSlug } from '@/lib/timezone'
 import { rankForYou, type GameLite } from '@/lib/matchmaking'
@@ -81,5 +84,6 @@ export default async function HomePage() {
   const m = monthSummary(bookings, nowMs, localToday)
   const month = m.games > 0 || m.weeks > 0 || people > 0 ? { games: m.games, people, weeks: m.weeks } : null
   const first = ((profile as any)?.nickname ?? (profile as any)?.full_name ?? '').toString().split(' ')[0] || null
-  return <HomeView name={first} fullName={((profile as any)?.full_name ?? '').toString() || null} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} month={month} later={later as any} />
+  const notices = (await loadNotices(createAdminClient() as any, homeSlug, nowMs)).map(n => ({ id: n.id, club: VENUES.find(v => v.slug === n.venue_slug)?.name ?? 'your club', title: n.title, body: n.body, age: ageLabel(n.created_at, nowMs) }))
+  return <HomeView notices={notices} name={first} fullName={((profile as any)?.full_name ?? '').toString() || null} homeSlug={homeSlug} tz={tz} nowMs={nowMs} next={next as any} shares={shares} usual={usual} games={games as any} offer={offer as any} saved={saved} month={month} later={later as any} />
 }

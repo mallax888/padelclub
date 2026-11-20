@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { localDateStr } from '@/lib/utils'
 import { hoursUntilBooking } from '@/lib/timezone'
 import { notifyWaitlistForSlot } from '@/lib/waitlist'
+import { loadRule } from '@/lib/cancellation-server'
+import { hoursWord, isFree } from '@/lib/cancellation-rules'
 
 export async function POST(request: Request) {
   const supabase = createServerClient()
@@ -43,8 +45,9 @@ export async function POST(request: Request) {
     booking.start_time,
     (booking.courts as any)?.venue_slug,
   )
-  if (hoursUntil < 24) {
-    return NextResponse.json({ error: 'Reschedule is only available more than 24 hours before your booking.' }, { status: 400 })
+  const rule = await loadRule(createAdminClient(), (booking.courts as any)?.venue_slug)
+  if (!isFree(hoursUntil, rule)) {
+    return NextResponse.json({ error: `Reschedule is only available more than ${hoursWord(rule.freeHours)} before your booking.` }, { status: 400 })
   }
 
   const [h, m] = newStartTime.split(':').map(Number)

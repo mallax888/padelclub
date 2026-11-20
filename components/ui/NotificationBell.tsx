@@ -148,6 +148,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   const destinationFor = (type: string) =>
     type === 'waitlist_open' ? '/book?wl=1'
     : type === 'court_offer' ? '/book?offer=1'
+    : type === 'club_announcement' ? '/home'
     : type === 'regular_created' || type === 'regular_payment' || type === 'booking_released' || type === 'share_cover_due' || type === 'share_covered' ? '/mybookings'
     : '/find-a-game'
 
@@ -163,6 +164,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     if (type === 'share_cover_due') return '💳'
     if (type === 'share_covered') return '🤝'
     if (type === 'court_offer') return '🏷️'
+    if (type === 'club_announcement') return '📣'
     return '🔔'
   }
 
