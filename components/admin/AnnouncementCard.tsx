@@ -46,8 +46,8 @@ export default function AnnouncementCard({ venueSlug, venueName }: { venueSlug: 
   const Switch = ({ on, label, onClick, id }: { on: boolean; label: string; onClick: () => void; id: string }) => (
     <button type="button" role="switch" aria-checked={on} onClick={onClick} data-testid={id} className="flex items-center justify-between w-full py-2.5 text-sm" style={{ color: 'var(--text-primary)' }}>
       <span>{label}</span>
-      <span className="relative rounded-full shrink-0" style={{ width: 46, height: 26, background: on ? '#d4f53c' : 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-        <span aria-hidden className="absolute rounded-full" style={{ top: 2, left: on ? 22 : 2, width: 20, height: 20, background: on ? '#17240a' : 'var(--text-subtle)', transition: 'left .15s' }} />
+      <span className="relative rounded-full shrink-0" style={{ width: 46, height: 26, background: on ? '#1f9a5f' : 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+        <span aria-hidden className="absolute rounded-full" style={{ top: 2, left: on ? 22 : 2, width: 20, height: 20, background: on ? '#ffffff' : 'var(--text-subtle)', transition: 'left .15s' }} />
       </span>
     </button>
   )

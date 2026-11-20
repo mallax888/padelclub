@@ -1,6 +1,7 @@
 'use client'
 
 import { fmtClock } from '@/lib/clock'
+import { GO } from '@/lib/accent'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import OfferSheet from '@/components/admin/OfferSheet'
@@ -28,7 +29,7 @@ function Shell({ tone, mark, title, text, children, done, testid }: { tone: 'red
 }
 const Action = ({ children, onClick, testid, hero }: { children: React.ReactNode; onClick: () => void; testid: string; hero?: boolean }) => (
   <button type="button" onClick={onClick} data-testid={testid} className={hero ? 'shrink-0 rounded-[12px] px-4 text-[13px] font-extrabold' : 'shrink-0 rounded-[10px] px-3.5 text-[12.5px] font-extrabold'}
-    style={hero ? { minHeight: 42, background: '#d4f53c', color: '#17240a' } : { minHeight: 38, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{children}</button>
+    style={hero ? { minHeight: 42, ...GO } : { minHeight: 38, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{children}</button>
 )
 
 function Dialog({ label, onClose, children }: { label: string; onClose: () => void; children: React.ReactNode }) {

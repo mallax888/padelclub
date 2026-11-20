@@ -1,6 +1,7 @@
 'use client'
 
 import { fmtClock, fmtClockRange } from '@/lib/clock'
+import { GO } from '@/lib/accent'
 import CardHeading from '@/components/ui/CardHeading'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -21,8 +22,7 @@ const MAX_ROWS = 6
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
 const eyebrow = { letterSpacing: '0.14em', color: 'var(--text-subtle)' } as const
 
-// The same lime as the Fill them button: the colour of money and of the next thing to do.
-const LIME = { background: '#d4f53c', color: '#17240a' } as const
+const LIME = GO
 const cardEyebrow = { fontSize: 11, letterSpacing: '0.14em', fontWeight: 800, color: 'var(--text-subtle)' } as const
 const bigTotal = { fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' } as const
 const WK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
@@ -119,7 +119,7 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
           <div key={r.id} className="flex items-center gap-3.5 py-3" style={{ borderTop: '1px solid var(--border)' }} data-testid="overdue-row">
             <DateTile date={r.date} month />
             <div className="min-w-0 flex-1">
-              <div className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{r.playerName} <span className="font-extrabold whitespace-nowrap" style={{ color: 'var(--ball-text)' }}>· {formatPrice(r.amount, currency)}</span></div>
+              <div className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{r.playerName} <span className="font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>· {formatPrice(r.amount, currency)}</span></div>
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {r.courtName} · {formatDate(r.date)} {fmtClock(r.startTime)}{r.organiserName ? ` · organised by ${r.organiserName}` : ''}
               </div>
@@ -168,7 +168,7 @@ function WaitlistCard({ demand }: { demand: WaitDemand }) {
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{demand.total === 1 ? 'wait joined' : 'waits joined'}</div>
             </div>
             <div>
-              <div className="text-3xl font-bold" style={{ ...display, color: 'var(--ball-text)' }}>{demand.bookedAfter}</div>
+              <div className="text-3xl font-bold" style={{ ...display, color: 'var(--go-text)' }}>{demand.bookedAfter}</div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>booked after being told</div>
             </div>
           </div>
@@ -178,7 +178,7 @@ function WaitlistCard({ demand }: { demand: WaitDemand }) {
               <li key={`${s.weekday}-${s.time}`} className="flex items-center gap-3 text-sm">
                 <span className="w-32 shrink-0" style={{ color: 'var(--text-primary)' }}>{WEEKDAY_NAMES[s.weekday]} {fmtClock(s.time)}</span>
                 <span className="h-2 rounded-full flex-1" style={{ background: 'var(--bg-raised)' }}>
-                  <span className="block h-2 rounded-full" style={{ width: `${Math.round((s.waits / max) * 100)}%`, background: '#d4f53c' }} />
+                  <span className="block h-2 rounded-full" style={{ width: `${Math.round((s.waits / max) * 100)}%`, background: '#1f9a5f' }} />
                 </span>
                 <span className="w-16 text-right tabular-nums" style={{ color: 'var(--text-muted)' }}>{s.waits} {s.waits === 1 ? 'person' : 'people'}</span>
               </li>
@@ -228,7 +228,7 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatDate(g.date)} · {g.fillPct}% full · {g.empty} of {g.courts} {g.courts === 1 ? 'court' : 'courts'} free · {g.kind === 'peak' ? 'peak' : 'quiet'}</div>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0">
-              <div className="text-xs font-extrabold whitespace-nowrap" style={{ color: 'var(--ball-text)' }}>up to {formatPrice(g.potential, currency)}</div>
+              <div className="text-right leading-tight"><div className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>up to</div><div className="text-[17px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{formatPrice(g.potential, currency)}</div></div>
               {onFill && (
                 <button type="button" onClick={() => onFill({ date: g.date, from: g.from, to: g.to })}
                   className="text-xs font-extrabold px-3.5 py-2 rounded-full" style={LIME}>Fill it</button>
@@ -276,7 +276,7 @@ function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
               <span><b style={{ color: 'var(--text-primary)' }}>{o.results.courtsBooked}</b> {o.results.courtsBooked === 1 ? 'court' : 'courts'} booked</span>
-              <span>Earned <b style={{ color: 'var(--ball-text)' }}>{formatPrice(o.results.earned, currency)}</b></span>
+              <span>Earned <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.earned, currency)}</b></span>
               <span>Given away <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.givenAway, currency)}</b></span>
               <span><b style={{ color: 'var(--text-primary)' }}>{o.results.newPlayers}</b> new · <b style={{ color: 'var(--text-primary)' }}>{o.results.returning}</b> returning</span>
             </div>

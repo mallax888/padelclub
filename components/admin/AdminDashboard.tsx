@@ -1287,8 +1287,8 @@ function BoardView({
                         if (dragged && dragged.date === date) return // dropped back on its own day, nothing to do
                         moveBooking(id, { newDate: date })
                       }}
-                      style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : isToday ? 'inset 0 0 0 2px #d4f53c' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
-                      <div style={{ marginBottom: 3 }}><span style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#17240a' : 'var(--text-primary)', background: isToday ? '#d4f53c' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span></div>
+                      style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
+                      <div style={{ marginBottom: 3 }}><span style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#ffffff' : 'var(--text-primary)', background: isToday ? 'var(--brand-primary)' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span></div>
                       {show.map((b: any) => {
                         const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
                         return (
@@ -1330,9 +1330,9 @@ function BoardView({
                   <tr>
                     <th className="px-3 py-2 text-left whitespace-nowrap" style={{ width: 110, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                     {weekDates.map(d => (
-                      <th key={d} className="px-2 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, letterSpacing: 0.3, color: d === today ? '#17240a' : 'var(--text-primary)', background: d === today ? '#d4f53c' : 'var(--bg-raised)', opacity: d === today ? 1 : d < today ? 0.55 : 0.8, fontWeight: d === today ? 800 : 700, borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}
+                      <th key={d} className="px-2 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, letterSpacing: 0.3, color: 'var(--text-primary)', background: 'var(--bg-raised)', opacity: d === today ? 1 : d < today ? 0.55 : 0.8, fontWeight: d === today ? 800 : 700, borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}
                           data-today={d === today ? 'true' : undefined}>
-                        {d === today ? `${formatDateCompact(d)} · TODAY` : formatDateCompact(d)}
+                        {d === today ? <span data-testid="today-date" style={{ display: 'inline-block', background: 'var(--brand-primary)', color: '#ffffff', borderRadius: 99, padding: '3px 12px' }}>{formatDateCompact(d)}</span> : formatDateCompact(d)}
                       </th>
                     ))}
                   </tr>
@@ -1347,7 +1347,6 @@ function BoardView({
                         const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
                         const show = dayBookings.slice(0, 2)
                         const extra = dayBookings.length - show.length
-                        const isToday = d === today
                         return (
                           <td key={d} className="align-top"
                             // Day and Month both let you drag a booking to a new
@@ -1373,7 +1372,6 @@ function BoardView({
                             background: dragOverCell === `${court.id}-${d}` && d >= today
                               ? 'var(--brand-primary-muted)'
                               : 'var(--bg-surface)',
-                            boxShadow: isToday ? 'inset 0 0 0 2px #d4f53c' : 'none',
                             borderBottom: rowIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)',
                             borderRight: colIdx === weekDates.length - 1 ? 'none' : '1px solid var(--border)',
                           }}>
@@ -1570,7 +1568,7 @@ function BoardView({
 
                   return TIME_ROWS.map((t, rowIdx) => (
                     <tr key={t}>
-                      <td className="px-2 font-medium whitespace-nowrap align-top" data-now={boardDate === today && nowHour === parseInt(t) ? 'true' : undefined} style={{ paddingTop: 6, height: DAY_ROW_HEIGHT, fontSize: 11, fontWeight: boardDate === today && nowHour === parseInt(t) ? 800 : undefined, background: boardDate === today && nowHour === parseInt(t) ? '#d4f53c' : 'var(--bg-surface)', color: boardDate === today && nowHour === parseInt(t) ? '#17240a' : 'var(--text-muted)', borderBottom: rowIdx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
+                      <td className="px-2 font-medium whitespace-nowrap align-top" data-now={boardDate === today && nowHour === parseInt(t) ? 'true' : undefined} style={{ paddingTop: 6, height: DAY_ROW_HEIGHT, fontSize: 11, fontWeight: boardDate === today && nowHour === parseInt(t) ? 800 : undefined, background: boardDate === today && nowHour === parseInt(t) ? 'var(--brand-primary)' : 'var(--bg-surface)', color: boardDate === today && nowHour === parseInt(t) ? '#ffffff' : 'var(--text-muted)', borderBottom: rowIdx === TIME_ROWS.length - 1 ? 'none' : '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
                         {fmtHour(t)}
                       </td>
                       {venueCourts.map((court: any, colIdx: number) => {
