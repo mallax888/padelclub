@@ -1,34 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import BookingTicket from '@/components/booking/BookingTicket'
 
 // "You're booked!": shown on My bookings when Stripe sends the player back after paying. The ball drops, squashes, bounces
 // twice more, and then the tick draws itself. No confetti and no sound. With reduced motion the ball just sits there, ticked.
-// There is no Done button: the ticket stays up long enough to read (about two seconds after it lands), then the whole thing is
-// dealt away to the left and My bookings slides up into its place. Tapping anywhere does that straight away.
-const HOLD_MS = 4000
-const HOLD_REDUCED_MS = 3500
 export default function BookedCelebration({ firstName, ticket, onDone }: {
   firstName: string
   ticket: { courtName: string; dateLabel: string; time: string; endTime: string; lengthLabel: string; venueName: string; you: string; price: string } | null
   onDone: () => void
 }) {
-  const [leaving, setLeaving] = useState(false)
-  const done = useRef(onDone); done.current = onDone
-  const [reduced, setReduced] = useState(false)
-  useEffect(() => { setReduced(!!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) }, [])
-  const leave = () => setLeaving(true)
-  useEffect(() => { const t = setTimeout(leave, reduced ? HOLD_REDUCED_MS : HOLD_MS); return () => clearTimeout(t) }, [reduced])
-  useEffect(() => {
-    if (!leaving) return
-    const t = setTimeout(() => done.current(), reduced ? 220 : 950)
-    return () => clearTimeout(t)
-  }, [leaving, reduced])
   return (
-    <div style={{ display: 'grid', gridTemplateRows: leaving && !reduced ? '0fr' : '1fr', transition: reduced ? 'none' : 'grid-template-rows .45s ease .4s', overflow: 'hidden' }}>
-    <section data-testid="booked-celebration" aria-label="Booking confirmed" className="relative flex flex-col items-center text-center mb-5 min-h-0"
-      style={{ transform: leaving && !reduced ? 'translateX(-115%) rotate(-2deg)' : 'none', opacity: leaving ? 0 : 1, transition: reduced ? 'opacity .2s' : 'transform .6s cubic-bezier(.55,0,.8,.3), opacity .5s ease .1s' }}>
+    <section data-testid="booked-celebration" aria-label="Booking confirmed" className="flex flex-col items-center text-center mb-5">
       <style>{`
         @keyframes pc-drop{0%{transform:translateY(-120px) scale(1,1);opacity:0;animation-timing-function:ease-in}6%{opacity:1}26%{transform:translateY(0) scale(1,1)}30%{transform:translateY(6px) scale(1.22,.74);animation-timing-function:ease-out}38%{transform:translateY(-46px) scale(.95,1.06);animation-timing-function:ease-in}48%{transform:translateY(0) scale(1.1,.88)}53%{transform:translateY(0) scale(1,1);animation-timing-function:ease-out}60%{transform:translateY(-16px) scale(.99,1.02);animation-timing-function:ease-in}68%,100%{transform:translateY(0) scale(1,1)}}
         @keyframes pc-shadow{0%{transform:scaleX(.3);opacity:.05}26%{transform:scaleX(1);opacity:.35}38%{transform:scaleX(.7);opacity:.2}48%{transform:scaleX(1);opacity:.35}60%{transform:scaleX(.88);opacity:.28}68%,100%{transform:scaleX(1);opacity:.32}}
@@ -62,8 +44,7 @@ export default function BookedCelebration({ firstName, ticket, onDone }: {
             venueName={ticket.venueName} you={ticket.you} friends={[]} priceLabel="You paid" price={ticket.price} />
         </div>
       )}
-      <button type="button" onClick={leave} data-testid="booked-done" aria-label="Continue to My bookings" className="absolute inset-0 w-full h-full" style={{ background: 'transparent' }} />
+      <button type="button" onClick={onDone} data-testid="booked-done" className="btn-main mt-4 w-full">Done</button>
     </section>
-    </div>
   )
 }

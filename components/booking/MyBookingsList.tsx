@@ -639,7 +639,6 @@ function MyBookingsListInner({
   const paidBooking = searchParams?.get('payment') === 'success'
     ? [...upcoming].sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')))[0] ?? null
     : null
-  const [justBooked, setJustBooked] = useState<string | null>(null)
   const celebrate = searchParams?.get('payment') === 'success' && !!paidBooking
   // The most recent game actually played, for the "Same again?" card. A
   // cancelled booking was never a game, so it isn't a court to offer back.
@@ -785,7 +784,7 @@ function MyBookingsListInner({
         const splits = outgoingSplits.filter(x => x.booking_id === paidBooking.id)
         const share = bookerShareCents(paidBooking.price_nzd, splits.length + 1) / 100
         return (
-          <BookedCelebration firstName={String(profile?.full_name ?? '').split(' ')[0]} onDone={() => { setJustBooked(paidBooking.id); router.replace('/mybookings'); setTimeout(() => setJustBooked(null), 4500) }}
+          <BookedCelebration firstName={String(profile?.full_name ?? '').split(' ')[0]} onDone={() => router.replace('/mybookings')}
             ticket={{ courtName: paidBooking.courts?.name ?? 'Court', dateLabel: formatDate(paidBooking.date), time: fmtClock(paidBooking.start_time), endTime: fmtUntil(paidBooking.start_time, paidBooking.end_time),
               lengthLabel: durationLabel(paidBooking.duration_minutes), venueName: VENUES.find(v => v.slug === venueSlug)?.name ?? '', you: profile?.full_name ?? 'You', price: formatPrice(share, currency) }} />
         )
@@ -841,7 +840,7 @@ function MyBookingsListInner({
               const today = localDateStr(now)
               const items = [
                 ...upcoming.map((b, i) => ({ key: b.id, date: b.date, time: b.start_time, node: (
-                  <JustBooked key={b.id} on={justBooked === b.id}><BookingRow booking={b} isNext={i === 0} collapsible onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} /></JustBooked>
+                  <BookingRow booking={b} isNext={i === 0} collapsible onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
                 ) })),
                 ...upcomingJoined.map(j => ({ key: j.id, date: j.bookings!.date, time: j.bookings!.start_time, node: <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} /> })),
               ].sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))
@@ -884,17 +883,6 @@ function MyBookingsListInner({
           {footerRule ? policyDetail(footerRule) : 'The rule for each booking is shown when you cancel or reschedule it. Everyone else on a split booking is refunded in full, whatever the notice.'}
         </div>
       </details>
-    </div>
-  )
-}
-
-// A green glow and a "Just booked" tag on the booking the player has just paid for, for a few seconds after the celebration slides away.
-function JustBooked({ on, children }: { on: boolean; children: React.ReactNode }) {
-  if (!on) return <>{children}</>
-  return (
-    <div className="relative rounded-[20px] pc-justbooked" data-testid="just-booked">
-      {children}
-      <span className="absolute pc-justbooked-chip text-[10px] font-extrabold uppercase rounded-full px-2.5 py-1" style={{ top: -8, right: 14, letterSpacing: '0.06em', background: '#1f9a5f', color: '#ffffff' }}>Just booked</span>
     </div>
   )
 }
