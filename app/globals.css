@@ -402,3 +402,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* the "Yesterday" line when it sits inside the blue card at the top of Today: same words, light colours */
 .yesterday-hero{--text-primary:#ffffff;--text-muted:#cfe0ff;--text-subtle:#cfe0ff;--brand-crimson:#ffc2c2;--success:#a6f3cb}
+
+/* The booking you have just paid for: a green glow that settles after a few seconds. */
+@keyframes pc-glow { 0%, 55% { box-shadow: 0 0 0 2px #4be09a, 0 0 22px #4be09a73 } 100% { box-shadow: 0 0 0 2px #4be09a00, 0 0 0 #4be09a00 } }
+@keyframes pc-chip { 0%, 80% { opacity: 1 } 100% { opacity: 0 } }
+.pc-justbooked { animation: pc-glow 4.5s ease-out both }
+.pc-justbooked-chip { animation: pc-chip 4.5s ease-out both }
+@media (prefers-reduced-motion: reduce) { .pc-justbooked, .pc-justbooked-chip { animation: none } }

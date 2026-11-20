@@ -27,7 +27,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     .single()
 
   if (!profile || !['staff','admin'].includes((profile as any).role)) {
-    redirect('/book')
+    redirect('/')
   }
 
   // Front desk can open Board, Bookings and Members; the money and settings tabs

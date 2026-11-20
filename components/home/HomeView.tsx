@@ -70,7 +70,7 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
         </div>
         <div className="hidden md:flex items-center gap-2.5 shrink-0">
           <Link href="/book" data-testid="book-court" className="rounded-full px-5 text-[14px] font-black uppercase inline-flex items-center" style={{ minHeight: 44, letterSpacing: '0.04em', background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>Book a court →</Link>
-          <Link href="/find-a-game" className="rounded-full px-5 text-[14px] font-extrabold inline-flex items-center" style={{ minHeight: 44, ...card, color: 'var(--text-primary)' }}>Open play →</Link>
+          <Link href="/find-a-game" data-testid="open-play-link" className="rounded-full px-5 text-[14px] font-black uppercase inline-flex items-center" style={{ minHeight: 44, letterSpacing: '0.04em', background: 'transparent', border: '2px solid var(--brand-primary)', color: 'var(--brand-primary-text)' }}>Open play →</Link>
         </div>
       </div>
 
@@ -151,9 +151,9 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
             <div aria-hidden className="absolute inset-0 pointer-events-none" style={{ background: 'repeating-linear-gradient(90deg, #ffffff06 0 2px, transparent 2px 28px)' }} />
             <div className="relative flex flex-wrap items-center gap-6 p-6 xl:px-7">
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2.5 mb-4">
-                  <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: SOFT }}>Kick-off in · {dateParts(next.date).short} · {next.courts?.name ?? 'Court'}</span>
-                  <span className="text-[11.5px] font-black rounded-full px-3 py-1 whitespace-nowrap" style={{ background: BALL, color: INK }}>{fmtClock(next.start_time)} – {fmtUntil(next.start_time, next.end_time ?? next.start_time)}{next.duration_minutes ? ` · ${next.duration_minutes} min` : ''}</span>
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2 mb-4 w-0 min-w-full" data-testid="kickoff-row">
+                  <span className="text-[14px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: SOFT }}>Kick-off in · {dateParts(next.date).short} · {next.courts?.name ?? 'Court'}</span>
+                  <span className="text-[14px] font-black rounded-full px-3.5 py-1.5 whitespace-nowrap" style={{ background: BALL, color: INK }}>{fmtClock(next.start_time)} – {fmtUntil(next.start_time, next.end_time ?? next.start_time)}{next.duration_minutes ? ` · ${next.duration_minutes} min` : ''}</span>
                 </div>
                 <GameCountdown startMs={startsAtMs(next)} nowMs={nowMs} />
                 <div className="flex flex-wrap gap-2 mt-4">
@@ -261,7 +261,7 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
                   const owes = !b.stripe_payment_id && !!b.pay_by
                   return (
                     <Link key={b.id} href="/mybookings" className="flex items-center gap-4 px-4 py-3.5" style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
-                      <span className="shrink-0 w-[150px] text-[13.5px] font-black whitespace-nowrap uppercase" style={{ color: 'var(--brand-primary-text)', fontFamily: "'Courier New', ui-monospace, monospace" }}>{dateParts(b.date).short}</span>
+                      <span className="shrink-0 w-[150px]"><span data-testid="coming-up-date" className="inline-block rounded-full px-3.5 py-1 text-[14px] font-extrabold whitespace-nowrap" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{dateParts(b.date).short}</span></span>
                       <span className="min-w-0 flex-1 truncate text-[14.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
                         {b.courts?.name ?? 'Court'} <span className="font-semibold" style={{ color: 'var(--text-subtle)' }}>· {b.regular_id ? 'Every week · ' : ''}{fmtClock(b.start_time)}{v && v.slug !== homeSlug ? ` · ${v.name}` : ''}</span>
                       </span>

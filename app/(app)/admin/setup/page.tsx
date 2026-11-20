@@ -20,7 +20,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function SetupPage({ searchParams }: { searchParams?: { venue?: string; stripe?: string } }) {
   const caller = await loadTeamCaller()
-  if (!caller || !isManagerRole(caller.role)) redirect('/book')
+  if (!caller || !isManagerRole(caller.role)) redirect('/')
   // Club settings are an owner's job: front desk is sent back to Today.
   if (!isOwnerRole(caller.role)) redirect('/admin/today')
 

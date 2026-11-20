@@ -38,7 +38,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
     .select('role, nickname, full_name, home_venue_slug, managed_venue_slug, managed_country')
     .eq('id', session!.user.id)
     .single()
-  if (!profile || !isManagerRole((profile as any).role)) redirect('/book')
+  if (!profile || !isManagerRole((profile as any).role)) redirect('/')
 
   // Same scoping as the dashboard: a club manager sees their own club, a country
   // manager their country's clubs, an unscoped admin everything.
