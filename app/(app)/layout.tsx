@@ -1,4 +1,5 @@
 ﻿import { redirect } from 'next/navigation'
+import LaunchHome from '@/components/ui/LaunchHome'
 import { createServerClient } from '@/lib/supabase-server'
 import { cookies } from 'next/headers'
 import Navbar from '@/components/ui/Navbar'
@@ -29,6 +30,7 @@ export default async function AppLayout({
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
+      <LaunchHome />
       <Navbar viewMode={resolveViewMode((profile as any)?.role, cookies().get(VIEW_COOKIE)?.value, splitOn())} isOwner={isOwnerRole((profile as any)?.role)} canSwitchView={!splitOn()} isPlatform={(profile as any)?.role === 'admin' && !(profile as any)?.managed_venue_slug && !(profile as any)?.managed_country} />
       {/* md:ml offsets the fixed desktop sidebar; the inner wrapper keeps the
           content width, centred on every screen so no page sits to one side, however wide it is. */}
