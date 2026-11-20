@@ -1287,7 +1287,7 @@ function BoardView({
                         if (dragged && dragged.date === date) return // dropped back on its own day, nothing to do
                         moveBooking(id, { newDate: date })
                       }}
-                      style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : isToday ? 'rgba(212,245,60,0.09)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : isToday ? 'inset 0 0 0 2px #d4f53c' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
+                      style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : isToday ? 'inset 0 0 0 2px #d4f53c' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
                       <div style={{ marginBottom: 3 }}><span style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#17240a' : 'var(--text-primary)', background: isToday ? '#d4f53c' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span></div>
                       {show.map((b: any) => {
                         const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
@@ -1302,7 +1302,7 @@ function BoardView({
                             }}
                             onDragEnd={() => { setDraggedId(null); setDragOverDate(null) }}
                             title={!isPast ? 'Drag to another day to reschedule' : undefined}
-                            style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: isPast ? 'rgba(170,170,170,0.3)' : color, color: isPast ? 'rgba(255,255,255,0.8)' : '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isPast ? 'line-through' : 'none', cursor: isPast ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                            style={{ fontSize: 11, fontWeight: 600, padding: '2px 5px', borderRadius: 3, marginBottom: 2, background: isPast ? 'rgba(170,170,170,0.3)' : color, color: isPast ? 'rgba(255,255,255,0.8)' : '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: isPast ? 'line-through' : 'none', cursor: isPast ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : isToday ? 1 : isPast ? 0.4 : 0.55 }}>
                             {fmtClock(b.start_time)} · {b.profiles?.full_name?.split(' ')[0] ?? '?'}
                           </div>
                         )
@@ -1330,8 +1330,9 @@ function BoardView({
                   <tr>
                     <th className="px-3 py-2 text-left whitespace-nowrap" style={{ width: 110, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Court</th>
                     {weekDates.map(d => (
-                      <th key={d} className="px-2 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.3, color: d === today ? 'var(--ball-text)' : 'var(--text-primary)', background: d === today ? 'rgba(212,245,60,0.09)' : 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>
-                        {formatDateCompact(d)}
+                      <th key={d} className="px-2 py-2 whitespace-nowrap text-center" style={{ fontSize: 11, letterSpacing: 0.3, color: d === today ? '#17240a' : 'var(--text-primary)', background: d === today ? '#d4f53c' : 'var(--bg-raised)', opacity: d === today ? 1 : d < today ? 0.55 : 0.8, fontWeight: d === today ? 800 : 700, borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}
+                          data-today={d === today ? 'true' : undefined}>
+                        {d === today ? `${formatDateCompact(d)} · TODAY` : formatDateCompact(d)}
                       </th>
                     ))}
                   </tr>
@@ -1371,7 +1372,7 @@ function BoardView({
                             padding: 4,
                             background: dragOverCell === `${court.id}-${d}` && d >= today
                               ? 'var(--brand-primary-muted)'
-                              : isToday ? 'rgba(212,245,60,0.09)' : 'var(--bg-surface)',
+                              : 'var(--bg-surface)',
                             boxShadow: isToday ? 'inset 0 0 0 2px #d4f53c' : 'none',
                             borderBottom: rowIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)',
                             borderRight: colIdx === weekDates.length - 1 ? 'none' : '1px solid var(--border)',
@@ -1387,7 +1388,7 @@ function BoardView({
                                     setDraggedId(b.id)
                                   }}
                                   onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
-                                  style={{ fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 4, marginBottom: 3, background: appearance.background, color: appearance.color, cursor: b.status === 'blocked' ? 'default' : d >= today ? 'grab' : 'pointer', opacity: draggedId === b.id ? 0.4 : 1 }}
+                                  style={{ fontSize: 11, fontWeight: 600, padding: '3px 6px', borderRadius: 4, marginBottom: 3, background: appearance.background, color: appearance.color, cursor: b.status === 'blocked' ? 'default' : d >= today ? 'grab' : 'pointer', opacity: draggedId === b.id ? 0.4 : d === today ? 1 : d < today ? 0.4 : 0.55 }}
                                   title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to another day or court'}
                                   onClick={() => {
                                     if (b.status === 'blocked') return
