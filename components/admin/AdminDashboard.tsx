@@ -459,7 +459,7 @@ export default function AdminDashboard({
   })
 
   const cancelBooking = async (id: string) => {
-    if (!confirm('Cancel this booking? If it was paid, the member will be refunded per the standard cancellation policy (full refund 24h+ out, 50% credit under 24h).')) return
+    if (!confirm('Cancel this booking? If it was paid, the member will be refunded in full, because the club is cancelling.')) return
     const res = await fetch('/api/admin/cancel-booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

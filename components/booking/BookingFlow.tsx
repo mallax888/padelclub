@@ -23,6 +23,7 @@ import type { Court, Profile } from '@/types/database'
 import { VENUES, COUNTRIES, type Venue } from '@/lib/venues'
 import { playSelectionSound, playBackSound } from '@/lib/sounds'
 import { defaultRange } from '@/lib/matchmaking'
+import { DEFAULT_RULE, bookingRuleLines, type CancellationRule } from '@/lib/cancellation-rules'
 import LevelRangePicker from '@/components/booking/LevelRangePicker'
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
@@ -110,6 +111,7 @@ export default function BookingFlow({
     waitPrefill = null,
     regularsOn = false,
     prepayOn = false,
+    rules = {},
     header = null,
     regularRules = {},
     offers = [],
@@ -130,6 +132,8 @@ export default function BookingFlow({
     waits?: MyWait[]
     waitlistOn?: boolean
     waitPrefill?: { venueSlug: string; date: string; durationMinutes: number } | null
+    // Each club's cancellation rule: shown on the confirm screen before anyone pays.
+    rules?: Record<string, CancellationRule>
     // Whether weekly regulars are switched on in the database, and each club's own
     // rules for them (a club can turn them off or cap how many courts they hold at peak).
     regularsOn?: boolean
@@ -867,6 +871,19 @@ export default function BookingFlow({
         onEdit={() => { setStep('time'); playBackSound() }} onChangeVenue={changeWhere}
         onChangePlayers={() => { setConfirmStage('players'); playBackSound() }} onChangeWeekly={() => { setConfirmStage('regular'); playBackSound() }} />,
     )
+    if (venue) {
+      const tz = timezoneForVenueSlug(venue.slug)
+      const lines = bookingRuleLines(rules[venue.slug] ?? DEFAULT_RULE, venueInstant(date, `${time.slice(0, 5)}:00`, tz).getTime(), Date.now(), tz)
+      answeredRows.push(
+        <div key="cancel-rule" data-testid="cancel-rule" className="rounded-[20px] p-4 flex items-start gap-3" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          <span aria-hidden className="inline-flex items-center justify-center rounded-full text-sm font-black shrink-0" style={{ width: 28, height: 28, background: 'var(--brand-green-muted)', color: 'var(--brand-green)' }}>✓</span>
+          <span className="min-w-0">
+            <span className="block text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{lines.title}</span>
+            <span className="block text-[12.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{lines.note}</span>
+          </span>
+        </div>,
+      )
+    }
   }
   const promptNo = groups.indexOf(groupNow) + 1
 

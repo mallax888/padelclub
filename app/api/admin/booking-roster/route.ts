@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { bookerShareCents } from '@/lib/share-rules'
+import { hoursUntilBooking } from '@/lib/timezone'
 
 export async function GET(request: Request) {
   const supabase = createServerClient()
@@ -38,6 +39,15 @@ export async function GET(request: Request) {
     .maybeSingle()
 
   const organizerName = (booking as any).profiles?.nickname ?? (booking as any).profiles?.full_name ?? '—'
+
+  // No-show: only offered once the booking has started, and only when the 037 database change has been
+  // run (until then this query errors and the roster simply has no no-show control).
+  const { data: ns, error: nsError } = await supabase.from('bookings').select('no_show_at, date, start_time, courts(venue_slug)').eq('id', bookingId).maybeSingle()
+  const noShow = {
+    available: !nsError && (booking as any).status === 'confirmed',
+    at: (ns as any)?.no_show_at ?? null,
+    started: !!ns && hoursUntilBooking((ns as any).date, (ns as any).start_time, (ns as any).courts?.venue_slug) <= 0,
+  }
 
   // Who previously held each seat, keyed by row id. The replaced_* columns
   // arrive with 019_seat_replacement_history.sql; until that's been run this
@@ -93,7 +103,7 @@ export async function GET(request: Request) {
         })),
     ]
 
-    return NextResponse.json({ type: 'open_play', players, priceNzd: booking.price_nzd })
+    return NextResponse.json({ type: 'open_play', players, priceNzd: booking.price_nzd, noShow })
   }
 
   const { data: splits } = await supabase
@@ -128,5 +138,5 @@ export async function GET(request: Request) {
     })),
   ]
 
-  return NextResponse.json({ type: 'split', players, priceNzd: booking.price_nzd, paidTotal })
+  return NextResponse.json({ type: 'split', players, priceNzd: booking.price_nzd, paidTotal, noShow })
 }

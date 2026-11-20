@@ -3,6 +3,8 @@ import { prepayReady } from '@/lib/regulars'
 import { createServerClient } from '@/lib/supabase-server'
 import Link from 'next/link'
 import MyBookingsList from '@/components/booking/MyBookingsList'
+import { loadRules } from '@/lib/cancellation-server'
+import { createAdminClient } from '@/lib/supabase-admin'
 import { stripeDashboardBase } from '@/lib/stripe'
 import { loadVenueSettings } from '@/lib/venue-settings'
 import { venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
@@ -88,7 +90,7 @@ export default async function MyBookingsPage() {
         </div>
         <Link href="/book" data-testid="new-booking" aria-label="New booking" className="shrink-0 rounded-full px-4 text-[13px] font-extrabold inline-flex items-center" style={{ minHeight: 40, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>+ New</Link>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} rules={await loadRules(createAdminClient())} />
     </div>
   )
 }

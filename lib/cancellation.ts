@@ -5,6 +5,8 @@ import { hoursUntilBooking } from '@/lib/timezone'
 import { reportMoneyIssue } from '@/lib/report'
 import { accountForIntent } from '@/lib/club-payments'
 import { REFUND_APPLICATION_FEE } from '@/lib/connect-rules'
+import { isFree } from '@/lib/cancellation-rules'
+import { loadRule } from '@/lib/cancellation-server'
 
 export type CancellableBooking = {
   id: string
@@ -96,7 +98,8 @@ async function amountPaidCents(
 // Cancellation policy (shown to the member before they confirm, see
 // MyBookingsList):
 //
-//   * The person cancelling: 24hrs+ notice before the booking's start time
+//   * The person cancelling: the club's free window (24hrs unless the club changed it, see
+//     lib/cancellation-rules.ts) before the booking's start time
 //     = a full refund (the card charge refunded via Stripe, or a full
 //     session credit back for a booking paid with session credits); under
 //     24hrs = 50% of what they paid back as account credit for a card
@@ -132,7 +135,10 @@ export async function applyCancellationRefund(
     .eq('id', booking.court_id)
     .single()
   const hoursUntil = hoursUntilBooking(booking.date, booking.start_time, court?.venue_slug)
-  const fullRefund = options.byStaff === true || hoursUntil >= 24
+  // The club's own rule: how long before play is free, and what comes back after that (half as credit by default).
+  const rule = await loadRule(admin, court?.venue_slug)
+  const fullRefund = options.byStaff === true || isFree(hoursUntil, rule)
+  const lateCredit = rule.after === 'half'
 
   let creditAmount = 0
   let creditsRefunded = 0
@@ -192,7 +198,7 @@ export async function applyCancellationRefund(
   if (booking.stripe_payment_id && paidSlice) {
     if (fullRefund) {
       if (!(await refundPartial(booking.stripe_payment_id, paidSlice, `slice-refund-${booking.id}`))) refundFailed = true
-    } else if (booking.user_id) {
+    } else if (booking.user_id && lateCredit) {
       creditAmount = Math.round((paidSlice * 0.5) / 100)
       await admin.rpc('increment_credits', { p_user_id: booking.user_id, p_amount: creditAmount })
     }
@@ -201,7 +207,7 @@ export async function applyCancellationRefund(
       if (!(await refundIntent(booking.stripe_payment_id, booking.id))) {
         refundFailed = true
       }
-    } else if (booking.user_id) {
+    } else if (booking.user_id && lateCredit) {
       // Half of what this person actually paid -- not half the court fee.
       // On a $120 court split four ways the booker is charged $30, and
       // crediting half the fee handed them $60 for a $30 booking.

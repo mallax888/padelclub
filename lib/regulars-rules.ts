@@ -101,8 +101,9 @@ export function reminderDue(startMs: number, nowMs: number, remindedAt: string |
 export const hoursUntilStart = (date: string, startTime: string, tz: string, nowMs: number): number =>
   (venueInstant(date, `${hhmm(startTime)}:00`, tz).getTime() - nowMs) / HOUR
 
-export const canSkipWeek = (date: string, startTime: string, tz: string, nowMs: number): boolean =>
-  hoursUntilStart(date, startTime, tz, nowMs) > MIN_SKIP_HOURS
+// A week can be skipped up to `hours` before it starts: the club's free-cancellation window, so a skip is always refunded in full.
+export const canSkipWeek = (date: string, startTime: string, tz: string, nowMs: number, hours: number = MIN_SKIP_HOURS): boolean =>
+  hoursUntilStart(date, startTime, tz, nowMs) > hours
 
 // ---------------------------------------------------------------- the listing
 
