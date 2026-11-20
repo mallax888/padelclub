@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { getInitials } from '@/lib/utils'
+import { copyText } from '@/lib/copy-text'
 import type { TeamScope } from '@/lib/team'
 import type { PendingInvite } from './InviteTeam'
 
@@ -178,6 +179,15 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
     toast.success(d.emailed ? `Invite sent again to ${email}` : 'We could not email them. Copy the new link from the invite box instead.')
     router.refresh()
   }
+  const copyInviteLink = async (id: string) => {
+    const res = await fetch('/api/admin/team/invite/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, email: false }) })
+    const d = await res.json().catch(() => ({}))
+    if (!res.ok) { toast.error(d.error ?? 'Could not make a link.'); return }
+    if (await copyText(d.link)) toast.success('New link copied. The link in the earlier email no longer works.')
+    else window.prompt('Copy this link and send it to them (the earlier link no longer works):', d.link)
+    router.refresh()
+  }
+  const daysLeft = (iso: string) => Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000))
   const owners = members.filter(m => m.role === 'admin')
   const desk = members.filter(m => m.role === 'staff')
 
@@ -246,9 +256,10 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
             <span aria-hidden className="inline-flex items-center justify-center rounded-full text-[13px] font-extrabold shrink-0" style={{ width: 40, height: 40, border: '1.5px solid var(--border)', color: 'var(--text-subtle)' }}>{getInitials(i.email)}</span>
             <span className="min-w-0 text-left">
               <span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{i.email}</span>
-              <span className="block text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{ROLE_TEXT[i.role].title} · {i.scopeLabel}</span>
+              <span className="block text-[11.5px] mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{ROLE_TEXT[i.role].title} · {i.scopeLabel} · {daysLeft(i.expiresAt) === 0 ? 'expires today' : `expires in ${daysLeft(i.expiresAt)} ${daysLeft(i.expiresAt) === 1 ? 'day' : 'days'}`}</span>
             </span>
             <span className="ml-auto shrink-0 text-[10.5px] font-extrabold uppercase px-2.5 py-1 rounded-full whitespace-nowrap" style={{ letterSpacing: '0.04em', background: 'var(--brand-yellow-muted)', color: 'var(--text-primary)' }}>Invite sent</span>
+            <button type="button" onClick={() => copyInviteLink(i.id)} className="shrink-0 text-xs font-bold px-1" style={{ color: 'var(--brand-primary-text)' }} data-testid="copy-invite-link">Copy link</button>
             <button type="button" onClick={() => resendInvite(i.id, i.email)} className="shrink-0 text-xs font-bold px-1" style={{ color: 'var(--brand-primary-text)' }} data-testid="resend-invite">Resend</button>
             <button type="button" onClick={() => cancelInvite(i.id)} className="shrink-0 text-xs font-semibold px-1" style={{ color: 'var(--text-muted)' }} data-testid="cancel-invite-row">Cancel</button>
           </div>

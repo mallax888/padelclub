@@ -152,3 +152,14 @@ export function nextStep(t: VTournament, players: VPlayer[], matches: VMatch[]):
   }
   return { kind: 'none', hint: '' }
 }
+
+// A confirmed score can be corrected (by the club team) while nothing has been built on top of it:
+// a round robin never builds on a result (the table is worked out from the matches); a group match
+// until the knockout starts; and in a rotation or knockout only the round played most recently, because
+// the next round is drawn from it.
+export function canEditResult(format: string, match: { round_number: number; stage?: string | null }, matches: { round_number: number; stage?: string | null }[]): boolean {
+  if (format === 'fixed_round_robin') return true
+  if (format === 'groups_knockout' && (match.stage ?? 'round') === 'group') return !matches.some(m => m.stage === 'ko' || m.stage === 'third_place')
+  const latest = matches.reduce((hi, m) => Math.max(hi, m.round_number), 0)
+  return match.round_number === latest
+}
