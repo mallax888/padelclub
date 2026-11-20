@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { GO } from '@/lib/accent'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import OfferSheet from '@/components/admin/OfferSheet'
@@ -192,7 +193,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
         </div>
         {goal && (
           <div className="mt-4">
-            <div className="h-[10px] rounded-full overflow-hidden" style={{ background: '#ffffff30' }} aria-hidden><div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: '#d4f53c' }} /></div>
+            <div className="h-[10px] rounded-full overflow-hidden" style={{ background: '#ffffff30' }} aria-hidden><div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: '#1f9a5f' }} /></div>
             <div className="text-[13px] font-bold mt-2" style={{ color: soft }}><b className="text-[15px]" style={{ color: '#ffffff' }}>{money(takings, currency)}</b> of {money(potential, currency)} possible today</div>
           </div>
         )}
@@ -245,7 +246,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                     <span className="min-w-0" data-testid="court-coin">
                       {showMoney && r.openValue > 0 ? (
                         <>
-                          <span className="block text-[20px] sm:text-[24px] font-black leading-none" style={{ color: 'var(--ball-text)', letterSpacing: '-0.02em' }}>{money(r.openValue, currency)}</span>
+                          <span className="block text-[20px] sm:text-[24px] font-black leading-none" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>{money(r.openValue, currency)}</span>
                           <span className="block text-[11.5px] mt-1" style={{ color: 'var(--text-muted)' }}>{r.openNow} {r.openNow === 1 ? 'hour' : 'hours'} still to sell</span>
                         </>
                       ) : (
@@ -254,7 +255,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                     </span>
                     {showMoney && offersOn && (
                       <button type="button" data-testid="court-fill" onClick={e => { e.stopPropagation(); setSel(c.id) }} className="hidden sm:inline-flex shrink-0 rounded-full px-4 py-2 text-[12px] font-black"
-                        style={{ background: '#d4f53c', color: '#17240a' }}>Fill it</button>
+                        style={GO}>Fill it</button>
                     )}
                     </span>
                   ) : soldOut ? (

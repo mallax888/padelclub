@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function TeamPage() {
   const caller = await loadTeamCaller()
-  if (!caller || !isManagerRole(caller.role)) redirect('/book')
+  if (!caller || !isManagerRole(caller.role)) redirect('/')
   // Front desk never sees the team.
   if (!isOwnerRole(caller.role)) redirect('/admin/today')
 

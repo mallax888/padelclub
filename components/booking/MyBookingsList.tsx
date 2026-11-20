@@ -1,6 +1,7 @@
 'use client'
 
 import { clockAt, fmtClock, fmtClockRange, fmtUntil } from '@/lib/clock'
+import { GO } from '@/lib/accent'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -351,17 +352,17 @@ function ShareDeadlineBox({ booking, shares }: { booking: BookingWithCourt; shar
   }
   const urgent = stage !== 'before'
   return (
-    <div className="rounded-xl mt-2.5 p-3 flex flex-wrap items-center justify-between gap-2.5" data-testid="share-deadline"
-      style={{ background: urgent ? 'var(--brand-yellow-muted)' : 'var(--bg-raised)', border: `1px solid ${urgent ? 'var(--brand-yellow)' : 'var(--border)'}` }}>
+    <div className="rounded-[20px] mt-2.5 p-5 flex flex-wrap items-center justify-between gap-4" data-testid="share-deadline"
+      style={{ background: (urgent || !sched) ? 'var(--brand-yellow-muted)' : 'var(--bg-raised)', border: `${(urgent || !sched) ? 1.5 : 1}px solid ${(urgent || !sched) ? 'var(--brand-yellow)' : 'var(--border)'}` }}>
       <div className="min-w-0 text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
         {urgent && sched
           ? <><b style={{ color: 'var(--brand-yellow)' }}>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid.</b> {stage === 'cover' ? <>Cover {amount} by {fmtWhen(sched.coverUntil, tz)} or</> : <>Cover {amount} now or</>} the court is released and everyone is refunded.</>
           : sched
           ? <>Friends pay by <b style={{ color: 'var(--text-primary)' }}>{fmtWhen(sched.deadline, tz)}</b>. After that you can cover what is left ({amount}), or the court is released.</>
-          : <>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid. You can cover {pending.length === 1 ? 'it' : 'them'} ({amount}).</>}
+          : <><span className="block text-[17px] sm:text-[18px] font-extrabold" style={{ color: 'var(--open-text)' }}>{pending.length === 1 ? 'A share is' : `${pending.length} shares are`} still unpaid</span><span className="block text-[13px] mt-0.5" style={{ color: 'var(--text-muted)' }}>You can cover {pending.length === 1 ? 'it' : 'them'} for <b style={{ color: 'var(--text-primary)' }}>{amount}</b></span></>}
       </div>
       <button onClick={cover} disabled={busy} className="rounded-full px-3.5 text-xs font-bold disabled:opacity-50 shrink-0 w-full sm:w-auto"
-        style={{ minHeight: 40, background: urgent ? 'var(--brand-primary)' : 'var(--bg-surface)', color: urgent ? 'var(--brand-primary-on)' : 'var(--text-primary)', border: urgent ? 'none' : '1px solid var(--border)' }}>
+        style={{ minHeight: 40, ...(urgent || !sched ? GO : { background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' }) }}>
         {busy ? 'Opening…' : `Cover ${amount}`}
       </button>
     </div>
@@ -839,7 +840,7 @@ function MyBookingsListInner({
               const today = localDateStr(now)
               const items = [
                 ...upcoming.map((b, i) => ({ key: b.id, date: b.date, time: b.start_time, node: (
-                  <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
+                  <BookingRow booking={b} isNext={i === 0} collapsible onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
                 ) })),
                 ...upcomingJoined.map(j => ({ key: j.id, date: j.bookings!.date, time: j.bookings!.start_time, node: <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} /> })),
               ].sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))

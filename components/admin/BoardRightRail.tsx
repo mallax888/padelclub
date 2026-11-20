@@ -1,6 +1,7 @@
 'use client'
 
 import { fmtClock } from '@/lib/clock'
+import { GO } from '@/lib/accent'
 import CardHeading from '@/components/ui/CardHeading'
 import { formatDate } from '@/lib/utils'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
@@ -92,7 +93,7 @@ export default function BoardRightRail({
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <CardHeading>Quick Actions</CardHeading>
         <div className="flex flex-col gap-4">
-          <button onClick={onBlockCourt} className="btn-main !justify-between px-4" style={{ background: '#d4f53c', color: '#17240a' }}>
+          <button onClick={onBlockCourt} className="btn-main !justify-between px-4" style={GO}>
             🔒 Block a court <span>→</span>
           </button>
           <button onClick={onAddCourt} className="btn-main btn-main-quiet !justify-between px-4">
@@ -122,7 +123,7 @@ export default function BoardRightRail({
                     <div className="text-xs font-bold truncate" style={{ color: 'var(--text-primary)' }}>{b.member_name}</div>
                     <div className="text-[10.5px]" style={{ color: 'var(--text-subtle)' }}>{b.court_name} · {formatDate(b.date)} · {fmtClock(b.start_time)}</div>
                   </div>
-                  <div className="text-xs font-extrabold shrink-0 pl-2" style={{ color: 'var(--ball-text)' }}>
+                  <div className="text-xs font-extrabold shrink-0 pl-2" style={{ color: 'var(--text-primary)' }}>
                     {b.price_nzd > 0 ? formatPrice(b.price_nzd, currency) : '—'}
                   </div>
                 </div>

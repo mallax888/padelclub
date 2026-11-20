@@ -926,39 +926,51 @@ export default function BookingFlow({
       {step !== 'confirm' && askCard(<>
 
       {step === 'country' && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in" data-testid="country-grid">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 lg:gap-4 animate-fade-in" data-testid="country-grid">
           {LIVE_COUNTRIES.map(c => (
             <button key={c.name}
               onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
-              className="rounded-xl lg:rounded-[20px] p-5 transition-all flex flex-col items-center gap-3"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 180, position: 'relative' }}
+              className="rounded-2xl lg:rounded-[20px] p-3 lg:p-5 transition-all flex flex-col items-start justify-between lg:justify-start lg:items-center gap-2 lg:gap-3 text-left lg:text-center min-h-[112px] lg:min-h-[180px] bg-[var(--bg-base)] lg:bg-[var(--bg-surface)]"
+              style={{ border: '1px solid var(--border)', position: 'relative' }}
               onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
               onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
-              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                <Image src={c.flag} alt={c.name} width={80} height={53} unoptimized style={{ width: 80, height: 53, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
+              <div className="flex lg:justify-center lg:w-full">
+                <Image src={c.flag} alt={c.name} width={80} height={53} unoptimized className="w-[46px] h-[31px] lg:w-20 lg:h-[53px]" style={{ objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
               </div>
-              <div className="text-lg font-bold text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
+              <div className="min-w-0 w-full">
+              <div className="text-[15.5px] lg:text-lg font-bold lg:text-center" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
               {/* A country whose clubs are listed but whose courts aren't in
                   the database yet counted them honestly and read "0 courts",
                   which lands as an error rather than as a club still being
                   set up. The venue step already phrases that case as "Courts
                   coming soon"; these two now agree with it. */}
-              <div className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                 {(() => {
                   const cities = c.regions.filter(r => REGIONS.includes(r)).length
                   const venueCount = LIVE_VENUES.filter(v => c.regions.includes(v.region)).length
                   const courtCount = courts.filter(ct => LIVE_VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length
-                  // One line on a phone; two on a desktop card, where four sit side by side.
-                  return <><span className="lg:block">{cities} cities</span><span className="lg:hidden"> · </span><span className="lg:block">{venueCount} venues · {courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}</span></>
+                  // Phone: the court count in lime first, then cities and venues, so four tiles fit one small screen.
+                  // Desktop: two centred lines, as before.
+                  return <>
+                    <div className="lg:hidden">
+                      <div className="text-[11.5px] font-extrabold mb-0.5" style={{ color: courtCount > 0 ? 'var(--go-text)' : 'var(--brand-accent)' }}>{courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}</div>
+                      <div className="text-[11px]">{cities} cities · {venueCount} venues</div>
+                    </div>
+                    <div className="hidden lg:block text-center">
+                      <span className="block">{cities} cities</span>
+                      <span className="block">{venueCount} venues · {courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}</span>
+                    </div>
+                  </>
                 })()}
+              </div>
               </div>
             </button>
           ))}
-            <div className="rounded-xl lg:rounded-[20px] p-5 flex flex-col items-center gap-3 opacity-80"
-              style={{ background: 'var(--bg-surface)', border: '1px dashed var(--brand-accent)', minHeight: 180, position: 'relative', cursor: 'default' }}>
-              <div style={{ fontSize: 36 }}>🌍</div>
-              <div className="text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
+            <div className="rounded-2xl lg:rounded-[20px] p-3 lg:p-5 flex flex-col items-center justify-center lg:justify-start gap-1.5 lg:gap-3 opacity-80 min-h-[112px] lg:min-h-[180px] bg-[var(--bg-base)] lg:bg-[var(--bg-surface)]"
+              style={{ border: '1px dashed var(--brand-accent)', position: 'relative', cursor: 'default' }}>
+              <div className="text-[26px] lg:text-4xl leading-none">🌍</div>
+              <div className="text-sm lg:text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
               <div className="text-xs text-center px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</div>
               
             </div>  

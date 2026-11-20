@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { GO } from '@/lib/accent'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { getInitials } from '@/lib/utils'
@@ -238,7 +239,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
             <div className="flex items-baseline gap-2 mt-1"><span className="text-[44px] font-extrabold leading-none" style={{ color: 'var(--text-primary)' }}>{desk.length}</span><span className="text-base font-bold" style={{ color: 'var(--text-muted)' }}>{desk.length === 1 ? 'person' : 'people'}</span></div>
             <div className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>Runs the day. No money, no settings</div>
           </div>
-          <button type="button" className={addBtn} style={{ background: '#d4f53c', color: '#17240a' }} onClick={() => openAdd('staff')}>+ Add front desk</button>
+          <button type="button" className={addBtn} style={GO} onClick={() => openAdd('staff')}>+ Add front desk</button>
         </div>
       </div>
 

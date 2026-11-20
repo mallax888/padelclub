@@ -44,7 +44,7 @@ export default function BookedCelebration({ firstName, ticket, onDone }: {
             venueName={ticket.venueName} you={ticket.you} friends={[]} priceLabel="You paid" price={ticket.price} />
         </div>
       )}
-      <button type="button" onClick={onDone} data-testid="booked-done" className="btn-main btn-main-quiet mt-4 w-full">Done</button>
+      <button type="button" onClick={onDone} data-testid="booked-done" className="btn-main mt-4 w-full">Done</button>
     </section>
   )
 }
