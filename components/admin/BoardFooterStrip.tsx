@@ -1,5 +1,7 @@
 'use client'
 
+import { fmtClock } from '@/lib/clock'
+
 export default function BoardFooterStrip({
   rangeLabel = 'This week',
   thisWeekCount,
@@ -19,16 +21,15 @@ export default function BoardFooterStrip({
 }) {
   const items = [
     { label: rangeLabel, value: `${thisWeekCount} bookings`, trend: thisWeekTrend },
-    { label: 'Peak time', value: peakTime ?? '—', trend: null },
+    { label: 'Peak time', value: peakTime ? fmtClock(peakTime) : '—', trend: null },
     { label: 'Most popular court', value: mostPopularCourtName ?? '—', trend: null },
     { label: 'Avg booking duration', value: avgDurationLabel ?? '—', trend: null },
   ]
 
   return (
-    <div className="rounded-2xl mt-4 px-4 py-3 flex flex-wrap items-center gap-x-8 gap-y-2"
-      style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+    <div className="mt-4 flex flex-wrap items-center gap-2">
       {items.map(item => (
-        <div key={item.label} className="flex items-baseline gap-2">
+        <div key={item.label} className="flex items-baseline gap-2 rounded-full px-3.5 py-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>{item.label}</span>
           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{item.value}</span>
           {item.trend !== null && (
