@@ -87,6 +87,9 @@ export async function createRegularWeeks(admin: Admin, input: { userId: string; 
   const allCourts = ((venueCourts ?? []) as any[]).sort(numericName)
   const courtType: string | null = first.courts?.type ?? null
   const courts = allCourts.filter(c => (c.type ?? null) === courtType)
+  // The later weeks try the first week's court first, so a regular who chose Court 2 keeps Court 2 whenever it is free.
+  const firstAt = courts.findIndex(c => c.id === first.court_id)
+  if (firstAt > 0) courts.unshift(...courts.splice(firstAt, 1))
   if (courts.length === 0) return fail(400, 'That club has no courts of that type.')
 
   const dates = seriesDates(first.date, input.weeks).slice(1)

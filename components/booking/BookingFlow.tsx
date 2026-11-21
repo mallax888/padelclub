@@ -11,6 +11,8 @@ import { dayHours, dayKeyOfDate, DAY_PLURALS, slotTimes, toMinutes } from '@/lib
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { bookerShareCents, friendShareCents } from '@/lib/share-rules'
 import BookingTicket from '@/components/booking/BookingTicket'
+import CourtPicker from '@/components/booking/CourtPicker'
+import { sortCourts } from '@/lib/court-pick'
 import { weeksPhrase } from '@/lib/regular-pay'
 import { planWeeks, seriesDates, weekdayPlural, WEEK_OPTIONS, type DatedBusy } from '@/lib/regulars-rules'
 import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
@@ -78,10 +80,10 @@ function durationLabel(d: number) {
 // whose courts aren't all the same type. Everywhere else it asked someone to
 // choose between four identical things. 'when' now carries all of it, and the
 // court is assigned from whatever is actually free.
-type Step = 'country' | 'region' | 'venue' | 'date' | 'duration' | 'time' | 'confirm'
+type Step = 'country' | 'region' | 'venue' | 'date' | 'duration' | 'time' | 'court' | 'confirm'
 const STEPS: Step[] = [
   ...(ONLY_COUNTRY ? [] : (['country'] as Step[])),
-  'region', 'venue', 'date', 'duration', 'time', 'confirm',
+  'region', 'venue', 'date', 'duration', 'time', 'court', 'confirm',
 ]
 
 // A player in the split picker. splitCount is how many courts this member has
@@ -186,6 +188,9 @@ export default function BookingFlow({
   const [duration, setDuration] = useState<number | null>(1)
   const [courtTypeFilter, setCourtTypeFilter] = useState<string | null>(null)
   const [time, setTime] = useState<string | null>(null)
+  // The court the player chose on the "Which court?" step. null means any court: we pick the lowest-numbered free one.
+  const [pickedCourtId, setPickedCourtId] = useState<string | null>(null)
+  const courtChoiceRef = useRef(false)
   const [busyByCourt, setBusyByCourt] = useState<Record<string, Set<number>>>({})
   const [makePublic, setMakePublic] = useState(false)
   const [matchType, setMatchType] = useState<'casual' | 'competitive'>('casual')
@@ -442,9 +447,12 @@ export default function BookingFlow({
   const openingDay = venue && date ? dayHours(weekFor(venueSettings, venue.slug), date) : null
   const timeSlots = slotTimes(openingDay, 30)
   const closedOnDate = !!venue && !!date && !openingDay
-  const selectableCourts = courtTypeFilter
+  const selectableCourts = sortCourts(courtTypeFilter
     ? venueCourts.filter(c => c.type === courtTypeFilter)
-    : venueCourts
+    : venueCourts)
+  // A club with one court has nothing to choose, so the step is skipped for it.
+  const courtChoice = selectableCourts.length > 1
+  courtChoiceRef.current = courtChoice
 
   // Every court that could take a booking of this length starting at `t`.
   // Ordered as the venue lists them, so the lowest-numbered free court wins
@@ -482,8 +490,13 @@ export default function BookingFlow({
     })
   }
 
-  // What the confirm screen names, and what the insert attempts first.
-  const assignedCourt = time ? (freeCourtsAt(time)[0] ?? null) : null
+  // What the confirm screen names, and what the insert attempts first: the court the player picked if it is still free,
+  // otherwise the lowest-numbered free court.
+  const freeAtTime = time ? freeCourtsAt(time) : []
+  const pickedCourt = pickedCourtId ? freeAtTime.find(c => c.id === pickedCourtId) ?? null : null
+  const assignedCourt = time ? (pickedCourt ?? freeAtTime[0] ?? null) : null
+  // The picked court is forgotten whenever the day, length or time changes.
+  useEffect(() => { setPickedCourtId(null) }, [venue?.slug, date, duration, time, courtTypeFilter])
 
   // Weekly regular: "same time every <weekday>" for 4, 8 or 12 weeks. The first
   // week is this booking; the later weeks are booked around it by the server.
@@ -522,7 +535,7 @@ export default function BookingFlow({
   const regularPlan = regular && regularAllowed && assignedCourt && date && time && duration && futureBusy && venue
     ? planWeeks({
         dates: seriesDates(date, regularWeeks).slice(1), startTime: time, durationMin: Math.round(duration * 60),
-        courts: venueCourts.filter(c => c.type === assignedCourt.type), busy: futureBusy,
+        courts: sortCourts(venueCourts.filter(c => c.type === assignedCourt.type)).sort((a, b) => (a.id === assignedCourt.id ? -1 : 0) - (b.id === assignedCourt.id ? -1 : 0)), busy: futureBusy,
         hoursFor: d => dayHours(weekFor(venueSettings, venue.slug), d), peakCap: clubRegularRules?.peakCap ?? null,
         startsInFuture: () => true,
       })
@@ -569,10 +582,13 @@ export default function BookingFlow({
     return () => { cancelled = true }
   }, [splitEnabled, invitesAvailable])
 
-  const goBack = () => {
-    const idx = STEPS.indexOf(step)
-    if (idx > 0) setStep(STEPS[idx - 1])
+  // A club with one court never shows the court step, so going back steps over it.
+  const stepBefore = (st: Step): Step => {
+    let idx = STEPS.indexOf(st) - 1
+    if (idx >= 0 && STEPS[idx] === 'court' && !courtChoiceRef.current) idx--
+    return idx >= 0 ? STEPS[idx] : st
   }
+  const goBack = () => { setStep(stepBefore(step)) }
 
   // Android/PWA hardware back button support: register each forward step
   // with browser history so the native back gesture steps back one at a
@@ -588,10 +604,7 @@ export default function BookingFlow({
 
   useEffect(() => {
     const onPopState = () => {
-      setStep(prev => {
-        const idx = STEPS.indexOf(prev)
-        return idx > 0 ? STEPS[idx - 1] : prev
-      })
+      setStep(prev => stepBefore(prev))
     }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
@@ -613,7 +626,15 @@ export default function BookingFlow({
     // screen. Nobody picked that court -- it was assigned -- so if someone
     // else took it while this screen was open, the next identical court is a
     // better answer than an error telling the member to start again.
-    const candidates = freeCourtsAt(time)
+    // A court the player picked is the only one tried: booking them onto a different court than the one they chose would be
+    // a surprise, so if it has just gone they are sent back to choose again.
+    const pickedName = pickedCourtId ? selectableCourts.find(c => c.id === pickedCourtId)?.name ?? 'That court' : null
+    const candidates = pickedCourtId ? freeCourtsAt(time).filter(c => c.id === pickedCourtId) : freeCourtsAt(time)
+    if (pickedCourtId && candidates.length === 0) {
+      toast.error(`${pickedName} has just gone — pick another.`)
+      setPickedCourtId(null); setStep('court'); setSubmitting(false)
+      return
+    }
     let bookingData: any = null
     let error: any = null
     for (const candidate of candidates) {
@@ -645,7 +666,7 @@ export default function BookingFlow({
       toast.error(
         !error ? 'That time has just gone — pick another.'
         : error.code === '23505' || error.code === '23P01'
-          ? 'Every court at that time has just gone — pick another.'
+          ? (pickedCourtId ? `${pickedName} has just gone — pick another.` : 'Every court at that time has just gone — pick another.')
         : error.message
       )
       setSubmitting(false)
@@ -803,6 +824,7 @@ export default function BookingFlow({
     date:     { title: 'When?', subtitle: venue?.name ?? '' },
     duration: { title: 'How long?', subtitle: date ? formatDate(date) : '' },
     time:     { title: 'What time?', subtitle: duration ? durationLabel(duration) : '' },
+    court:    { title: 'Which court?', subtitle: 'Optional. Leave it on Any court and we pick one for you.' },
     confirm:  { title: 'Confirm booking', subtitle: date ? formatDate(date) : '' },
   }
 
@@ -829,12 +851,12 @@ export default function BookingFlow({
   // shown dimmed so nobody wonders how long it takes.
   const venueCountry = venue ? COUNTRIES.find(c => c.regions.includes(venue.region)) ?? null : null
   const askRegular = regularAllowed && !!assignedCourt && !!date && !!time
-  type Group = 'where' | 'date' | 'duration' | 'time' | 'players' | 'regular' | 'pay'
+  type Group = 'where' | 'date' | 'duration' | 'time' | 'court' | 'players' | 'regular' | 'pay'
   const groupOf = (st: Step): Group => (st === 'country' || st === 'region' || st === 'venue' ? 'where' : st === 'confirm' ? (confirmStage === 'players' ? 'players' : confirmStage === 'regular' ? 'regular' : 'pay') : st)
   const venuePickerSkipped = venue === homeVenue && homeVenue !== null && visibleSteps[0] === 'date'
-  const groups: Group[] = [...(venuePickerSkipped ? [] : ['where' as Group]), 'date', 'duration', 'time', 'players', ...(askRegular ? ['regular' as Group] : []), 'pay']
+  const groups: Group[] = [...(venuePickerSkipped ? [] : ['where' as Group]), 'date', 'duration', 'time', ...(courtChoice ? ['court' as Group] : []), 'players', ...(askRegular ? ['regular' as Group] : []), 'pay']
   const groupNow = groupOf(step)
-  const groupLabel: Record<Group, string> = { where: 'Where are you playing?', date: 'When?', duration: 'How long?', time: 'What time?', players: 'Anyone playing with you?', regular: 'Same time every week?', pay: 'Check and pay' }
+  const groupLabel: Record<Group, string> = { where: 'Where are you playing?', date: 'When?', duration: 'How long?', time: 'What time?', court: 'Which court?', players: 'Anyone playing with you?', regular: 'Same time every week?', pay: 'Check and pay' }
   const done = (g: Group) => groups.indexOf(g) < groups.indexOf(groupNow)
   const endTimeNow = time && duration ? addHoursDecimal(time, duration) : ''
   const flagImg = (name?: string | null) => { const f = COUNTRIES.find(c => c.name === name)?.flag; return f ? <Image src={f} alt={name ?? ''} width={28} height={19} unoptimized style={{ width: 28, height: 19, objectFit: 'cover', borderRadius: 3, boxShadow: '0 1px 4px rgba(0,0,0,0.3)' }} /> : null }
@@ -868,6 +890,7 @@ export default function BookingFlow({
         weekly={regularDone ? (regular && date ? `Every ${weekdayPlural(date).slice(0, -1)} for ${regularWeeks} weeks${prepayActive ? ', all paid now' : ''}` : 'Just this once') : undefined}
         priceLabel={playersDone && seatCount > 0 ? 'You pay' : 'Price'} price={formatPrice(playersDone ? yourShare : courtPrice, currency)}
         courtTotal={playersDone && seatCount > 0 ? formatPrice(courtPrice, currency) : undefined}
+        courtPicked={!!pickedCourt} onChangeCourt={courtChoice ? () => { setStep('court'); playBackSound() } : undefined}
         onEdit={() => { setStep('time'); playBackSound() }} onChangeVenue={changeWhere}
         onChangePlayers={() => { setConfirmStage('players'); playBackSound() }} onChangeWeekly={() => { setConfirmStage('regular'); playBackSound() }} />,
     )
@@ -1263,7 +1286,7 @@ export default function BookingFlow({
               }
               return (
                 <button key={t} disabled={!available}
-                  onClick={() => { setTime(t); setStep('confirm'); playSelectionSound() }}
+                  onClick={() => { setTime(t); setStep(courtChoice ? 'court' : 'confirm'); playSelectionSound() }}
                   className="rounded-xl p-3 text-center transition-all"
                   style={{
                     background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
@@ -1341,6 +1364,14 @@ export default function BookingFlow({
             </div>
           )}
         </div>
+      )}
+
+      {step === 'court' && venue && date && time && duration && (
+        <CourtPicker courts={selectableCourts} listed={VENUES.find(v => v.slug === venue.slug)?.courts ?? null}
+          freeIds={new Set(freeAtTime.map(c => c.id))} timeLabel={fmtClock(time)} pickedId={pickedCourt?.id ?? null}
+          priceLabel={id => { const c = selectableCourts.find(x => x.id === id); if (!c) return ''; const o = offerAt(c, time); return formatPrice(o ? o.price : computeCourtPrice(c, date, time, duration, discount), currency) }}
+          onPick={id => { setPickedCourtId(id); playSelectionSound() }}
+          onContinue={() => { setStep('confirm'); playSelectionSound() }} />
       )}
 
       </>, { title: stepMeta[step].title, subtitle: stepMeta[step].subtitle, back: groupNow === 'where' && whereBack })}
