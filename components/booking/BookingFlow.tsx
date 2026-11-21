@@ -933,7 +933,7 @@ export default function BookingFlow({
   const whereBack = step !== visibleSteps[0]
 
   return (
-    <div className="w-full">
+    <div className="w-full lg:max-w-[680px] lg:mx-auto" data-testid="book-column">
       {header}
 
       {/* Progress bar: one segment for every question this booking will ask. */}
@@ -949,7 +949,8 @@ export default function BookingFlow({
       {step !== 'confirm' && askCard(<>
 
       {step === 'country' && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 lg:gap-4 animate-fade-in" data-testid="country-grid">
+        <>
+        <div className="lg:hidden grid grid-cols-2 gap-2.5 animate-fade-in" data-testid="country-grid">
           {LIVE_COUNTRIES.map(c => (
             <button key={c.name}
               onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
@@ -998,6 +999,50 @@ export default function BookingFlow({
               
             </div>  
         </div>
+        {/* Computer: one country per row, the court count as the headline, in a narrower column. */}
+        <div className="hidden lg:flex flex-col gap-3 animate-fade-in" data-testid="country-rows">
+          {LIVE_COUNTRIES.map(c => {
+            const cities = c.regions.filter(r => REGIONS.includes(r)).length
+            const venueCount = LIVE_VENUES.filter(v => c.regions.includes(v.region)).length
+            const courtCount = courts.filter(ct => LIVE_VENUES.some(v => c.regions.includes(v.region) && v.slug === (ct as any).venue_slug)).length
+            const chip = 'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12.5px] font-bold'
+            return (
+              <button key={c.name} data-testid={`country-row-${c.name}`}
+                onClick={() => { setCountry(c.name); setRegion(null); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('region'); playSelectionSound() }}
+                className="flex items-center gap-4 rounded-[20px] px-[18px] py-3.5 text-left transition-all bg-[var(--bg-surface)]"
+                style={{ border: '1px solid var(--border)' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
+                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}>
+                <Image src={c.flag} alt="" width={64} height={43} unoptimized className="shrink-0" style={{ width: 64, height: 43, objectFit: 'cover', borderRadius: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }} />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[19px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{c.name}</div>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    <span className={chip} style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.4"/></svg>
+                      {cities} cities
+                    </span>
+                    <span className={chip} style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{venueCount} venues</span>
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  {courtCount > 0 ? (
+                    <>
+                      <div className="text-[34px] font-black leading-none" style={{ color: 'var(--text-primary)' }}>{courtCount}</div>
+                      <div className="text-[13px] font-extrabold mt-0.5" style={{ color: 'var(--go-text)' }}>courts</div>
+                    </>
+                  ) : <div className="text-[13px] font-extrabold" style={{ color: 'var(--brand-accent)' }}>Courts coming soon</div>}
+                </div>
+                <span className="text-[22px] shrink-0" aria-hidden style={{ color: 'var(--text-subtle)' }}>›</span>
+              </button>
+            )
+          })}
+          <div className="flex items-center justify-center gap-3 rounded-[20px] px-4 py-3 opacity-80 bg-[var(--bg-surface)]" style={{ border: '1px dashed var(--brand-accent)', cursor: 'default' }}>
+            <span className="text-[22px] leading-none" aria-hidden>🌍</span>
+            <span className="text-[15px] font-bold" style={{ color: 'var(--text-muted)' }}>New country</span>
+            <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</span>
+          </div>
+        </div>
+        </>
       )}
       {step === 'region' && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in">
