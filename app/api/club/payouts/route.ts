@@ -6,7 +6,7 @@ import { covers } from '@/lib/team'
 import { VENUES, getVenue } from '@/lib/venues'
 import { getAppUrl } from '@/lib/env'
 import { currencyForVenueSlug } from '@/lib/currency'
-import { connectOn, connectState, describeDue, stripeCountry } from '@/lib/connect-rules'
+import { connectOn, connectState, describeDue, stripeCountry, DEFAULT_FEE_PERCENT } from '@/lib/connect-rules'
 import { countryNameOfVenue, feeOf, loadClubAccount, readAccount, syncAccount } from '@/lib/club-payments'
 
 // An owner connecting their club to Stripe, and seeing how payouts are going. Owners only,
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
         defaults: { currency: currencyForVenueSlug(slug).toLowerCase(), responsibilities: { fees_collector: 'stripe', losses_collector: 'stripe' } },
         metadata: { venue_slug: slug },
       })
-      const { error } = await admin.from('club_stripe_accounts').insert({ venue_slug: slug, stripe_account_id: account.id })
+      const { error } = await admin.from('club_stripe_accounts').insert({ venue_slug: slug, stripe_account_id: account.id, fee_percent: DEFAULT_FEE_PERCENT })
       if (error) {
         // Two taps at once: another request made the row first. Use that one.
         row = await loadClubAccount(admin, slug)
