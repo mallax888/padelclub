@@ -16,7 +16,7 @@ export const connectOn = (env: Record<string, string | undefined> = process.env)
   !!(env.STRIPE_CONNECT_WEBHOOK_SECRET && env.STRIPE_CONNECT_WEBHOOK_SECRET.length > 0)
 
 // ---------------------------------------------------------------- the fee
-export const DEFAULT_FEE_PERCENT = 2.5
+export const DEFAULT_FEE_PERCENT = 3
 export const MAX_FEE_PERCENT = 20
 export const MAX_FEE_FIXED = 5 // per payment, in the club's own currency
 

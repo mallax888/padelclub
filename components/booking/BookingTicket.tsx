@@ -38,13 +38,15 @@ export function Avatars({ names, plus = false, size = 38 }: { names: string[]; p
   )
 }
 
-export default function BookingTicket({ courtName, dateLabel, time, endTime, lengthLabel, venueName, you, friends, who, weekly, priceLabel, price, courtTotal, onEdit, onChangeVenue, onChangePlayers, onChangeWeekly }: {
+export default function BookingTicket({ courtName, dateLabel, time, endTime, lengthLabel, venueName, you, friends, who, weekly, priceLabel, price, courtTotal, onEdit, onChangeVenue, onChangePlayers, onChangeWeekly, courtPicked, onChangeCourt }: {
   courtName: string; dateLabel: string; time: string; endTime: string; lengthLabel: string; venueName: string
   you: string; friends: string[]
   // who: undefined while the question is still open, otherwise the words for the line ("You + Jonesy", "Just you")
   who?: string; weekly?: string
   priceLabel: string; price: string; courtTotal?: string
   onEdit?: () => void; onChangeVenue?: () => void; onChangePlayers?: () => void; onChangeWeekly?: () => void
+  // courtPicked: the player chose this court (rather than it being assigned). onChangeCourt: offered where there is a choice.
+  courtPicked?: boolean; onChangeCourt?: () => void
 }) {
   const bare = courtName.replace(/^court\s*/i, '').trim()
   const named = !(bare.length > 0 && bare.length <= 3)
@@ -87,8 +89,13 @@ export default function BookingTicket({ courtName, dateLabel, time, endTime, len
           {onChangeVenue
             ? <button type="button" onClick={onChangeVenue} aria-label="Change Where" data-testid="answered-where" className="font-semibold">{venueName}</button>
             : venueName}
+          {courtPicked ? <span data-testid="court-picked" style={{ color: 'var(--go-text)', fontWeight: 800 }}>{' · your pick'}</span> : null}
           {courtTotal ? ` · ${courtTotal} court` : ''}
         </span>
+        {onChangeCourt && (
+          <button type="button" onClick={onChangeCourt} aria-label="Change court" data-testid="change-court" className="text-[13px] font-extrabold rounded-full px-3.5 py-1.5 shrink-0 ml-auto"
+            style={{ background: 'var(--brand-primary)', color: '#ffffff' }}>Change court</button>
+        )}
         {onEdit && (
           <button type="button" onClick={onEdit} aria-label="Change Your booking" className="text-[13px] font-extrabold rounded-full px-3.5 py-1.5 shrink-0"
             style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>Edit</button>
