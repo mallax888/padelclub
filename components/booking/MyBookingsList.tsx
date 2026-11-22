@@ -5,7 +5,7 @@ import { GO } from '@/lib/accent'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { cn, formatDate, localDateStr } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { weekGroup } from '@/lib/home-rules'
 import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
@@ -628,13 +628,18 @@ function MyBookingsListInner({
   const legacy = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
   const mem = { name: plan?.name ?? legacy.name ?? tierLabel(profile?.membership_tier), bookingWindowDays: plan?.windowDays ?? legacy.bookingWindowDays }
   const now = new Date()
-  const hasEnded = (date: string, endTime: string) => new Date(`${date}T${endTime}`) <= now
-  const upcoming = bookings.filter(b => b.status !== 'cancelled' && !hasEnded(b.date, b.end_time))
+  // Booking times are the club's wall clock. "Has it ended" and "what is today" are worked out in the club's
+  // time zone, not the viewer's, so the server (UTC) and the player's phone always agree and the page does not
+  // flip between "This week" and "Next week" while it loads.
+  const homeSlug: string | null = (profile as any)?.home_venue_slug ?? null
+  const hasEnded = (date: string, endTime: string, venueSlug?: string | null) =>
+    venueInstant(date, String(endTime), timezoneForVenueSlug(venueSlug ?? homeSlug)).getTime() <= now.getTime()
+  const upcoming = bookings.filter(b => b.status !== 'cancelled' && !hasEnded(b.date, b.end_time, (b.courts as any)?.venue_slug))
   // One rule line under the list: the clubs these bookings are at, when they all share a rule.
   const footerRules = Array.from(new Set(upcoming.map(b => (b.courts as any)?.venue_slug as string | undefined))).map(slug => rules[slug ?? ''] ?? DEFAULT_RULE)
   const footerRule = footerRules.length > 0 && footerRules.every(x => x.freeHours === footerRules[0].freeHours && x.after === footerRules[0].after) ? footerRules[0] : footerRules.length === 0 ? DEFAULT_RULE : null
-  const past = bookings.filter(b => b.status === 'cancelled' || hasEnded(b.date, b.end_time))
-  const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time))
+  const past = bookings.filter(b => b.status === 'cancelled' || hasEnded(b.date, b.end_time, (b.courts as any)?.venue_slug))
+  const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time, (j.bookings as any).courts?.venue_slug))
   const hasUpcoming = upcoming.length > 0 || upcomingJoined.length > 0
   // "You're booked!" after paying for a booking: the booking just made is the newest upcoming one.
   const paidBooking = searchParams?.get('payment') === 'success'
@@ -838,10 +843,10 @@ function MyBookingsListInner({
              was on. The row's own badge says which is which. */
           <div className="space-y-5" data-testid="upcoming-list">
             {(() => {
-              const today = localDateStr(now)
+              const today = new Intl.DateTimeFormat('en-CA', { timeZone: timezoneForVenueSlug(homeSlug) }).format(now)
               const items = [
                 ...upcoming.map((b, i) => ({ key: b.id, date: b.date, time: b.start_time, node: (
-                  <BookingRow booking={b} isNext={i === 0} collapsible onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
+                  <BookingRow key={b.id} booking={b} isNext={i === 0} collapsible onCancel={() => handleCancel(b.id)} cancelling={cancelling === b.id} splits={outgoingSplits.filter(s => s.booking_id === b.id)} bookingWindowDays={mem.bookingWindowDays} stripeDashboardBase={stripeDashboardBase} venueSettings={venueSettings} sharesOn={sharesOn} />
                 ) })),
                 ...upcomingJoined.map(j => ({ key: j.id, date: j.bookings!.date, time: j.bookings!.start_time, node: <JoinedGameRow key={j.id} game={j} currentUserId={currentUserId} /> })),
               ].sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time))
