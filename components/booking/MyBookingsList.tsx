@@ -907,11 +907,9 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
   const payment = paymentLabel(b.payment_method, b.stripe_payment_id)
   const venue = VENUES.find(v => v.slug === (b.courts as any)?.venue_slug)
   const [showReschedule, setShowReschedule] = useState(false)
-  // A booking with a spot waiting for a friend opens on the share buttons,
-  // rather than behind a tap: sending the link is the next thing to do.
-  const [expanded, setExpanded] = useState(
-    !past && splits.some(s => !s.user_id && s.status === 'pending' && !!s.invite_token),
-  )
+  // Every booking starts closed, one line each. Tap one to open it. (A booking with a spot waiting for a
+  // friend used to open itself on the share buttons; that left some open and some closed on arrival.)
+  const [expanded, setExpanded] = useState(false)
   const muted = !isNext && !past
   const [paying, setPaying] = useState(false)
   const payNow = async () => { setPaying(true); try { await startCheckout(b) } finally { setPaying(false) } }
