@@ -402,3 +402,6 @@ h1, h2, h3, h4, h5, h6 {
 
 /* the "Yesterday" line when it sits inside the blue card at the top of Today: same words, light colours */
 .yesterday-hero{--text-primary:#ffffff;--text-muted:#cfe0ff;--text-subtle:#cfe0ff;--brand-crimson:#ffc2c2;--success:#a6f3cb}
+
+/* The page and the bottom tab bar never bounce or slide: no rubber-band at the end of a page, no pull-to-refresh drag. */
+html, body { overscroll-behavior-y: none; }

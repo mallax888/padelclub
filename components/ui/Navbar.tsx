@@ -261,6 +261,10 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
           paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
           background: 'var(--bg-surface)',
           borderTop: '1px solid var(--border)',
+          // Pinned to the bottom of the screen: its own layer, so a phone's address bar collapsing or a bounce at the end of
+          // the page cannot make it drift or slide.
+          transform: 'translateZ(0)',
+          WebkitTransform: 'translateZ(0)',
         }}>
         {manager
           ? (isOwner ? OWNER_TAB_ITEMS : DESK_TAB_ITEMS).map(item => (
