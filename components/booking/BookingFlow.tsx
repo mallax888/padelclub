@@ -35,6 +35,8 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 // switcher and gated the admin board, but the booking flow offered every
 // venue in the file regardless -- so a club PadelClub has no agreement with
 // could be picked, booked and paid for.
+// The choice you made on a step (shown when you come back to it): the same blue as the booking ticket.
+const PICKED = { background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', border: '1px solid #6ea0ff', color: '#ffffff' } as const
 const LIVE_VENUES = VENUES.filter(v => v.isLive)
 const REGIONS = LIVE_VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
 const LIVE_COUNTRIES = COUNTRIES.filter(c => c.regions.some(r => REGIONS.includes(r)))
@@ -474,6 +476,13 @@ export default function BookingFlow({
   }
 
   const isSlotAvailable = (t: string) => freeCourtsAt(t).length > 0
+
+  // "from $55" under each length: the lowest court price for that many hours on the chosen day, at the off-peak rate.
+  const fromPrice = (hours: number): string | null => {
+    if (!date || selectableCourts.length === 0) return null
+    const lowest = Math.min(...selectableCourts.map(c => Math.round(c.price_per_hour * (1 - discount) * hours)))
+    return Number.isFinite(lowest) ? `from ${formatPrice(lowest, currency)}` : null
+  }
 
   // A start time someone can queue for: the club is open and has courts, the
   // whole booking fits inside opening hours, it hasn't started, and every court
@@ -1220,17 +1229,18 @@ export default function BookingFlow({
                 <button key={d}
                   onClick={() => { setDate(d); setTime(null); setStep('duration'); playSelectionSound() }}
                   className="rounded-xl p-3 text-center transition-all"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-                  onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+                  data-picked={date === d ? 'yes' : undefined}
+                  style={date === d ? PICKED : { background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+                  onMouseEnter={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
+                  onMouseLeave={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
-                  <div className="text-[10px] opacity-60">{day}</div>
-                  <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>{num}</div>
-                  <div className="text-[10px] opacity-60">{month}</div>
+                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{day}</div>
+                  <div className="text-lg font-bold" style={{ color: date === d ? '#ffffff' : 'var(--text-primary)' }}>{num}</div>
+                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{month}</div>
                   {busy && (
                     <div className="flex items-center justify-center gap-1 mt-1.5">
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: busy.color }} />
-                      <span className="text-[9px] font-semibold" style={{ color: busy.color }}>{busy.text}</span>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: date === d ? '#cfe0ff' : busy.color }} />
+                      <span className="text-[9px] font-semibold" style={{ color: date === d ? '#cfe0ff' : busy.color }}>{busy.text}</span>
                     </div>
                   )}
                 </button>
@@ -1253,20 +1263,21 @@ export default function BookingFlow({
               <button key={d.value}
                 onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
                 className="rounded-xl p-3 text-center transition-all"
-                style={{
-                  background: duration === d.value ? 'var(--brand-primary-muted)' : 'var(--bg-surface)',
-                  border: `1px solid ${duration === d.value ? 'var(--brand-primary)' : 'var(--border)'}`,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = duration === d.value ? 'var(--brand-primary)' : 'var(--border)')}
+                data-picked={duration === d.value ? 'yes' : undefined}
+                style={duration === d.value ? PICKED : { background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+                onMouseEnter={e => { if (duration !== d.value) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
+                onMouseLeave={e => { if (duration !== d.value) e.currentTarget.style.borderColor = 'var(--border)' }}
               >
-                <div className="text-lg font-bold" style={{ color: duration === d.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>
+                <div className="text-lg font-bold" style={{ color: duration === d.value ? '#ffffff' : 'var(--text-primary)' }}>
                   {d.value * 60}
                 </div>
-                <div className="text-[10px] opacity-60">min</div>
-                <div className="text-[9px] font-semibold mt-1.5" style={{ color: 'var(--brand-primary-text)' }}>
+                <div className="text-[10px]" style={{ opacity: duration === d.value ? 0.85 : 0.6 }}>min</div>
+                <div className="text-[9px] font-semibold mt-1.5" style={{ color: duration === d.value ? '#cfe0ff' : 'var(--brand-primary-text)' }}>
                   {hoursLabel(d.value)}
                 </div>
+                {fromPrice(d.value) && (
+                  <div className="text-[10px] font-bold mt-0.5" data-testid="length-price" style={{ color: duration === d.value ? '#ffffff' : 'var(--go-text)' }}>{fromPrice(d.value)}</div>
+                )}
               </button>
             ))}
           </div>
@@ -1302,7 +1313,7 @@ export default function BookingFlow({
               <span style={{ color: 'var(--text-subtle)' }}>Peak (eve + weekends)</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
-              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--brand-primary)' }} />
+              <div className="w-2 h-2 rounded-full" style={{ background: 'var(--go-text)' }} />
               <span style={{ color: 'var(--text-subtle)' }}>Off-peak</span>
             </div>
           </div>
@@ -1346,15 +1357,16 @@ export default function BookingFlow({
                 <button key={t} disabled={!available}
                   onClick={() => { setTime(t); setStep(courtChoice ? 'court' : 'confirm'); playSelectionSound() }}
                   className="rounded-xl p-3 text-center transition-all"
-                  style={{
+                  data-picked={time === t ? 'yes' : undefined}
+                  style={time === t && available ? { ...PICKED, cursor: 'pointer' } : {
                     background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
                     border: available ? '1px solid var(--border)' : '1px solid transparent',
                     color: !available ? 'var(--text-subtle)' : 'var(--text-primary)',
                     cursor: !available ? 'not-allowed' : 'pointer',
                     opacity: !available ? 0.4 : 1,
                   }}
-                  onMouseEnter={e => { if (available) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
-                  onMouseLeave={e => { if (available) e.currentTarget.style.borderColor = 'var(--border)' }}
+                  onMouseEnter={e => { if (available && time !== t) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
+                  onMouseLeave={e => { if (available && time !== t) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
                   <div className="text-sm font-semibold">{fmtClock(t)}</div>
                   {deal ? (
@@ -1362,8 +1374,8 @@ export default function BookingFlow({
                       🏷️ Deal {formatPrice(deal.price, currency)} <s style={{ opacity: 0.6 }}>{formatPrice(dealList, currency)}</s>
                     </div>
                   ) : available && (
-                    <div className="text-[10px] mt-0.5 font-medium"
-                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--brand-primary-text)' }}>
+                    <div className="text-[10px] mt-0.5 font-bold" data-testid="time-kind"
+                      style={{ color: time === t ? '#cfe0ff' : peak ? 'var(--brand-accent)' : 'var(--go-text)' }}>
                       {peak ? '⚡ Peak' : '✓ Off-peak'}
                     </div>
                   )}
