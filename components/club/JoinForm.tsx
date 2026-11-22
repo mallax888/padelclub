@@ -28,7 +28,7 @@ export default function JoinForm({ token, email, role, where }: { token: string;
   return (
     <ClubShell>
       <div className="rounded-2xl p-6" style={clubCard}>
-        <h1 className="text-xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Welcome to PadelClub</h1>
+        <h1 className="text-xl font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>Welcome to PadelMate</h1>
         <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>You are joining as <b style={{ color: 'var(--text-primary)' }} data-testid="join-role">{role}</b> ({where}).</p>
         <form onSubmit={submit} className="space-y-4">
           <div><label className="label">Email</label><input className="input" value={email} disabled readOnly /></div>

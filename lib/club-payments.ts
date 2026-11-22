@@ -1,6 +1,6 @@
 // Server-only: where a card payment goes. A club that has finished connecting Stripe is paid
-// directly (a direct charge on its own account, PadelClub's fee taken as it happens); every
-// other payment goes to PadelClub's own Stripe account exactly as before. The rules live in
+// directly (a direct charge on its own account, PadelMate's fee taken as it happens); every
+// other payment goes to PadelMate's own Stripe account exactly as before. The rules live in
 // lib/connect-rules.ts; this file is the part that touches Stripe and the database.
 import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
@@ -24,7 +24,7 @@ export const feeOf = (a: Pick<StoredAccount, 'fee_percent' | 'fee_fixed'> | null
 
 export type PaymentTarget = { account: string; venueSlug: string; feeCents: number }
 
-// Who gets paid for a payment of this size at this club. Null = PadelClub's own account.
+// Who gets paid for a payment of this size at this club. Null = PadelMate's own account.
 export async function paymentTarget(admin: any, venueSlug: string | null | undefined, amountCents: number): Promise<PaymentTarget | null> {
   if (!connectOn()) return null
   const row = await loadClubAccount(admin, venueSlug)
@@ -45,7 +45,7 @@ export async function createCheckout(params: Stripe.Checkout.SessionCreateParams
   )
 }
 
-// The account a payment was made on, for refunds. Null = PadelClub's own account.
+// The account a payment was made on, for refunds. Null = PadelMate's own account.
 export async function accountForIntent(paymentIntentId: string): Promise<string | null> {
   try {
     const admin = createAdminClient() as any

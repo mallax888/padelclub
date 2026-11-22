@@ -22,7 +22,7 @@ async function ownerFor(slug: unknown) {
   return { caller, slug }
 }
 
-const notReady = () => NextResponse.json({ error: "Direct payouts aren't switched on yet. PadelClub has to finish a one-off Stripe set-up first." }, { status: 503 })
+const notReady = () => NextResponse.json({ error: "Direct payouts aren't switched on yet. PadelMate has to finish a one-off Stripe set-up first." }, { status: 503 })
 
 // What the card shows: state, what is missing, the fee, and (once connected) money figures.
 export async function GET(request: Request) {
@@ -117,7 +117,7 @@ export async function POST(request: Request) {
     console.error('Stripe connect failed for', slug, err)
     const msg = String(err?.message ?? '')
     if (/signed up for Connect|Connect/i.test(msg) && /sign/i.test(msg)) {
-      return NextResponse.json({ error: "Stripe Connect hasn't been turned on for PadelClub's Stripe account yet." }, { status: 503 })
+      return NextResponse.json({ error: "Stripe Connect hasn't been turned on for PadelMate's Stripe account yet." }, { status: 503 })
     }
     // The exact reason from Stripe is shown to the owner who pressed the button, next to a plain
     // sentence. It holds no keys or bank details, and during set-up the person pressing it is
@@ -125,13 +125,13 @@ export async function POST(request: Request) {
     const detail = `${err?.type ?? 'Error'}: ${msg}`.slice(0, 300)
     // The one-off Stripe step that stops accounts being created: who covers losses on club accounts.
     if (/managing losses|platform[- ]profile/i.test(msg)) {
-      return NextResponse.json({ error: "PadelClub still has one Stripe setting to finish (who covers losses on club accounts). PadelClub needs to fix this.", detail }, { status: 503 })
+      return NextResponse.json({ error: "PadelMate still has one Stripe setting to finish (who covers losses on club accounts). PadelMate needs to fix this.", detail }, { status: 503 })
     }
     if (err?.type === 'StripeAuthenticationError') {
-      return NextResponse.json({ error: "Stripe didn't accept PadelClub's connection key. PadelClub needs to fix this.", detail }, { status: 502 })
+      return NextResponse.json({ error: "Stripe didn't accept PadelMate's connection key. PadelMate needs to fix this.", detail }, { status: 502 })
     }
     if (err?.type === 'StripePermissionError') {
-      return NextResponse.json({ error: "PadelClub's Stripe key isn't allowed to set up club accounts. PadelClub needs to fix this.", detail }, { status: 502 })
+      return NextResponse.json({ error: "PadelMate's Stripe key isn't allowed to set up club accounts. PadelMate needs to fix this.", detail }, { status: 502 })
     }
     return NextResponse.json({ error: 'Stripe could not start the set-up. Please try again in a moment.', detail }, { status: 502 })
   }

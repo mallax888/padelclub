@@ -80,7 +80,7 @@ export async function POST(request: Request) {
         ],
         ctaText: accepted ? 'View match' : undefined,
         ctaUrl: accepted ? matchUrl : undefined,
-        footer: `PadelClub · ${venue.name}, ${venue.region}`,
+        footer: `PadelMate · ${venue.name}, ${venue.region}`,
       }),
     })
   } catch (error) {

@@ -4,7 +4,7 @@ import { loadTeamCaller } from '@/lib/team-server'
 import { isPlatformAdmin } from '@/lib/club-access'
 import { validateFee } from '@/lib/connect-rules'
 
-// The platform admin sets PadelClub's fee for one club. Owners never see an editable fee:
+// The platform admin sets PadelMate's fee for one club. Owners never see an editable fee:
 // they see the result on each booking.
 export async function POST(request: Request) {
   const caller = await loadTeamCaller()

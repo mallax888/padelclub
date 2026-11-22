@@ -19,5 +19,5 @@ export async function loadShared(admin: any, id: string): Promise<SharedTourname
   const summary = shareSummary(t, (players ?? []) as any, (matches ?? []) as any)
   const rows = ((players ?? []) as any[]).map(p => ({ name: publicName(playerName(p)), points: p.total_points ?? 0, played: p.games_played ?? 0, won: p.games_won ?? 0 }))
     .sort((a, b) => b.points - a.points)
-  return { id: t.id, name: t.name, club: getVenue(t.venue_slug)?.name ?? 'PadelClub', date: formatDate(t.date), summary, players: rows, live: t.status === 'in_progress', rotation: isRotationFormat(t.format) }
+  return { id: t.id, name: t.name, club: getVenue(t.venue_slug)?.name ?? 'PadelMate', date: formatDate(t.date), summary, players: rows, live: t.status === 'in_progress', rotation: isRotationFormat(t.format) }
 }

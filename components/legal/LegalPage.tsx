@@ -7,8 +7,8 @@ export function LegalPage({ title, children }: { title: string; children: ReactN
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
       <header className="px-5 sm:px-8 py-5 flex items-center justify-between max-w-3xl mx-auto">
-        <Link href="/" className="text-[13px] font-extrabold" style={{ letterSpacing: '0.18em' }}>PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span></Link>
-        <Link href="/" className="text-[13px] font-bold" style={{ color: 'var(--brand-primary-text)' }}>‹ Back to PadelClub</Link>
+        <Link href="/" className="text-[13px] font-extrabold" style={{ letterSpacing: '0.18em' }}>PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span></Link>
+        <Link href="/" className="text-[13px] font-bold" style={{ color: 'var(--brand-primary-text)' }}>‹ Back to PadelMate</Link>
       </header>
       <main className="px-5 sm:px-8 pb-16 max-w-3xl mx-auto">
         <h1 className="text-3xl font-semibold" style={{ borderLeft: '3px solid var(--brand-primary)', paddingLeft: 12 }}>{title}</h1>

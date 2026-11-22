@@ -3,14 +3,14 @@ self.addEventListener('push', event => {
   try {
     data = event.data ? event.data.json() : {}
   } catch {
-    data = { title: 'PadelClub', body: event.data ? event.data.text() : '' }
+    data = { title: 'PadelMate', body: event.data ? event.data.text() : '' }
   }
 
-  const title = data.title || 'PadelClub'
+  const title = data.title || 'PadelMate'
   const options = {
     body: data.body || '',
-    icon: '/icons/icon-v3-192.png',
-    badge: '/icons/icon-v3-192.png',
+    icon: '/icons/icon-v4-192.png',
+    badge: '/icons/icon-v4-192.png',
     data: { url: data.url || '/' },
   }
 

@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { validateClubRequest } from '@/lib/club-access'
 import { MIGRATION_MESSAGE, escapeHtml, sendClubEmail, tableMissing } from '@/lib/club-server'
 
-// Public: a club asks to join PadelClub. Nothing is created except the request itself;
+// Public: a club asks to join PadelMate. Nothing is created except the request itself;
 // the platform admin approves it by hand. No account, no password, no role is set here.
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}))

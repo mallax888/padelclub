@@ -18,7 +18,7 @@ import { decodeParts, weeksPhrase } from '@/lib/regular-pay'
 export async function POST(request: Request) {
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')!
-  // Two endpoints point here: PadelClub's own account, and (once Connect is switched on) the
+  // Two endpoints point here: PadelMate's own account, and (once Connect is switched on) the
   // clubs' connected accounts. Each has its own signing secret. An event is only treated as a
   // club's if it verified against the connected-accounts secret.
   let event: any
@@ -298,7 +298,7 @@ export async function POST(request: Request) {
               total: formatPrice(booking.price_nzd, currencyForRegion(venue?.region)),
               appUrl: getAppUrl(request),
               specials: venueSlug ? getActiveSpecialsForVenueDate(venueSlug, booking.date) : [],
-              venueLabel: venue ? `PadelClub · ${venue.name}, ${venue.region}` : 'PadelClub',
+              venueLabel: venue ? `PadelMate · ${venue.name}, ${venue.region}` : 'PadelMate',
             })
           } catch (emailError) {
             // Booking is already confirmed — don't fail the webhook (and

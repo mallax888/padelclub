@@ -99,7 +99,7 @@ function ScopePicker({ scope, setScope, clubs, countries, canGrantAll }: {
           )}
         </Option>
       )}
-      {canGrantAll && <Option selected={scope.kind === 'all'} onClick={() => setScope({ kind: 'all' })} title="All clubs" text="Every club on PadelClub" />}
+      {canGrantAll && <Option selected={scope.kind === 'all'} onClick={() => setScope({ kind: 'all' })} title="All clubs" text="Every club on PadelMate" />}
     </div>
   )
 }
@@ -265,7 +265,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
             <button type="button" onClick={() => cancelInvite(i.id)} className="shrink-0 text-xs font-semibold px-1" style={{ color: 'var(--text-muted)' }} data-testid="cancel-invite-row">Cancel</button>
           </div>
         ))}
-        <p className="text-xs px-5 py-3.5 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Already have a PadelClub account? Use Add owner or Add front desk and search by name. No account yet? Send an invite by email.</p>
+        <p className="text-xs px-5 py-3.5 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Already have a PadelMate account? Use Add owner or Add front desk and search by name. No account yet? Send an invite by email.</p>
       </div>
 
       <div className="lg:hidden">
@@ -281,7 +281,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
       <div className="rounded-[20px] overflow-hidden" style={card}>{desk.length > 0 ? desk.map(m => <Row key={m.id} m={m} />) : <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No front-desk staff yet. Add someone above.</div>}</div>
 
       <p className="text-xs mt-3 px-1 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>
-        Owners see everything, including money and settings. Front desk runs the day but sees no money. Already have a PadelClub account? Use Add team member. No account yet? Send an invite.
+        Owners see everything, including money and settings. Front desk runs the day but sees no money. Already have a PadelMate account? Use Add team member. No account yet? Send an invite.
       </p>
       </div>
       </div>
@@ -289,7 +289,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
 
       {adding && (
         <Sheet title="Add team member" onClose={closeAll}>
-          <p className="text-[12.5px] mt-1" style={{ color: 'var(--text-muted)' }}>Find them by name or email. They need a PadelClub account.</p>
+          <p className="text-[12.5px] mt-1" style={{ color: 'var(--text-muted)' }}>Find them by name or email. They need a PadelMate account.</p>
           {!picked ? (
             <>
               <input autoFocus value={query} onChange={e => setQuery(e.target.value)} placeholder="Name or email" aria-label="Find a person"
@@ -308,7 +308,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
                 })}
               </div>
               {query.trim().length >= 2 && !searching && results.length === 0 && (
-                <p className="text-xs mt-3 px-1" style={{ color: 'var(--text-muted)' }}>No one found. They need to sign up to PadelClub first, and their home club needs to be one you cover.</p>
+                <p className="text-xs mt-3 px-1" style={{ color: 'var(--text-muted)' }}>No one found. They need to sign up to PadelMate first, and their home club needs to be one you cover.</p>
               )}
             </>
           ) : (

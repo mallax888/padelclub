@@ -1,4 +1,4 @@
-# PadelClub
+# PadelMate
 
 Court booking platform for padel clubs. Next.js 14 (App Router) + Supabase
 (Postgres, Auth, RLS) + Stripe, deployed to Vercel as `padelclub-nz`.

@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const unitAmount = Math.round(localPriceFromNzd(pack.priceNzd, currency) * 100)
 
     // A club that is paid directly gets this payment too (the member's home club); otherwise it
-    // goes to PadelClub's own account as before.
+    // goes to PadelMate's own account as before.
     const target = await paymentTarget(createAdminClient(), profile?.home_venue_slug, unitAmount)
     const checkoutSession = await createCheckout({
       payment_method_types: ['card'],
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
             currency,
             product_data: {
               name: `${pack.sessions}-session credit pack`,
-              description: 'PadelClub session credits — use any time, on any court',
+              description: 'PadelMate session credits — use any time, on any court',
             },
             unit_amount: unitAmount,
           },

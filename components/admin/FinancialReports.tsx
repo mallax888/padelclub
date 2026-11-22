@@ -95,7 +95,7 @@ export default function FinancialReports({
   const best = summary.byDay.reduce((m, x) => (x.revenue > m.revenue ? x : m), summary.byDay[0] ?? { date: '', revenue: 0, bookings: 0 })
   const max = Math.max(1, ...summary.byDay.map(x => x.revenue))
   const mid = summary.byDay[Math.floor(summary.byDay.length / 2)]
-  const file = (what: string) => `padelclub-${what}-${clubName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${range.from}-to-${range.to}.csv`
+  const file = (what: string) => `padelmate-${what}-${clubName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${range.from}-to-${range.to}.csv`
   const [exporting, setExporting] = useState(false)
   const downloadExcel = async () => {
     setExporting(true)

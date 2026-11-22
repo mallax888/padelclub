@@ -214,14 +214,14 @@ const AddToCalendarButton = ({ booking, courtLabel, venueAddress }: {
   <a
     href={buildBookingIcsDataUri({
       uid: booking.id,
-      title: `${courtLabel} — PadelClub`,
+      title: `${courtLabel} — PadelMate`,
       description: 'Padel court booking',
       location: venueAddress,
       date: booking.date,
       startTime: booking.start_time,
       endTime: booking.end_time,
     })}
-    download={`padelclub-${booking.date}.ics`}
+    download={`padelmate-${booking.date}.ics`}
     className="inline-flex items-center justify-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl transition-all whitespace-nowrap"
     style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
     onClick={e => e.stopPropagation()}

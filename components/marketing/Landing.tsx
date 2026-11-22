@@ -19,7 +19,7 @@ export default function Landing() {
             <g clipPath="url(#landBallClip)"><path d="M 50 4 C 20 20, 20 40, 50 50 C 80 60, 80 80, 50 96" fill="none" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" transform="rotate(25 50 50)" /></g>
             <ellipse cx="34" cy="28" rx="14" ry="9" fill="white" opacity="0.35" transform="rotate(-25 34 28)" />
           </svg>
-          <div className={styles.brandword} aria-label="PadelClub">PADEL<span className={styles.brandclub}>CLUB</span></div>
+          <div className={styles.brandword} aria-label="PadelMate">PADEL<span className={styles.brandclub}>MATE</span></div>
         </div>
         <div className={styles.navActions}>
           <Link href="/auth/login" className={`${styles.btn} ${styles.btnLime} ${styles.btnNav}`} data-testid="landing-signin">Sign in</Link>
@@ -27,7 +27,7 @@ export default function Landing() {
       </nav>
 
       <div className={styles.wrap}>
-        <section style={{ padding: '36px 0 44px', textAlign: 'center', color: 'var(--ink)' }} id="choose" aria-label="Choose how you use PadelClub" data-testid="two-doors">
+        <section style={{ padding: '36px 0 44px', textAlign: 'center', color: 'var(--ink)' }} id="choose" aria-label="Choose how you use PadelMate" data-testid="two-doors">
           <h1 style={{ fontSize: 'clamp(28px, 5vw, 44px)', lineHeight: 1.12, fontWeight: 800, margin: 0, color: 'var(--ink)', border: 'none', padding: 0 }}>Padel, made simple.<br /><span className={styles.accent}>Which one are you?</span></h1>
           <p style={{ opacity: 0.8, margin: '12px auto 26px', maxWidth: 480 }}>One app for players and for the clubs that run the courts.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: 16, maxWidth: 860, margin: '0 auto' }}>

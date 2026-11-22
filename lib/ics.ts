@@ -27,7 +27,7 @@ export function buildBookingIcsDataUri({
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//PadelClub//Booking//EN',
+    'PRODID:-//PadelMate//Booking//EN',
     'BEGIN:VEVENT',
     `UID:${uid}@padelclub`,
     `DTSTAMP:${dtstamp}`,

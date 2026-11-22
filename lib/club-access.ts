@@ -1,4 +1,4 @@
-// How people get onto the club side of PadelClub, as pure rules (no database, no React) so
+// How people get onto the club side of PadelMate, as pure rules (no database, no React) so
 // they are tested on their own.
 //   * Players sign up themselves and can only ever be players.
 //   * An owner is created by the platform admin approving a "Start a club" request.
@@ -77,7 +77,7 @@ export function planInvite(input: { caller: { role: string; reach: Reach }; emai
   if (!isTeamRole(input.role)) return { ok: false, status: 400, error: 'Choose Owner or Front desk.' }
   if (!isValidScope(input.scope)) return { ok: false, status: 400, error: 'Choose which clubs they cover.' }
   if (!covers(input.caller.reach, input.scope as TeamScope)) return { ok: false, status: 403, error: 'You can only give access to clubs you cover yourself.' }
-  if (input.emailHasAccount) return { ok: false, status: 409, error: 'That email already has a PadelClub account. Ask them to use a different email, or add them from the existing accounts below.' }
+  if (input.emailHasAccount) return { ok: false, status: 409, error: 'That email already has a PadelMate account. Ask them to use a different email, or add them from the existing accounts below.' }
   return { ok: true, email, role: input.role, columns: scopeColumns(input.scope as TeamScope) }
 }
 
@@ -85,6 +85,6 @@ export const validPassword = (p: unknown): p is string => typeof p === 'string' 
 
 // ---------------------------------------------------------------- platform admin
 // The platform admin is an owner with no club or country limit: the person who runs
-// PadelClub itself. Only they see the club requests.
+// PadelMate itself. Only they see the club requests.
 export const isPlatformAdmin = (caller: { role: string; reach: Reach } | null): boolean =>
   !!caller && caller.role === 'admin' && caller.reach.venueSlug === null && caller.reach.country === null

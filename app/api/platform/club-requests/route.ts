@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     const { error } = await admin.from('club_requests').update({ status: 'declined', decline_reason: reason || null, decided_by: caller.id, decided_at: new Date().toISOString() }).eq('id', req.id)
     if (error) return NextResponse.json({ error: 'Could not save that. Please try again.' }, { status: 500 })
     await sendClubEmail({
-      to: req.email, subject: 'Your PadelClub request', heading: 'About your club request',
+      to: req.email, subject: 'Your PadelMate request', heading: 'About your club request',
       intro: `Hi ${escapeHtml(req.contact_name)}, thanks for asking to start <b>${escapeHtml(req.club_name)}</b>. We are not able to set it up right now.${reason ? ` ${escapeHtml(reason)}` : ''}`,
       footer: 'You are welcome to reply to this email or try again later.',
     })
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   const venue = VENUES.find(v => v.slug === b.venueSlug)
   if (!venue) return NextResponse.json({ error: 'Choose which club this is in the list. If it is not there yet, it has to be added first.' }, { status: 400 })
   if (await emailHasAccount(admin, req.email)) {
-    return NextResponse.json({ error: 'That email already has a PadelClub account (probably a player). Ask them for a different work email, then decline this and have them send it again.' }, { status: 409 })
+    return NextResponse.json({ error: 'That email already has a PadelMate account (probably a player). Ask them for a different work email, then decline this and have them send it again.' }, { status: 409 })
   }
 
   const { token, hash } = newInviteToken()
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
   const link = joinLink(request, token)
   const emailed = await sendClubEmail({
-    to: req.email, subject: `${req.club_name} is approved on PadelClub`, heading: 'Your club is approved',
+    to: req.email, subject: `${req.club_name} is approved on PadelMate`, heading: 'Your club is approved',
     intro: `Hi ${escapeHtml(req.contact_name)}, <b>${escapeHtml(req.club_name)}</b> is approved. Set a password to open your club dashboard.`,
     ctaText: 'Set my password', ctaUrl: link, footer: 'This link works once and expires in 7 days. If you did not ask for this, ignore this email.',
   })

@@ -150,7 +150,7 @@ export function briefingEmail(b: Briefing, o: { name: string; venueName: string;
   if (b.overdueCount > 0) rows.push(item(`${plural(b.overdueCount, 'share is', 'shares are')} overdue`, b.overdueTotal !== null ? `${amount(b.overdueTotal, o.currency)} still to collect` : 'Still to collect', 'Remind all', o.remindUrl))
   if (b.newPlayers > 0) rows.push(item(`${plural(b.newPlayers, 'new player', 'new players')} joined yesterday`, 'Have a look at who they are', 'See players', o.todayUrl.replace('/admin/today', '/players')))
   const html = `<div style="font-family:Inter,Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;color:#1b1f24;border-radius:14px;overflow:hidden;border:1px solid #e3e7ec">
-<div style="background:#262B31;color:#fff;padding:14px 22px;font-size:11px;letter-spacing:.14em;font-weight:800">PADEL<span style="color:#86BBF7">CLUB</span> · Good morning, ${esc(o.name)}</div>
+<div style="background:#262B31;color:#fff;padding:14px 22px;font-size:11px;letter-spacing:.14em;font-weight:800">PADEL<span style="color:#86BBF7">MATE</span> · Good morning, ${esc(o.name)}</div>
 <div style="padding:22px">
 <h2 style="margin:0 0 4px;font-size:21px">${esc(headline)}</h2>
 <p style="margin:0 0 14px;font-size:13px;color:#4a525c;line-height:1.55">${esc(o.venueName)} in 30 seconds.</p>

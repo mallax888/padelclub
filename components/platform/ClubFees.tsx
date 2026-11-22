@@ -13,7 +13,7 @@ export default function ClubFees({ clubs }: { clubs: ClubFee[] }) {
   return (
     <div className="mt-8" data-testid="club-fees">
       <h2 className="text-lg font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>Club payments</h2>
-      <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>PadelClub&apos;s fee on each card payment to a club. The club pays Stripe&apos;s own card fee. Only you can change this; owners see the result on their own screen.</p>
+      <p className="text-xs mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>PadelMate&apos;s fee on each card payment to a club. The club pays Stripe&apos;s own card fee. Only you can change this; owners see the result on their own screen.</p>
       {clubs.length === 0
         ? <p className="text-sm rounded-2xl p-4" style={{ ...card, color: 'var(--text-muted)' }}>No club has started connecting Stripe yet.</p>
         : <div className="grid gap-3">{clubs.map(c => <Row key={c.venueSlug} club={c} />)}</div>}

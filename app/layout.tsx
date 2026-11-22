@@ -13,19 +13,19 @@ const inter = Inter({ subsets: ['latin'] })
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display' })
 
 export const metadata: Metadata = {
-  title: { default: 'PadelClub - Book padel courts', template: '%s | PadelClub' },
+  title: { default: 'PadelMate - Book padel courts', template: '%s | PadelMate' },
   description: 'Book padel courts, find a game, split payments.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'PadelClub',
+    title: 'PadelMate',
   },
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
-    'apple-mobile-web-app-title': 'PadelClub',
+    'apple-mobile-web-app-title': 'PadelMate',
   },
 }
 
@@ -49,7 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="color-scheme" content="light dark" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <link rel="icon" href="/icons/icon-v3-192.png" type="image/png" />
+        <link rel="icon" href="/icons/icon-v4-192.png" type="image/png" />
       </head>
       <body className={`${inter.className} ${manrope.variable}`}>
         <ThemeProvider defaultTheme="system" enableSystem>

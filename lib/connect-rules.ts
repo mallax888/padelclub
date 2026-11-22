@@ -1,8 +1,8 @@
 // How a club gets paid through Stripe, as pure rules (no database, no Stripe, no React) so
 // they are tested on their own.
 //   * Each club connects its OWN Stripe account (a "Standard" account). A player's card
-//     payment goes straight to that account, so PadelClub never holds the club's money.
-//   * PadelClub's fee is taken from each payment as it happens: a percentage, plus an
+//     payment goes straight to that account, so PadelMate never holds the club's money.
+//   * PadelMate's fee is taken from each payment as it happens: a percentage, plus an
 //     optional fixed amount. The club pays Stripe's own card fee, refunds and chargebacks
 //     (that is how a direct charge works), so those are not our fee.
 //   * Until a club has connected, and until the switch below is on, payments work exactly
@@ -33,7 +33,7 @@ export function validateFee(percent: unknown, fixed: unknown): FeeResult {
   return { ok: true, value: { percent: Math.round(p * 100) / 100, fixed: Math.round(f * 100) / 100 } }
 }
 
-// PadelClub's fee on one payment, in cents. Never more than the payment itself, never negative.
+// PadelMate's fee on one payment, in cents. Never more than the payment itself, never negative.
 export function applicationFeeCents(amountCents: number, fee: FeeSetting = DEFAULT_FEE): number {
   const amount = Math.max(0, Math.round(amountCents))
   const raw = Math.round((amount * fee.percent) / 100) + Math.round(fee.fixed * 100)
@@ -94,6 +94,6 @@ export function describeDue(due: string[] | null | undefined): string[] {
 }
 
 // ---------------------------------------------------------------- refunds
-// A refund of a direct charge is taken from the club's own balance, and PadelClub gives its
+// A refund of a direct charge is taken from the club's own balance, and PadelMate gives its
 // fee back with it, so the club is made whole.
 export const REFUND_APPLICATION_FEE = true

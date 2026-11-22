@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   if (b?.email === false) return NextResponse.json({ ok: true, emailed: false, link })
   const where = scopeLabel(scopeOf(inv))
   const emailed = await sendClubEmail({
-    to: inv.email, subject: `${caller.name ?? 'An owner'} invited you to PadelClub`, heading: 'You have been invited',
+    to: inv.email, subject: `${caller.name ?? 'An owner'} invited you to PadelMate`, heading: 'You have been invited',
     intro: `${escapeHtml(caller.name ?? 'An owner')} invited you to join as <b>${roleLabel(inv.role)}</b> (${escapeHtml(where)}). Set a password to open the club dashboard.`,
     ctaText: 'Set my password', ctaUrl: link, footer: 'This link works once and expires in 7 days. If you do not know the person who invited you, ignore this email and nothing happens.',
   })
