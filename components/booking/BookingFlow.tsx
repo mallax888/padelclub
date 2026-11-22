@@ -867,7 +867,7 @@ export default function BookingFlow({
   type Group = 'where' | 'date' | 'duration' | 'time' | 'court' | 'players' | 'regular' | 'pay'
   const groupOf = (st: Step): Group => (st === 'country' || st === 'region' || st === 'venue' ? 'where' : st === 'confirm' ? (confirmStage === 'players' ? 'players' : confirmStage === 'regular' ? 'regular' : 'pay') : st)
   const venuePickerSkipped = venue === homeVenue && homeVenue !== null && visibleSteps[0] === 'date'
-  const groups: Group[] = [...(venuePickerSkipped ? [] : ['where' as Group]), 'date', 'duration', 'time', ...(courtChoice ? ['court' as Group] : []), 'players', ...(askRegular ? ['regular' as Group] : []), 'pay']
+  const groups: Group[] = [...(venuePickerSkipped ? [] : ['where' as Group]), 'date', 'duration', 'time', ...(courtChoice ? ['court' as Group] : []), 'players', ...(regularAllowed ? ['regular' as Group] : []), 'pay']
   const groupNow = groupOf(step)
   const groupLabel: Record<Group, string> = { where: 'Where are you playing?', date: 'When?', duration: 'How long?', time: 'What time?', court: 'Which court?', players: 'Anyone playing with you?', regular: 'Same time every week?', pay: 'Check and pay' }
   const done = (g: Group) => groups.indexOf(g) < groups.indexOf(groupNow)

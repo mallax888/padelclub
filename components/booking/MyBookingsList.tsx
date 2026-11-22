@@ -27,6 +27,7 @@ import { canSkipWeek, weekRows, upcomingWeeks, bookedWeekCount, weekdayPlural, s
 import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
 import BookedCelebration from '@/components/booking/BookedCelebration'
 import InviteShare from '@/components/invites/InviteShare'
+import { CourtTile } from '@/components/booking/BookingTicket'
 
 interface BookingWithCourt {
   id: string
@@ -973,6 +974,150 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
     )
   }
 
+  const rescheduleModal = showReschedule && venue ? (
+    <RescheduleModal
+      bookingId={b.id}
+      courtId={b.court_id}
+      courtLabel={`${b.courts?.name} — ${b.courts?.type}`}
+      venueName={venue.name}
+      durationMinutes={b.duration_minutes}
+      bookingWindowDays={bookingWindowDays}
+      hours={weekFor(venueSettings, (b.courts as any)?.venue_slug ?? '')}
+      onClose={() => setShowReschedule(false)}
+      onRescheduled={() => { setShowReschedule(false); router.refresh() }}
+    />
+  ) : null
+
+  // An opened booking is a set of tiles: the ticket across the top, then where, what you pay, the friends, sharing,
+  // and the two things you can change. (Past bookings keep the plain card below.)
+  if (collapsible && expanded) {
+    const unpaidShares = splits.filter(s => s.status !== 'paid')
+    const paidShares = splits.length - unpaidShares.length
+    const tile = 'rounded-[18px] p-3.5 flex flex-col gap-2'
+    const tileStyle = { background: 'var(--bg-raised)', border: '1px solid var(--border)' } as const
+    const label = { fontSize: 10.5, letterSpacing: '0.1em', color: 'var(--text-subtle)' } as const
+    return (
+      <div className="rounded-[20px] p-3 sm:p-4" data-testid="booking-open" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+        <button onClick={() => setExpanded(false)} className="flex items-center gap-1.5 text-xs font-semibold mb-2.5 ml-1" style={{ color: 'var(--text-subtle)' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
+          Close
+        </button>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="col-span-2 rounded-[18px] p-4 flex items-center gap-3.5" style={{ background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', color: '#ffffff' }}>
+            <CourtTile name={b.courts?.name ?? ''} size={66} />
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: '#cfe0ff' }}>
+                {isNext && 'Up next · '}{longDate(b.date)}{b.regular_id ? ' · 🔁 Regular' : ''}
+              </div>
+              <div className="font-black leading-none" style={{ fontSize: 36, letterSpacing: '-0.03em' }}>{fmtClock(b.start_time)}</div>
+              <div className="text-[13px] font-bold mt-1" style={{ color: '#cfe0ff' }}>until {fmtClock(b.end_time)} · {durationLabel(b.duration_minutes)} · {b.courts?.name} — {b.courts?.type}</div>
+            </div>
+          </div>
+
+          <div className={tile} style={tileStyle}>
+            <div className="font-extrabold uppercase" style={label}>Where</div>
+            <div className="text-[14.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{venue?.name ?? 'The club'}</div>
+            {venue && (
+              <div className="flex flex-wrap gap-1.5 mt-auto">
+                <DirectionsButton address={venue.address} />
+                <AddToCalendarButton booking={b} courtLabel={`${b.courts?.name} — ${b.courts?.type}`} venueAddress={venue.address} />
+              </div>
+            )}
+          </div>
+
+          <div className={tile} style={tileStyle}>
+            <div className="font-extrabold uppercase" style={label}>{yourShare !== null ? 'Your share' : 'Price'}</div>
+            <div className="leading-none" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, fontSize: 28 }}>{formatPrice(yourShare ?? b.price_nzd, bookingCurrency)}</div>
+            {yourShare !== null && (
+              <div className="text-[10.5px] font-bold" style={{ color: 'var(--brand-primary-text)' }}>Split {shareCount} ways · {formatPrice(b.price_nzd, bookingCurrency)} court</div>
+            )}
+            <div className="text-[11px] font-bold uppercase tracking-wide" style={{ color: b.status === 'confirmed' ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{b.status}</div>
+            {b.stripe_payment_id ? (
+              <a href={`${stripeDashboardBase}/${b.stripe_payment_id}`} target="_blank" rel="noopener noreferrer" className="text-[11px] font-medium" style={{ color: payment.color, textDecoration: 'underline' }}>{payment.label} · Receipt ↗</a>
+            ) : (
+              <div className="text-[11px] font-medium" style={{ color: payment.color }}>{payment.label}</div>
+            )}
+            {!past && b.status === 'confirmed' && !b.stripe_payment_id && b.pay_by && (
+              <>
+                <div className="text-[11px] font-bold" style={{ color: 'var(--brand-yellow)' }}>Pay by {fmtPayBy(b.pay_by, timezoneForVenueSlug((b.courts as any)?.venue_slug))}</div>
+                <button onClick={payNow} disabled={paying} className="rounded-full px-3 text-xs font-bold disabled:opacity-50" style={{ minHeight: 36, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{paying ? 'Opening…' : 'Pay now'}</button>
+              </>
+            )}
+          </div>
+
+          {splits.length > 0 && (
+            <div className={`col-span-2 ${tile}`} style={tileStyle}>
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-extrabold uppercase" style={label}>Friends</div>
+                <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: unpaidShares.length > 0 ? 'var(--text-muted)' : 'var(--go-text)' }}>
+                  {unpaidShares.length > 0 ? `${unpaidShares.length} of ${splits.length} still to pay` : 'All paid'}
+                </div>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)' }} aria-hidden>
+                <div className="h-full rounded-full" style={{ width: `${Math.round((paidShares / splits.length) * 100)}%`, background: 'linear-gradient(90deg, #1f9a5f, #34D399)' }} />
+              </div>
+              {members.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {members.map(sp => {
+                    const name = sp.profiles?.nickname ?? sp.profiles?.full_name ?? 'Player'
+                    const paid = sp.status === 'paid'
+                    return (
+                      <span key={sp.id} className="inline-flex items-center gap-1.5">
+                        <PlayerChip name={name} paid={paid} />
+                        {!paid && (
+                          <RemindButton name={name} amount={formatPrice(Math.round(yourShare ?? b.price_nzd), bookingCurrency)} court={b.courts?.name ?? 'the court'} venueName={venue?.name ?? 'the club'} when={`${formatDate(b.date)} at ${fmtClock(b.start_time)}`} />
+                        )}
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+              {sharesOn && b.status === 'confirmed' && <div className="[&>*]:!mt-0"><ShareDeadlineBox booking={b} shares={splits} /></div>}
+            </div>
+          )}
+
+          {openSeats.length > 0 && (
+            <div className={`col-span-2 ${tile}`} style={tileStyle}>
+              {openSeats.map((seat, i) => (
+                <div key={seat.id} className="flex flex-col gap-2">
+                  <div className="font-extrabold uppercase" style={label}>
+                    {openSeats.length > 1 ? `Spot ${i + 1} is waiting for a friend` : 'A spot is waiting for a friend'}
+                    <span className="normal-case font-medium" style={{ letterSpacing: 0 }}> · send them the link</span>
+                  </div>
+                  <InviteShare
+                    token={seat.invite_token as string}
+                    court={b.courts?.name ?? 'the court'}
+                    venueName={venue?.name ?? 'the club'}
+                    when={`${formatDate(b.date)} at ${fmtClock(b.start_time)}`}
+                    amount={formatPrice(bookerShareCents(b.price_nzd, shareCount) / 100, bookingCurrency)}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {(canReschedule || canCancel) && (
+            <div className="col-span-2 grid grid-cols-2 gap-2 [&>*:only-child]:col-span-2">
+              {canReschedule && (
+                <div className="rounded-[18px] p-2.5 flex flex-col items-center gap-0.5" style={{ background: 'var(--bg-raised)', border: '1px solid var(--brand-primary)' }}>
+                  <button type="button" onClick={() => setShowReschedule(true)} className="w-full py-2 text-[14px] font-extrabold" style={{ color: 'var(--brand-primary-text)' }}>Reschedule</button>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>No charge</span>
+                </div>
+              )}
+              {canCancel && (
+                <div className="rounded-[18px] p-2.5 flex flex-col items-center gap-0.5" style={{ background: 'var(--bg-raised)', border: '1px solid var(--brand-accent)' }}>
+                  <button onClick={onCancel} disabled={cancelling} className="w-full py-2 text-[14px] font-extrabold disabled:opacity-60" style={{ color: 'var(--brand-accent)' }}>{cancelling ? '…' : 'Cancel'}</button>
+                  <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)' }}>{!isPaid ? 'No charge' : isLateCancel ? (rule.after === 'half' ? '50% credit' : 'No refund') : 'Full refund'}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        {rescheduleModal}
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-[20px] p-5" style={{
       background: 'var(--bg-surface)',
@@ -1133,19 +1278,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
           ))}
         </div>
       )}
-      {showReschedule && venue && (
-        <RescheduleModal
-          bookingId={b.id}
-          courtId={b.court_id}
-          courtLabel={`${b.courts?.name} — ${b.courts?.type}`}
-          venueName={venue.name}
-          durationMinutes={b.duration_minutes}
-          bookingWindowDays={bookingWindowDays}
-          hours={weekFor(venueSettings, (b.courts as any)?.venue_slug ?? '')}
-          onClose={() => setShowReschedule(false)}
-          onRescheduled={() => { setShowReschedule(false); router.refresh() }}
-        />
-      )}
+      {rescheduleModal}
     </div>
   )
 }

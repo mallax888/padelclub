@@ -54,7 +54,7 @@ export default function InviteShare({ token, court, venueName, when, amount }: {
   const neutral = { background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' } as const
 
   return (
-    <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+    <div className="grid grid-cols-3 gap-2">
       <button type="button" onClick={whatsapp} className={base}
         style={{ background: `${WHATSAPP_GREEN}24`, border: `1px solid ${WHATSAPP_GREEN}80`, color: 'var(--text-primary)' }}>
         {/* The green stays on the icon and the tint. As label text it was about
