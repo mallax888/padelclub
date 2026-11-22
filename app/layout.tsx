@@ -48,8 +48,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <meta name="color-scheme" content="light dark" />
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <link rel="icon" href="/icons/icon-192.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="icon" href="/icons/icon-v3-192.png" type="image/png" />
       </head>
       <body className={`${inter.className} ${manrope.variable}`}>
         <ThemeProvider defaultTheme="system" enableSystem>
