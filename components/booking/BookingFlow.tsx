@@ -700,7 +700,7 @@ export default function BookingFlow({
     if (makePublic && bookingData) {
       // Every level is stored as 0-7, as the "All levels" option always was.
       const { min, max } = openToAll ? { min: 0, max: 7 } : levelRange
-      const { data: newMatch } = await sb.from('open_matches').insert({
+      const { data: newMatch, error: matchError } = await sb.from('open_matches').insert({
         booking_id: bookingData.id,
         organizer_id: userId,
         venue_slug: venue?.slug ?? 'auckland-albany',
@@ -717,11 +717,24 @@ export default function BookingFlow({
       }).select().single()
 
       if (newMatch) {
-        await sb.from('open_match_players').insert({
+        const { error: seatError } = await sb.from('open_match_players').insert({
           match_id: newMatch.id,
           player_id: userId,
           status: 'accepted',
         })
+        if (seatError) console.error('Could not add the organiser to their own open play game', seatError)
+      } else {
+        // The game never reached the Open play list. Release the booking on the spot and say why, rather than taking
+        // payment for an Open play game nobody can see (the same rule as invite seats above).
+        console.error('Could not list the booking on Open play', matchError)
+        await fetch('/api/cancel-booking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bookingId: bookingData.id }),
+        }).catch(() => null)
+        toast.error(`We could not list your game on Open play, so nothing was booked${matchError?.message ? ` (${matchError.message})` : ''}. Please try again.`, { duration: 8000 })
+        setSubmitting(false)
+        return
       }
     }
 
