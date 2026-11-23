@@ -7,6 +7,8 @@ import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
 import YesterdayStrip from '@/components/admin/YesterdayStrip'
 import { FillButton, OverdueRow } from '@/components/admin/TodayActionRows'
 import ClubMap from '@/components/admin/ClubMap'
+import CourtRevenuePie from '@/components/admin/CourtRevenuePie'
+import type { CourtRevenue } from '@/lib/court-revenue'
 import type { MapBooking } from '@/lib/club-map'
 import type { CourtDay } from '@/lib/court-day'
 import type { Briefing } from '@/lib/briefing'
@@ -32,6 +34,7 @@ export type TodayViewProps = {
   openSeats: { count: number; soonest: string | null }
   emptyHoursToday: number
   courtDay: CourtDay // each court, hour by hour, for the card that replaces "Courts right now"
+  courtRevenue?: CourtRevenue | null // owners only: today's booked revenue by court, for the pie
   nowMinutes: number // the club's own time, in minutes since midnight
   map: { courts: { id: string; name: string; today: number; lastWeek: number }[]; bookings: MapBooking[]; takings: number; bounds: { from: string; to: string } | null; date: string }
   closeToday: string | null // when the club closes today (null = closed all day)
@@ -182,6 +185,7 @@ export default function TodayView(p: TodayViewProps) {
             yesterday={p.briefing ? <YesterdayStrip hero b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} brandNew={p.briefing.brandNew} /> : null}
             stillToPlay={s.bookings.remaining} bookedPct={p.courtDay.pct} unpaidChase={p.showMoney ? null : unpaid.count}
             courts={p.courtDay.rows.map(r => ({ id: r.id, name: r.name, row: r, today: p.map.courts.find(c => c.id === r.id)?.today ?? 0, lastWeek: p.map.courts.find(c => c.id === r.id)?.lastWeek ?? 0 }))} />
+          {p.showMoney && p.courtRevenue && <div className="mt-6"><CourtRevenuePie revenue={p.courtRevenue} currency={p.currency} /></div>}
         </div>
       )}
     </div>

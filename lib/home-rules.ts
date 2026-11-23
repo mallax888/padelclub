@@ -191,3 +191,20 @@ export function comingUp<B extends HomeBooking>(bookings: B[], next: { id: strin
     .sort((a, b) => startMs(a) - startMs(b))
     .slice(0, limit)
 }
+
+// "today", "tomorrow" or "in 4 days", counted from the player's own today.
+export function inDays(date: string, today: string): string {
+  const d = dayNumber(date) - dayNumber(today)
+  return d <= 0 ? 'today' : d === 1 ? 'tomorrow' : `in ${d} days`
+}
+
+// The Monday-to-Sunday week that contains `today`, one entry a day, marking the days with a game booked.
+export const WEEK_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+export function weekStrip(today: string, bookedDates: string[]): { date: string; weekday: string; day: number; booked: boolean; isToday: boolean }[] {
+  const monday = dayNumber(today) - ((weekdayIndex(today) + 6) % 7)
+  const booked = new Set(bookedDates)
+  return WEEK_DAYS.map((weekday, i) => {
+    const date = new Date((monday + i) * 86400000).toISOString().slice(0, 10)
+    return { date, weekday, day: Number(date.slice(8, 10)), booked: booked.has(date), isToday: date === today }
+  })
+}

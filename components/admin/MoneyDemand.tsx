@@ -7,6 +7,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import OfferSheet from '@/components/admin/OfferSheet'
 import type { OfferRow } from '@/lib/offers'
+import { closedOfferLine, splitOffers } from '@/lib/offers-view'
+import { timezoneForVenueSlug } from '@/lib/timezone'
 import { formatDate } from '@/lib/utils'
 import { currencyForVenueSlug, formatPrice } from '@/lib/currency'
 import {
@@ -74,7 +76,7 @@ export default function MoneyDemand({ venueSlug, courts, bookings, unpaidShares,
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
           <OverdueCard venueSlug={venueSlug} rows={unpaidShares} now={now} currency={currency} />
           <BestSlotsCard venueSlug={venueSlug} courts={courts} bookings={bookings} now={now} currency={currency} week={week} onFill={offers ? setFill : undefined} />
-          {offers && offers.length > 0 && <OffersCard offers={offers} currency={currency} onChanged={() => router.refresh()} onFill={setFill} />}
+          {offers && offers.length > 0 && <OffersCard offers={offers} currency={currency} today={new Intl.DateTimeFormat('en-CA', { timeZone: timezoneForVenueSlug(venueSlug) }).format(now)} onChanged={() => router.refresh()} onFill={setFill} />}
           {waitDemand && <WaitlistCard demand={waitDemand} />}
         </div>
       )}
@@ -119,14 +121,15 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
           <div key={r.id} className="flex items-center gap-3.5 py-3" style={{ borderTop: '1px solid var(--border)' }} data-testid="overdue-row">
             <DateTile date={r.date} month />
             <div className="min-w-0 flex-1">
-              <div className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{r.playerName} <span className="font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>· {formatPrice(r.amount, currency)}</span></div>
+              <div className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{r.playerName}</div>
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {r.courtName} · {formatDate(r.date)} {fmtClock(r.startTime)}{r.organiserName ? ` · organised by ${r.organiserName}` : ''}
               </div>
             </div>
-            <div className="text-right shrink-0">
+            <div className="flex flex-col items-end gap-1.5 shrink-0" style={{ width: ACTION_W }}>
+              <div className="text-right leading-tight"><div className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>owes</div><div className="text-[17px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }} data-testid="overdue-amount">{formatPrice(r.amount, currency)}</div></div>
               <button type="button" disabled={sent[r.id] === 'busy' || sent[r.id] === 'sent'} onClick={() => remind(r.id)}
-                className="text-xs font-extrabold px-3.5 py-2 rounded-full disabled:opacity-60" style={LIME} data-testid="remind-both">
+                className="w-full text-center text-xs font-extrabold px-2 py-2 rounded-full disabled:opacity-60" style={LIME} data-testid="remind-both">
                 {sent[r.id] === 'sent' ? 'Reminded' : sent[r.id] === 'busy' ? 'Sending…' : 'Remind both'}
               </button>
               {sent[r.id] === 'error' && <div className="text-[10.5px] mt-1" style={{ color: 'var(--brand-crimson)' }}>Could not send. Try again.</div>}
@@ -143,6 +146,9 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
     </div>
   )
 }
+
+// The right-hand column of both lists: the price, then one button, the same width in each card.
+const ACTION_W = 118
 
 const WEEKDAY_NAMES = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays']
 
@@ -227,11 +233,11 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
               <div className="text-[14px] font-bold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{fmtClockRange(g.from, g.to)}</div>
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatDate(g.date)} · {g.fillPct}% full · {g.empty} of {g.courts} {g.courts === 1 ? 'court' : 'courts'} free · {g.kind === 'peak' ? 'peak' : 'quiet'}</div>
             </div>
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex flex-col items-end gap-1.5 shrink-0" style={{ width: ACTION_W }}>
               <div className="text-right leading-tight"><div className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>up to</div><div className="text-[17px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{formatPrice(g.potential, currency)}</div></div>
               {onFill && (
                 <button type="button" onClick={() => onFill({ date: g.date, from: g.from, to: g.to })}
-                  className="text-xs font-extrabold px-3.5 py-2 rounded-full" style={LIME}>Fill it</button>
+                  className="w-full text-center text-xs font-extrabold px-2 py-2 rounded-full" style={LIME}>Fill it</button>
               )}
             </div>
           </div>
@@ -244,35 +250,47 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
   )
 }
 
-// Offers the owner has sent, with what each one achieved.
-function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[]; currency: ReturnType<typeof currencyForVenueSlug>; onChanged: () => void; onFill: (g: { date: string; from: string; to: string }) => void }) {
+// Offers the owner has sent. Live ones stay big with their results; closed ones from the last week shrink to a
+// single line; anything older folds away behind one line, so the card is about what is on now.
+function OffersCard({ offers, currency, today, onChanged, onFill }: { offers: OfferRow[]; currency: ReturnType<typeof currencyForVenueSlug>; today: string; onChanged: () => void; onFill: (g: { date: string; from: string; to: string }) => void }) {
   const [busy, setBusy] = useState<string | null>(null)
+  const [showEarlier, setShowEarlier] = useState(false)
   async function end(id: string) {
     setBusy(id)
     try { await fetch('/api/admin/offers/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) }) } finally { setBusy(null); onChanged() }
   }
+  const { live, recent, earlier } = splitOffers(offers, today)
+  const ghost = { background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' } as const
+  const again = (o: OfferRow) => o.ended && o.date >= today && (
+    <button type="button" onClick={() => onFill({ date: o.date, from: o.start_time.slice(0, 5), to: o.end_time.slice(0, 5) })} className="text-xs font-bold px-3 py-1.5 rounded-full shrink-0" style={ghost}>Run it again</button>
+  )
+  const closedRow = (o: OfferRow) => (
+    <div key={o.id} className="flex items-center gap-3 py-2.5 flex-wrap" style={{ borderTop: '1px solid var(--border)' }} data-testid="offer-row-closed">
+      <span className="shrink-0 rounded-full px-2.5 py-1 text-[11.5px] font-black whitespace-nowrap" style={{ background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{o.discount_percent}% off</span>
+      <span className="text-[13px] font-semibold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{formatDate(o.date)} · {fmtClockRange(o.start_time, o.end_time)}</span>
+      <span className="text-[12px] min-w-0 flex-1" style={{ color: 'var(--text-muted)' }}>{closedOfferLine(o, formatPrice(o.results.earned, currency))}</span>
+      {again(o)}
+    </div>
+  )
+  const label = (text: string) => <div className="text-[10.5px] font-extrabold uppercase mt-4 mb-1" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>{text}</div>
   return (
     <div className="rounded-[20px] p-5 lg:col-span-2" style={card} data-testid="offers-card">
       <CardHeading className="">Offers you&apos;ve sent</CardHeading>
       <div className="mt-2">
-        {offers.map((o, i) => (
+        {live.length === 0 && (
+          <p className="text-[13px] py-2" style={{ color: 'var(--text-muted)' }} data-testid="offers-none-live">No offer is open right now.</p>
+        )}
+        {live.map((o, i) => (
           <div key={o.id} className="py-3.5" style={{ borderTop: i === 0 ? 'none' : '1px solid var(--border)' }} data-testid="offer-row">
             <div className="flex items-start gap-3.5 flex-wrap">
-              <span className="shrink-0 rounded-full px-3.5 py-2 text-[13px] font-black whitespace-nowrap" style={o.ended ? { background: 'var(--bg-raised)', color: 'var(--text-muted)' } : { background: 'linear-gradient(160deg,#1f9a5f,#0f5c38)', color: '#ffffff' }}>{o.discount_percent}% off</span>
+              <span className="shrink-0 rounded-full px-3.5 py-2 text-[13px] font-black whitespace-nowrap" style={{ background: 'linear-gradient(160deg,#1f9a5f,#0f5c38)', color: '#ffffff' }}>{o.discount_percent}% off</span>
               <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-bold" style={{ color: o.ended ? 'var(--text-muted)' : 'var(--text-primary)' }}>{formatDate(o.date)} · {fmtClockRange(o.start_time, o.end_time)}</div>
+                <div className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(o.date)} · {fmtClockRange(o.start_time, o.end_time)}</div>
                 <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                  Told {o.told_count} {o.told_count === 1 ? 'player' : 'players'} · {o.status === 'cancelled' ? 'Ended early' : o.ended ? 'Closed' : <span style={{ color: 'var(--brand-green)', fontWeight: 800 }}>Open now</span>}
+                  Told {o.told_count} {o.told_count === 1 ? 'player' : 'players'} · <span style={{ color: 'var(--brand-green)', fontWeight: 800 }}>Open now</span>
                 </div>
               </div>
-              <div className="flex gap-2">
-                {!o.ended && (
-                  <button type="button" disabled={busy === o.id} onClick={() => end(o.id)} className="text-xs font-bold px-3 py-1.5 rounded-full disabled:opacity-50" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>End offer</button>
-                )}
-                {o.ended && o.date >= new Date().toISOString().slice(0, 10) && (
-                  <button type="button" onClick={() => onFill({ date: o.date, from: o.start_time.slice(0, 5), to: o.end_time.slice(0, 5) })} className="text-xs font-bold px-3 py-1.5 rounded-full" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>Run it again</button>
-                )}
-              </div>
+              <button type="button" disabled={busy === o.id} onClick={() => end(o.id)} className="text-xs font-bold px-3 py-1.5 rounded-full disabled:opacity-50" style={ghost}>End offer</button>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
               <span><b style={{ color: 'var(--text-primary)' }}>{o.results.courtsBooked}</b> {o.results.courtsBooked === 1 ? 'court' : 'courts'} booked</span>
@@ -282,6 +300,16 @@ function OffersCard({ offers, currency, onChanged, onFill }: { offers: OfferRow[
             </div>
           </div>
         ))}
+        {recent.length > 0 && (<>{label('Closed this week')}{recent.map(closedRow)}</>)}
+        {earlier.length > 0 && (
+          <div className="mt-2" style={{ borderTop: '1px solid var(--border)' }}>
+            <button type="button" onClick={() => setShowEarlier(v => !v)} aria-expanded={showEarlier} data-testid="offers-earlier-toggle"
+              className="w-full flex items-center justify-between pt-3 text-[13px] font-bold" style={{ color: 'var(--brand-primary-text)' }}>
+              <span>Earlier offers ({earlier.length})</span><span>{showEarlier ? 'Hide ▴' : 'Show ▾'}</span>
+            </button>
+            {showEarlier && <div className="mt-1" data-testid="offers-earlier">{earlier.map(closedRow)}</div>}
+          </div>
+        )}
       </div>
     </div>
   )

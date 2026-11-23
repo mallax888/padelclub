@@ -3,7 +3,7 @@ import { VENUES, getVenue } from '@/lib/venues'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import { fmtClock, fmtHour, fmtUntil } from '@/lib/clock'
-import { countdownLabel, dayWord, greetingFor, levelText, mapsUrl, nextOccurrence, shareChips, startsAtMs, usualLink, type HomeBooking, type Usual } from '@/lib/home-rules'
+import { countdownLabel, dayWord, greetingFor, inDays, weekStrip, levelText, mapsUrl, nextOccurrence, shareChips, startsAtMs, usualLink, type HomeBooking, type Usual } from '@/lib/home-rules'
 import { Avatars, CourtTile } from '@/components/booking/BookingTicket'
 import GameCountdown from '@/components/home/GameCountdown'
 import NextGameCourt from '@/components/home/NextGameCourt'
@@ -255,20 +255,42 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
           {later.length > 0 && (
             <section className="hidden md:block" data-testid="coming-up">
               <h3 className="text-[11px] font-extrabold uppercase mb-2.5 px-0.5" style={label}>Coming up</h3>
-              <div className="rounded-[20px] overflow-hidden" style={card}>
-                {later.map((b, i) => {
-                  const v = b.courts?.venue_slug ? getVenue(b.courts.venue_slug) : null
-                  const owes = !b.stripe_payment_id && !!b.pay_by
-                  return (
-                    <Link key={b.id} href="/mybookings" className="flex items-center gap-4 px-4 py-3.5" style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
-                      <span className="shrink-0 w-[150px]"><span data-testid="coming-up-date" className="inline-block rounded-full px-3.5 py-1 text-[14px] font-extrabold whitespace-nowrap" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{dateParts(b.date).short}</span></span>
-                      <span className="min-w-0 flex-1 truncate text-[14.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
-                        {b.courts?.name ?? 'Court'} <span className="font-semibold" style={{ color: 'var(--text-subtle)' }}>· {b.regular_id ? 'Every week · ' : ''}{fmtClock(b.start_time)}{v && v.slug !== homeSlug ? ` · ${v.name}` : ''}</span>
-                      </span>
-                      {owes && <span className="shrink-0 text-[11px] font-black rounded-full px-2.5 py-1 whitespace-nowrap" style={{ background: BALL, color: INK }}>Pay your share</span>}
-                    </Link>
-                  )
-                })}
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-stretch">
+                <div className="rounded-[20px] overflow-hidden" style={card}>
+                  {later.map((b, i) => {
+                    const v = b.courts?.venue_slug ? getVenue(b.courts.venue_slug) : null
+                    const owes = !b.stripe_payment_id && !!b.pay_by
+                    return (
+                      <Link key={b.id} href="/mybookings" className="flex items-center gap-4 px-4 py-3.5" style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
+                        <span className="shrink-0 w-[112px]"><span data-testid="coming-up-date" className="inline-block rounded-full px-3.5 py-1 text-[14px] font-extrabold whitespace-nowrap" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>{dateParts(b.date).short}</span></span>
+                        <span className="min-w-0 flex-1 truncate text-[14.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
+                          {b.courts?.name ?? 'Court'} <span className="font-semibold" style={{ color: 'var(--text-subtle)' }}>· {b.regular_id ? 'Every week · ' : ''}{fmtClock(b.start_time)}{v && v.slug !== homeSlug ? ` · ${v.name}` : ''}</span>
+                        </span>
+                        {owes && <span className="shrink-0 text-[11px] font-black rounded-full px-2.5 py-1 whitespace-nowrap" style={{ background: BALL, color: INK }}>Pay your share</span>}
+                        <span className="shrink-0 text-[12px] whitespace-nowrap" style={{ color: 'var(--text-muted)' }} data-testid="coming-up-in">{inDays(b.date, todayDate)}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+                <div className="rounded-[20px] p-5 flex flex-col" style={card} data-testid="week-panel">
+                  <h4 className="text-[11px] font-extrabold uppercase mb-3" style={label}>This week</h4>
+                  <div className="grid grid-cols-7 gap-1">
+                    {weekStrip(todayDate, [next?.date, ...later.map(b => b.date)].filter((d): d is string => !!d)).map(d => (
+                      <div key={d.date} data-testid="week-day" data-booked={d.booked ? 'yes' : 'no'} className="text-center rounded-xl py-2" style={{ background: d.isToday ? 'var(--bg-raised)' : 'transparent' }}>
+                        <div className="text-[10.5px] font-extrabold" style={{ color: 'var(--text-muted)' }}>{d.weekday}</div>
+                        <div className="text-[15px] font-extrabold mt-0.5 mb-1.5" style={{ color: 'var(--text-primary)' }}>{d.day}</div>
+                        <i className="block mx-auto rounded-full" style={{ width: 8, height: 8, background: d.booked ? BALL : 'transparent', border: d.booked ? 'none' : '1px solid var(--border)' }} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-auto pt-4 flex items-center justify-between gap-3" style={{ borderTop: '1px solid var(--border)' }}>
+                    {(() => {
+                      const n = weekStrip(todayDate, [next?.date, ...later.map(b => b.date)].filter((d): d is string => !!d)).filter(d => d.booked).length
+                      return <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }} data-testid="week-count"><b style={{ color: 'var(--text-primary)' }}>{n} {n === 1 ? 'day' : 'days'}</b> with a game this week</span>
+                    })()}
+                    <Link href="/book" className="shrink-0 rounded-full px-3.5 py-2 text-[12px] font-black" style={{ background: BALL, color: INK }}>Book another</Link>
+                  </div>
+                </div>
               </div>
             </section>
           )}
