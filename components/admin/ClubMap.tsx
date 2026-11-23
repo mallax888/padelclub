@@ -185,18 +185,18 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
           const hot = showMoney && day.openValue > 0
           return (
             <div className="grid grid-cols-2 lg:grid-cols-[1fr_1fr_1.25fr] gap-2.5 lg:gap-3.5 mt-3.5 lg:mt-5 lg:flex-1 lg:max-h-[300px]" data-testid="map-title">
-              <div className="px-4 py-3.5 lg:px-[18px] lg:py-5 flex flex-col justify-between gap-3" style={tile}>
+              <div className="px-4 py-3.5 lg:px-5 lg:py-5 flex flex-col justify-between gap-3" style={tile}>
                 <span className={big} style={{ letterSpacing: '-0.04em' }} data-testid="map-number">{bookingsToday}</span>
                 <span className={cap} style={{ color: soft }}>{bookingsToday === 1 ? 'booking' : 'bookings'} · <span data-testid="map-compare">{comparison(bookingsToday - bookingsLastWeek, weekdayShort)}</span></span>
               </div>
-              <div className="px-4 py-3.5 lg:px-[18px] lg:py-5 flex flex-col justify-between gap-3" style={tile}>
+              <div className="px-4 py-3.5 lg:px-5 lg:py-5 flex flex-col justify-between gap-3" style={tile}>
                 {goal ? (
                   <><span className={big} style={{ letterSpacing: '-0.04em' }} data-testid="map-taken">{money(takings, currency)}</span><span className={cap} style={{ color: soft }}>taken of {money(potential, currency)} possible</span></>
                 ) : (
                   <><span className={big} style={{ letterSpacing: '-0.04em' }}>{bookedPct ?? 0}%</span><span className={cap} style={{ color: soft }}>of court-hours booked</span></>
                 )}
               </div>
-              <div className="col-span-2 lg:col-span-1 px-4 py-3.5 lg:px-[18px] lg:py-5 flex flex-col justify-between gap-3" style={hot ? { background: '#d4f53c', border: '1px solid #d4f53c', borderRadius: 20, color: '#1b2300' } : tile} data-testid="map-hot">
+              <div className="col-span-2 lg:col-span-1 px-4 py-3.5 lg:px-5 lg:py-5 flex flex-col justify-between gap-3" style={hot ? { background: '#d4f53c', border: '1px solid #d4f53c', borderRadius: 20, color: '#1b2300' } : tile} data-testid="map-hot">
                 <span className={big} style={{ letterSpacing: '-0.04em' }}>{hot ? money(day.openValue, currency) : day.openNow}</span>
                 <span className={cap} style={{ color: hot ? '#3b4a00' : soft }} data-testid="court-day-summary">
                   {none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? `still to win · ${day.openNow} court-${day.openNow === 1 ? 'hour' : 'hours'} open` : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
