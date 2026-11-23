@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { readPushSupport, subscribeToPush, type PushSupport } from '@/lib/push-client'
 
-const DISMISSED_KEY = 'padelclub.remindersPromptDismissed'
+const DISMISSED_KEY = 'padelmate.remindersPromptDismissed'
 
 // Asking for notification permission is a one-shot: deny it and the browser
 // never shows the prompt again, on any visit. The only place it was asked

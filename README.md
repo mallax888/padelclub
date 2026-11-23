@@ -23,7 +23,7 @@ Supports court bookings, membership tiers, session credit packs, and a staff adm
 ### 1. Create a Supabase project
 
 1. Go to [supabase.com](https://supabase.com) → New project
-2. Choose a name (e.g. `padelclub`), set a strong database password, select **Sydney** region (closest to NZ)
+2. Choose a name (e.g. `padelmate`), set a strong database password, select **Sydney** region (closest to NZ)
 3. Wait ~2 minutes for it to spin up
 
 ### 2. Run the database migration
@@ -85,7 +85,7 @@ After deploy, update your Supabase Auth URLs to your Vercel domain.
 ## Project structure
 
 ```
-padelclub/
+padelmate/
 ├── app/
 │   ├── (app)/                  # Auth-protected routes
 │   │   ├── layout.tsx          # Shared layout with Navbar + auth guard

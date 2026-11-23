@@ -185,8 +185,8 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
   useEffect(() => { setTabParam(urlTab) }, [urlTab])
   useEffect(() => {
     const on = (e: Event) => { const t = (e as CustomEvent).detail; if (typeof t === 'string') setTabParam(t) }
-    window.addEventListener('padelclub:tab', on)
-    return () => window.removeEventListener('padelclub:tab', on)
+    window.addEventListener('padelmate:tab', on)
+    return () => window.removeEventListener('padelmate:tab', on)
   }, [])
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -213,7 +213,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
     e.preventDefault()
     const url = new URL(window.location.href); url.searchParams.set('tab', m[1])
     window.history.replaceState(null, '', url.toString())
-    window.dispatchEvent(new CustomEvent('padelclub:tab', { detail: m[1] }))
+    window.dispatchEvent(new CustomEvent('padelmate:tab', { detail: m[1] }))
     setMenuOpen(false)
   }
   const managerTabActive = (item: { href: string; tab: string | null }) =>
