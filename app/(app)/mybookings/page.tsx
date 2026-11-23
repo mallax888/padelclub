@@ -18,7 +18,7 @@ export default async function MyBookingsPage() {
   const supabase = createServerClient()
   await keepClubAccountsOut(supabase, '/mybookings')
   const { data: { session } } = await supabase.auth.getSession()
-  const [{ data: bookings }, { data: profile }, { data: splitRequests }, { data: outgoingSplits }, { data: joinedGames }, venueSettings] = await Promise.all([
+  const [{ data: bookings }, { data: profile }, { data: splitRequests }, { data: outgoingSplits }, { data: joinedGames }, { data: refundedShares }, venueSettings] = await Promise.all([
     supabase
       .from('bookings')
       .select('*, courts(*)')
@@ -40,6 +40,11 @@ export default async function MyBookingsPage() {
       .select('*, bookings(*, courts(*), booking_splits(user_id, status, profiles!booking_splits_user_id_fkey(nickname, full_name))), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
       .eq('user_id', session!.user.id)
       .eq('status', 'paid'),
+    supabase
+      .from('booking_splits')
+      .select('*, bookings(date, start_time, end_time, courts(name, type, venue_slug)), profiles!booking_splits_invited_by_fkey(nickname, full_name)')
+      .eq('user_id', session!.user.id)
+      .eq('status', 'refunded'),
     loadVenueSettings(supabase),
   ])
   // Times the player is waiting on (empty if the waitlist table isn't there yet), their active weekly regulars (empty if
@@ -94,7 +99,7 @@ export default async function MyBookingsPage() {
         </div>
         <Link href="/book" data-testid="new-booking" aria-label="New booking" className="shrink-0 rounded-full px-4 text-[13px] font-extrabold inline-flex items-center" style={{ minHeight: 40, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>+ New</Link>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} pastUnpaid={pastUnpaid} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} rules={await loadRules(createAdminClient())} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} pastUnpaid={pastUnpaid} pastRefunded={(refundedShares ?? []) as any} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} rules={await loadRules(createAdminClient())} />
     </div>
   )
 }
