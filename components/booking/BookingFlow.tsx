@@ -19,6 +19,7 @@ import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-se
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
 import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
+import { PlaceCard, MonthCalendar, LengthDial } from '@/components/booking/BookCards'
 import { memberDiscount, memberWindowDays, effectivePlans, planOf, type PlanRow } from '@/lib/plan-rules'
 import NearMe from '@/components/booking/NearMe'
 import type { Court, Profile } from '@/types/database'
@@ -1067,119 +1068,34 @@ export default function BookingFlow({
         </>
       )}
       {step === 'region' && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 animate-fade-in">
-          {countryFilteredRegions.map(r => {
+        <div className="grid gap-3 lg:grid-cols-3 lg:gap-4 animate-fade-in" data-testid="city-grid">
+          {countryFilteredRegions.map((r, i) => {
             const venues = LIVE_VENUES.filter(v => v.region === r)
             const totalCourts = courts.filter(ct => venues.some(v => v.slug === (ct as any).venue_slug)).length
             return (
-              <button key={r}
-                onClick={() => { setRegion(r); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('venue'); playSelectionSound() }}
-                className="rounded-xl p-5 text-left transition-all flex flex-col justify-between"
-                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', minHeight: 160 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-              >
-                <div>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', marginBottom: 12 }}>
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                  </svg>
-                  <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r}</div>
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    <span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{venues.length}</span> venue{venues.length > 1 ? 's' : ''} · {totalCourts > 0
-                      ? <><span style={{ color: 'var(--brand-primary-text)', fontWeight: 600 }}>{totalCourts}</span> courts</>
-                      : 'courts coming soon'}
-                  </div>
-                </div>
-                <div className="flex gap-1 mt-3 flex-wrap">
-                  {/* The whole name, cut with an ellipsis if the tile is too
-                      narrow. It used to keep only the last two words, which is
-                      fine for "Pacific Padel Albany" and turns "Tribe Padel &
-                      Wellness" into "& Wellness" and "Padel Fit Thebarton" into
-                      "Fit Thebarton". */}
-                  {venues.slice(0,2).map(v => (
-                    <span key={v.slug} className="text-[10px] px-2 py-0.5 rounded-full min-w-0 max-w-full truncate"
-                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary-muted)' }}>
-                      {v.name}
-                    </span>
-                  ))}
-                  {venues.length > 2 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full"
-                      style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)', border: '1px solid var(--brand-primary-muted)' }}>
-                      +{venues.length - 2} more
-                    </span>
-                  )}
-                </div>
-              </button>
+              <PlaceCard key={r} index={i} testid={`city-${r}`} title={r} sub={`${venues.length} venue${venues.length > 1 ? 's' : ''}`}
+                pill={totalCourts > 0 ? `${totalCourts} courts` : 'Courts coming soon'}
+                onClick={() => { setRegion(r); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('venue'); playSelectionSound() }} />
             )
           })}
-          {/* Not a spacer: it says the map is still growing, so a three-city
-              country doesn't read as a half-finished grid. Deliberately names
-              no city -- announcing one before there is a venue to book would
-              be a promise the app can't keep. Not a button, nothing happens
-              on tap. */}
-          <div className="rounded-xl p-5 text-left flex flex-col justify-between"
-            style={{ background: 'transparent', border: '1px dashed var(--border)', minHeight: 160 }}>
-            <div>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-subtle)', marginBottom: 12 }}>
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-              </svg>
-              <div className="text-lg font-bold mb-1" style={{ color: 'var(--text-muted)' }}>More cities</div>
-              <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>We&apos;re adding clubs</div>
-            </div>
-            <div className="flex gap-1 mt-3 flex-wrap">
-              <span className="text-[10px] px-2 py-0.5 rounded-full"
-                style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)', border: '1px dashed var(--border)' }}>
-                Coming soon
-              </span>
-            </div>
-          </div>
         </div>
       )}
 
       {/* STEP: Venue */}
       {step === 'venue' && (
-        <div className="space-y-2 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-4 animate-fade-in">
-          {regionVenues.map(v => {
-            // A club that has courts but isn't open for booking yet looks the
-            // same to players as one with no courts: "coming soon".
+        <div className="grid gap-3 lg:grid-cols-3 lg:gap-4 animate-fade-in" data-testid="venue-grid">
+          {regionVenues.map((v, i) => {
+            // A club that has courts but isn't open for booking yet looks the same to players as one with no courts: "coming soon".
             const realCourtCount = isOpenForBooking(venueSettings, v.slug)
               ? courts.filter(c => (c as any).venue_slug === v.slug).length
               : 0
             return (
-            <button key={v.slug}
-              onClick={() => {
-                if (realCourtCount === 0) {
-                  toast.error(`${v.name} doesn't have any courts set up yet.`)
-                  return
-                }
-                setVenue(v); setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); playSelectionSound()
-              }}
-              className="w-full rounded-xl px-4 py-4 text-left transition-all flex items-center justify-between"
-              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', opacity: realCourtCount === 0 ? 0.6 : 1 }}
-              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--brand-primary)')}
-              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
-            >
-              <div>
-                <div className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text-primary)' }}>{v.name}</div>
-                <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>
-                  {v.address.split(',').slice(0,2).join(',')}
-                </div>
-                <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  {realCourtCount > 0 ? `${realCourtCount} courts` : 'Courts coming soon'}
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-2">
-                {realCourtCount === 0 && (
-                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-                    style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>
-                    Soon
-                  </span>
-                )}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: 'var(--text-subtle)' }}>
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </div>
-            </button>
+              <PlaceCard key={v.slug} index={i} testid={`venue-${v.slug}`} title={v.name} sub={v.address.split(',').slice(0, 2).join(',')}
+                pill={realCourtCount > 0 ? `${realCourtCount} ${realCourtCount === 1 ? 'court' : 'courts'}` : 'Courts coming soon'} club={v.slug === homeSlug} dim={realCourtCount === 0}
+                onClick={() => {
+                  if (realCourtCount === 0) { toast.error(`${v.name} doesn't have any courts set up yet.`); return }
+                  setVenue(v); setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); playSelectionSound()
+                }} />
             )
           })}
         </div>
@@ -1187,10 +1103,12 @@ export default function BookingFlow({
 
       {/* Find a club near me: once, at the bottom of the city screen. By then the country is known and it is only the area they are unsure of. Members with a home club skip these screens and get the Travelling card on the date step instead. */}
       {step === 'region' && (
-        <div className="rounded-2xl p-4 mt-4" data-testid="near-me-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
-          <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Not sure of the area?</div>
-          <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>We&apos;ll find clubs within 25 km of where you are. Great when you&apos;re travelling.</p>
-          <button type="button" data-testid="near-me-button" onClick={() => setNearOpen(true)} className="btn-main">Find a club near me</button>
+        <div className="mt-4" data-testid="near-me-card">
+          <button type="button" data-testid="near-me-button" onClick={() => setNearOpen(true)} className="w-full flex items-center gap-2.5 rounded-2xl px-4 py-3.5 text-left"
+            style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
+            <span aria-hidden>📍</span><span className="text-[15px] font-extrabold">Find a club near me</span>
+            <span className="ml-auto text-[12px] font-semibold" style={{ color: 'var(--text-muted)' }}>within 25 km</span>
+          </button>
         </div>
       )}
 
@@ -1199,53 +1117,35 @@ export default function BookingFlow({
           it. Date, length and time stay separate screens: one question at a
           time is what makes the flow feel like it's guiding you. */}
       {step === 'date' && (
-        <div className="animate-fade-in">
-          <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:mb-5 lg:[&>*]:mb-0 lg:[&>*:only-child]:col-span-2">
+        <div className="animate-fade-in lg:grid lg:grid-cols-[1.6fr_1fr] lg:gap-x-5 items-start">
           {homeVenue && venue?.slug === homeVenue.slug && (
-            <div className="rounded-2xl p-5 mb-4" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
+            <div className="rounded-2xl p-5 mb-4 order-1 lg:col-start-2 lg:row-start-1" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Travelling?</div>
               <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Find a club near you and book there. Your home club stays the same.</p>
               <button type="button" onClick={() => setNearOpen(true)} className="btn-main">Find a club near me</button>
             </div>
           )}
-          <button
-            onClick={() => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }}
-            className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-5 text-left"
-            style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span className="min-w-0">
-              <span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{venue?.name}</span>
-              <span className="block text-[11px]" style={{ color: 'var(--text-subtle)' }}>{venue?.region}</span>
-            </span>
-            <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--link-change)' }}>Change</span>
-          </button>
+          {/* The club is already shown in the Where row above; only when that row is skipped (a member opening on their home club) does it need its own line here. */}
+          {venuePickerSkipped && (
+            <button
+              onClick={() => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }}
+              className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-4 text-left order-1 lg:col-start-2"
+              style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold truncate" style={{ color: 'var(--text-primary)' }}>{venue?.name}</span>
+                <span className="block text-[11px]" style={{ color: 'var(--text-subtle)' }}>{venue?.region}</span>
+              </span>
+              <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--link-change)' }}>Change</span>
+            </button>
+          )}
+          <div className="order-2 lg:col-start-1 lg:row-start-1 lg:row-span-3">
+            <MonthCalendar bookable={dates} picked={date} isBusy={d => busynessLabel(dateBusyness[d])?.text === 'Busy'}
+              onPick={d => { setDate(d); setTime(null); setStep('duration'); playSelectionSound() }} />
           </div>
-
-          <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 lg:gap-4">
-            {dates.map(d => {
-              const { day, num, month } = dateLabel(d)
-              const busy = busynessLabel(dateBusyness[d])
-              return (
-                <button key={d}
-                  onClick={() => { setDate(d); setTime(null); setStep('duration'); playSelectionSound() }}
-                  className="rounded-xl p-3 text-center transition-all"
-                  data-picked={date === d ? 'yes' : undefined}
-                  style={date === d ? PICKED : { background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-                  onMouseEnter={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
-                  onMouseLeave={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--border)' }}
-                >
-                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{day}</div>
-                  <div className="text-lg font-bold" style={{ color: date === d ? '#ffffff' : 'var(--text-primary)' }}>{num}</div>
-                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{month}</div>
-                  {busy && (
-                    <div className="flex items-center justify-center gap-1 mt-1.5">
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: date === d ? '#cfe0ff' : busy.color }} />
-                      <span className="text-[9px] font-semibold" style={{ color: date === d ? '#cfe0ff' : busy.color }}>{busy.text}</span>
-                    </div>
-                  )}
-                </button>
-              )
-            })}
+          <div className="order-3 mt-4 lg:mt-0 lg:col-start-2 rounded-2xl px-4 py-3.5 text-[13px] leading-relaxed" data-testid="calendar-key" style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            <div><span style={{ color: 'var(--brand-accent)' }}>●</span> Busy day</div>
+            <div className="mt-1">Book up to {dates.length} days ahead</div>
           </div>
         </div>
       )}
@@ -1254,31 +1154,10 @@ export default function BookingFlow({
           kind. The court itself is still assigned from what's free. */}
       {step === 'duration' && (
         <div className="animate-fade-in">
-          {/* Same four-across grid as the date tiles on the previous screen,
-              down to the three-line shape: the hour reading sits where a date
-              carries its Quiet/Busy line, so the two steps read as one
-              control rather than two different kinds of picker. */}
-          <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 lg:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 lg:gap-4" data-testid="length-grid">
             {DURATIONS.map(d => (
-              <button key={d.value}
-                onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }}
-                className="rounded-xl p-3 text-center transition-all"
-                data-picked={duration === d.value ? 'yes' : undefined}
-                style={duration === d.value ? PICKED : { background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
-                onMouseEnter={e => { if (duration !== d.value) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
-                onMouseLeave={e => { if (duration !== d.value) e.currentTarget.style.borderColor = 'var(--border)' }}
-              >
-                <div className="text-lg font-bold" style={{ color: duration === d.value ? '#ffffff' : 'var(--text-primary)' }}>
-                  {d.value * 60}
-                </div>
-                <div className="text-[10px]" style={{ opacity: duration === d.value ? 0.85 : 0.6 }}>min</div>
-                <div className="text-[9px] font-semibold mt-1.5" style={{ color: duration === d.value ? '#cfe0ff' : 'var(--brand-primary-text)' }}>
-                  {hoursLabel(d.value)}
-                </div>
-                {fromPrice(d.value) && (
-                  <div className="text-[10px] font-bold mt-0.5" data-testid="length-price" style={{ color: duration === d.value ? '#ffffff' : 'var(--go-text)' }}>{fromPrice(d.value)}</div>
-                )}
-              </button>
+              <LengthDial key={d.value} minutes={d.value * 60} picked={duration === d.value} price={fromPrice(d.value) ?? hoursLabel(d.value)}
+                onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }} />
             ))}
           </div>
 
@@ -1368,7 +1247,7 @@ export default function BookingFlow({
                   onMouseEnter={e => { if (available && time !== t) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
                   onMouseLeave={e => { if (available && time !== t) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
-                  <div className="text-sm font-semibold">{fmtClock(t)}</div>
+                  <div className="text-[15px] font-extrabold">{fmtClock(t)}</div>
                   {deal ? (
                     <div className="text-[10px] mt-0.5 font-bold" data-testid="deal-tile" style={{ color: 'var(--brand-green, var(--brand-primary-text))' }}>
                       🏷️ Deal {formatPrice(deal.price, currency)} <s style={{ opacity: 0.6 }}>{formatPrice(dealList, currency)}</s>

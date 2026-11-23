@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
-import { DISCOUNT_CHOICES, MAX_PERKS, MAX_PLANS, type Plan } from '@/lib/plan-rules'
+import { DISCOUNT_CHOICES, MAX_PERKS, MAX_PLANS, bookAhead, type Plan } from '@/lib/plan-rules'
 import type { PlanStats } from '@/lib/club-plans'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
@@ -125,7 +125,7 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
                   {p.price === 0 ? 'Free' : <>{formatPrice(p.price, currency)}<span className="text-[13px] font-bold"> / month</span></>}
                 </span>
                 <span className="block text-[11.5px] mt-1" style={{ color: 'rgba(255,255,255,0.8)' }}>
-                  {p.discountPercent > 0 ? `${p.discountPercent}% off` : 'No discount'} · book {p.windowDays} days ahead
+                  {p.discountPercent > 0 ? `${p.discountPercent}% off` : 'No discount'} · book {bookAhead(p.windowDays)} days ahead
                 </span>
               </button>
               <div className="mt-3">

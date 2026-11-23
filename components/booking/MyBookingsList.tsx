@@ -10,7 +10,7 @@ import { weekGroup } from '@/lib/home-rules'
 import { hoursUntilBooking, venueInstant, timezoneForVenueSlug } from '@/lib/timezone'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { MEMBERSHIP_CONFIG } from '@/types/database'
-import { tierLabel } from '@/lib/plan-rules'
+import { bookAhead, tierLabel } from '@/lib/plan-rules'
 import { DEFAULT_RULE, cancelOutcome, hoursWord, isFree, policyDetail, policySummary, type CancellationRule } from '@/lib/cancellation-rules'
 
 // Each club's cancellation rule, from the server page. A club that has not changed it keeps the default.
@@ -631,7 +631,7 @@ function MyBookingsListInner({
 
   // The member's plan at their home club (name and how many days ahead they can book).
   const legacy = MEMBERSHIP_CONFIG[profile?.membership_tier ?? 'casual'] ?? MEMBERSHIP_CONFIG['casual']
-  const mem = { name: plan?.name ?? legacy.name ?? tierLabel(profile?.membership_tier), bookingWindowDays: plan?.windowDays ?? legacy.bookingWindowDays }
+  const mem = { name: plan?.name ?? legacy.name ?? tierLabel(profile?.membership_tier), bookingWindowDays: bookAhead(plan?.windowDays ?? legacy.bookingWindowDays) }
   const now = new Date()
   // Booking times are the club's wall clock. "Has it ended" and "what is today" are worked out in the club's
   // time zone, not the viewer's, so the server (UTC) and the player's phone always agree and the page does not

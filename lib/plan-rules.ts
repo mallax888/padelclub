@@ -14,6 +14,9 @@ export const MAX_PERK_LENGTH = 80
 export const MAX_PRICE = 10000
 export const MIN_WINDOW = 1
 export const MAX_WINDOW = 60
+// Everyone can book at least this far ahead, whatever their plan.
+export const BOOK_AHEAD_DAYS = 30
+export const bookAhead = (days: number | null | undefined): number => Math.max(BOOK_AHEAD_DAYS, Number(days) || 0)
 export const MAX_GRANT_DAYS = 800
 
 export type PlanRow = {
@@ -93,10 +96,10 @@ export function memberDiscount(rows: PlanRow[] | null | undefined, o: { tier: st
 // home club, otherwise the club's Casual window.
 export function memberWindowDays(rows: PlanRow[] | null | undefined, o: { tier: string | null | undefined; homeSlug: string | null | undefined; venueSlug: string | null | undefined }): number {
   const tier = o.tier ?? 'casual'
-  if (!o.homeSlug) return (MEMBERSHIP_CONFIG as any)[tier]?.bookingWindowDays ?? 14
+  if (!o.homeSlug) return bookAhead((MEMBERSHIP_CONFIG as any)[tier]?.bookingWindowDays)
   const slug = o.venueSlug ?? o.homeSlug
   const plans = effectivePlans(rows, slug)
-  return planOf(plans, slug === o.homeSlug ? tier : 'casual').windowDays
+  return bookAhead(planOf(plans, slug === o.homeSlug ? tier : 'casual').windowDays)
 }
 
 // The lines shown to players: what the plan really does, then the owner's own.
@@ -104,7 +107,7 @@ export function planLines(p: Plan): string[] {
   const lines: string[] = []
   if (p.discountPercent > 0) lines.push(`${p.discountPercent}% off every court booking`)
   else if (p.key === 'casual') lines.push('Book courts at the normal price')
-  lines.push(`Book up to ${p.windowDays} days ahead`)
+  lines.push(`Book up to ${bookAhead(p.windowDays)} days ahead`)
   return [...lines, ...p.perks]
 }
 
