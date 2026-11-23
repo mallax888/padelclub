@@ -145,6 +145,8 @@ export async function applyCancellationRefund(
   let refundFailed = false
   let splitsRefunded = 0
   let splitsWithdrawn = 0
+  // What the booker got back, kept on the booking so My bookings can say "Refunded $X" afterwards.
+  let refund: { cents: number; kind: 'card' | 'credit' | 'session' } | null = null
 
   // Everyone who paid a share, refunded in full. Done before the booker's
   // own branch so a failure here still surfaces through refundFailed even
@@ -197,16 +199,20 @@ export async function applyCancellationRefund(
   // The booker's own money.
   if (booking.stripe_payment_id && paidSlice) {
     if (fullRefund) {
-      if (!(await refundPartial(booking.stripe_payment_id, paidSlice, `slice-refund-${booking.id}`))) refundFailed = true
+      if (await refundPartial(booking.stripe_payment_id, paidSlice, `slice-refund-${booking.id}`)) refund = { cents: paidSlice, kind: 'card' }
+      else refundFailed = true
     } else if (booking.user_id && lateCredit) {
       creditAmount = Math.round((paidSlice * 0.5) / 100)
       await admin.rpc('increment_credits', { p_user_id: booking.user_id, p_amount: creditAmount })
+      if (creditAmount > 0) refund = { cents: creditAmount * 100, kind: 'credit' }
     }
   } else if (booking.stripe_payment_id) {
     if (fullRefund) {
-      if (!(await refundIntent(booking.stripe_payment_id, booking.id))) {
-        refundFailed = true
-      }
+      // What their card was charged, read before refunding so it can be shown afterwards.
+      const shareCountFull = (paidSplits?.length ?? 0) + splitsWithdrawn + 1
+      const chargedCents = await amountPaidCents(booking.stripe_payment_id, booking.price_nzd / shareCountFull)
+      if (await refundIntent(booking.stripe_payment_id, booking.id)) refund = { cents: chargedCents, kind: 'card' }
+      else refundFailed = true
     } else if (booking.user_id && lateCredit) {
       // Half of what this person actually paid -- not half the court fee.
       // On a $120 court split four ways the booker is charged $30, and
@@ -223,9 +229,11 @@ export async function applyCancellationRefund(
       // then disagree with what actually landed in their balance.
       creditAmount = Math.round((paidCents * 0.5) / 100)
       await admin.rpc('increment_credits', { p_user_id: booking.user_id, p_amount: creditAmount })
+      if (creditAmount > 0) refund = { cents: creditAmount * 100, kind: 'credit' }
     }
   } else if (booking.payment_method === 'credits' && booking.user_id && fullRefund) {
     creditsRefunded = 1
+    refund = { cents: 1, kind: 'session' }
     await admin.rpc('increment_credits', { p_user_id: booking.user_id, p_amount: 1 })
     await admin.from('credit_transactions').insert({
       user_id: booking.user_id,
@@ -236,6 +244,12 @@ export async function applyCancellationRefund(
         ? 'Session credit refunded — booking cancelled by the club'
         : 'Session credit refunded — booking cancelled with 24+ hours notice',
     })
+  }
+
+  // Best effort: the columns only exist once the refund-record database change has been run, and a failure here
+  // must never undo or hide a refund that has already gone out.
+  if (refund) {
+    try { await (admin as any).from('bookings').update({ refund_cents: refund.cents, refund_kind: refund.kind }).eq('id', booking.id) } catch {}
   }
 
   return { isPaid, hoursUntil, creditAmount, creditsRefunded, refundFailed, splitsRefunded, splitsWithdrawn }

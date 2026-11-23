@@ -583,6 +583,7 @@ function MyBookingsListInner({
   profile,
   splitRequests = [],
   pastUnpaid = [],
+  pastRefunded = [],
   outgoingSplits = [],
   joinedGames = [],
   currentUserId,
@@ -599,6 +600,8 @@ function MyBookingsListInner({
   splitRequests?: SplitRequest[]
   // Unpaid shares on games that are already over: nothing is owed on them, so they only show in Past.
   pastUnpaid?: SplitRequest[]
+  // Shares the player paid on a game that was then cancelled: the money went back to their card.
+  pastRefunded?: SplitRequest[]
   outgoingSplits?: OutgoingSplit[]
   joinedGames?: JoinedGame[]
   currentUserId?: string
@@ -647,11 +650,12 @@ function MyBookingsListInner({
   const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time, (j.bookings as any).courts?.venue_slug))
   const pastJoined = joinedGames.filter(j => j.bookings && hasEnded(j.bookings.date, j.bookings.end_time, (j.bookings as any).courts?.venue_slug))
   const nameOf = (p: { nickname: string | null; full_name: string | null } | null) => p?.nickname ?? p?.full_name ?? null
-  const pastOwn: PastOwn[] = past.map(b => ({ id: b.id, date: b.date, startTime: b.start_time, court: b.courts?.name ?? 'Court', venueSlug: (b.courts as any)?.venue_slug ?? null, status: b.status, price: Number(b.price_nzd) || 0, method: b.payment_method, stripeId: b.stripe_payment_id }))
+  const pastOwn: PastOwn[] = past.map(b => ({ id: b.id, date: b.date, startTime: b.start_time, court: b.courts?.name ?? 'Court', venueSlug: (b.courts as any)?.venue_slug ?? null, status: b.status, price: Number(b.price_nzd) || 0, method: b.payment_method, stripeId: b.stripe_payment_id, refundCents: (b as any).refund_cents ?? null, refundKind: (b as any).refund_kind ?? null }))
   const pastJoinedPaid: PastShare[] = pastJoined.map(j => ({ id: j.id, date: j.bookings!.date, startTime: j.bookings!.start_time, court: j.bookings!.courts?.name ?? 'Court', venueSlug: j.bookings!.courts?.venue_slug ?? null, amount: Number(j.amount_nzd) || 0, from: nameOf(j.profiles) }))
   const pastUnpaidShares: PastShare[] = pastUnpaid.filter(s => s.bookings?.date).map(s => ({ id: s.id, date: s.bookings!.date, startTime: s.bookings!.start_time, court: s.bookings!.courts?.name ?? 'Court', venueSlug: s.bookings!.courts?.venue_slug ?? null, amount: Number(s.amount_nzd) || 0, from: nameOf(s.profiles) }))
   const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezoneForVenueSlug(homeSlug) }).format(now)
-  const pastCount = buildPastHistory({ own: pastOwn, joinedPaid: pastJoinedPaid, unpaid: pastUnpaidShares, year: todayStr.slice(0, 4) }).reduce((t, m) => t + m.items.length, 0)
+  const pastRefundedShares: PastShare[] = pastRefunded.filter(s => s.bookings?.date).map(s => ({ id: s.id, date: s.bookings!.date, startTime: s.bookings!.start_time, court: s.bookings!.courts?.name ?? 'Court', venueSlug: s.bookings!.courts?.venue_slug ?? null, amount: Number(s.amount_nzd) || 0, from: nameOf(s.profiles) }))
+  const pastCount = buildPastHistory({ own: pastOwn, joinedPaid: pastJoinedPaid, unpaid: pastUnpaidShares, refunded: pastRefundedShares, year: todayStr.slice(0, 4) }).reduce((t, m) => t + m.items.length, 0)
   const hasUpcoming = upcoming.length > 0 || upcomingJoined.length > 0
   // "You're booked!" after paying for a booking: the booking just made is the newest upcoming one.
   const paidBooking = searchParams?.get('payment') === 'success'
@@ -880,7 +884,7 @@ function MyBookingsListInner({
 
       {hasUpcoming && !justPaid && !showHistory && <div className="mt-5"><PushRemindersPrompt highlight={false} /></div>}
 
-      {showHistory && <PastHistory own={pastOwn} joinedPaid={pastJoinedPaid} unpaid={pastUnpaidShares} year={todayStr.slice(0, 4)} />}
+      {showHistory && <PastHistory own={pastOwn} joinedPaid={pastJoinedPaid} unpaid={pastUnpaidShares} refunded={pastRefundedShares} year={todayStr.slice(0, 4)} />}
 
       {/* The line that matters stays visible; the rest opens on demand. */}
       <details className="mt-6 text-xs text-center" style={{ color: 'var(--text-muted)' }}>

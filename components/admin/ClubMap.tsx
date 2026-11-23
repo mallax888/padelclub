@@ -273,10 +273,17 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                         <span className="block text-[12.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{r.openNow} {r.openNow === 1 ? 'hour' : 'hours'} open</span>
                       )}
                     </span>
-                    {showMoney && offersOn && (
-                      <button type="button" data-testid="court-fill" onClick={e => { e.stopPropagation(); setSel(c.id) }} className="hidden sm:inline-flex shrink-0 rounded-full px-4 py-2 text-[12px] font-black"
-                        style={GO}>Fill it</button>
-                    )}
+                    {showMoney && offersOn && (() => {
+                      // Fill it opens the offer for the first gap that is still far enough away to sell. If every gap starts too soon
+                      // it says so, instead of a button that only reopens the briefing.
+                      const offerable = r.openRanges.find(g => g.from.length === 5 && parseInt(g.from.slice(0, 2), 10) * 60 - nowMinutes >= MIN_LEAD_HOURS * 60)
+                      return offerable ? (
+                        <button type="button" data-testid="court-fill" onClick={e => { e.stopPropagation(); setSel(c.id); setOffer({ from: offerable.from, to: offerable.to }) }} className="hidden sm:inline-flex shrink-0 rounded-full px-4 py-2 text-[12px] font-black"
+                          style={GO}>Fill it</button>
+                      ) : (
+                        <span data-testid="court-too-late" className="hidden sm:inline-flex shrink-0 text-[11.5px] font-bold text-right leading-tight" style={{ color: 'var(--text-muted)' }}>Too late<br />to offer</span>
+                      )
+                    })()}
                     </span>
                   ) : soldOut ? (
                     <span className="text-[10.5px] font-black rounded-full px-2.5 py-1" style={{ background: 'var(--brand-green-muted)', color: 'var(--brand-green)', letterSpacing: '0.04em' }} data-testid="court-soldout">SOLD OUT ✓</span>

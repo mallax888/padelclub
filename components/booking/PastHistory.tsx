@@ -14,12 +14,12 @@ const currencyOf = (slug: string | null) => currencyForRegion(VENUES.find(v => v
 
 const chipStyle = (c: PastChip) =>
   c.tone === 'paid' ? { background: 'var(--brand-green-muted)', color: 'var(--go-text)' }
-  : c.tone === 'cancelled' ? { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }
+  : c.tone === 'cancelled' || c.tone === 'refunded' ? { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }
   : { background: 'var(--bg-raised)', color: 'var(--text-muted)' }
 
 // Every finished game, newest first, grouped by month: the courts you booked and the games you joined, each saying how it ended.
-export default function PastHistory({ own, joinedPaid, unpaid, year }: { own: PastOwn[]; joinedPaid: PastShare[]; unpaid: PastShare[]; year: string }) {
-  const months = buildPastHistory({ own, joinedPaid, unpaid, year })
+export default function PastHistory({ own, joinedPaid, unpaid, refunded, year }: { own: PastOwn[]; joinedPaid: PastShare[]; unpaid: PastShare[]; refunded: PastShare[]; year: string }) {
+  const months = buildPastHistory({ own, joinedPaid, unpaid, refunded, year })
   if (months.length === 0) {
     return <div className="rounded-2xl text-center py-8 text-sm" style={{ ...card, color: 'var(--text-muted)' }}>Nothing here yet.</div>
   }

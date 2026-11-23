@@ -1,11 +1,12 @@
 // The Past tab on My bookings: every game that is over, newest first and grouped by month, each saying how it ended.
 // Courts you booked and games you joined sit in one list. Pure (no clock, no fetching) so it is tested without a browser.
 //   Paid $34.00 / Paid with credits / Membership   a game that was paid for
-//   Cancelled                                       a booking that was cancelled
+//   Refunded $34.00                                 a cancelled booking (or a share) that came back to the player
+//   Cancelled                                       a booking that was cancelled with nothing returned
 //   Nothing owed                                    a share (or booking) that was never paid before the game ended
-export type PastOwn = { id: string; date: string; startTime: string; court: string; venueSlug: string | null; status: string; price: number; method: string; stripeId: string | null }
+export type PastOwn = { id: string; date: string; startTime: string; court: string; venueSlug: string | null; status: string; price: number; method: string; stripeId: string | null; refundCents?: number | null; refundKind?: string | null }
 export type PastShare = { id: string; date: string; startTime: string; court: string; venueSlug: string | null; amount: number; from: string | null }
-export type PastChip = { tone: 'paid' | 'cancelled' | 'nothing' | 'plain'; label: string; amount?: number }
+export type PastChip = { tone: 'paid' | 'refunded' | 'cancelled' | 'nothing' | 'plain'; label: string; amount?: number }
 export type PastItem = { key: string; date: string; startTime: string; court: string; venueSlug: string | null; note: string; chip: PastChip; paid: number }
 export type PastMonth = { key: string; label: string; items: PastItem[]; paid: number; games: number }
 
@@ -13,12 +14,17 @@ const monthLabel = (date: string, withYear: boolean): string =>
   new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', month: 'long', ...(withYear ? { year: 'numeric' } : {}) }).format(new Date(date + 'T12:00:00Z'))
 const cents = (n: number) => Math.round(n * 100) / 100
 
-export function buildPastHistory(input: { own: PastOwn[]; joinedPaid: PastShare[]; unpaid: PastShare[]; year?: string }): PastMonth[] {
+export function buildPastHistory(input: { own: PastOwn[]; joinedPaid: PastShare[]; unpaid: PastShare[]; refunded?: PastShare[]; year?: string }): PastMonth[] {
   const items: PastItem[] = []
   for (const b of input.own) {
     if (b.method === 'staff_block' || b.status === 'blocked') continue
     const base = { key: `b-${b.id}`, date: b.date, startTime: b.startTime, court: b.court, venueSlug: b.venueSlug }
-    if (b.status === 'cancelled') items.push({ ...base, note: 'Cancelled · you booked this', chip: { tone: 'cancelled', label: 'Cancelled' }, paid: 0 })
+    if (b.status === 'cancelled') {
+      const back = Number(b.refundCents) || 0
+      if (back > 0 && b.refundKind === 'session') items.push({ ...base, note: 'Cancelled · session credit returned', chip: { tone: 'refunded', label: '1 credit back' }, paid: 0 })
+      else if (back > 0) items.push({ ...base, note: b.refundKind === 'credit' ? 'Cancelled · returned as account credit' : 'Cancelled · back on your card', chip: { tone: 'refunded', label: 'Refunded', amount: Math.round(back) / 100 }, paid: 0 })
+      else items.push({ ...base, note: 'Cancelled · you booked this', chip: { tone: 'cancelled', label: 'Cancelled' }, paid: 0 })
+    }
     else if (b.method === 'card' && b.stripeId) items.push({ ...base, note: 'You booked this', chip: { tone: 'paid', label: 'Paid', amount: b.price }, paid: b.price })
     else if (b.method === 'credits') items.push({ ...base, note: 'You booked this', chip: { tone: 'paid', label: 'Paid with credits' }, paid: 0 })
     else if (b.method === 'membership_allowance') items.push({ ...base, note: 'You booked this', chip: { tone: 'paid', label: 'Membership' }, paid: 0 })
@@ -26,6 +32,7 @@ export function buildPastHistory(input: { own: PastOwn[]; joinedPaid: PastShare[
   }
   const who = (from: string | null) => (from ? `Joined ${from}'s game · your share` : 'Joined a game · your share')
   for (const s of input.joinedPaid) items.push({ key: `p-${s.id}`, date: s.date, startTime: s.startTime, court: s.court, venueSlug: s.venueSlug, note: who(s.from), chip: { tone: 'paid', label: 'Paid', amount: s.amount }, paid: s.amount })
+  for (const s of input.refunded ?? []) items.push({ key: `r-${s.id}`, date: s.date, startTime: s.startTime, court: s.court, venueSlug: s.venueSlug, note: `${who(s.from)} · game cancelled`, chip: { tone: 'refunded', label: 'Refunded', amount: s.amount }, paid: 0 })
   for (const s of input.unpaid) items.push({ key: `u-${s.id}`, date: s.date, startTime: s.startTime, court: s.court, venueSlug: s.venueSlug, note: who(s.from), chip: { tone: 'nothing', label: 'Nothing owed' }, paid: 0 })
 
   items.sort((a, b) => (b.date + b.startTime).localeCompare(a.date + a.startTime) || a.key.localeCompare(b.key))
