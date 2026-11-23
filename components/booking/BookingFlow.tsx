@@ -19,7 +19,7 @@ import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-se
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
 import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
-import { PlaceCard, MonthCalendar, LengthDial } from '@/components/booking/BookCards'
+import { BookRow } from '@/components/booking/BookCards'
 import { memberDiscount, memberWindowDays, effectivePlans, planOf, type PlanRow } from '@/lib/plan-rules'
 import NearMe from '@/components/booking/NearMe'
 import type { Court, Profile } from '@/types/database'
@@ -1068,13 +1068,13 @@ export default function BookingFlow({
         </>
       )}
       {step === 'region' && (
-        <div className="grid gap-3 lg:grid-cols-3 lg:gap-4 animate-fade-in" data-testid="city-grid">
-          {countryFilteredRegions.map((r, i) => {
+        <div className="grid gap-3 lg:grid-cols-2 animate-fade-in" data-testid="city-grid">
+          {countryFilteredRegions.map(r => {
             const venues = LIVE_VENUES.filter(v => v.region === r)
             const totalCourts = courts.filter(ct => venues.some(v => v.slug === (ct as any).venue_slug)).length
             return (
-              <PlaceCard key={r} index={i} testid={`city-${r}`} title={r} sub={`${venues.length} venue${venues.length > 1 ? 's' : ''}`}
-                pill={totalCourts > 0 ? `${totalCourts} courts` : 'Courts coming soon'}
+              <BookRow key={r} testid={`city-${r}`} label={venues.length === 1 ? 'VENUE' : 'VENUES'} value={venues.length} eyebrow={country ?? undefined} title={r}
+                sub={totalCourts > 0 ? `${totalCourts} courts` : 'Courts coming soon'} muted={totalCourts === 0}
                 onClick={() => { setRegion(r); setVenue(null); setDate(null); setDuration(null); setTime(null); setStep('venue'); playSelectionSound() }} />
             )
           })}
@@ -1083,15 +1083,16 @@ export default function BookingFlow({
 
       {/* STEP: Venue */}
       {step === 'venue' && (
-        <div className="grid gap-3 lg:grid-cols-3 lg:gap-4 animate-fade-in" data-testid="venue-grid">
-          {regionVenues.map((v, i) => {
+        <div className="grid gap-3 lg:grid-cols-2 animate-fade-in" data-testid="venue-grid">
+          {regionVenues.map(v => {
             // A club that has courts but isn't open for booking yet looks the same to players as one with no courts: "coming soon".
             const realCourtCount = isOpenForBooking(venueSettings, v.slug)
               ? courts.filter(c => (c as any).venue_slug === v.slug).length
               : 0
             return (
-              <PlaceCard key={v.slug} index={i} testid={`venue-${v.slug}`} title={v.name} sub={v.address.split(',').slice(0, 2).join(',')}
-                pill={realCourtCount > 0 ? `${realCourtCount} ${realCourtCount === 1 ? 'court' : 'courts'}` : 'Courts coming soon'} club={v.slug === homeSlug} dim={realCourtCount === 0}
+              <BookRow key={v.slug} testid={`venue-${v.slug}`} label={realCourtCount === 1 ? 'COURT' : 'COURTS'} value={realCourtCount > 0 ? realCourtCount : '–'} muted={realCourtCount === 0} dim={realCourtCount === 0}
+                eyebrow={v.region} title={v.name} sub={realCourtCount === 0 ? 'Courts coming soon' : v.address.split(',').slice(0, 2).join(',')}
+                chip={v.slug === homeSlug ? { text: 'Your club', kind: 'lime' } : undefined}
                 onClick={() => {
                   if (realCourtCount === 0) { toast.error(`${v.name} doesn't have any courts set up yet.`); return }
                   setVenue(v); setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); playSelectionSound()
@@ -1117,9 +1118,10 @@ export default function BookingFlow({
           it. Date, length and time stay separate screens: one question at a
           time is what makes the flow feel like it's guiding you. */}
       {step === 'date' && (
-        <div className="animate-fade-in lg:grid lg:grid-cols-[1.6fr_1fr] lg:gap-x-5 items-start">
+        <div className="animate-fade-in">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:mb-5 lg:[&>*]:mb-0 lg:[&>*:only-child]:col-span-2">
           {homeVenue && venue?.slug === homeVenue.slug && (
-            <div className="rounded-2xl p-5 mb-4 order-1 lg:col-start-2 lg:row-start-1" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
+            <div className="rounded-2xl p-5 mb-4" data-testid="travelling-card" style={{ border: '1.5px dashed var(--brand-primary)', background: 'var(--brand-primary-muted)' }}>
               <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>📍 Travelling?</div>
               <p className="text-xs mt-1 mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>Find a club near you and book there. Your home club stays the same.</p>
               <button type="button" onClick={() => setNearOpen(true)} className="btn-main">Find a club near me</button>
@@ -1129,7 +1131,7 @@ export default function BookingFlow({
           {venuePickerSkipped && (
             <button
               onClick={() => { setDate(null); setTime(null); setStep(STEPS[0]); playBackSound() }}
-              className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-4 text-left order-1 lg:col-start-2"
+              className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mb-5 text-left"
               style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--brand-primary-text)', flexShrink: 0 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               <span className="min-w-0">
@@ -1139,13 +1141,34 @@ export default function BookingFlow({
               <span className="ml-auto text-xs font-bold shrink-0" style={{ color: 'var(--link-change)' }}>Change</span>
             </button>
           )}
-          <div className="order-2 lg:col-start-1 lg:row-start-1 lg:row-span-3">
-            <MonthCalendar bookable={dates} picked={date} isBusy={d => busynessLabel(dateBusyness[d])?.text === 'Busy'}
-              onPick={d => { setDate(d); setTime(null); setStep('duration'); playSelectionSound() }} />
           </div>
-          <div className="order-3 mt-4 lg:mt-0 lg:col-start-2 rounded-2xl px-4 py-3.5 text-[13px] leading-relaxed" data-testid="calendar-key" style={{ background: 'var(--bg-base)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            <div><span style={{ color: 'var(--brand-accent)' }}>●</span> Busy day</div>
-            <div className="mt-1">Book up to {dates.length} days ahead</div>
+
+          <div className="grid grid-cols-4 lg:grid-cols-7 gap-2 lg:gap-4" data-testid="date-grid">
+            {dates.map(d => {
+              const { day, num, month } = dateLabel(d)
+              const busy = busynessLabel(dateBusyness[d])
+              return (
+                <button key={d}
+                  onClick={() => { setDate(d); setTime(null); setStep('duration'); playSelectionSound() }}
+                  className="rounded-xl p-3 text-center transition-all"
+                  data-testid="date-tile" data-date={d}
+                  data-picked={date === d ? 'yes' : undefined}
+                  style={date === d ? PICKED : { background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+                  onMouseEnter={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
+                  onMouseLeave={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--border)' }}
+                >
+                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{day}</div>
+                  <div className="text-lg font-bold" style={{ color: date === d ? '#ffffff' : 'var(--text-primary)' }}>{num}</div>
+                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{month}</div>
+                  {busy && (
+                    <div className="flex items-center justify-center gap-1 mt-1.5">
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: date === d ? '#cfe0ff' : busy.color }} />
+                      <span className="text-[9px] font-semibold" style={{ color: date === d ? '#cfe0ff' : busy.color }}>{busy.text}</span>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -1154,10 +1177,10 @@ export default function BookingFlow({
           kind. The court itself is still assigned from what's free. */}
       {step === 'duration' && (
         <div className="animate-fade-in">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 lg:gap-4" data-testid="length-grid">
+          <div className="grid gap-3 lg:grid-cols-2" data-testid="length-grid">
             {DURATIONS.map(d => (
-              <LengthDial key={d.value} minutes={d.value * 60} picked={duration === d.value} price={fromPrice(d.value) ?? hoursLabel(d.value)}
-                onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }} />
+              <BookRow key={d.value} testid="length-dial" extra={{ 'data-minutes': d.value * 60 }} label="MIN" value={d.value * 60} title={hoursLabel(d.value)} price={fromPrice(d.value) ?? undefined}
+                picked={duration === d.value} onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }} />
             ))}
           </div>
 
@@ -1206,7 +1229,7 @@ export default function BookingFlow({
               {venue!.name} is closed on {DAY_PLURALS[dayKeyOfDate(date!)]}. Pick another day.
             </div>
           )}
-          <div className="grid grid-cols-3 lg:grid-cols-7 gap-2 lg:gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 lg:gap-3">
             {timeSlots.map(t => {
               const available = isSlotAvailable(t)
               const peak = isPeakTime(date, t)
@@ -1235,7 +1258,7 @@ export default function BookingFlow({
               return (
                 <button key={t} disabled={!available}
                   onClick={() => { setTime(t); setStep(courtChoice ? 'court' : 'confirm'); playSelectionSound() }}
-                  className="rounded-xl p-3 text-center transition-all"
+                  className="rounded-xl px-1.5 py-3 text-center transition-all whitespace-nowrap"
                   data-picked={time === t ? 'yes' : undefined}
                   style={time === t && available ? { ...PICKED, cursor: 'pointer' } : {
                     background: !available ? 'var(--bg-raised)' : 'var(--bg-surface)',
