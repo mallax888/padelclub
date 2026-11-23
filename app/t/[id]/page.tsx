@@ -44,7 +44,7 @@ export default async function SharedTournament({ params }: { params: { id: strin
               <tbody>{s.players.map((p, i) => <tr key={i}><td className="py-1 font-medium">{p.name}</td><td className="text-center">{p.played}</td><td className="text-center">{p.won}</td><td className="text-right font-bold">{p.points}</td></tr>)}</tbody></table>
           </div>
         )}
-        <p className="text-xs mt-6 text-center" style={{ color: 'var(--text-subtle)' }}>Made with PadelMate · padelclub-nz.vercel.app</p>
+        <p className="text-xs mt-6 text-center" style={{ color: 'var(--text-subtle)' }}>Made with PadelMate</p>
       </div>
     </main>
   )

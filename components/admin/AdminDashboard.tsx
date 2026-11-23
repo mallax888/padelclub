@@ -177,8 +177,8 @@ export default function AdminDashboard({
   // The phone's bottom bar changes the tab without a page load, and says so here.
   useEffect(() => {
     const on = (e: Event) => { const t = (e as CustomEvent).detail; if (typeof t === 'string' && (allowedTabs as readonly string[]).includes(t)) setTabState(t as AdminTab) }
-    window.addEventListener('padelclub:tab', on)
-    return () => window.removeEventListener('padelclub:tab', on)
+    window.addEventListener('padelmate:tab', on)
+    return () => window.removeEventListener('padelmate:tab', on)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   // A link from Today's club map (Block the court) arrives with ?block=<court>: open that dialog ready to use.
@@ -195,7 +195,7 @@ export default function AdminDashboard({
       const url = new URL(window.location.href)
       url.searchParams.set('tab', t)
       window.history.replaceState(null, '', url.toString())
-      window.dispatchEvent(new CustomEvent('padelclub:tab', { detail: t }))
+      window.dispatchEvent(new CustomEvent('padelmate:tab', { detail: t }))
     }
   }
   const initialRegion = initialVenue ? getVenue(initialVenue).region : ''

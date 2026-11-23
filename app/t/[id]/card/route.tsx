@@ -28,7 +28,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
           ))}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', position: 'absolute', left: 80, right: 80, bottom: 60, fontSize: 28, fontWeight: 700, opacity: 0.85 }}>
-          <div style={{ display: 'flex' }}>PADELMATE</div><div style={{ display: 'flex' }}>padelclub-nz.vercel.app</div>
+          <div style={{ display: 'flex' }}>PADELMATE</div>
         </div>
       </div>
     ),

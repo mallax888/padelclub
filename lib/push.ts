@@ -16,7 +16,7 @@ function isConfigured(): boolean {
     return false
   }
   webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT || 'mailto:admin@padelclub.example',
+    process.env.VAPID_SUBJECT || 'mailto:admin@padelmate.example',
     publicKey,
     privateKey
   )
