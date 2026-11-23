@@ -9,7 +9,7 @@ export type ShareScope = { venueSlug?: string | null; venueSlugs?: string[] | nu
 
 export function unpaidSharesQuery(supabase: any, scope: ShareScope) {
   let q = supabase.from('booking_splits')
-    .select('id, amount_nzd, created_at, bookings!inner(date, start_time, status, courts!inner(name, venue_slug)), debtor:profiles!booking_splits_user_id_fkey(full_name, nickname), organiser:profiles!booking_splits_invited_by_fkey(full_name, nickname)')
+    .select('id, amount_nzd, created_at, bookings!inner(date, start_time, end_time, status, courts!inner(name, venue_slug)), debtor:profiles!booking_splits_user_id_fkey(full_name, nickname), organiser:profiles!booking_splits_invited_by_fkey(full_name, nickname)')
     .eq('status', 'pending')
     .not('user_id', 'is', null)
     .order('created_at', { ascending: true })
@@ -28,6 +28,7 @@ export function mapUnpaidShares(rows: any[] | null | undefined): UnpaidShareRow[
     createdAt: s.created_at as string,
     date: s.bookings?.date as string,
     startTime: s.bookings?.start_time as string,
+    endTime: (s.bookings?.end_time ?? null) as string | null,
     courtName: (s.bookings?.courts?.name ?? 'Court') as string,
     venueSlug: (s.bookings?.courts?.venue_slug ?? '') as string,
     bookingStatus: (s.bookings?.status ?? '') as string,

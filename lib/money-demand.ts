@@ -2,6 +2,7 @@
 // owed in unpaid shares, and how much court time over the coming week is still
 // unsold. Pure functions of their inputs (no fetching, no "now" read inside),
 // so the cases that matter can be tested without a browser or a database.
+import { gameHasEnded } from '@/lib/game-over'
 import { isPeakTime } from '@/lib/pricing'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { dayHours, toMinutes, type WeekHours } from '@/lib/venue-hours'
@@ -24,6 +25,7 @@ export type UnpaidShareRow = {
   createdAt: string
   date: string
   startTime: string
+  endTime?: string | null
   courtName: string
   venueSlug: string
   bookingStatus: string
@@ -52,7 +54,8 @@ export function summariseUnpaidShares(rows: UnpaidShareRow[], venueSlug: string,
   let total = 0
   for (const r of rows) {
     // A share on a cancelled booking is no longer owed: cancelling withdraws it.
-    if (r.venueSlug !== venueSlug || r.bookingStatus === 'cancelled') continue
+    // Nor is a share on a game that is already over: it was paid, or it is not owed.
+    if (r.venueSlug !== venueSlug || r.bookingStatus === 'cancelled' || gameHasEnded(r.date, r.endTime ?? r.startTime, r.venueSlug, nowMs)) continue
     const created = Date.parse(r.createdAt)
     const ageDays = Number.isFinite(created) ? Math.max(0, Math.floor((nowMs - created) / DAY_MS)) : 0
     const band = bandFor(ageDays)

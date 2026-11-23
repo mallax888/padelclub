@@ -1,4 +1,5 @@
-﻿import { keepClubAccountsOut } from '@/lib/club-guard'
+﻿import { gameHasEnded } from '@/lib/game-over'
+import { keepClubAccountsOut } from '@/lib/club-guard'
 import { prepayReady } from '@/lib/regulars'
 import { createServerClient } from '@/lib/supabase-server'
 import Link from 'next/link'
@@ -67,7 +68,8 @@ export default async function MyBookingsPage() {
   // Bookings made before the share deadline existed are exempt from it. That flag is
   // read separately (not in the main query above) so a database without the column
   // can't break the list of shares you owe.
-  let splitReqs: any[] = splitRequests ?? []
+  // A game that is over owes nothing: an unpaid share on it is not shown as owed.
+  let splitReqs: any[] = (splitRequests ?? []).filter((s: any) => !(s.bookings?.date && gameHasEnded(s.bookings.date, s.bookings.end_time ?? s.bookings.start_time, s.bookings.courts?.venue_slug, Date.now())))
   if (sharesOn && splitReqs.length > 0) {
     const { data: flags } = await (supabase as any).from('bookings').select('id, share_deadline_exempt').in('id', splitReqs.map((s: any) => s.booking_id))
     const exempt = new Set(((flags ?? []) as any[]).filter(f => f.share_deadline_exempt).map(f => f.id))

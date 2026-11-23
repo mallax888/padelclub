@@ -1,3 +1,4 @@
+import { gameHasEnded } from '@/lib/game-over'
 import { NextResponse } from 'next/server'
 import { createCheckout, paymentTarget } from '@/lib/club-payments'
 import { createServerClient } from '@/lib/supabase-server'
@@ -39,11 +40,15 @@ export async function POST(request: Request) {
     // one would buy a share of a court nobody is playing on.
     const { data: parentBooking } = await admin
       .from('bookings')
-      .select('status')
+      .select('status, date, start_time, end_time, courts(venue_slug)')
       .eq('id', split.booking_id)
       .single()
     if (parentBooking?.status === 'cancelled') {
       return NextResponse.json({ error: 'This booking has been cancelled.' }, { status: 400 })
+    }
+    // Once the game is over nothing is owed on it.
+    if (parentBooking?.date && gameHasEnded(parentBooking.date, (parentBooking as any).end_time ?? (parentBooking as any).start_time, (parentBooking as any).courts?.venue_slug, Date.now())) {
+      return NextResponse.json({ error: 'This game has finished, so nothing is owed.' }, { status: 400 })
     }
 
     const verified = await verifyAndCorrectBookingPrice(admin, split.booking_id)
