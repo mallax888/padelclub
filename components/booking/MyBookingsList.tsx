@@ -28,6 +28,8 @@ import PushRemindersPrompt from '@/components/ui/PushRemindersPrompt'
 import BookedCelebration from '@/components/booking/BookedCelebration'
 import InviteShare from '@/components/invites/InviteShare'
 import { CourtTile } from '@/components/booking/BookingTicket'
+import PastHistory from '@/components/booking/PastHistory'
+import { buildPastHistory, type PastOwn, type PastShare } from '@/lib/past-history'
 
 interface BookingWithCourt {
   id: string
@@ -580,6 +582,7 @@ function MyBookingsListInner({
   bookings,
   profile,
   splitRequests = [],
+  pastUnpaid = [],
   outgoingSplits = [],
   joinedGames = [],
   currentUserId,
@@ -594,6 +597,8 @@ function MyBookingsListInner({
   bookings: BookingWithCourt[]
   profile: Profile
   splitRequests?: SplitRequest[]
+  // Unpaid shares on games that are already over: nothing is owed on them, so they only show in Past.
+  pastUnpaid?: SplitRequest[]
   outgoingSplits?: OutgoingSplit[]
   joinedGames?: JoinedGame[]
   currentUserId?: string
@@ -640,6 +645,13 @@ function MyBookingsListInner({
   const footerRule = footerRules.length > 0 && footerRules.every(x => x.freeHours === footerRules[0].freeHours && x.after === footerRules[0].after) ? footerRules[0] : footerRules.length === 0 ? DEFAULT_RULE : null
   const past = bookings.filter(b => b.status === 'cancelled' || hasEnded(b.date, b.end_time, (b.courts as any)?.venue_slug))
   const upcomingJoined = joinedGames.filter(j => j.bookings && !hasEnded(j.bookings.date, j.bookings.end_time, (j.bookings as any).courts?.venue_slug))
+  const pastJoined = joinedGames.filter(j => j.bookings && hasEnded(j.bookings.date, j.bookings.end_time, (j.bookings as any).courts?.venue_slug))
+  const nameOf = (p: { nickname: string | null; full_name: string | null } | null) => p?.nickname ?? p?.full_name ?? null
+  const pastOwn: PastOwn[] = past.map(b => ({ id: b.id, date: b.date, startTime: b.start_time, court: b.courts?.name ?? 'Court', venueSlug: (b.courts as any)?.venue_slug ?? null, status: b.status, price: Number(b.price_nzd) || 0, method: b.payment_method, stripeId: b.stripe_payment_id }))
+  const pastJoinedPaid: PastShare[] = pastJoined.map(j => ({ id: j.id, date: j.bookings!.date, startTime: j.bookings!.start_time, court: j.bookings!.courts?.name ?? 'Court', venueSlug: j.bookings!.courts?.venue_slug ?? null, amount: Number(j.amount_nzd) || 0, from: nameOf(j.profiles) }))
+  const pastUnpaidShares: PastShare[] = pastUnpaid.filter(s => s.bookings?.date).map(s => ({ id: s.id, date: s.bookings!.date, startTime: s.bookings!.start_time, court: s.bookings!.courts?.name ?? 'Court', venueSlug: s.bookings!.courts?.venue_slug ?? null, amount: Number(s.amount_nzd) || 0, from: nameOf(s.profiles) }))
+  const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: timezoneForVenueSlug(homeSlug) }).format(now)
+  const pastCount = buildPastHistory({ own: pastOwn, joinedPaid: pastJoinedPaid, unpaid: pastUnpaidShares, year: todayStr.slice(0, 4) }).reduce((t, m) => t + m.items.length, 0)
   const hasUpcoming = upcoming.length > 0 || upcomingJoined.length > 0
   // "You're booked!" after paying for a booking: the booking just made is the newest upcoming one.
   const paidBooking = searchParams?.get('payment') === 'success'
@@ -817,7 +829,7 @@ function MyBookingsListInner({
         </button>
         <button onClick={() => setShowHistory(true)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
           style={showHistory ? { background: 'var(--bg-raised)', color: 'var(--text-primary)' } : { color: 'var(--text-subtle)' }}>
-          Past · {past.length}
+          Past · {pastCount}
         </button>
       </div>
 
@@ -868,17 +880,7 @@ function MyBookingsListInner({
 
       {hasUpcoming && !justPaid && !showHistory && <div className="mt-5"><PushRemindersPrompt highlight={false} /></div>}
 
-      {showHistory && (
-        past.length === 0 ? (
-          <div className="rounded-2xl text-center py-8 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            Nothing here yet.
-          </div>
-        ) : (
-          <div className="space-y-4 opacity-60">
-            {past.map(b => <BookingRow key={b.id} booking={b} past splits={outgoingSplits.filter(s => s.booking_id === b.id)} stripeDashboardBase={stripeDashboardBase} />)}
-          </div>
-        )
-      )}
+      {showHistory && <PastHistory own={pastOwn} joinedPaid={pastJoinedPaid} unpaid={pastUnpaidShares} year={todayStr.slice(0, 4)} />}
 
       {/* The line that matters stays visible; the rest opens on demand. */}
       <details className="mt-6 text-xs text-center" style={{ color: 'var(--text-muted)' }}>

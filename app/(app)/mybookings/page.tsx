@@ -68,8 +68,10 @@ export default async function MyBookingsPage() {
   // Bookings made before the share deadline existed are exempt from it. That flag is
   // read separately (not in the main query above) so a database without the column
   // can't break the list of shares you owe.
-  // A game that is over owes nothing: an unpaid share on it is not shown as owed.
-  let splitReqs: any[] = (splitRequests ?? []).filter((s: any) => !(s.bookings?.date && gameHasEnded(s.bookings.date, s.bookings.end_time ?? s.bookings.start_time, s.bookings.courts?.venue_slug, Date.now())))
+  // A game that is over owes nothing: an unpaid share on it is not shown as owed, it only shows in Past.
+  const isOver = (s: any) => !!(s.bookings?.date && gameHasEnded(s.bookings.date, s.bookings.end_time ?? s.bookings.start_time, s.bookings.courts?.venue_slug, Date.now()))
+  const pastUnpaid: any[] = (splitRequests ?? []).filter(isOver)
+  let splitReqs: any[] = (splitRequests ?? []).filter((s: any) => !isOver(s))
   if (sharesOn && splitReqs.length > 0) {
     const { data: flags } = await (supabase as any).from('bookings').select('id, share_deadline_exempt').in('id', splitReqs.map((s: any) => s.booking_id))
     const exempt = new Set(((flags ?? []) as any[]).filter(f => f.share_deadline_exempt).map(f => f.id))
@@ -92,7 +94,7 @@ export default async function MyBookingsPage() {
         </div>
         <Link href="/book" data-testid="new-booking" aria-label="New booking" className="shrink-0 rounded-full px-4 text-[13px] font-extrabold inline-flex items-center" style={{ minHeight: 40, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>+ New</Link>
       </div>
-      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} rules={await loadRules(createAdminClient())} />
+      <MyBookingsList bookings={bookings ?? []} profile={profile!} splitRequests={splitReqs} pastUnpaid={pastUnpaid} outgoingSplits={outgoingSplits ?? []} joinedGames={joinedGames ?? []} currentUserId={session!.user.id} stripeDashboardBase={stripeDashboardBase()} venueSettings={venueSettings} waits={waits} regulars={regulars} sharesOn={sharesOn} prepayOn={prepayOn} plan={memberPlan} rules={await loadRules(createAdminClient())} />
     </div>
   )
 }
