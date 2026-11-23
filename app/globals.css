@@ -37,6 +37,9 @@
   --open-text:          #8A6A00;
   --ball-text:          #5B7500;
   --go-text:            #0F7A46;
+  --court-1:            #2a78d6;
+  --court-2:            #eb6834;
+  --court-3:            #1baf7a;
   --glow-yellow:        0 0 16px 0 #F5B80033;
   --brand-crimson:      #DC2626;
   --brand-crimson-muted:#DC26261A;
@@ -75,6 +78,9 @@
   --open-text:          #FFD400;
   --ball-text:          #D4F53C;
   --go-text:            #5FE0A3;
+  --court-1:            #3987e5;
+  --court-2:            #d95926;
+  --court-3:            #199e70;
   --glow-yellow:        0 0 16px 0 #FFD40033;
   --brand-crimson:      #FF6B6B;
   --brand-crimson-muted:#FF6B6B1A;

@@ -10,6 +10,7 @@ import { currencyForVenueSlug } from '@/lib/currency'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
 import { isManagerRole, isOwnerRole, roleLabel } from '@/lib/view-mode'
 import { computeCourtDay } from '@/lib/court-day'
+import { computeCourtRevenue } from '@/lib/court-revenue'
 import { addDaysStr, computeToday, greetingFor, venueClock, type TodayBooking } from '@/lib/today'
 import { computeEmptyCourtTime, splitOverdueShares, summariseUnpaidShares } from '@/lib/money-demand'
 import { mapUnpaidShares, unpaidSharesQuery } from '@/lib/unpaid-shares'
@@ -134,6 +135,8 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const week = weekFor(venueSettings, venueSlug)
   const empty = computeEmptyCourtTime(courts as any, bookings.filter(b => b.date === clock.date), venueSlug, nowMs, 1, week)
   const courtDay = computeCourtDay({ courts: courts as any, bookings: bookings.filter(b => b.date === clock.date), date: clock.date, nowMinutes: clock.minutes, week })
+  // Owners only: what each court has booked today against what it could earn (front desk never sees money).
+  const courtRevenue = isOwner ? computeCourtRevenue({ courts: courts as any, bookings: bookings.filter(b => b.date === clock.date), day: courtDay, date: clock.date }) : null
   // Who is on each court, for the club map: the booker and the friends who have joined.
   const joined = ((splitRows ?? []) as any[]).filter(s => s.user_id && s.status !== 'cancelled')
   const joinedIds = Array.from(new Set(joined.map(s => s.user_id as string)))
@@ -221,6 +224,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       roleLabel={roleLabel((profile as any).role)}
       briefing={briefing}
       courtDay={courtDay}
+      courtRevenue={courtRevenue}
       map={{ courts: mapCourts, bookings: mapBookings, takings: summary.revenue.today, bounds: hoursToday ? { from: hoursToday.open, to: hoursToday.close } : null, date: clock.date }}
       nowMinutes={clock.minutes}
       actions={actions}
