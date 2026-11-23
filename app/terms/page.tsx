@@ -9,7 +9,7 @@ export default function TermsPage() {
     <LegalPage title="Terms of use">
       <P>These terms are between you and {BUSINESS.legalName}, a New Zealand company trading as {BUSINESS.tradingName} (&quot;we&quot;, &quot;us&quot;). They apply when you use the {BUSINESS.tradingName} website and app to find, book and pay for padel courts, join games and play in club events. Please read them with our <Link href="/refunds" style={{ color: 'var(--brand-primary-text)' }}>Refunds and cancellations</Link> and <Link href="/privacy" style={{ color: 'var(--brand-primary-text)' }}>Privacy</Link> pages.</P>
 
-      <H2>1. What PadelClub is</H2>
+      <H2>1. What PadelMate is</H2>
       <P>{BUSINESS.tradingName} is booking software for padel clubs. The courts, coaching and events belong to the club. When you book a court, you are booking it <B>with that club</B>. We provide the platform, and we help the club take your payment through Stripe. We are not the operator of the courts.</P>
 
       <H2>2. Your account</H2>

@@ -8,7 +8,7 @@ export default function ClubShell({ children, wide = false }: { children: ReactN
       style={{ background: 'radial-gradient(circle at 50% 0%, var(--brand-primary-muted), var(--bg-base) 60%)' }}>
       <div className={`w-full ${wide ? 'max-w-2xl' : 'max-w-md'}`}>
         <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center justify-center gap-2.5" aria-label="PadelClub for clubs">
+          <Link href="/" className="inline-flex items-center justify-center gap-2.5" aria-label="PadelMate for clubs">
             <svg width="36" height="36" viewBox="0 0 100 100" style={{ colorScheme: 'light' }} aria-hidden>
               <defs>
                 <radialGradient id="clubBall" cx="35%" cy="28%" r="75%">
@@ -21,7 +21,7 @@ export default function ClubShell({ children, wide = false }: { children: ReactN
               <ellipse cx="34" cy="28" rx="14" ry="9" fill="white" opacity="0.35" transform="rotate(-25 34 28)"/>
             </svg>
             <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span>
             </span>
             <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>for clubs</span>
           </Link>

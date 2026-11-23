@@ -66,7 +66,7 @@ export default function SignupPage() {
               <ellipse cx="34" cy="28" rx="14" ry="9" fill="white" opacity="0.35" transform="rotate(-25 34 28)"/>
             </svg>
             <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', userSelect: 'none' }}>
-              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span>
             </div>
           </div>
           <p className="text-sm font-medium tracking-wide" style={{ color: 'var(--text-muted)' }}>

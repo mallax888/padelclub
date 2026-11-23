@@ -68,7 +68,7 @@ export default function ReportSheet({ clubName, range, prevRange, summary, prev,
       )}
 
       <p className="rs-foot">
-        All amounts in {currency.toUpperCase()}. Revenue counts confirmed and completed bookings. &ldquo;Cancelled&rdquo; is an estimate: the price of bookings paid by card and later cancelled in this period. Card refunds are made in Stripe and are not listed here. Source: PadelClub bookings.
+        All amounts in {currency.toUpperCase()}. Revenue counts confirmed and completed bookings. &ldquo;Cancelled&rdquo; is an estimate: the price of bookings paid by card and later cancelled in this period. Card refunds are made in Stripe and are not listed here. Source: PadelMate bookings.
       </p>
     </div>
   )

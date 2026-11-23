@@ -45,7 +45,7 @@ export async function sendAnnouncement(admin: Admin, input: AnnouncementInput & 
     const { data: people } = await admin.from('profiles').select('email').in('id', audience.slice(0, MAX_EMAILS))
     const addresses = ((people ?? []) as any[]).map(p => p.email as string | null).filter((e): e is string => !!e)
     for (let i = 0; i < addresses.length; i += 10) {
-      const results = await Promise.all(addresses.slice(i, i + 10).map(to => sendClubEmail({ to, subject: `${venue.name}: ${input.title}`, heading: input.title, intro: escapeHtml(input.body || input.title), footer: `Sent by ${venue.name} through PadelClub.` })))
+      const results = await Promise.all(addresses.slice(i, i + 10).map(to => sendClubEmail({ to, subject: `${venue.name}: ${input.title}`, heading: input.title, intro: escapeHtml(input.body || input.title), footer: `Sent by ${venue.name} through PadelMate.` })))
       emailed += results.filter(Boolean).length
     }
   }

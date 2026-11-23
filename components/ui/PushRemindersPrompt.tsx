@@ -103,7 +103,7 @@ export default function PushRemindersPrompt({ highlight = false }: {
 
       <div className="min-w-0 flex-1">
         <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-          {needsInstall ? 'Add PadelClub to your home screen' : 'Never miss a court time'}
+          {needsInstall ? 'Add PadelMate to your home screen' : 'Never miss a court time'}
         </div>
         <div className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
           {needsInstall

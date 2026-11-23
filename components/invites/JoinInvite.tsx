@@ -140,7 +140,7 @@ export default function JoinInvite({ token, state, preview, signedIn, isOwnBooki
         <div className="flex items-center justify-center gap-2.5 mb-7">
           <span className="inline-flex items-center justify-center rounded-full text-xl"
             style={{ width: 40, height: 40, background: 'var(--brand-primary)', boxShadow: 'var(--glow-primary)' }}>🎾</span>
-          <span className="text-xl font-extrabold tracking-tight" style={{ ...display, color: 'var(--text-primary)' }}>PadelClub</span>
+          <span className="text-xl font-extrabold tracking-tight" style={{ ...display, color: 'var(--text-primary)' }}>PadelMate</span>
         </div>
 
         <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
@@ -159,7 +159,7 @@ export default function JoinInvite({ token, state, preview, signedIn, isOwnBooki
               <Link href={signedIn ? '/mybookings' : '/'}
                 className={`${unpaidSplitId ? 'mt-2' : 'mt-5'} flex items-center justify-center rounded-xl py-3 text-sm font-bold`}
                 style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                {signedIn ? 'My bookings' : 'Go to PadelClub'}
+                {signedIn ? 'My bookings' : 'Go to PadelMate'}
               </Link>
             </div>
           ) : preview && (

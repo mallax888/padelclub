@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const link = joinLink(request, token)
   const where = scopeLabel(scopeOf(plan.columns))
   const emailed = await sendClubEmail({
-    to: plan.email, subject: `${caller.name ?? 'An owner'} invited you to PadelClub`, heading: 'You have been invited',
+    to: plan.email, subject: `${caller.name ?? 'An owner'} invited you to PadelMate`, heading: 'You have been invited',
     intro: `${escapeHtml(caller.name ?? 'An owner')} invited you to join as <b>${roleLabel(plan.role)}</b> (${escapeHtml(where)}). Set a password to open the club dashboard.`,
     ctaText: 'Set my password', ctaUrl: link, footer: 'This link works once and expires in 7 days. If you do not know the person who invited you, ignore this email and nothing happens.',
   })

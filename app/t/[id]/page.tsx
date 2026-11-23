@@ -8,9 +8,9 @@ export const dynamic = 'force-dynamic'
 // names (first name and last initial) and scores, nothing else.
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const s = await loadShared(createAdminClient() as any, params.id)
-  if (!s) return { title: 'Tournament | PadelClub' }
+  if (!s) return { title: 'Tournament | PadelMate' }
   const title = `${s.name} · ${s.club}`
-  return { title: `${title} | PadelClub`, description: `${s.summary.heading}: ${s.summary.detail}`, openGraph: { title, description: `${s.summary.heading}. ${s.summary.detail}`, images: [`/t/${params.id}/card`] }, twitter: { card: 'summary_large_image' as const, title, images: [`/t/${params.id}/card`] } }
+  return { title: `${title} | PadelMate`, description: `${s.summary.heading}: ${s.summary.detail}`, openGraph: { title, description: `${s.summary.heading}. ${s.summary.detail}`, images: [`/t/${params.id}/card`] }, twitter: { card: 'summary_large_image' as const, title, images: [`/t/${params.id}/card`] } }
 }
 
 export default async function SharedTournament({ params }: { params: { id: string } }) {
@@ -44,7 +44,7 @@ export default async function SharedTournament({ params }: { params: { id: strin
               <tbody>{s.players.map((p, i) => <tr key={i}><td className="py-1 font-medium">{p.name}</td><td className="text-center">{p.played}</td><td className="text-center">{p.won}</td><td className="text-right font-bold">{p.points}</td></tr>)}</tbody></table>
           </div>
         )}
-        <p className="text-xs mt-6 text-center" style={{ color: 'var(--text-subtle)' }}>Made with PadelClub · padelclub-nz.vercel.app</p>
+        <p className="text-xs mt-6 text-center" style={{ color: 'var(--text-subtle)' }}>Made with PadelMate · padelclub-nz.vercel.app</p>
       </div>
     </main>
   )

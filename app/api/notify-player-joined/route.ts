@@ -75,7 +75,7 @@ export async function POST(request: Request) {
         ],
         ctaText: 'View match',
         ctaUrl: matchUrl,
-        footer: `PadelClub · ${venue.name}, ${venue.region}`,
+        footer: `PadelMate · ${venue.name}, ${venue.region}`,
       }),
     })
   } catch (error) {

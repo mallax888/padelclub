@@ -12,7 +12,7 @@ export async function sendBookingConfirmationEmail({
   total,
   appUrl,
   specials = [],
-  venueLabel = 'PadelClub',
+  venueLabel = 'PadelMate',
 }: {
   to: string
   name: string

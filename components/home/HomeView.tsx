@@ -57,7 +57,7 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
   const seatNames = [fullName ?? name ?? 'You', ...shares.paid, ...shares.waiting].slice(0, 4)
   const seatsOpen = 4 - seatNames.length
   const calendarHref = next ? buildBookingIcsDataUri({
-    uid: next.id, title: `Padel at ${nextVenue?.name ?? 'PadelClub'}`, description: `${next.courts?.name ?? 'Court'} · booked with PadelClub`,
+    uid: next.id, title: `Padel at ${nextVenue?.name ?? 'PadelMate'}`, description: `${next.courts?.name ?? 'Court'} · booked with PadelMate`,
     location: nextVenue ? `${nextVenue.name}, ${nextVenue.address}` : '', date: next.date, startTime: next.start_time, endTime: next.end_time ?? next.start_time,
   }) : ''
 

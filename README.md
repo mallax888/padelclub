@@ -1,4 +1,4 @@
-# PadelClub — Booking App
+# PadelMate — Booking App
 
 Full-stack court booking app built with **Next.js 14**, **Supabase**, and **Tailwind CSS**.
 Supports court bookings, membership tiers, session credit packs, and a staff admin panel.

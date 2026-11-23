@@ -21,8 +21,8 @@ export const resend = new Proxy({} as Resend, {
 //
 // Going live is therefore an environment variable rather than a deploy --
 // verify a domain in Resend, add its DNS records, then set RESEND_FROM to
-// something like "PadelClub <bookings@padelclub.nz>".
-const SANDBOX_FROM = 'PadelClub <onboarding@resend.dev>'
+// something like "PadelMate <bookings@padelclub.nz>".
+const SANDBOX_FROM = 'PadelMate <onboarding@resend.dev>'
 
 export function emailFrom(): string {
   const configured = process.env.RESEND_FROM?.trim()

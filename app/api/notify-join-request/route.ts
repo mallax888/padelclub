@@ -10,7 +10,7 @@ import { getVenue } from '@/lib/venues'
 // Previously this route trusted every field (organizerEmail, playerName,
 // court, date, time, matchUrl) straight from the request body with no
 // authentication check at all -- anyone, logged in or not, could POST here
-// and make the app's own Resend account send an official-looking "PadelClub"
+// and make the app's own Resend account send an official-looking "PadelMate"
 // email to any address, saying anything, linking anywhere. Now the caller
 // must be signed in and must actually hold the pending request this email is
 // about; every value in the email is looked up server-side instead of
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
         extraHtml: `<p style="color:#BBC3CC;font-size:13px;margin:16px 0 0">Log in to accept or decline this request.</p>`,
         ctaText: 'View match',
         ctaUrl: matchUrl,
-        footer: `PadelClub · ${venue.name}, ${venue.region}`,
+        footer: `PadelMate · ${venue.name}, ${venue.region}`,
       }),
     })
   } catch (error) {

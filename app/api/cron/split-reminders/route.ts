@@ -271,7 +271,7 @@ async function nudge(
         ],
         ctaText: `Pay ${amount}`,
         ctaUrl: `${appUrl}${url}`,
-        footer: venue ? `PadelClub · ${venue.name}, ${venue.region}` : 'PadelClub',
+        footer: venue ? `PadelMate · ${venue.name}, ${venue.region}` : 'PadelMate',
       }),
     })
   } catch (err) {

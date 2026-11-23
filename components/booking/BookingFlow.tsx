@@ -33,7 +33,7 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 // Everything the booking flow offers comes from this list, never VENUES
 // directly. isLive used to be decorative here: it greyed a badge in the venue
 // switcher and gated the admin board, but the booking flow offered every
-// venue in the file regardless -- so a club PadelClub has no agreement with
+// venue in the file regardless -- so a club PadelMate has no agreement with
 // could be picked, booked and paid for.
 // The choice you made on a step (shown when you come back to it): the same blue as the booking ticket.
 const PICKED = { background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', border: '1px solid #6ea0ff', color: '#ffffff' } as const
@@ -42,7 +42,7 @@ const REGIONS = LIVE_VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf
 const LIVE_COUNTRIES = COUNTRIES.filter(c => c.regions.some(r => REGIONS.includes(r)))
 
 // Asking "which country?" when there is only one is a screen with a single
-// answer on it. While PadelClub runs in New Zealand alone the step drops out
+// answer on it. While PadelMate runs in New Zealand alone the step drops out
 // of the flow entirely -- including for the back button and Android's back
 // gesture, which both walk STEPS -- and returns on its own the first time a
 // venue goes live somewhere else, with no code change.
@@ -1522,7 +1522,7 @@ export default function BookingFlow({
                   <div className="rounded-xl px-3 py-2.5" style={{ background: 'var(--bg-raised)', border: '1px dashed var(--border)' }}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="min-w-0">
-                        <span className="block text-sm" style={{ color: 'var(--text-primary)' }}>Mate not on PadelClub yet?</span>
+                        <span className="block text-sm" style={{ color: 'var(--text-primary)' }}>Mate not on PadelMate yet?</span>
                         <span className="block text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>
                           Send them a link on WhatsApp or email. They join when they sign up.
                         </span>

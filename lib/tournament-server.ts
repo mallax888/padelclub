@@ -85,7 +85,7 @@ export async function createTournament(db: Db, caller: Caller, input: CreateInpu
 
   const modern = info.id !== 'americano' && info.id !== 'mexicano'
   const ready = await formatsReady(db)
-  if (modern && !ready) return fail('This format needs a one-off update to the database first. Ask whoever looks after PadelClub to run the latest setup step.', 503)
+  if (modern && !ready) return fail('This format needs a one-off update to the database first. Ask whoever looks after PadelMate to run the latest setup step.', 503)
 
   const row: Record<string, unknown> = {
     name, format: info.id, venue_slug: venue.slug, date: input.date, court_ids: courtIds, organizer_id: caller.id,

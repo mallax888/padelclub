@@ -1,7 +1,7 @@
-// Who is behind PadelClub, for the Terms, Privacy, Refunds and Contact pages and the footer links. Fill in the empty ones when you have
+// Who is behind PadelMate, for the Terms, Privacy, Refunds and Contact pages and the footer links. Fill in the empty ones when you have
 // them (company number, address, support email, phone, GST number) and they appear on the pages; nothing is made up in the meantime.
 export const BUSINESS = {
-  tradingName: 'PadelClub',
+  tradingName: 'PadelMate',
   legalName: 'Forge Ripple Limited',
   companyNumber: null as string | null,
   address: null as string | null,

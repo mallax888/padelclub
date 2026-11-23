@@ -67,7 +67,7 @@ export default function ClubPayouts({ venueSlug, returning }: { venueSlug: strin
   const price = (cents: number) => formatPrice(cents / 100, s.currency)
 
   if (!s.supported) return shell(<p className="text-xs mt-2 leading-relaxed" style={muted}>Direct payouts aren&apos;t available for clubs in {s.country ?? 'your country'} yet. Players pay exactly as they do today, and we&apos;ll tell you the moment it is.</p>, { text: 'Not available yet', tone: 'mute' })
-  if (!s.on) return shell(<p className="text-xs mt-2 leading-relaxed" style={muted}>Players&apos; card payments will go straight into your club&apos;s own Stripe account. This isn&apos;t switched on for PadelClub yet. We&apos;ll tell you when you can connect.</p>, { text: 'Coming soon', tone: 'mute' })
+  if (!s.on) return shell(<p className="text-xs mt-2 leading-relaxed" style={muted}>Players&apos; card payments will go straight into your club&apos;s own Stripe account. This isn&apos;t switched on for PadelMate yet. We&apos;ll tell you when you can connect.</p>, { text: 'Coming soon', tone: 'mute' })
 
   if (s.state === 'not_started') return shell(
     <>
@@ -78,7 +78,7 @@ export default function ClubPayouts({ venueSlug, returning }: { venueSlug: strin
         <li>Bookings stay open to players while you set it up</li>
       </ul>
       <Btn onClick={connect}>Connect with Stripe →</Btn>
-      <p className="text-[11px] mt-2 text-center" style={{ color: 'var(--text-subtle)' }}>Opens Stripe&apos;s short form, then brings you back here. PadelClub never sees your bank details.</p>
+      <p className="text-[11px] mt-2 text-center" style={{ color: 'var(--text-subtle)' }}>Opens Stripe&apos;s short form, then brings you back here. PadelMate never sees your bank details.</p>
     </>, { text: 'Not connected', tone: 'warn' })
 
   if (s.state === 'needs_info') return shell(
@@ -87,7 +87,7 @@ export default function ClubPayouts({ venueSlug, returning }: { venueSlug: strin
       <ul className="mt-2 text-[13px] leading-relaxed list-disc pl-5" style={{ color: 'var(--text-primary)' }} data-testid="due-list">
         {(s.due.length ? s.due : ['Your business details and bank account']).map(d => <li key={d}>{d}</li>)}
       </ul>
-      <p className="text-[12px] mt-2 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Until this is done, card payments for your club still work and go to PadelClub&apos;s account as before.</p>
+      <p className="text-[12px] mt-2 leading-relaxed" style={{ color: 'var(--text-subtle)' }}>Until this is done, card payments for your club still work and go to PadelMate&apos;s account as before.</p>
       <Btn onClick={connect}>Continue on Stripe →</Btn>
     </>, { text: 'Action needed', tone: 'warn' })
 
@@ -127,7 +127,7 @@ export default function ClubPayouts({ venueSlug, returning }: { venueSlug: strin
         </>
       ) : <p className="text-[13px] mt-2.5" style={muted}>Your club is paid directly. Your balance couldn&apos;t be loaded just now.</p>}
       <p className="text-[12px] mt-3 leading-relaxed" style={{ color: 'var(--text-subtle)' }} data-testid="fee-line">
-        Players&apos; payments go straight to your Stripe account. PadelClub&apos;s fee is {s.fee.percent}%{s.fee.fixed > 0 ? ` plus ${formatPrice(s.fee.fixed, s.currency)}` : ''} of each payment, taken automatically. Stripe&apos;s card fee comes out of each payment too.
+        Players&apos; payments go straight to your Stripe account. PadelMate&apos;s fee is {s.fee.percent}%{s.fee.fixed > 0 ? ` plus ${formatPrice(s.fee.fixed, s.currency)}` : ''} of each payment, taken automatically. Stripe&apos;s card fee comes out of each payment too.
       </p>
       <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-full rounded-2xl mt-3 text-sm font-bold" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Open Stripe dashboard ↗</a>
     </div>, { text: 'Connected', tone: 'ok' })

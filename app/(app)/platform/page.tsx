@@ -11,7 +11,7 @@ import { getVenue } from '@/lib/venues'
 export const metadata = { title: 'Clubs and fees' }
 export const dynamic = 'force-dynamic'
 
-// For the person who runs PadelClub itself: new clubs waiting to be approved.
+// For the person who runs PadelMate itself: new clubs waiting to be approved.
 export default async function PlatformPage() {
   const caller = await loadTeamCaller()
   if (!caller) redirect('/club/login')

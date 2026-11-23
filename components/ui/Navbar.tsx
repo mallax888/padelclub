@@ -229,7 +229,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
             onClick={() => setMenuOpen(false)}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#d4f53c', boxShadow: '0 0 8px #d4f53c99' }} />
             <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
-              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span>
             </span>
           </Link>
           <div className="flex items-center gap-2 shrink-0">
@@ -296,7 +296,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
           <Link href={homeHref} className="flex items-center gap-2 font-bold text-sm px-1.5 mb-5">
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#d4f53c', boxShadow: '0 0 8px #d4f53c99' }} />
             <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
-              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>CLUB</span>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span>
             </span>
           </Link>
 

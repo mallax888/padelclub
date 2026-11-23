@@ -92,7 +92,7 @@ export default function OnboardingFlow({
           {step === 'nickname' && (
             <>
               <div className="text-2xl mb-2">🎾</div>
-              <h1 className="text-xl font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>Welcome to PadelClub</h1>
+              <h1 className="text-xl font-extrabold mb-1" style={{ color: 'var(--text-primary)' }}>Welcome to PadelMate</h1>
               <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>What should other players call you?</p>
               <input
                 type="text"
