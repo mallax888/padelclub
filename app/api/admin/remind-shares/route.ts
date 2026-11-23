@@ -1,3 +1,4 @@
+import { gameHasEnded } from '@/lib/game-over'
 import { fmtClock } from '@/lib/clock'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase-admin'
@@ -20,12 +21,12 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient() as any
   const { data: split } = await admin.from('booking_splits')
-    .select('id, user_id, invited_by, amount_nzd, status, bookings(date, start_time, status, courts(name, venue_slug))')
+    .select('id, user_id, invited_by, amount_nzd, status, bookings(date, start_time, end_time, status, courts(name, venue_slug))')
     .eq('id', b.id).maybeSingle()
   if (!split) return NextResponse.json({ error: 'We could not find that share.' }, { status: 404 })
   const venueSlug: string | undefined = split.bookings?.courts?.venue_slug
   if (!venueSlug || !covers(caller.reach, { kind: 'club', venueSlug })) return NextResponse.json({ error: 'That club is outside your reach.' }, { status: 403 })
-  if (split.status !== 'pending' || !split.user_id || split.bookings?.status === 'cancelled') {
+  if (split.status !== 'pending' || !split.user_id || split.bookings?.status === 'cancelled' || (split.bookings?.date && gameHasEnded(split.bookings.date, split.bookings.end_time ?? split.bookings.start_time, venueSlug, Date.now()))) {
     return NextResponse.json({ error: 'That share is no longer owed, so there is nothing to remind.' }, { status: 409 })
   }
 

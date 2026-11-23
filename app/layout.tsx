@@ -13,8 +13,8 @@ const inter = Inter({ subsets: ['latin'] })
 const manrope = Manrope({ subsets: ['latin'], weight: ['600', '700', '800'], variable: '--font-display' })
 
 export const metadata: Metadata = {
-  title: { default: 'PadelMate - Book padel courts', template: '%s | PadelMate' },
-  description: 'Book padel courts, find a game, split payments.',
+  title: { default: 'PadelMate - Book it. Run it. Play it.', template: '%s | PadelMate' },
+  description: 'Players: book courts and find a game. Clubs: run bookings, payments and your team from one dashboard.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
