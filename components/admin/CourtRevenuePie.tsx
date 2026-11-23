@@ -64,11 +64,11 @@ export default function CourtRevenuePie({ revenue, currency }: { revenue: CourtR
         <b style={{ color: 'var(--text-primary)' }}>{formatPrice(revenue.booked, currency)}</b> booked of {formatPrice(revenue.possible, currency)} possible
         {view === 'graph' ? ' · each column is an hour' : ''}
       </p>
-      <div className="grid gap-3.5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
         {revenue.rows.map((r, i) => {
           const colour = COLOURS[i % COLOURS.length]
           return (
-            <div key={r.id} className="rounded-2xl p-4" style={{ background: 'var(--bg-base)', border: '1px solid var(--border)' }} data-testid="court-revenue-card">
+            <div key={r.id} className="rounded-[20px] p-5" style={{ background: 'var(--bg-base)', border: '1px solid var(--border)' }} data-testid="court-revenue-card">
               {view === 'pie' ? <Pie row={r} colour={colour} /> : (
                 <div className="mb-1"><Hours row={r} colour={colour} maxFee={revenue.maxFee} /></div>
               )}
