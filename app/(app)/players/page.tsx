@@ -6,10 +6,15 @@ import { isManagerRole } from '@/lib/view-mode'
 import PlayersDirectory from '@/components/players/PlayersDirectory'
 import Link from 'next/link'
 import { getInitials } from '@/lib/utils'
+import { createAdminClient } from '@/lib/supabase-admin'
+import { VENUES, getVenue } from '@/lib/venues'
+import { currencyForRegion } from '@/lib/currency'
+import { loadClubPlayers } from '@/lib/club-players-server'
+import ClubPlayers from '@/components/players/ClubPlayers'
 
 export const metadata = { title: 'Players' }
 
-export default async function PlayersPage() {
+export default async function PlayersPage({ searchParams }: { searchParams?: { venue?: string } }) {
   const supabase = createServerClient()
   // A club's own people see only that club's players. Club accounts are never on a leaderboard.
   const caller = await loadTeamCaller()
@@ -32,6 +37,23 @@ export default async function PlayersPage() {
     console.error('Players page error:', e)
   }
 
+  // A club's owner or front desk gets a working list of the club's players, with what they have really done there.
+  let club: { slug: string; name: string; currency: any; today: string; list: any[]; choices: { slug: string; name: string }[] } | null = null
+  if (managing && caller) {
+    try {
+      const admin = createAdminClient() as any
+      const { data: cts } = await admin.from('courts').select('venue_slug').eq('is_active', true)
+      const withCourts = new Set(((cts ?? []) as any[]).map(c => c.venue_slug as string))
+      const choices = VENUES.filter(v => withCourts.has(v.slug) && covers(caller.reach, { kind: 'club', venueSlug: v.slug })).map(v => ({ slug: v.slug, name: v.name }))
+      const slug = choices.find(c => c.slug === searchParams?.venue)?.slug ?? choices[0]?.slug
+      if (slug) {
+        const v = getVenue(slug)
+        const loaded = await loadClubPlayers(admin, slug)
+        club = { slug, name: v.name, currency: currencyForRegion(v.region), today: loaded.today, list: loaded.players, choices }
+      }
+    } catch (e) { console.error('Club players error:', e) }
+  }
+
   const leaderboard = [...players].sort((a, b) => (b.ranking_points ?? 0) - (a.ranking_points ?? 0))
 
   return (
@@ -44,7 +66,19 @@ export default async function PlayersPage() {
       <div className="flex flex-col lg:flex-row gap-6 items-start">
 
         {/* Player cards */}
-        <PlayersDirectory players={players} />
+        {club ? (
+          <div className="w-full lg:flex-1 min-w-0">
+            {club.choices.length > 1 && (
+              <div className="flex gap-2 mb-3 overflow-x-auto" data-testid="club-choices">
+                {club.choices.map(c => (
+                  <Link key={c.slug} href={`/players?venue=${c.slug}`} className="shrink-0 rounded-full px-4 py-2 text-[13px] font-extrabold"
+                    style={c.slug === club!.slug ? { background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' } : { color: 'var(--text-muted)', border: '1px solid var(--border)' }}>{c.name}</Link>
+                ))}
+              </div>
+            )}
+            <ClubPlayers players={club.list} today={club.today} venueSlug={club.slug} club={club.name} currency={club.currency} showMoney={caller!.role === 'admin'} canMessage={caller!.role === 'admin'} />
+          </div>
+        ) : <PlayersDirectory players={players} />}
 
         {/* Leaderboard — full width on mobile, sidebar on desktop */}
         <div className="w-full lg:w-64 lg:shrink-0 rounded-2xl overflow-hidden"
