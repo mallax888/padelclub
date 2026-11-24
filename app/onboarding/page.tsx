@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase-server'
 import OnboardingFlow from '@/components/onboarding/OnboardingFlow'
 import { INVITE_COOKIE, joinPathFor, safeNext } from '@/lib/return-to'
+import { CLUB_COOKIE, bookPathForCookie } from '@/lib/club-link'
 
 export const metadata = { title: 'Welcome' }
 
@@ -20,7 +21,7 @@ export default async function OnboardingPage({ searchParams }: { searchParams: {
     .single()
 
   if (profile?.onboarding_completed) {
-    redirect(safeNext(searchParams?.next) ?? joinPathFor(cookies().get(INVITE_COOKIE)?.value) ?? '/')
+    redirect(safeNext(searchParams?.next) ?? joinPathFor(cookies().get(INVITE_COOKIE)?.value) ?? bookPathForCookie(cookies().get(CLUB_COOKIE)?.value) ?? '/')
   }
 
   return <OnboardingFlow userId={session!.user.id} defaultName={profile?.full_name ?? ''} />

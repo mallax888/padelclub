@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import MembershipPlans from '@/components/admin/MembershipPlans'
+import BookingLinkCard from '@/components/admin/BookingLinkCard'
+import type { LinkSummary } from '@/lib/club-link'
 import ClubPayouts from '@/components/admin/ClubPayouts'
 import BriefingSettings from '@/components/admin/BriefingSettings'
 import CancellationSettings from '@/components/admin/CancellationSettings'
@@ -63,7 +65,7 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   )
 }
 
-export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null, stripeReturn = null, cancellation = null, briefing = null }: {
+export default function ClubSetup({ clubs, venue, listed, currency, hours: savedHours, isOpen, courts, regulars, memberships = null, bookingLink = null, stripeReturn = null, cancellation = null, briefing = null }: {
   clubs: SetupClub[]
   venue: { slug: string; name: string; address: string; region: string }
   listed: Listed[]
@@ -75,6 +77,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
   regulars: { enabled: boolean; peakCap: number | null } | null
   // This club's membership plans and figures. Null when the club plans database change hasn't been run.
   memberships?: { plans: Plan[]; stats: PlanStats; examplePrice: number | null } | null
+  bookingLink?: { origin: string; summary: LinkSummary | null } | null
   // Set when the owner has just come back from Stripe's form.
   stripeReturn?: 'return' | 'refresh' | null
   // This club's morning briefing settings. Null when the 035 database change hasn't been run.
@@ -348,6 +351,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
             </div>
 
             <div className="flex flex-col gap-4 min-w-0">
+              {bookingLink && <BookingLinkCard venueSlug={venue.slug} venueName={venue.name} origin={bookingLink.origin} summary={bookingLink.summary} currency={currency} />}
               {regularsCard}
               <BriefingSettings venueSlug={venue.slug} settings={briefing} />
               <CancellationSettings venueSlug={venue.slug} rule={cancellation} />
@@ -393,6 +397,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
         {eff !== 'live' && <div className="text-[11px] font-extrabold uppercase mt-2 px-0.5" style={sectionLabel}>More settings</div>}
       {!bento && regularsCard}
           {!bento && <>
+            {bookingLink && <BookingLinkCard venueSlug={venue.slug} venueName={venue.name} origin={bookingLink.origin} summary={bookingLink.summary} currency={currency} />}
             <BriefingSettings venueSlug={venue.slug} settings={briefing} />
             <CancellationSettings venueSlug={venue.slug} rule={cancellation} />
             <ClubPayouts venueSlug={venue.slug} returning={stripeReturn} />
