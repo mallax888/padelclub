@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
 
 export default function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  // resolvedTheme is what the page looks like now. theme is only the saved choice, which stays "system" until someone taps,
+  // so a phone set to dark would read "light" here and the first tap would change nothing.
+  const { resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => setMounted(true), [])
   if (!mounted) return null
 
-  const isDark = theme === 'dark'
+  const isDark = resolvedTheme === 'dark'
 
   return (
     <button

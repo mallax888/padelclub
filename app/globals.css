@@ -7,7 +7,9 @@
      schemes -- without it, Android Chrome's "Force Dark" auto-darkens
      the page on top of our own dark theme, which is what was skewing
      bright colors like --brand-primary's blue. */
-  color-scheme: light;
+  /* "only light": the browser must not recolour the light theme itself (Chrome's "Darken websites" on Android turned the
+     blue and lime into dull dark shades even after switching to light). The dark theme is our own. */
+  color-scheme: only light;
   --bg-base:            #F1F3F6;
   --bg-surface:         #FFFFFF;
   --bg-raised:          #E4E8ED;
