@@ -15,14 +15,16 @@ export type ClubPlayer = {
   booked: number             // the court value of those games (what they booked, not what they paid after splits)
   owes: number               // how many shares of other people's games they have not paid yet
   joined: string | null      // YYYY-MM-DD they signed up
+  viaLink?: boolean          // signed up through this club's booking link
 }
 
-export type Segment = 'all' | 'members' | 'owes' | 'new' | 'quiet'
+export type Segment = 'all' | 'members' | 'owes' | 'new' | 'link' | 'quiet'
 export const SEGMENTS: { key: Segment; label: string; short: string }[] = [
   { key: 'all', label: 'All', short: 'All' },
   { key: 'members', label: 'Club members', short: 'Members' },
   { key: 'owes', label: 'Owes money', short: 'Owes' },
   { key: 'new', label: 'New this month', short: 'New' },
+  { key: 'link', label: 'Joined via link', short: 'Via link' },
   { key: 'quiet', label: 'Not played in 30 days', short: '30 days' },
 ]
 
@@ -41,6 +43,7 @@ export function inSegment(p: ClubPlayer, s: Segment, today: string): boolean {
     case 'members': return p.member
     case 'owes': return p.owes > 0
     case 'new': return isNew(p, today)
+    case 'link': return !!p.viaLink
     case 'quiet': return isQuiet(p, today)
     default: return true
   }
@@ -49,7 +52,7 @@ export function inSegment(p: ClubPlayer, s: Segment, today: string): boolean {
 export const filterPlayers = (players: ClubPlayer[], s: Segment, today: string): ClubPlayer[] => players.filter(p => inSegment(p, s, today))
 
 export function countSegments(players: ClubPlayer[], today: string): Record<Segment, number> {
-  const out = { all: 0, members: 0, owes: 0, new: 0, quiet: 0 } as Record<Segment, number>
+  const out = { all: 0, members: 0, owes: 0, new: 0, link: 0, quiet: 0 } as Record<Segment, number>
   for (const p of players) for (const s of SEGMENTS) if (inSegment(p, s.key, today)) out[s.key]++
   return out
 }

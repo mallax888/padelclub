@@ -15,6 +15,7 @@ const starter = (t: MessageTarget, club: string): { title: string; body: string 
   switch (t.segment) {
     case 'quiet': return { title: 'We have missed you', body: `Come and play at ${club} this week. The courts are open and we would love to see you.` }
     case 'owes': return { title: 'A quick reminder', body: 'You have a share still to pay for an upcoming game. You can pay it in My bookings.' }
+    case 'link':
     case 'new': return { title: `Welcome to ${club}`, body: 'Great to have you. Book your next game any time, or join an open match to meet other players.' }
     case 'members': return { title: 'A note for our members', body: '' }
     default: return { title: `News from ${club}`, body: '' }

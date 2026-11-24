@@ -1,12 +1,13 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import toast from 'react-hot-toast'
 import { SKILL_LEVELS, type SkillLevel } from '@/lib/skill-levels'
 import { VENUES } from '@/lib/venues'
 import { returnTarget } from '@/lib/return-to'
+import { readClubCookie } from '@/lib/club-link'
 
 type Step = 'nickname' | 'skill' | 'venue'
 const STEPS: Step[] = ['nickname', 'skill', 'venue']
@@ -25,6 +26,8 @@ export default function OnboardingFlow({
   const [skillLevel, setSkillLevel] = useState<SkillLevel | null>(null)
   const [homeVenueSlug, setHomeVenueSlug] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  // Came in through a club's booking link: that club is the suggested home club.
+  useEffect(() => { const c = readClubCookie(); if (c) setHomeVenueSlug(cur => cur ?? c) }, [])
 
   // Live venues only. A new member picking a home club they can never book at
   // would land on a booking flow that doesn't offer it, and their home venue
@@ -59,9 +62,13 @@ export default function OnboardingFlow({
       setSaving(false)
       return
     }
+    // Work out where they are going first: telling the club (below) uses up the link's cookie.
+    const target = returnTarget()
+    // If they came in through a club's link, tell the club (a failure here must never stop sign-up).
+    if (readClubCookie()) { try { await fetch('/api/club-link/claim', { method: 'POST' }) } catch {} }
     // An invited friend finishes setting up and goes straight back to the game
     // they were asked to join, not to the booking page.
-    router.push(returnTarget())
+    router.push(target)
     router.refresh()
   }
 
