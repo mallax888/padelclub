@@ -64,8 +64,8 @@ export default function OnboardingFlow({
     }
     // Work out where they are going first: telling the club (below) uses up the link's cookie.
     const target = returnTarget()
-    // If they came in through a club's link, tell the club (a failure here must never stop sign-up).
-    if (readClubCookie()) { try { await fetch('/api/club-link/claim', { method: 'POST' }) } catch {} }
+    // Tell the server they are done: it tags the club whose link they used, and links any club that had them as a contact.
+    try { await fetch('/api/club-link/claim', { method: 'POST' }) } catch { /* never blocks sign-up */ }
     // An invited friend finishes setting up and goes straight back to the game
     // they were asked to join, not to the booking page.
     router.push(target)

@@ -3,12 +3,16 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { CLUB_COOKIE, isLiveClub } from '@/lib/club-link'
+import { linkContactsByEmail } from '@/lib/contacts-server'
 
 // A new player finished sign-up after opening a club's booking link: remember which club brought them.
 // Set once and never changed, so an old link cannot re-tag someone who already belongs somewhere.
 export async function POST() {
   const { data: { session } } = await createServerClient().auth.getSession()
   if (!session) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+  // Anyone a club imported with this (confirmed) email is now that club's player, link or no link.
+  const email = session.user.email
+  if (email) { try { await linkContactsByEmail(createAdminClient() as any, session.user.id, email) } catch { /* never blocks sign-up */ } }
   const slug = cookies().get(CLUB_COOKIE)?.value
   if (!isLiveClub(slug)) return NextResponse.json({ ok: true, tagged: false })
   const admin = createAdminClient() as any
