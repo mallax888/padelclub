@@ -3,7 +3,7 @@ import { VENUES, getVenue } from '@/lib/venues'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { buildBookingIcsDataUri } from '@/lib/ics'
 import { fmtClock, fmtHour, fmtUntil } from '@/lib/clock'
-import { countdownLabel, dayWord, greetingFor, inDays, weekStrip, levelText, mapsUrl, nextOccurrence, shareChips, startsAtMs, usualLink, type HomeBooking, type Usual } from '@/lib/home-rules'
+import { countdownLabel, dayWord, greetingFor, inDays, weekStrip, levelText, mapsUrl, nextOccurrence, shareChips, startsAtMs, usualLink, dayLink, type HomeBooking, type Usual } from '@/lib/home-rules'
 import { Avatars, CourtTile } from '@/components/booking/BookingTicket'
 import GameCountdown from '@/components/home/GameCountdown'
 import NextGameCourt from '@/components/home/NextGameCourt'
@@ -46,6 +46,8 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
   const cur = currencyForRegion(nextVenue?.region)
   const chips = shareChips(shares)
   const usualDate = usual ? nextOccurrence(usual, nowMs) : null
+  // Where a tapped day in This week opens: the player's own club, else the club of their next game.
+  const weekVenue = homeSlug ?? next?.courts?.venue_slug ?? null
   const usualCur = usual ? currencyForRegion(getVenue(usual.venueSlug)?.region) : cur
   // "ends Sunday": the weekday an offer stops, at the club's own clock ("ends today" if that is today).
   const endsOn = (iso: string | null | undefined): string => {
@@ -68,9 +70,11 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
           <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }} data-testid="greeting">{greetingFor(hour)}{name ? `, ${name}` : ''}</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{today}{homeName ? ` · ${homeName}` : ''}</p>
         </div>
-        <div className="hidden md:flex items-center gap-2.5 shrink-0">
-          <Link href="/book" data-testid="book-court" className="rounded-full px-5 text-[14px] font-black uppercase inline-flex items-center" style={{ minHeight: 44, letterSpacing: '0.04em', background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>Book a court →</Link>
-          <Link href="/find-a-game" data-testid="open-play-link" className="rounded-full px-5 text-[14px] font-black uppercase inline-flex items-center" style={{ minHeight: 44, letterSpacing: '0.04em', background: 'transparent', border: '2px solid var(--brand-primary)', color: 'var(--brand-primary-text)' }}>Open play →</Link>
+        <div className="hidden md:flex items-center shrink-0">
+          {/* One button: the player's usual slot if they have one, otherwise Book a court. */}
+          <Link href={usual && usualDate ? usualLink(usual, usualDate) : '/book'} data-testid="book-court" className="rounded-full px-5 text-[14px] font-black uppercase inline-flex items-center" style={{ minHeight: 44, letterSpacing: '0.04em', background: BALL, color: INK }}>
+            {usual && usualDate ? `Book your usual · ${usual.weekdayName.slice(0, 3)} ${fmtClock(usual.startTime)} →` : 'Book a court →'}
+          </Link>
         </div>
       </div>
 
@@ -122,27 +126,19 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4">
-              <Link href="/book" data-testid="book-court" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
-                <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', opacity: 0.85 }}>Book a court</span>
-                <span className="text-[17px] font-black leading-tight">Book in seconds</span>
+            {usual && usualDate ? (
+              <Link href={usualLink(usual, usualDate)} data-testid="usual-card" className="rounded-[20px] p-4 flex flex-col justify-between gap-2 min-h-[104px]" style={{ background: BALL, color: INK }}>
+                <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', opacity: 0.8 }}>Book your usual</span>
+                <span className="text-[19px] font-black leading-tight">{usual.weekdayName.slice(0, 3)} {fmtClock(usual.startTime)} · {usual.courtName} →</span>
+                <span className="text-[12px] font-bold">{formatPrice(usual.price, usualCur)} · tap to rebook</span>
+                <span className="sr-only">{venueName(usual.venueSlug)}. Pick the time on {dateParts(usualDate).short}.</span>
+              </Link>
+            ) : (
+              <Link href="/book" data-testid="book-court" className="rounded-[20px] p-4 flex items-center justify-between gap-3 min-h-[72px]" style={{ background: BALL, color: INK }}>
+                <span className="text-[18px] font-black leading-tight">Book a court</span>
                 <span className="text-lg font-extrabold leading-none" aria-hidden>→</span>
               </Link>
-              {usual && usualDate ? (
-                <Link href={usualLink(usual, usualDate)} data-testid="usual-card" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: BALL, color: INK }}>
-                  <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', opacity: 0.8 }}>Play your usual</span>
-                  <span className="text-[17px] font-black leading-tight">{usual.weekdayName.slice(0, 3)} {fmtClock(usual.startTime)}, {usual.courtName}</span>
-                  <span className="text-[12px] font-bold">{formatPrice(usual.price, usualCur)} · tap to rebook</span>
-                  <span className="sr-only">{venueName(usual.venueSlug)}. Pick the time on {dateParts(usualDate).short}.</span>
-                </Link>
-              ) : (
-                <Link href="/find-a-game" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                  <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>Open play</span>
-                  <span className="text-[17px] font-black leading-tight">Join a game near your level</span>
-                  <span className="text-lg font-extrabold leading-none" aria-hidden>→</span>
-                </Link>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Tablet and desktop: the scoreboard */}
@@ -178,18 +174,18 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
             <h2 className="text-lg font-extrabold" style={{ color: 'var(--text-primary)' }}>No game booked yet</h2>
             <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>Pick a club, a day and a time, and your next game shows up here.</p>
           </section>
-          <div className="md:hidden grid grid-cols-[repeat(2,minmax(0,1fr))] gap-4">
-            <Link href="/book" data-testid="book-court" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', boxShadow: 'var(--glow-primary)' }}>
-              <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', opacity: 0.85 }}>Book a court</span>
-              <span className="text-[17px] font-black leading-tight">Book in seconds</span>
+          {usual && usualDate ? (
+            <Link href={usualLink(usual, usualDate)} data-testid="usual-card" className="md:hidden rounded-[20px] p-4 flex flex-col justify-between gap-2 min-h-[104px]" style={{ background: BALL, color: INK }}>
+              <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', opacity: 0.8 }}>Book your usual</span>
+              <span className="text-[19px] font-black leading-tight">{usual.weekdayName.slice(0, 3)} {fmtClock(usual.startTime)} · {usual.courtName} →</span>
+              <span className="text-[12px] font-bold">{formatPrice(usual.price, usualCur)} · tap to rebook</span>
+            </Link>
+          ) : (
+            <Link href="/book" data-testid="book-court" className="md:hidden rounded-[20px] p-4 flex items-center justify-between gap-3 min-h-[72px]" style={{ background: BALL, color: INK }}>
+              <span className="text-[18px] font-black leading-tight">Book a court</span>
               <span className="text-lg font-extrabold leading-none" aria-hidden>→</span>
             </Link>
-            <Link href="/find-a-game" className="rounded-[20px] p-4 flex flex-col justify-between gap-3 min-h-[104px]" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-              <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>Open play</span>
-              <span className="text-[17px] font-black leading-tight">Join a game near your level</span>
-              <span className="text-lg font-extrabold leading-none" aria-hidden>→</span>
-            </Link>
-          </div>
+          )}
         </>
       )}
 
@@ -273,22 +269,29 @@ export default function HomeView({ name, fullName, homeSlug, tz, nowMs, next, sh
                   })}
                 </div>
                 <div className="rounded-[20px] p-5 flex flex-col" style={card} data-testid="week-panel">
-                  <h4 className="text-[11px] font-extrabold uppercase mb-3" style={label}>This week</h4>
+                  <h4 className="text-[11px] font-extrabold uppercase mb-3 flex items-baseline justify-between gap-2" style={label}><span>This week</span>{weekVenue && <span className="normal-case font-semibold tracking-normal text-[11.5px]" style={{ color: 'var(--text-muted)', letterSpacing: 0 }}>tap a day to book it</span>}</h4>
                   <div className="grid grid-cols-7 gap-1">
-                    {weekStrip(todayDate, [next?.date, ...later.map(b => b.date)].filter((d): d is string => !!d)).map(d => (
-                      <div key={d.date} data-testid="week-day" data-booked={d.booked ? 'yes' : 'no'} className="text-center rounded-xl py-2" style={{ background: d.isToday ? 'var(--bg-raised)' : 'transparent' }}>
-                        <div className="text-[10.5px] font-extrabold" style={{ color: 'var(--text-muted)' }}>{d.weekday}</div>
-                        <div className="text-[15px] font-extrabold mt-0.5 mb-1.5" style={{ color: 'var(--text-primary)' }}>{d.day}</div>
-                        <i className="block mx-auto rounded-full" style={{ width: 8, height: 8, background: d.booked ? BALL : 'transparent', border: d.booked ? 'none' : '1px solid var(--border)' }} />
-                      </div>
-                    ))}
+                    {weekStrip(todayDate, [next?.date, ...later.map(b => b.date)].filter((d): d is string => !!d)).map(d => {
+                      const inner = (
+                        <>
+                          <div className="text-[10.5px] font-extrabold" style={{ color: 'var(--text-muted)' }}>{d.weekday}</div>
+                          <div className="text-[15px] font-extrabold mt-0.5 mb-1.5" style={{ color: 'var(--text-primary)' }}>{d.day}</div>
+                          <i className="block mx-auto rounded-full" style={{ width: 8, height: 8, background: d.booked ? BALL : 'transparent', border: d.booked ? 'none' : '1px solid var(--border)' }} />
+                        </>
+                      )
+                      const cls = 'block text-center rounded-xl py-2'
+                      const st = { background: d.isToday ? 'var(--bg-raised)' : 'transparent' }
+                      // A day that has not passed opens Book a court on that day, at the player's club.
+                      return d.date >= todayDate && weekVenue
+                        ? <Link key={d.date} href={dayLink(weekVenue, d.date, usual?.durationMin ?? 60)} data-testid="week-day" data-booked={d.booked ? 'yes' : 'no'} aria-label={`Book ${d.weekday} ${d.day}`} className={cls} style={st}>{inner}</Link>
+                        : <div key={d.date} data-testid="week-day" data-booked={d.booked ? 'yes' : 'no'} className={cls} style={st}>{inner}</div>
+                    })}
                   </div>
                   <div className="mt-auto pt-4 flex items-center justify-between gap-3" style={{ borderTop: '1px solid var(--border)' }}>
                     {(() => {
                       const n = weekStrip(todayDate, [next?.date, ...later.map(b => b.date)].filter((d): d is string => !!d)).filter(d => d.booked).length
                       return <span className="text-[12.5px]" style={{ color: 'var(--text-muted)' }} data-testid="week-count"><b style={{ color: 'var(--text-primary)' }}>{n} {n === 1 ? 'day' : 'days'}</b> with a game this week</span>
                     })()}
-                    <Link href="/book" className="shrink-0 rounded-full px-3.5 py-2 text-[12px] font-black" style={{ background: BALL, color: INK }}>Book another</Link>
                   </div>
                 </div>
               </div>

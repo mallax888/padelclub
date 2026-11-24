@@ -130,6 +130,10 @@ export const mapsUrl = (address: string): string => `https://www.google.com/maps
 export const usualLink = (u: Usual, date: string): string =>
   `/book?wl=1&u=${encodeURIComponent(u.venueSlug)}&ud=${date}&um=${u.durationMin}`
 
+// A day tapped in "This week": that club and day, the time left as the one tap.
+export const dayLink = (venueSlug: string, date: string, durationMin = 60): string =>
+  `/book?wl=1&u=${encodeURIComponent(venueSlug)}&ud=${date}&um=${durationMin}`
+
 // "In 21 hrs", "In 40 min", "In 3 days": how long until a game starts, for the next-game ticket.
 export function countdownLabel(b: HomeBooking, nowMs: number): string {
   const mins = Math.max(0, Math.round((startMs(b) - nowMs) / 60000))
