@@ -21,6 +21,9 @@ export async function loadClubPlayers(admin: Admin, venueSlug: string, nowMs: nu
   const bookings = (bk ?? []) as any[]
   const ids = new Set<string>(await homeClubIds(admin, venueSlug))
   for (const b of bookings) if (b.user_id) ids.add(b.user_id)
+  // People this club imported who already have an account are its players too, even before their first booking.
+  const { data: linked, error: linkedErr } = await admin.from('club_contacts').select('user_id').eq('venue_slug', venueSlug)
+  if (!linkedErr) for (const r of ((linked ?? []) as any[])) if (r.user_id) ids.add(r.user_id)
 
   const profiles: any[] = []
   for (const part of chunks(Array.from(ids), 150)) {

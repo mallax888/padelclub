@@ -11,6 +11,8 @@ import { VENUES, getVenue } from '@/lib/venues'
 import { currencyForRegion } from '@/lib/currency'
 import { loadClubPlayers } from '@/lib/club-players-server'
 import ClubPlayers from '@/components/players/ClubPlayers'
+import { contactsAvailable, loadContacts } from '@/lib/contacts-server'
+import { contactSummary, type Contact, type ContactSummary } from '@/lib/contact-rules'
 
 export const metadata = { title: 'Players' }
 
@@ -38,7 +40,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
   }
 
   // A club's owner or front desk gets a working list of the club's players, with what they have really done there.
-  let club: { slug: string; name: string; currency: any; today: string; list: any[]; choices: { slug: string; name: string }[] } | null = null
+  let club: { slug: string; name: string; currency: any; today: string; list: any[]; choices: { slug: string; name: string }[]; contacts: Contact[]; contactInfo: ContactSummary | null } | null = null
   if (managing && caller) {
     try {
       const admin = createAdminClient() as any
@@ -49,7 +51,10 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
       if (slug) {
         const v = getVenue(slug)
         const loaded = await loadClubPlayers(admin, slug)
-        club = { slug, name: v.name, currency: currencyForRegion(v.region), today: loaded.today, list: loaded.players, choices }
+        // People the owner imported who have not joined yet (owner only). Quietly absent until the database change is run.
+        let contacts: Contact[] = [], contactInfo: ContactSummary | null = null
+        if (caller.role === 'admin' && (await contactsAvailable(admin))) { contacts = await loadContacts(admin, slug); contactInfo = contactSummary(contacts, Date.now()) }
+        club = { slug, name: v.name, currency: currencyForRegion(v.region), today: loaded.today, list: loaded.players, choices, contacts, contactInfo }
       }
     } catch (e) { console.error('Club players error:', e) }
   }
@@ -76,7 +81,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
                 ))}
               </div>
             )}
-            <ClubPlayers players={club.list} today={club.today} venueSlug={club.slug} club={club.name} currency={club.currency} showMoney={caller!.role === 'admin'} canMessage={caller!.role === 'admin'} />
+            <ClubPlayers players={club.list} today={club.today} venueSlug={club.slug} club={club.name} currency={club.currency} showMoney={caller!.role === 'admin'} canMessage={caller!.role === 'admin'} contacts={club.contacts} contactInfo={club.contactInfo} canImport={caller!.role === 'admin'} emailReady={!!process.env.RESEND_API_KEY} />
           </div>
         ) : <PlayersDirectory players={players} />}
 
