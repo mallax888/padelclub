@@ -10,7 +10,8 @@ function Delta({ diff, money: isMoney, currency }: { diff: number | null; money:
   if (diff === null || diff === 0) return null
   const up = diff > 0
   const n = Math.abs(diff)
-  return <span style={{ color: up ? 'var(--success, #35c27a)' : 'var(--brand-crimson)' }} className="font-bold"> {up ? '▲' : '▼'} {isMoney ? money(n, currency) : n}</span>
+  // A white pill with green (up) or red (down) text: it reads clearly on the blue card, and down is a true red, not pink.
+  return <span className="font-bold text-[13px] rounded-full px-2.5 py-0.5 ml-2 whitespace-nowrap" data-testid={up ? 'delta-up' : 'delta-down'} style={{ background: '#ffffff', color: up ? '#0b7a43' : '#c4161c' }}>{up ? '▲' : '▼'} {isMoney ? money(n, currency) : n}</span>
 }
 
 export default function YesterdayStrip({ b, currency, weekday, label, brandNew, hero }: { b: Briefing; currency: CurrencyCode; weekday: string; label: string; brandNew?: boolean; hero?: boolean }) {
