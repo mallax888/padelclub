@@ -75,6 +75,7 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
                   <span className="flex flex-wrap items-center gap-1.5 mt-0.5">
                     <span className="text-[11.5px] lg:hidden" style={{ color: 'var(--text-muted)' }}>{lastPlayedLabel(p, today)} · {p.games} {p.games === 1 ? 'game' : 'games'}</span>
                     <span className="text-[10px] font-black rounded-full px-2 py-0.5" style={p.member ? { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' } : { background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{p.member ? (p.planLabel ?? 'Member') : 'Casual'}</span>
+                    {p.viaLink && <span className="text-[10px] font-black rounded-full px-2 py-0.5" data-testid="via-link-tag" style={{ background: 'rgba(212,245,60,0.14)', color: '#d4f53c', border: '1px solid rgba(212,245,60,0.45)' }}>via link</span>}
                     {p.owes > 0 && showMoney && <span className="text-[10px] font-black rounded-full px-2 py-0.5" style={{ background: '#d4f53c', color: '#17240a' }}>owes {p.owes}</span>}
                   </span>
                 </span>

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { INVITE_COOKIE, joinPathFor, safeNext } from '@/lib/return-to'
+import { CLUB_COOKIE, bookPathForCookie } from '@/lib/club-link'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
   const destination =
     safeNext(requestUrl.searchParams.get('next'))
     ?? joinPathFor(request.cookies.get(INVITE_COOKIE)?.value)
+    ?? bookPathForCookie(request.cookies.get(CLUB_COOKIE)?.value)
     ?? '/' // the front door sends each person to their own home: players to Home, managers to Today
   return NextResponse.redirect(new URL(destination, request.url))
 }

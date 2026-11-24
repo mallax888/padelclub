@@ -28,6 +28,7 @@ import { playSelectionSound, playBackSound } from '@/lib/sounds'
 import { defaultRange } from '@/lib/matchmaking'
 import { DEFAULT_RULE, bookingRuleLines, type CancellationRule } from '@/lib/cancellation-rules'
 import LevelRangePicker from '@/components/booking/LevelRangePicker'
+import { forgetClub } from '@/lib/club-link'
 
 const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -340,6 +341,24 @@ export default function BookingFlow({
     setStep('time')
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [offerParam, offerPrefill?.venueSlug, offerPrefill?.date])
+
+  // Arriving from a club's own booking link (/book?club=slug): open on that club, ready to pick the day.
+  const clubParam = searchParams.get('club')
+  const appliedClub = useRef<string | null>(null)
+  useEffect(() => {
+    if (!clubParam || appliedClub.current === clubParam) return
+    const v = LIVE_VENUES.find(x => x.slug === clubParam)
+    if (!v) return
+    appliedClub.current = clubParam
+    setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null)
+    setRegion(v.region)
+    setVenue(v)
+    setDate(null)
+    setTime(null)
+    setStep('date')
+    forgetClub() // the link has done its job; don't pull later logins back here
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clubParam])
 
   const joinWait = async (t: string) => {
     if (!venue || !date || !duration) return

@@ -15,6 +15,8 @@
 // Client-safe on purpose (no server imports): the login, signup and onboarding
 // pages are client components and use this directly.
 
+import { bookPathForCookie, readClubCookie } from '@/lib/club-link'
+
 export const INVITE_COOKIE = 'pc_invite'
 
 // What lib/invites.ts generates: 18 random bytes, base64url -> 24 characters.
@@ -55,13 +57,13 @@ function readInviteCookie(): string | null {
 }
 
 // For the pages that send someone onward after signing in: an explicit ?next=
-// wins, then a remembered invite, then the default.
+// wins, then a remembered invite, then the club link they came in through, then the default.
 // The fallback is the front door ('/'), which sends each person to their own
 // home: players to Home, managers to the Today screen.
 export function returnTarget(fallback = '/'): string {
   if (typeof window === 'undefined') return fallback
   const explicit = safeNext(new URLSearchParams(window.location.search).get('next'))
-  return explicit ?? joinPathFor(readInviteCookie()) ?? fallback
+  return explicit ?? joinPathFor(readInviteCookie()) ?? bookPathForCookie(readClubCookie()) ?? fallback
 }
 
 // ?next= carried onto the next auth page (signup -> login), or nothing.

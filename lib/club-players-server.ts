@@ -28,6 +28,12 @@ export async function loadClubPlayers(admin: Admin, venueSlug: string, nowMs: nu
     profiles.push(...((data ?? []) as any[]))
   }
 
+  // Which of them came in through this club's booking link. Read on its own so the page still works
+  // before the database change that adds the column has been run.
+  const viaLink = new Set<string>()
+  const { data: via, error: viaErr } = await admin.from('profiles').select('id').eq('joined_via_venue', venueSlug)
+  if (!viaErr) for (const r of ((via ?? []) as any[])) viaLink.add(r.id)
+
   const stats = new Map<string, { last: string | null; games: number; booked: number }>()
   const upcoming = new Set<string>() // bookings still to be played, the only ones a share can still be owed on
   for (const b of bookings) {
@@ -52,6 +58,7 @@ export async function loadClubPlayers(admin: Admin, venueSlug: string, nowMs: nu
     return {
       id: p.id, name: (p.nickname || p.full_name || 'Player') as string, member: tier !== 'casual', planLabel: tier !== 'casual' ? tierLabel(tier) : null,
       lastPlayed: s?.last ?? null, games: s?.games ?? 0, booked: Math.round((s?.booked ?? 0) * 100) / 100, owes: owes.get(p.id) ?? 0,
+      viaLink: viaLink.has(p.id),
       joined: p.created_at ? dayIn(timezoneForVenueSlug(venueSlug), Date.parse(p.created_at)) : null,
     }
   })

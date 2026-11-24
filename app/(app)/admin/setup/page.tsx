@@ -13,6 +13,9 @@ import { effectivePlans } from '@/lib/plan-rules'
 import { loadPlanRows, planStats } from '@/lib/club-plans'
 import { loadBriefingSettings } from '@/lib/briefing-server'
 import { loadRule, rulesAvailable } from '@/lib/cancellation-server'
+import { headers } from 'next/headers'
+import { isLiveClub, linkSummary } from '@/lib/club-link'
+import { loadClubPlayers } from '@/lib/club-players-server'
 
 export const metadata = { title: 'Club settings' }
 
@@ -72,6 +75,17 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
     examplePrice: courts.length ? Math.max(...courts.map(c => c.pricePerHourPeak ?? c.pricePerHour)) : null,
   }
 
+  // This club's booking link, and what it has brought in. The numbers are left out if they cannot be read,
+  // the card still works without them.
+  let bookingLink: { origin: string; summary: ReturnType<typeof linkSummary> | null } | null = null
+  if (isLiveClub(slug)) {
+    const host = headers().get('host')
+    const origin = process.env.NEXT_PUBLIC_APP_URL || (host ? `https://${host}` : '')
+    let summary: ReturnType<typeof linkSummary> | null = null
+    try { const { today, players } = await loadClubPlayers(admin, slug); summary = linkSummary(players as any, today) } catch { summary = null }
+    bookingLink = { origin, summary }
+  }
+
   return (
     <ClubSetup
       key={slug}
@@ -84,6 +98,7 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       courts={courts}
       regulars={regRules}
       memberships={memberships}
+      bookingLink={bookingLink}
       briefing={await loadBriefingSettings(admin, slug)}
       cancellation={(await rulesAvailable(admin)) ? await loadRule(admin, slug) : null}
       stripeReturn={searchParams?.stripe === 'return' || searchParams?.stripe === 'refresh' ? searchParams.stripe : null}
