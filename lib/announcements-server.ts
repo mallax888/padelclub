@@ -18,7 +18,8 @@ export async function announcementAudience(admin: Admin, venueSlug: string, nowM
   return Array.from(ids)
 }
 
-export async function sendAnnouncement(admin: Admin, input: AnnouncementInput & { venueSlug: string; createdBy: string }, nowMs: number = Date.now()): Promise<Sent> {
+// `audienceOverride` sends to exactly those people (a group the owner picked) instead of everyone at the club.
+export async function sendAnnouncement(admin: Admin, input: AnnouncementInput & { venueSlug: string; createdBy: string }, nowMs: number = Date.now(), audienceOverride?: string[]): Promise<Sent> {
   const { data: row, error } = await admin.from('club_announcements').insert({
     venue_slug: input.venueSlug, title: input.title, body: input.body, by_push: input.push, by_email: input.email, show_on_home: input.home,
     told_count: 0, created_by: input.createdBy, created_at: new Date(nowMs).toISOString(), expires_at: noticeExpiry(nowMs),
@@ -26,7 +27,7 @@ export async function sendAnnouncement(admin: Admin, input: AnnouncementInput & 
   if (tableMissing(error)) return { ok: false, status: 503, error: "Announcements aren't switched on yet. Run the 038 database change first." }
   if (error || !row) return { ok: false, status: 500, error: 'Could not send that. Please try again.' }
 
-  const audience = (await announcementAudience(admin, input.venueSlug, nowMs)).filter(id => id !== input.createdBy).slice(0, MAX_TOLD)
+  const audience = (audienceOverride ?? await announcementAudience(admin, input.venueSlug, nowMs)).filter(id => id !== input.createdBy).slice(0, MAX_TOLD)
   const venue = getVenue(input.venueSlug)
   const message = bellMessage(input.title, input.body)
   if (input.push || input.home) {
