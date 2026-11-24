@@ -26,6 +26,7 @@ import { weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import type { UnpaidShareRow } from '@/lib/money-demand'
 import type { WaitDemand } from '@/lib/waitlist-rules'
 import FinancialReports from '@/components/admin/FinancialReports'
+import type { RunningCosts } from '@/lib/running-costs'
 import type { ReportRow } from '@/lib/report-rules'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import BoardRightRail from '@/components/admin/BoardRightRail'
@@ -125,6 +126,7 @@ export default function AdminDashboard({
   initialVenue,
   initialPlan,
   venueSettings = {},
+  runningCosts = null,
   staffName,
   todayStr,
 }: {
@@ -154,6 +156,8 @@ export default function AdminDashboard({
   initialPlan?: string
   // Each club's opening hours (default 07:00-22:00 when a club hasn't set any).
   venueSettings?: VenueSettingsMap
+  // Owners only: each club's running costs for the breakeven line on Reports. Null for front desk, or before the 042 database change.
+  runningCosts?: Record<string, RunningCosts> | null
   staffName: string | null
   // "Today" as the server saw it. The first render uses this so the page matches the HTML the server sent; it is
   // then replaced by the viewer's own date (the server and a viewer in another time zone can be on different days).
@@ -705,7 +709,7 @@ export default function AdminDashboard({
 
       {tab === 'reports' && (<>
         <CardHeading as="h2" size="section" className="mb-4">Reports</CardHeading>
-        <FinancialReports rows={reportRows} creditTransactions={creditTransactions} todayStr={today} venueSlug={activeVenue} />
+        <FinancialReports rows={reportRows} creditTransactions={creditTransactions} todayStr={today} venueSlug={activeVenue} runningCosts={runningCosts} />
       </>)}
 
       {/* Bookings tab */}

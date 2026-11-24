@@ -13,6 +13,8 @@ import { effectivePlans } from '@/lib/plan-rules'
 import { loadPlanRows, planStats } from '@/lib/club-plans'
 import { loadBriefingSettings } from '@/lib/briefing-server'
 import { loadRule, rulesAvailable } from '@/lib/cancellation-server'
+import { NO_COSTS } from '@/lib/running-costs'
+import { loadCostsFor } from '@/lib/running-costs-server'
 import { headers } from 'next/headers'
 import { isLiveClub, linkSummary } from '@/lib/club-link'
 import { loadClubPlayers } from '@/lib/club-players-server'
@@ -86,6 +88,9 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
     bookingLink = { origin, summary }
   }
 
+  // This club's running costs: null before the 042 database change, which the settings card says.
+  const costsMap = await loadCostsFor(admin, [slug])
+
   return (
     <ClubSetup
       key={slug}
@@ -101,6 +106,7 @@ export default async function SetupPage({ searchParams }: { searchParams?: { ven
       bookingLink={bookingLink}
       briefing={await loadBriefingSettings(admin, slug)}
       cancellation={(await rulesAvailable(admin)) ? await loadRule(admin, slug) : null}
+      runningCosts={costsMap ? (costsMap[slug] ?? NO_COSTS) : null}
       stripeReturn={searchParams?.stripe === 'return' || searchParams?.stripe === 'refresh' ? searchParams.stripe : null}
     />
   )
