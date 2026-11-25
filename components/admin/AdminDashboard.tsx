@@ -2,7 +2,7 @@
 
 import { fmtClock, fmtClockRange, fmtHour } from '@/lib/clock'
 import CardHeading from '@/components/ui/CardHeading'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -246,7 +246,8 @@ export default function AdminDashboard({
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
   const [boardDate, setBoardDate] = useState(todayStr ?? localDateStr())
   const [showBlock, setShowBlock] = useState(false)
-  const [showPastBookings, setShowPastBookings] = useState(false)
+  // Upcoming, Past or Cancelled: one switch instead of the old "Show past bookings" tick box.
+  const [bookingsView, setBookingsView] = useState<'upcoming' | 'past' | 'cancelled'>('upcoming')
   const [memberSearch, setMemberSearch] = useState('')
   const [memberTierFilter, setMemberTierFilter] = useState<'all' | string>(initialPlan ?? 'all')
   const [planFor, setPlanFor] = useState<{ id: string; name: string; tier: string; home: string } | null>(null)
@@ -394,8 +395,11 @@ export default function AdminDashboard({
   })
   const membersSpark = last7Days.map(d => membersForVenue.filter(m => (m as any).membership_tier !== 'casual' && (m as any).created_at?.slice(0, 10) <= d).length)
   const visibleBookings = bookingsForVenue
-    .filter(b => showPastBookings || b.date >= today)
-    .sort((a, b) => (a.date === b.date ? a.start_time.localeCompare(b.start_time) : a.date.localeCompare(b.date)))
+    .filter(b => bookingsView === 'cancelled' ? b.status === 'cancelled' : b.status !== 'cancelled' && (bookingsView === 'past' ? b.date < today : b.date >= today))
+    // Upcoming runs oldest to newest; Past and Cancelled show the latest first, with each day still in time order.
+    .sort((a, b) => (a.date === b.date ? a.start_time.localeCompare(b.start_time) : bookingsView === 'upcoming' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)))
+  const bookingDays: { date: string; rows: typeof visibleBookings }[] = []
+  for (const b of visibleBookings) { const last = bookingDays[bookingDays.length - 1]; if (last && last.date === b.date) last.rows.push(b); else bookingDays.push({ date: b.date, rows: [b] }) }
 
   // Every venue in lib/venues.ts names its courts generically ("Court 1",
   // "Court 2"...), so leaving this unscoped mixes different venues' courts
@@ -757,78 +761,101 @@ export default function AdminDashboard({
           <CardHeading as="h2" size="section" className="">Bookings</CardHeading>
           <button className="btn btn-primary btn-sm md:hidden shrink-0" onClick={() => setShowBlock(true)}>🔒 Block a court</button>
         </div>
-        {statCards && <div className="mb-6">{statCards}</div>}
+        {/* The four big tiles are for the PC; a phone goes straight to the bookings. */}
+        {statCards && <div className="mb-6 hidden md:block">{statCards}</div>}
         {canSeeMoney && (() => {
           // This week at a glance (owners only): what was taken, what went back, and what is overdue.
           const w = weekMoney(bookingsForVenue as any, today)
           const overdue = activeVenue ? splitOverdueShares(unpaidShares, activeVenue, Date.now()).overdueTotal : 0
           const cur = currencyForVenueSlug(activeVenue)
           const m = (n: number) => formatPrice(n, cur).replace(/\.00$/, '')
-          const cell = (label: string, id: string, kind: 'gain' | 'loss' | 'none', text: string) => (
-            <div key={id}><div className="text-[11px] font-extrabold uppercase mb-1.5" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{label}</div>
-              <MoneyBubble kind={kind} size={16} testId={id}>{text}</MoneyBubble></div>
+          // On a phone only what has something in it shows; the PC always shows all three.
+          const cell = (label: string, id: string, kind: 'gain' | 'loss' | 'none', text: string, alwaysOnPhone = false) => (
+            <div key={id} className={alwaysOnPhone || kind !== 'none' ? undefined : 'hidden md:block'}><div className="text-[11px] font-extrabold uppercase mb-1.5" style={{ letterSpacing: '0.1em', color: 'var(--text-primary)' }}>{label}</div>
+              <MoneyBubble kind={kind} size={15} testId={id}>{text}</MoneyBubble></div>
           )
           return (
-            <div className="rounded-2xl p-5 mb-4 flex flex-wrap gap-x-8 gap-y-3" data-testid="bookings-week" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-              {cell('Taken this week', 'week-taken', w.taken > 0 ? 'gain' : 'none', w.taken > 0 ? `+${m(w.taken)}` : m(0))}
+            <div className="rounded-[20px] p-5 mb-4 flex flex-wrap gap-x-8 gap-y-3" data-testid="bookings-week" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+              {cell('Taken this week', 'week-taken', w.taken > 0 ? 'gain' : 'none', w.taken > 0 ? `+${m(w.taken)}` : m(0), true)}
               {cell('Refunded this week', 'week-refunded', w.refunded > 0 ? 'loss' : 'none', w.refunded > 0 ? `\u2212${m(w.refunded)}` : m(0))}
               {cell('Overdue', 'week-overdue', overdue > 0 ? 'loss' : 'none', m(overdue))}
             </div>
           )
         })()}
-        <label className="flex items-center gap-2 text-xs cursor-pointer mb-4" style={{ color: 'var(--text-muted)' }}>
-          <input type="checkbox" checked={showPastBookings} onChange={e => setShowPastBookings(e.target.checked)} />
-          Show past bookings
-        </label>
-        {/* Phones: a card per booking, swipe left to cancel. md and up keeps the table below. */}
-        <div className="md:hidden">
-          <BookingCards rows={visibleBookings as any} showMoney={canSeeMoney} currencyFor={currencyForVenueSlug} onCancel={cancelBooking}
-            emptyText={`No ${showPastBookings ? '' : 'upcoming '}bookings for this venue.`} />
+        {/* Upcoming, Past or Cancelled: a white switch (the "Show past bookings" tick box is gone). */}
+        <div className="flex w-full md:w-auto md:ml-auto md:justify-end mb-3" data-testid="bookings-view">
+          <div className="flex w-full md:w-auto gap-1 rounded-full p-1" style={{ background: 'var(--bg-raised)' }} role="radiogroup" aria-label="Which bookings">
+            {(['upcoming', 'past', 'cancelled'] as const).map(v => (
+              <button key={v} type="button" role="radio" aria-checked={bookingsView === v} data-testid={`bookings-view-${v}`} data-on={bookingsView === v ? 'true' : undefined} onClick={() => setBookingsView(v)}
+                className="wh-seg flex-1 md:flex-none px-5 py-2.5 rounded-full text-[13px] font-bold capitalize transition-all"
+                style={{ color: bookingsView === v ? undefined : 'var(--text-primary)', opacity: bookingsView === v ? 1 : 0.8 }}>{v}</button>
+            ))}
+          </div>
         </div>
-        <div className="hidden md:block rounded-2xl overflow-x-auto scrollbar-thin"
-          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Member','Court','Date','Time','Amount','Status',''].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-medium whitespace-nowrap"
-                    style={{ color: 'var(--text-subtle)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
+        {/* Phones: a roomy card per booking under its day, swipe left to cancel. md and up has the grouped list below. */}
+        <div className="md:hidden">
+          <BookingCards rows={visibleBookings as any} showMoney={canSeeMoney} currencyFor={currencyForVenueSlug} onCancel={cancelBooking} today={today}
+            emptyText={`No ${bookingsView === 'upcoming' ? 'upcoming ' : bookingsView === 'cancelled' ? 'cancelled ' : 'past '}bookings for this venue.`} />
+        </div>
+        <div className="hidden md:block bd-card" data-testid="bookings-web">
+          <table className="bk-table w-full text-sm">
+            <thead className="sr-only"><tr>{['Court', 'Member', 'Time', 'Amount', 'Status', ''].map(h => <th key={h}>{h}</th>)}</tr></thead>
             <tbody>
-              {visibleBookings.length === 0 ? (
+              {bookingDays.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                    No {showPastBookings ? '' : 'upcoming '}bookings for this venue.
+                  <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-primary)' }}>
+                    No {bookingsView === 'upcoming' ? 'upcoming ' : bookingsView === 'cancelled' ? 'cancelled ' : 'past '}bookings for this venue.
                   </td>
                 </tr>
-              ) : visibleBookings.map(b => (
-                <tr key={b.id} className="last:border-0 transition-colors"
-                  style={{ borderBottom: '1px solid var(--border)' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {b.profiles?.full_name ?? '—'}
-                  </td>
-                  <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{b.courts?.name}</td>
-                  <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDate(b.date)}</td>
-                  <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{fmtClock(b.start_time)}</td>
-                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {b.price_nzd > 0
-                      ? <MoneyBubble kind={bookingKind(b.status)} testId="booking-amount" strike={b.status === 'cancelled'}>{formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug))}</MoneyBubble>
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }} data-testid="booking-status">{b.status}</td>
-                  <td className="px-4 py-3">
-                    {b.status !== 'cancelled' && b.status !== 'blocked' && (
-                      <button className="btn btn-danger btn-sm" onClick={() => cancelBooking(b.id)}>
-                        Cancel
-                      </button>
-                    )}
-                  </td>
-                </tr>
+              ) : bookingDays.map(g => (
+                <Fragment key={g.date}>
+                  <tr data-testid="booking-day" data-date={g.date}>
+                    <td colSpan={6} className="bk-ghead">
+                      <div className="flex items-center gap-3">
+                        {g.date === today
+                          ? <span data-testid="booking-day-today" className="inline-block text-sm font-extrabold rounded-xl px-4 py-1.5" style={{ background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' }}>Today</span>
+                          : <span className="text-sm font-extrabold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)}</span>}
+                        {g.date === today && <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)}</span>}
+                        <span className="flex-1" />
+                        <MoneyBubble kind="wait" size={11.5} testId="booking-day-count">{g.rows.length} {g.rows.length === 1 ? 'booking' : 'bookings'}</MoneyBubble>
+                      </div>
+                    </td>
+                  </tr>
+                  {g.rows.map(b => {
+                    const initials = String(b.profiles?.full_name ?? '?').split(' ').filter(Boolean).slice(0, 2).map((x: string) => x[0]).join('').toUpperCase()
+                    const dot = b.status === 'confirmed' || b.status === 'completed' ? MONEY_HEX.gain : b.status === 'pending' ? MONEY_HEX.wait : b.status === 'cancelled' ? MONEY_HEX.loss : MONEY_HEX.none
+                    return (
+                      <tr key={b.id} className="bk-row" data-testid="booking-row" data-today={g.date === today ? 'true' : undefined}>
+                        <td style={{ width: 70 }}><CourtTile name={b.courts?.name ?? ''} plain /></td>
+                        <td>
+                          <span className="flex items-center gap-3 min-w-0">
+                            <span className="w-[34px] h-[34px] rounded-full inline-flex items-center justify-center text-[13px] font-extrabold text-white shrink-0" style={{ background: 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' }}>{initials}</span>
+                            <span className="text-[15.5px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{b.profiles?.full_name ?? '—'}</span>
+                          </span>
+                        </td>
+                        <td className="text-[15px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{fmtClock(b.start_time)}</td>
+                        <td>
+                          {b.price_nzd > 0
+                            ? <MoneyBubble kind={bookingKind(b.status)} size={13} testId="booking-amount" strike={b.status === 'cancelled'}>{formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug))}</MoneyBubble>
+                            : <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>—</span>}
+                        </td>
+                        <td>
+                          <span className="inline-flex items-center gap-2 text-[13px] font-extrabold" style={{ color: 'var(--text-primary)' }}>
+                            <i style={{ width: 9, height: 9, borderRadius: 99, background: dot, display: 'inline-block' }} />
+                            <span className="capitalize" data-testid="booking-status">{b.status}</span>
+                          </span>
+                        </td>
+                        <td className="text-right">
+                          {b.status !== 'cancelled' && b.status !== 'blocked' && (
+                            <button className="btn btn-danger btn-sm" onClick={() => cancelBooking(b.id)}>
+                              Cancel
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </Fragment>
               ))}
             </tbody>
           </table>
