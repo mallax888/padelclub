@@ -35,6 +35,7 @@ import AdminSidebar from '@/components/admin/AdminSidebar'
 import BoardRightRail from '@/components/admin/BoardRightRail'
 import BoardFooterStrip from '@/components/admin/BoardFooterStrip'
 import BookingRosterModal from '@/components/admin/BookingRosterModal'
+import BookingCards from '@/components/admin/BookingCards'
 import type { ClubAnalytics as ClubAnalyticsData, CourtPerformanceBooking, FinancialCreditTx } from '@/lib/analytics'
 
 
@@ -746,7 +747,12 @@ export default function AdminDashboard({
           <input type="checkbox" checked={showPastBookings} onChange={e => setShowPastBookings(e.target.checked)} />
           Show past bookings
         </label>
-        <div className="rounded-2xl overflow-x-auto scrollbar-thin"
+        {/* Phones: a card per booking, swipe left to cancel. md and up keeps the table below. */}
+        <div className="md:hidden">
+          <BookingCards rows={visibleBookings as any} showMoney={canSeeMoney} currencyFor={currencyForVenueSlug} onCancel={cancelBooking}
+            emptyText={`No ${showPastBookings ? '' : 'upcoming '}bookings for this venue.`} />
+        </div>
+        <div className="hidden md:block rounded-2xl overflow-x-auto scrollbar-thin"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <table className="w-full text-sm">
             <thead>
