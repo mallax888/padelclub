@@ -27,6 +27,9 @@ import type { UnpaidShareRow } from '@/lib/money-demand'
 import type { WaitDemand } from '@/lib/waitlist-rules'
 import FinancialReports from '@/components/admin/FinancialReports'
 import type { RunningCosts } from '@/lib/running-costs'
+import MoneyBubble from '@/components/ui/MoneyBubble'
+import { bookingKind, countChange, moneyChange, weekMoney } from '@/lib/money-colours'
+import { splitOverdueShares } from '@/lib/money-demand'
 import type { ReportRow } from '@/lib/report-rules'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import BoardRightRail from '@/components/admin/BoardRightRail'
@@ -594,7 +597,7 @@ export default function AdminDashboard({
       { label: 'Paying members',   value: memberCount, color: 'var(--brand-accent)', trend: membersTrend, trendLabel: 'vs 7 days ago', spark: membersSpark },
     ].filter(c => canSeeMoney || c.label !== 'Revenue today').map(({ label, value, trend, trendLabel, spark }) => {
       // The four numbers wear the plan-tile colours: blue, green, gold, and a quiet grey for members.
-      const fill = label === "Today's bookings" ? 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' : label === 'Players today' ? 'linear-gradient(160deg,#1f9a5f,#0f5c38)' : label === 'Revenue today' ? 'linear-gradient(160deg,#c9a300,#8a6f00)' : null
+      const fill = label === "Today's bookings" ? 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' : label === 'Players today' ? 'linear-gradient(160deg,#2c5fc4,#1d3f8d)' : null
       const ink = fill ? '#ffffff' : 'var(--text-primary)'
       const sub = fill ? 'rgba(255,255,255,0.85)' : 'var(--text-subtle)'
       return (
@@ -604,11 +607,13 @@ export default function AdminDashboard({
             <div className="text-xs font-bold mb-1.5" style={{ color: sub }}>{label}</div>
             <div className="flex items-baseline gap-2 flex-wrap">
               <div className="text-[26px] sm:text-[28px] leading-none font-extrabold" style={{ color: ink, letterSpacing: '-0.02em' }}>{value}</div>
-              {trend !== null && (
-                <span className="text-[11px] font-extrabold" style={{ color: fill ? '#ffffff' : trend > 0 ? 'var(--brand-primary-text)' : trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
-                  {trend === 0 ? 'no change' : `${trend > 0 ? '↑' : '↓'}${Math.abs(trend)}%`}
-                </span>
-              )}
+              {trend !== null && (() => {
+                // Revenue is money: more is a green up arrow, less a red down arrow. The other three are counts, so they stay blue.
+                const ch = label === 'Revenue today' ? moneyChange(trend) : countChange(trend)
+                return ch
+                  ? <MoneyBubble kind={ch.kind} size={11} testId={`stat-trend-${label === 'Revenue today' ? 'revenue' : 'count'}`}>{ch.arrow} {ch.text}</MoneyBubble>
+                  : <span className="text-[11px] font-extrabold" style={{ color: sub }}>no change</span>
+              })()}
             </div>
             <div className="text-[10.5px] mt-1.5" style={{ color: sub }}>{trendLabel}</div>
           </div>
@@ -719,6 +724,24 @@ export default function AdminDashboard({
           <button className="btn btn-primary btn-sm md:hidden shrink-0" onClick={() => setShowBlock(true)}>🔒 Block a court</button>
         </div>
         {statCards && <div className="mb-6">{statCards}</div>}
+        {canSeeMoney && (() => {
+          // This week at a glance (owners only): what was taken, what went back, and what is overdue.
+          const w = weekMoney(bookingsForVenue as any, today)
+          const overdue = activeVenue ? splitOverdueShares(unpaidShares, activeVenue, Date.now()).overdueTotal : 0
+          const cur = currencyForVenueSlug(activeVenue)
+          const m = (n: number) => formatPrice(n, cur).replace(/\.00$/, '')
+          const cell = (label: string, id: string, kind: 'gain' | 'loss' | 'none', text: string) => (
+            <div key={id}><div className="text-[11px] font-extrabold uppercase mb-1.5" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{label}</div>
+              <MoneyBubble kind={kind} size={16} testId={id}>{text}</MoneyBubble></div>
+          )
+          return (
+            <div className="rounded-2xl p-5 mb-4 flex flex-wrap gap-x-8 gap-y-3" data-testid="bookings-week" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+              {cell('Taken this week', 'week-taken', w.taken > 0 ? 'gain' : 'none', w.taken > 0 ? `+${m(w.taken)}` : m(0))}
+              {cell('Refunded this week', 'week-refunded', w.refunded > 0 ? 'loss' : 'none', w.refunded > 0 ? `\u2212${m(w.refunded)}` : m(0))}
+              {cell('Overdue', 'week-overdue', overdue > 0 ? 'loss' : 'none', m(overdue))}
+            </div>
+          )
+        })()}
         <label className="flex items-center gap-2 text-xs cursor-pointer mb-4" style={{ color: 'var(--text-muted)' }}>
           <input type="checkbox" checked={showPastBookings} onChange={e => setShowPastBookings(e.target.checked)} />
           Show past bookings
@@ -754,11 +777,11 @@ export default function AdminDashboard({
                   <td className="px-4 py-3 whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{formatDate(b.date)}</td>
                   <td className="px-4 py-3" style={{ color: 'var(--text-muted)' }}>{fmtClock(b.start_time)}</td>
                   <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug)) : '—'}
+                    {b.price_nzd > 0
+                      ? <MoneyBubble kind={bookingKind(b.status)} testId="booking-amount" strike={b.status === 'cancelled'}>{formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug))}</MoneyBubble>
+                      : '—'}
                   </td>
-                  <td className="px-4 py-3">
-                    <span className={cn('badge', `status-${b.status}`)}>{b.status}</span>
-                  </td>
+                  <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-muted)' }} data-testid="booking-status">{b.status}</td>
                   <td className="px-4 py-3">
                     {b.status !== 'cancelled' && b.status !== 'blocked' && (
                       <button className="btn btn-danger btn-sm" onClick={() => cancelBooking(b.id)}>

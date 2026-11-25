@@ -125,6 +125,10 @@
 }
 
 @layer components {
+  /* The money colour rule's bubble (components/ui/MoneyBubble.tsx): white text, solid on the light theme, soft and outlined on the dark. */
+  .money-bubble { background: var(--mb-hex); border: 1px solid var(--mb-hex); color: #ffffff; }
+  .dark .money-bubble { background: var(--mb-soft); }
+
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed;
     border: 1px solid var(--border);

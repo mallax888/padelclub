@@ -1,5 +1,6 @@
 'use client'
 
+import MoneyBubble from '@/components/ui/MoneyBubble'
 import { fmtClock } from '@/lib/clock'
 import CardHeading from '@/components/ui/CardHeading'
 import { useState, Fragment, type ReactNode } from 'react'
@@ -90,7 +91,10 @@ export default function ClubAnalytics({
             <div key={k.label} className="rounded-2xl p-4" style={card} data-testid="kpi">
               <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{k.label}</div>
               <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{k.value}</div>
-              {d && <div className="text-[11px] mt-1 font-semibold" style={{ color: TONE[d.tone] }}>{d.text}</div>}
+              {d && (d.tone === 'flat'
+                ? <div className="text-[11px] mt-1 font-semibold" style={{ color: TONE.flat }}>{d.text}</div>
+                // these are counts (utilisation, bookings, players, members), so the bubble is blue; the arrow shows which way it went
+                : <div className="mt-1.5" data-testid="kpi-change"><MoneyBubble kind="wait" size={11} wrap>{d.text}</MoneyBubble></div>)}
               {k.fixed && <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-subtle)' }}>{k.fixed} · doesn&apos;t change with the period</div>}
             </div>
           )
