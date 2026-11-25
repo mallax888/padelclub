@@ -153,7 +153,7 @@ export default function ClubAnalytics({
                   <div key={d.dow} className="flex-1 min-w-0 text-center rounded-2xl pt-2 pb-1.5" data-today={isToday ? 'true' : undefined} data-testid="by-day-col"
                     style={isToday ? { background: 'var(--today-grad)', boxShadow: 'inset 0 0 0 1px var(--today-edge)' } : { background: 'var(--board-cell)' }}>
                     <div className="flex items-end justify-center" style={{ height: 84 }}>
-                      <div style={{ width: '58%', height: `${Math.max(5, (d.v / maxDay) * 100)}%`, borderRadius: 99, background: MONEY_HEX.wait }} />
+                      {d.v > 0 && <div style={{ width: '58%', height: `${Math.max(8, (d.v / maxDay) * 100)}%`, borderRadius: 99, background: MONEY_HEX.wait }} />}
                     </div>
                     <div className="mx-1.5 mt-2 mb-0.5 rounded-xl text-[11px] font-extrabold flex items-center justify-center" style={{ height: 24, ...(isToday ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { color: 'var(--text-muted)' }) }}>{DAY_LABELS[d.dow]}</div>
                     <div className="text-[11px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{d.v}%</div>
@@ -171,8 +171,8 @@ export default function ClubAnalytics({
               return (
                 <div key={h.hour} data-testid="hour-row" data-quiet={isQuiet ? 'true' : undefined} className={`${show ? 'flex' : 'hidden md:flex'} items-center gap-2.5 mb-1.5`}>
                   <span className="text-[11px] font-extrabold shrink-0" style={{ width: 46, color: 'var(--text-muted)' }}>{hourLabel(h.hour)}</span>
-                  <div className="flex-1 overflow-hidden" style={{ height: 18, background: 'var(--board-cell)', borderRadius: 99 }}>
-                    <div style={{ width: `${Math.max(3, h.v)}%`, height: '100%', borderRadius: 99, background: isQuiet ? 'transparent' : MONEY_HEX.wait, boxShadow: isQuiet ? 'inset 0 0 0 2px var(--text-primary)' : undefined }} />
+                  <div className="flex-1 overflow-hidden" style={{ height: 18, background: 'var(--board-cell)', borderRadius: 99, outline: isQuiet ? '2px dashed var(--text-primary)' : undefined, outlineOffset: isQuiet ? 1 : undefined }}>
+                    {h.v > 0 && <div style={{ width: `${Math.max(3, h.v)}%`, height: '100%', borderRadius: 99, background: MONEY_HEX.wait }} />}
                   </div>
                   <b className="text-[11.5px] text-right shrink-0" style={{ width: 38, color: 'var(--text-primary)' }}>{h.v}%</b>
                 </div>
@@ -184,7 +184,7 @@ export default function ClubAnalytics({
               </button>
             )}
             <div className="flex items-center gap-1.5 mt-2 text-[10.5px] font-semibold" style={{ color: 'var(--text-muted)' }}>
-              <span style={{ width: 16, height: 10, borderRadius: 3, border: '2px dashed var(--text-primary)', display: 'inline-block' }} />Quietest hours
+              <span style={{ width: 22, height: 10, borderRadius: 99, border: '2px dashed var(--text-primary)', display: 'inline-block' }} />Quietest hours
             </div>
           </div>
         </div>
