@@ -146,6 +146,9 @@
   .money-bubble { background: var(--mb-hex); border: 1px solid var(--mb-hex); color: #ffffff; }
   .dark .money-bubble { background: var(--mb-soft); }
 
+  /* The white "on" state of a switch (My bookings: Upcoming / Past). */
+  .wh-seg[data-on="true"] { background: var(--today-block-bg) !important; color: var(--today-block-fg) !important; box-shadow: var(--today-block-shadow); }
+
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed;
     border: 1px solid var(--border);
