@@ -47,6 +47,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="color-scheme" content="light dark" />
+        {/* Dark Reader style extensions and "night mode" add-ons (Android Firefox, Kiwi, Samsung Internet) respect this: the app has its own dark theme. */}
+        <meta name="darkreader-lock" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <link rel="icon" href="/icons/icon-v4-192.png" type="image/png" />

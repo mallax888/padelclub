@@ -22,6 +22,11 @@ export default function ThemeColorSync() {
       document.head.appendChild(meta)
     }
     meta.setAttribute('content', THEME_COLORS[resolvedTheme])
+    // Say outright which scheme the page is in, so a browser's own dark mode (Android "Darken websites", Samsung Internet's night
+    // mode) has nothing to recolour on the light theme: "only light" opts out, and the dark theme is already dark.
+    let scheme = document.querySelector('meta[name="color-scheme"]') as HTMLMetaElement | null
+    if (!scheme) { scheme = document.createElement('meta'); scheme.setAttribute('name', 'color-scheme'); document.head.appendChild(scheme) }
+    scheme.setAttribute('content', resolvedTheme === 'light' ? 'only light' : 'dark')
   }, [resolvedTheme])
 
   return null
