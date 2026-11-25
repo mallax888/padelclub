@@ -515,7 +515,7 @@ export default function FindGameList({
                           : fit ? <MoneyBubble kind={FIT_KIND[fit]} size={11.5} testId="fit">{FIT_LABEL[fit]}</MoneyBubble> : null}
                       </div>
                       <div className="text-[12.5px] font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>
-                        {venue.name} · until {fmtClock(match.end_time)} · <span className="capitalize" style={match.match_type === 'competitive' ? { color: '#ff9d6b' } : undefined}>{match.match_type}</span>
+                        {venue.name} · until {fmtClock(match.end_time)} · <span className="capitalize" style={match.match_type === 'competitive' ? { color: 'var(--busy-amber)', fontWeight: 800 } : undefined}>{match.match_type}</span>
                       </div>
                     </div>
                   </div>
