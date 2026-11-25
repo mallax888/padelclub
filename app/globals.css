@@ -445,7 +445,7 @@ html { overscroll-behavior-y: none; }
 
 /* The web Board (Day, Week, Month) from the medium breakpoint up. Phones keep the old look: nothing here applies below 768px. */
 @media (min-width: 768px) {
-  .bd-card { background: var(--board-card) !important; border: 1px solid var(--border) !important; border-radius: 20px !important; padding: 14px; box-shadow: var(--shadow-float); }
+  .bd-card { background: var(--board-card) !important; border: 1px solid var(--border) !important; border-radius: 20px !important; padding: 20px; box-shadow: var(--shadow-float); }
   .bd-table { border-collapse: separate !important; border-spacing: 8px !important; }
   .bd-th { background: transparent !important; border: 0 !important; }
   .bd-th.bd-sticky { background: var(--board-card-top) !important; }
@@ -457,7 +457,7 @@ html { overscroll-behavior-y: none; }
   .bd-chip { background: var(--mb-hex) !important; border: 1px solid var(--mb-hex) !important; color: #ffffff !important; border-radius: 99px !important; font-weight: 800 !important; text-decoration: none; }
   .dark .bd-chip, .dark .bd-block { background: var(--mb-soft) !important; }
   .bd-block { background: var(--mb-hex) !important; border: 1px solid var(--mb-hex) !important; color: #ffffff !important; border-radius: 16px !important; font-weight: 800 !important; }
-  .bd-mgrid { gap: 8px; padding: 14px; background: var(--board-card); border: 1px solid var(--border) !important; border-radius: 20px !important; box-shadow: var(--shadow-float); overflow: visible !important; }
+  .bd-mgrid { gap: 8px; padding: 20px; background: var(--board-card); border: 1px solid var(--border) !important; border-radius: 20px !important; box-shadow: var(--shadow-float); overflow: visible !important; }
   .bd-mhead { background: transparent !important; border: 0 !important; color: var(--text-muted) !important; letter-spacing: 0.12em !important; text-transform: uppercase; font-size: 10px !important; }
   .bd-mcell { background: var(--board-cell) !important; border: 0 !important; border-radius: 14px; }
   .bd-mcell[data-over="true"] { background: var(--brand-primary-muted) !important; }
