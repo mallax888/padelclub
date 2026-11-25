@@ -58,7 +58,7 @@ export default function AnnouncementCard({ venueSlug, venueName }: { venueSlug: 
       <div className="rounded-[20px] p-5" style={card} data-testid="announcement-card">
         <div className="text-[11px] font-extrabold uppercase mb-2" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Message your players</div>
         <p className="text-sm" style={muted}>Tell everyone who plays at {venueName} about a closure, an event or news.{info && info.available ? ` Reaches ${info.reach} ${info.reach === 1 ? 'person' : 'people'}.` : ''}</p>
-        <button type="button" onClick={() => setOpen(true)} className="btn-main mt-3" data-testid="announce-open" disabled={info !== null && !info.available}>
+        <button type="button" onClick={() => setOpen(true)} className="btn-main btn-main-lime mt-3" data-testid="announce-open" disabled={info !== null && !info.available}>
           {info !== null && !info.available ? 'Not switched on yet' : 'Write a message'}
         </button>
         {info && !info.available && <p className="text-[11px] mt-2" style={{ color: 'var(--text-subtle)' }}>Run the 038 database change first.</p>}

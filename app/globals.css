@@ -179,6 +179,8 @@
     box-shadow: var(--glow-primary);
   }
   .btn-main:hover:not(:disabled) { filter: brightness(1.1); }
+  /* The lime main button: the one action on a page that should stand out (Today: Write a message). */
+  .btn-main-lime { background: #d4f53c; color: #17240a; border-color: #d4f53c; box-shadow: none; }
   .btn-main-quiet {
     background: var(--bg-raised);
     color: var(--text-primary);
@@ -434,12 +436,12 @@ h1, h2, h3, h4, h5, h6 {
 
 /* The time slider on Today's club map: a tennis ball for a handle. */
 .time-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 10px; border-radius: 6px; outline: none; cursor: pointer; }
-.time-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; border: 0; background: radial-gradient(circle at 35% 28%, #F7FFD6, #D4FF3D 45%, #8FAE1E); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
-.time-slider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; border: 0; background: radial-gradient(circle at 35% 28%, #F7FFD6, #D4FF3D 45%, #8FAE1E); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4); }
+.time-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 28px; height: 28px; border-radius: 50%; border: 0; background: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(15, 21, 28, 0.12); }
+.time-slider::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; border: 0; background: #ffffff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(15, 21, 28, 0.12); }
 .time-slider:focus-visible { outline: 2px solid var(--brand-primary-text); outline-offset: 6px; }
 
 /* the "Yesterday" line when it sits inside the blue card at the top of Today: same words, light colours */
-.yesterday-hero{--text-primary:#ffffff;--text-muted:#cfe0ff;--text-subtle:#cfe0ff;--brand-crimson:#ffc2c2;--success:#a6f3cb}
+.yesterday-hero{} /* the top card is no longer blue, so the Yesterday line keeps the page's own colours */
 
 /* The page and the bottom tab bar never bounce or slide: no rubber-band at the end of a page, no pull-to-refresh drag.
    On html only: setting it on body as well, with body clipping sideways overflow, stopped Android Chrome scrolling at all. */

@@ -6,7 +6,8 @@ import ViewSwitch from '@/components/ui/ViewSwitch'
 import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
 import YesterdayStrip from '@/components/admin/YesterdayStrip'
 import { FillButton, OverdueRow } from '@/components/admin/TodayActionRows'
-import ClubMap from '@/components/admin/ClubMap'
+import ClubMap, { CourtBadge } from '@/components/admin/ClubMap'
+import CourtRevenuePie from '@/components/admin/CourtRevenuePie'
 import type { CourtRevenue } from '@/lib/court-revenue'
 import type { MapBooking } from '@/lib/club-map'
 import type { CourtDay } from '@/lib/court-day'
@@ -56,11 +57,11 @@ function AttentionRow({ href, tone, mark, title, text, bubble }: { href: string;
   const color = tone === 'red' ? 'var(--brand-crimson)' : tone === 'yellow' ? 'var(--text-primary)' : 'var(--brand-primary-text)'
   const bg = tone === 'red' ? 'var(--brand-crimson-muted)' : tone === 'yellow' ? 'var(--brand-yellow-muted)' : 'var(--brand-primary-muted)'
   return (
-    <Link href={href} className="flex items-center gap-3 px-3.5 py-3" style={{ minHeight: 60, borderBottom: '1px solid var(--border)' }}>
+    <Link href={href} className="flex items-center gap-3 px-3.5 py-3 rounded-2xl mb-2" style={{ minHeight: 60, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
       <span aria-hidden className="inline-flex items-center justify-center rounded-[11px] font-extrabold shrink-0" style={{ width: 34, height: 34, background: bg, color }}>{mark}</span>
       <span className="min-w-0">
         <span className="block text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
-        <span className="block text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{text}</span>
+        <span className="block text-[12.5px] mt-0.5 font-semibold" style={{ color: 'var(--text-muted)' }}>{text}</span>
       </span>
       {bubble && <span className="ml-auto shrink-0">{bubble}</span>}
       <span aria-hidden className={`${bubble ? '' : 'ml-auto '}text-lg`} style={{ color: 'var(--text-subtle)' }}>›</span>
@@ -108,23 +109,23 @@ export default function TodayView(p: TodayViewProps) {
     <>
       <div>
         <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Needs attention</div>
-      <div className="rounded-[20px] overflow-hidden" style={card}>
+      <div>
         {attention.length > 0 ? attention : (
-          <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>All clear. Nothing needs your attention right now.</div>
+          <div className="px-3.5 py-4 text-sm rounded-2xl" style={{ ...card, color: 'var(--text-muted)' }}>All clear. Nothing needs your attention right now.</div>
         )}
       </div>
       </div>
       <div>
         <div className="text-[11px] font-extrabold uppercase mb-2 px-0.5" style={sectionLabel}>Next up</div>
-      <div className="rounded-[20px] overflow-hidden" style={card}>
+      <div className="rounded-[20px] overflow-hidden" style={{ ...card, background: 'var(--today-grad), var(--bg-surface)', border: '1px solid var(--today-edge)' }} data-testid="next-up">
         {s.nextUp.length === 0 ? (
           <div className="px-3.5 py-4 text-sm" style={{ color: 'var(--text-muted)' }}>No more bookings today.</div>
         ) : s.nextUp.map(n => (
-          <div key={n.id} className="flex items-center gap-3 px-3.5 py-3" style={{ minHeight: 60, borderBottom: '1px solid var(--border)' }}>
-            <div className="w-[84px] shrink-0 text-[17px] font-extrabold" style={{ ...display, color: 'var(--text-primary)' }}>{fmtClock(n.start)}</div>
+          <div key={n.id} className="flex items-center gap-3 px-3.5 py-3" style={{ minHeight: 64, borderBottom: '1px solid var(--border)' }}>
+            <CourtBadge name={n.courtName} testId="next-up-court" />
             <div className="min-w-0">
-              <div className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{n.courtName} · {n.bookerName ?? 'Booking'}</div>
-              <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{n.players} {n.players === 1 ? 'player' : 'players'}</div>
+              <div className="text-[19px] font-extrabold leading-tight" style={{ ...display, color: 'var(--text-primary)' }}>{fmtClock(n.start)}</div>
+              <div className="text-[13px] font-bold truncate mt-0.5" style={{ color: 'var(--text-muted)' }}><span className="sr-only">{n.courtName} · </span>{n.bookerName ?? 'Booking'} · {n.players} {n.players === 1 ? 'player' : 'players'}</div>
             </div>
             <span className="ml-auto"><MoneyBubble kind={n.unpaid > 0 ? 'wait' : 'gain'} size={11} testId="next-up-paid">{n.unpaid > 0 ? `${n.unpaid} unpaid` : 'All paid'}</MoneyBubble></span>
           </div>
@@ -136,7 +137,7 @@ export default function TodayView(p: TodayViewProps) {
         )}
       </div>
 
-      <Link href={`/admin?tab=board&${q}`} className="btn-main btn-main-quiet mt-4">
+      <Link href={`/admin?tab=board&${q}`} className="btn-main btn-main-quiet mt-4 hidden lg:flex">
         Open the full dashboard
       </Link>
 
@@ -183,6 +184,8 @@ export default function TodayView(p: TodayViewProps) {
             revenueByCourt={p.showMoney && p.courtRevenue ? Object.fromEntries(p.courtRevenue.rows.map(r => [r.id, { booked: r.booked, possible: r.possible, pct: r.pct }])) : null}
             stillToPlay={s.bookings.remaining} bookedPct={p.courtDay.pct} unpaidChase={p.showMoney ? null : unpaid.count}
             courts={p.courtDay.rows.map(r => ({ id: r.id, name: r.name, row: r, today: p.map.courts.find(c => c.id === r.id)?.today ?? 0, lastWeek: p.map.courts.find(c => c.id === r.id)?.lastWeek ?? 0 }))} />
+          {/* PC, owners only: today's takings court by court, as pies or hour by hour. */}
+          {p.showMoney && p.courtRevenue && <div className="hidden lg:block mt-6"><CourtRevenuePie revenue={p.courtRevenue} currency={p.currency} /></div>}
         </div>
       )}
     </div>
