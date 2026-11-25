@@ -161,7 +161,7 @@ export default function BookingCards({ rows, showMoney, currencyFor, onCancel, e
                     ? <MoneyBubble kind={bookingKind(b.status)} size={13} testId="booking-card-amount" strike={b.status === 'cancelled'}>{price}</MoneyBubble>
                     : <div className="text-[12px] font-extrabold" style={{ color: 'var(--text-muted)' }}>{b.status === 'blocked' ? 'Blocked' : '—'}</div>)}
                   {/* The amount bubble carries the status; the word stays for screen readers and for no-money front desk. */}
-                  <div className={showMoney && price ? 'sr-only' : 'text-[11px] mt-1 font-bold'} style={{ color: 'var(--text-muted)' }} data-testid="booking-card-status">{b.status}</div>
+                  <div className={showMoney && (price || b.status === 'blocked') ? 'sr-only' : 'text-[11px] mt-1 font-bold'} style={{ color: 'var(--text-muted)' }} data-testid="booking-card-status">{b.status}</div>
                 </div>
               </div>
             </div>

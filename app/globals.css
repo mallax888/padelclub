@@ -473,6 +473,8 @@ html { overscroll-behavior-y: none; }
 .bk-table { border-collapse: separate; border-spacing: 0 10px; }
 .bk-table td { padding: 12px 10px; }
 .bk-table .bk-ghead { padding: 18px 2px 0; }
+.bk-table { margin-top: -10px; }
+.bk-table tbody tr:first-child .bk-ghead { padding-top: 0; }
 .bk-row td { background: var(--board-cell); }
 .bk-row td:first-child { border-radius: 16px 0 0 16px; padding-left: 12px; }
 .bk-row td:last-child { border-radius: 0 16px 16px 0; padding-right: 16px; }
