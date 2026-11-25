@@ -10,6 +10,17 @@ import type { CourtDay, CourtDayCell, CourtDayRow } from '@/lib/court-day'
 import { fmtClockRange, fmtHour, fmtMinutes } from '@/lib/clock'
 import { bookingsWord, clock12, comparison, courtAt, gapSentence, hhmm, initialsOf, nextBookings, slotChips, type MapBooking } from '@/lib/club-map'
 import { MIN_LEAD_HOURS } from '@/lib/offer-rules'
+import MoneyBubble from '@/components/ui/MoneyBubble'
+
+// The court as a blue tile: COURT over the number (a named court keeps its name). The text reads "Court 3" to a screen reader.
+export function CourtBadge({ name, testId = 'court-name' }: { name: string; testId?: string }) {
+  const m = /^Court\s+(\d+)$/i.exec(name.trim())
+  return (
+    <span data-testid={testId} aria-label={name} className="inline-flex flex-col items-center justify-center text-white shrink-0" style={{ minWidth: 52, height: 46, padding: m ? 0 : '0 10px', borderRadius: 14, background: 'linear-gradient(160deg,#3a73dc,#1d3f8d)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.28), 0 6px 14px rgba(11,30,74,0.35)', lineHeight: 1 }}>
+      {m ? (<><span style={{ fontSize: 8, letterSpacing: '0.12em', fontWeight: 800, marginBottom: 3 }}>COURT</span><span style={{ fontSize: 20, fontWeight: 800 }}>{m[1]}</span></>) : <span style={{ fontSize: 12, fontWeight: 800 }}>{name}</span>}
+    </span>
+  )
+}
 
 // "Your club right now": one calm tile per court, who is on it, what is left to sell, and a thin strip for the
 // rest of the day. A slider moves the whole map to any time of day. Tap a court for its briefing (a panel under
@@ -100,7 +111,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   const ringEl = (c: CourtProp, cls: string) => {
     const rv = revenueByCourt?.[c.id]; const pct = rv ? rv.pct : c.row.pct
     if (pct === null || pct === undefined) return null
-    return <span aria-hidden data-testid="court-ring" className={`${cls} shrink-0 items-center justify-center rounded-full`} style={{ width: 46, height: 46, background: `conic-gradient(var(--court-${(courts.findIndex(x => x.id === c.id) % 3) + 1}) ${pct * 3.6}deg, var(--bg-raised) 0)` }}><span className="inline-flex items-center justify-center rounded-full text-[12px] font-black" style={{ width: 34, height: 34, background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>{pct}%</span></span>
+    return <span aria-hidden data-testid="court-ring" className={`${cls} shrink-0 items-center justify-center rounded-full`} style={{ width: 46, height: 46, background: `conic-gradient(#1f9a5f ${pct * 3.6}deg, var(--board-cell) 0)` }}><span className="inline-flex items-center justify-center rounded-full text-[12px] font-black" style={{ width: 34, height: 34, background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>{pct}%</span></span>
   }
 
   const briefing = ({ c, testid }: { c: CourtProp; testid: string }) => {
@@ -180,36 +191,57 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   }
 
   const goal = showMoney && potential > 0
-  const soft = '#cfe0ff'
+  const soft = 'var(--text-muted)'
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start" data-testid="court-day">
       {/* the day in one blue card */}
-      <section className="order-1 lg:col-start-1 lg:row-start-1 rounded-[22px] p-4 lg:p-7" style={{ background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', color: '#ffffff' }} aria-label="Today so far">
-        <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: soft }}>{isNow ? `Today so far · ${clock12(nowMinutes)}` : 'Your club at'}</div>
+      <section className="order-1 lg:col-start-1 lg:row-start-1 rounded-[20px] p-5 lg:p-6" style={{ background: 'var(--board-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)', color: 'var(--text-primary)' }} aria-label="Today so far">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="inline-block text-[11px] font-extrabold uppercase rounded-xl px-3 py-1.5" style={{ letterSpacing: '0.1em', background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' }}>{isNow ? `Today so far · ${clock12(nowMinutes)}` : 'Your club at'}</span>
+          {isNow && none && showMoney && <MoneyBubble kind="gain" size={12} testId="map-soldout">{day.finished ? 'Today is finished' : 'Sold out from now'}</MoneyBubble>}
+        </div>
         {isNow ? (() => {
           // One number that matters, large: what is still to sell (lime). Everything else is one quiet line under it.
           const hot = showMoney && day.openValue > 0
+          // Sold out (owners): the big number becomes what was taken today; the "Sold out" bubble above says the rest.
+          const takenBig = showMoney && none && potential > 0
           return (
             <div className="mt-3 lg:mt-4" data-testid="map-title">
               <div data-testid="map-hot">
-                <span className="block font-black leading-none text-[56px] lg:text-[84px]" style={{ letterSpacing: '-0.05em', color: '#ffffff' }}>{hot ? money(day.openValue, currency) : day.openNow}</span>
+                <span className="block font-black leading-none text-[52px] lg:text-[72px]" style={{ letterSpacing: '-0.05em', color: 'var(--text-primary)' }}>{hot ? money(day.openValue, currency) : takenBig ? money(takings, currency) : day.openNow}</span>
                 <span className="block text-[18px] lg:text-[20px] font-extrabold mt-1.5" data-testid="court-day-summary">
-                  {none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? 'still to sell today' : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
+                  {takenBig ? `taken of ${money(potential, currency)} possible` : none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? 'still to sell today' : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
                 </span>
               </div>
               {goal && (
                 <>
-                  <div className="h-[12px] rounded-full overflow-hidden mt-4" style={{ background: '#ffffff30' }} aria-hidden><div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: '#2fd08a' }} /></div>
-                  <div className="text-[13px] font-bold mt-2" style={{ color: soft }} data-testid="map-taken"><b style={{ color: '#fff' }}>{money(takings, currency)}</b> taken of {money(potential, currency)} possible{hot ? ` · ${day.openNow} court-${day.openNow === 1 ? 'hour' : 'hours'} open` : ''}</div>
+                  <div className="h-[12px] rounded-full overflow-hidden mt-4" style={{ background: 'var(--board-cell)' }} aria-hidden><div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: '#1f9a5f' }} /></div>
+                  <div className={`text-[14px] font-bold mt-2.5${takenBig ? ' sr-only' : ''}`} style={{ color: soft }} data-testid="map-taken"><b style={{ color: 'var(--text-primary)' }}>{money(takings, currency)}</b> taken of {money(potential, currency)} possible{hot ? ` · ${day.openNow} court-${day.openNow === 1 ? 'hour' : 'hours'} open` : ''}</div>
                 </>
               )}
-              <div className="text-[12.5px] font-bold mt-2.5" style={{ color: soft }}><span data-testid="map-number">{bookingsToday}</span> {bookingsToday === 1 ? 'booking' : 'bookings'} · <span data-testid="map-compare">{comparison(bookingsToday - bookingsLastWeek, weekdayShort)}</span></div>
+              <div className="text-[13px] font-bold mt-2.5 lg:hidden" style={{ color: soft }}><span data-testid="map-number">{bookingsToday}</span> {bookingsToday === 1 ? 'booking' : 'bookings'} · <span data-testid="map-compare">{comparison(bookingsToday - bookingsLastWeek, weekdayShort)}</span></div>
             </div>
           )
         })() : (
           <div className="font-black leading-none mt-1.5" style={{ fontSize: 44, letterSpacing: '-0.03em' }} data-testid="map-title">{fmtMinutes(at)}</div>
         )}
-        <div className="text-[13px] font-bold mt-2.5" style={{ color: soft }} data-testid="map-sub">
+        {/* PC: three number tiles. Phone: the same as one line. */}
+        {isNow && (
+          <div className="hidden lg:grid grid-cols-3 gap-2.5 mt-5" data-testid="map-tiles">
+            {[
+              { k: 'Bookings today', v: String(bookingsToday), b: <MoneyBubble kind="wait" size={11}>{comparison(bookingsToday - bookingsLastWeek, weekdayShort)}</MoneyBubble> },
+              { k: 'Court-hours booked', v: bookedPct !== null ? `${bookedPct}%` : '—', b: <MoneyBubble kind="wait" size={11}>{stillToPlay > 0 ? `${stillToPlay} still to play` : 'none left to play'}</MoneyBubble> },
+              { k: 'Courts right now', v: `${playing} playing`, b: <MoneyBubble kind="none" size={11}>{free} free</MoneyBubble> },
+            ].map(t => (
+              <div key={t.k} className="rounded-2xl px-4 py-3.5" style={{ background: 'var(--board-cell)' }}>
+                <div className="text-[12px] font-extrabold" style={{ color: 'var(--text-muted)' }}>{t.k}</div>
+                <div className="text-[26px] font-black my-1" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{t.v}</div>
+                {t.b}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className={`text-[13px] font-bold mt-2.5${isNow ? ' lg:hidden' : ''}`} style={{ color: soft }} data-testid="map-sub">
           {isNow
             ? `${bookedPct !== null ? `${bookedPct}% of court-hours booked · ` : ''}${playing} ${playing === 1 ? 'court' : 'courts'} playing · ${free} free${stillToPlay > 0 ? ` · ${stillToPlay} still to play` : ''}`
             : `${playing} of ${courts.length} courts booked at ${fmtMinutes(at)}${playing === courts.length ? ': your courts are full' : ''}`}
@@ -217,7 +249,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
         {!isNow && <div className="text-[13px] font-bold mt-3" style={{ color: day.openValue > 0 ? '#ffe566' : soft }} data-testid="court-day-summary">{summary}</div>}
         {unpaidChase !== null && unpaidChase > 0 && <div className="text-[13px] font-bold mt-1" style={{ color: soft }}>{unpaidChase} {unpaidChase === 1 ? 'share' : 'shares'} to chase</div>}
         {fill && <div className="mt-4 flex flex-wrap gap-2.5">{fill}</div>}
-        {yesterday && <div className="mt-3 pt-3 lg:mt-5 lg:pt-4" style={{ borderTop: '1px solid #ffffff30' }}>{yesterday}</div>}
+        {yesterday && <div className="mt-3 pt-3 lg:mt-5 lg:pt-4" style={{ borderTop: '1px solid var(--border)' }}>{yesterday}</div>}
       </section>
 
       <div className="order-3 lg:col-start-2 lg:row-start-1 flex flex-col gap-6">{aside}</div>
@@ -228,20 +260,19 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
           <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Courts right now</div>
           <div className="text-[12px]" style={{ color: 'var(--text-subtle)' }}>Tap a court for its briefing</div>
         </div>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-3">
           {courts.map(c => {
             const st = states.get(c.id)!
             const r = c.row
-            const t = tone[st.state]
             const soldOut = r.sellable > 0 && r.openNow === 0 && !day.finished
             return (
               <div key={c.id} role="button" tabIndex={0} onClick={() => setSel(sel === c.id ? null : c.id)} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); setSel(sel === c.id ? null : c.id) } }} data-testid="court-tile" aria-pressed={sel === c.id}
                 aria-label={`${c.name}: ${st.state === 'playing' ? `${st.who ?? 'booked'} until ${fmtMinutes(st.until!)}` : st.state === 'blocked' ? 'blocked' : 'free'}${r.openNow > 0 ? `, ${r.openNow} ${r.openNow === 1 ? 'hour' : 'hours'} to sell` : ''}`}
-                className="text-left rounded-[20px] p-4 lg:p-5 transition-shadow cursor-pointer"
-                style={{ background: 'var(--bg-surface)', border: sel === c.id ? '2px solid var(--brand-primary)' : '2px solid var(--border)', boxShadow: sel === c.id ? '0 0 0 4px var(--brand-primary-muted)' : 'none' }}>
+                className="text-left rounded-[20px] p-5 transition-shadow cursor-pointer"
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: sel === c.id ? '0 0 0 2px var(--text-primary)' : 'var(--shadow-float)' }}>
                 <span className="flex items-center justify-between gap-2">
-                  <span className="text-[19px] sm:text-[21px] font-black shrink-0 whitespace-nowrap" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }} data-testid="court-name">{c.name}</span>
-                  <span className="text-[10.5px] font-black whitespace-nowrap" style={{ letterSpacing: '0.08em', color: t.text }}>● {st.state === 'playing' ? (isNow ? 'LIVE' : <><span className="sm:hidden">BUSY</span><span className="hidden sm:inline">PLAYING</span></>) : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
+                  <CourtBadge name={c.name} />
+                  <span className="text-[11px] font-black whitespace-nowrap inline-flex items-center gap-1.5" style={{ letterSpacing: '0.08em', color: 'var(--text-primary)' }}><i aria-hidden style={{ width: 8, height: 8, borderRadius: 99, display: 'inline-block', background: st.state === 'playing' ? '#1f9a5f' : st.state === 'blocked' ? '#c4343a' : '#8a94a0' }} />{st.state === 'playing' ? (isNow ? 'LIVE' : <><span className="sm:hidden">BUSY</span><span className="hidden sm:inline">PLAYING</span></>) : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
                 </span>
                 <span className="flex items-center gap-2.5 mt-3 min-h-[38px]">
                   {ringEl(c, 'hidden sm:inline-flex order-last ml-auto')}
@@ -255,7 +286,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                     </span>
                   </span>
                 </span>
-                <span className="grid gap-[3px] mt-3" style={{ gridTemplateColumns: `repeat(${Math.max(n, 1)}, minmax(0,1fr))` }} aria-hidden>
+                <span className="hidden sm:grid gap-[3px] mt-3" style={{ gridTemplateColumns: `repeat(${Math.max(n, 1)}, minmax(0,1fr))` }} aria-hidden>
                   {r.cells.map(cell => <i key={cell.hour} style={{ height: 12, borderRadius: 4, display: 'block', ...cellStyle(cell) }} />)}
                 </span>
                 <span className="flex mt-3.5 items-center">
@@ -284,7 +315,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                     })()}
                     </span>
                   ) : soldOut ? (
-                    <span className="text-[10.5px] font-black rounded-full px-2.5 py-1" style={{ background: 'var(--brand-green-muted)', color: 'var(--brand-green)', letterSpacing: '0.04em' }} data-testid="court-soldout">SOLD OUT ✓</span>
+                    <MoneyBubble kind="gain" size={11} testId="court-soldout">Sold out</MoneyBubble>
                   ) : (
                     <span className="text-[11px] font-bold py-1" style={{ color: 'var(--text-subtle)' }}>{day.finished ? 'Done for today' : r.sellable === 0 ? 'Not on sale' : ''}&nbsp;</span>
                   )}
@@ -296,14 +327,14 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
         </div>
 
         {/* the time slider */}
-        <div ref={slotRef} style={pinned && slotH ? { height: slotH } : undefined}>
+        <div ref={slotRef} className="hidden lg:block" style={pinned && slotH ? { height: slotH } : undefined}>
         <div className={pinned ? 'px-4 pt-3 pb-2 rounded-[20px] lg:rounded-none' : 'pt-4'} data-testid="time-scrub" data-pinned={pinned ? 'true' : 'false'}
           style={pinned ? { position: 'fixed', left: 12, right: 12, bottom: 'calc(80px + env(safe-area-inset-bottom))', zIndex: 30, background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 10px 30px rgba(0,0,0,0.28)' } : undefined}>
           <div className="flex items-center justify-between gap-3 mb-2.5">
-            <span className="text-[12px] font-extrabold" style={{ color: 'var(--text-muted)' }}>Drag the ball to see another time today</span>
+            <span className="text-[13px] font-extrabold" style={{ color: 'var(--text-primary)' }}>Drag to see another time today</span>
             <span className="flex gap-1.5 flex-wrap justify-end">
               <button type="button" onClick={() => setAt(nowMinutes)} data-testid="time-now" aria-pressed={isNow} className="text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
-                style={isNow ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)', border: '1.5px solid var(--brand-primary)' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>Now</button>
+                style={isNow ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', border: '1.5px solid transparent' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>Now</button>
               {chips.map(m => (
                 <button key={m} type="button" onClick={() => setAt(m)} data-testid="time-chip" aria-pressed={at === m} className="hidden sm:inline-block text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
                   style={at === m ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)', border: '1.5px solid var(--brand-primary)' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>{fmtMinutes(m)}</button>

@@ -3,29 +3,32 @@
 import { useState } from 'react'
 import type { CourtRevenue, CourtRevenueRow } from '@/lib/court-revenue'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
+import MoneyBubble from '@/components/ui/MoneyBubble'
+import { CourtBadge } from '@/components/admin/ClubMap'
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)' } as const
-const COLOURS = ['var(--court-1)', 'var(--court-2)', 'var(--court-3)', '#9085e9', '#e87ba4', '#c98500'] // a court keeps its colour by number, never by rank
+const SOLD = '#1f9a5f' // green: what is sold
 const R = 64
 const C = 2 * Math.PI * R
 
 // Today's takings court by court: one pie each (what is booked against what the court could earn), or the same day hour by hour.
 // One switch changes every court together; the club total is one bar underneath.
-function Pie({ row, colour }: { row: CourtRevenueRow; colour: string }) {
+function Pie({ row, colour, currency }: { row: CourtRevenueRow; colour: string; currency: CurrencyCode }) {
   const arc = row.possible > 0 ? Math.min(1, row.booked / row.possible) * C : 0
   return (
     <div className="relative mx-auto" style={{ width: 150, height: 150 }} data-testid="court-pie">
       <svg viewBox="0 0 160 160" width="150" height="150" role="img" aria-label={`${row.name}: ${row.pct ?? 0}% of what it could earn today is booked`}>
-        <circle cx="80" cy="80" r={R} fill="none" strokeWidth="24" style={{ stroke: 'var(--bg-raised)' }} />
-        {arc > 0 && <circle cx="80" cy="80" r={R} fill="none" strokeWidth="24" strokeDasharray={`${arc} ${C - arc}`} transform="rotate(-90 80 80)" style={{ stroke: colour }} />}
+        <circle cx="80" cy="80" r={R} fill="none" strokeWidth="22" style={{ stroke: 'var(--board-cell)' }} />
+        {arc > 0 && <circle cx="80" cy="80" r={R} fill="none" strokeWidth="22" strokeDasharray={`${arc} ${C - arc}`} transform="rotate(-90 80 80)" style={{ stroke: colour }} />}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <b className="text-[24px] font-extrabold leading-none" style={{ color: 'var(--text-primary)' }}>{row.pct ?? 0}%</b>
-        <span className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>booked</span>
+        <b className="text-[22px] font-extrabold leading-none" style={{ color: 'var(--text-primary)' }}>{money(row.booked, currency)}</b>
+        <span className="text-[11.5px] mt-1 font-bold" style={{ color: 'var(--text-muted)' }}>booked of {money(row.possible, currency)}</span>
       </div>
     </div>
   )
 }
+const money = (n: number, c: CurrencyCode) => formatPrice(n, c).replace(/\.00$/, '')
 
 function Hours({ row, colour, maxFee }: { row: CourtRevenueRow; colour: string; maxFee: number }) {
   const h = 92
@@ -52,49 +55,38 @@ export default function CourtRevenuePie({ revenue, currency }: { revenue: CourtR
   const pct = revenue.pct ?? 0
   const seg = (v: 'pie' | 'graph', text: string) => (
     <button type="button" onClick={() => setView(v)} aria-pressed={view === v} data-testid={`court-revenue-${v}`}
-      className="text-[12px] font-extrabold px-3.5 py-1.5 rounded-full" style={view === v ? { background: '#ffffff', color: '#1a2330' } : { background: 'transparent', color: 'var(--text-muted)' }}>{text}</button>
+      className="text-[12px] font-extrabold px-4 py-1.5 rounded-full" style={view === v ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { background: 'transparent', color: 'var(--text-primary)', opacity: 0.8 }}>{text}</button>
   )
   return (
-    <section className="rounded-[20px] p-5" style={card} data-testid="court-revenue">
-      <div className="flex items-center gap-3 mb-1">
-        <h3 className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Today by court</h3>
+    <section className="rounded-[20px] p-5" style={{ ...card, background: 'var(--board-card)', boxShadow: 'var(--shadow-float)' }} data-testid="court-revenue">
+      <div className="flex items-center gap-3 mb-4">
+        <h3 className="text-[11.5px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--text-primary)' }}>Today&apos;s takings by court</h3>
         <div className="ml-auto inline-flex p-[3px] rounded-full" style={{ background: 'var(--bg-raised)' }}>{seg('pie', 'Pie')}{seg('graph', 'Graph')}</div>
       </div>
-      <p className="text-[12.5px] mb-4" style={{ color: 'var(--text-muted)' }}>
-        <b style={{ color: 'var(--text-primary)' }}>{formatPrice(revenue.booked, currency)}</b> booked of {formatPrice(revenue.possible, currency)} possible
-        {view === 'graph' ? ' · each column is an hour' : ''}
-      </p>
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
-        {revenue.rows.map((r, i) => {
-          const colour = COLOURS[i % COLOURS.length]
+      {view === 'graph' && <p className="text-[12.5px] -mt-2 mb-4 font-semibold" style={{ color: 'var(--text-muted)' }}>Each column is an hour</p>}
+      <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))' }}>
+        {revenue.rows.map((r) => {
+          const colour = SOLD
           return (
-            <div key={r.id} className="rounded-[20px] p-5" style={{ background: 'var(--bg-base)', border: '1px solid var(--border)' }} data-testid="court-revenue-card">
-              {view === 'pie' ? <Pie row={r} colour={colour} /> : (
+            <div key={r.id} className="rounded-[20px] p-5 text-center" style={{ background: 'var(--board-cell)' }} data-testid="court-revenue-card">
+              <div className="flex justify-center mb-3"><CourtBadge name={r.name} testId="court-revenue-court" /></div>
+              {view === 'pie' ? <Pie row={r} colour={colour} currency={currency} /> : (
                 <div className="mb-1"><Hours row={r} colour={colour} maxFee={revenue.maxFee} /></div>
               )}
-              <div className={`flex items-center gap-2 ${view === 'pie' ? 'justify-center mt-2.5' : 'mt-3'}`}>
-                <i aria-hidden className="rounded" style={{ width: 11, height: 11, background: colour }} />
-                <span className="text-[14px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{r.name}</span>
-                {view === 'graph' && <span className="ml-auto text-[12px] font-semibold" style={{ color: 'var(--text-muted)' }}>{formatPrice(r.booked, currency)}</span>}
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <MoneyBubble kind={(r.pct ?? 0) > 0 ? 'gain' : 'none'} size={11}>{r.pct ?? 0}% sold</MoneyBubble>
+                {view === 'graph' && <span className="text-[12.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{money(r.booked, currency)} of {money(r.possible, currency)}</span>}
               </div>
-              {view === 'pie' && (
-                <div className="text-center text-[12px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                  <b style={{ color: 'var(--text-primary)' }}>{formatPrice(r.booked, currency)}</b> of {formatPrice(r.possible, currency)}<br />
-                  {r.bookedHours} of {r.sellableHours} hours
-                </div>
-              )}
             </div>
           )
         })}
       </div>
-      <div className="mt-4 pt-3.5" style={{ borderTop: '1px solid var(--border)' }} data-testid="court-revenue-total">
-        <div className="flex items-baseline justify-between text-[12.5px] mb-2" style={{ color: 'var(--text-muted)' }}>
-          <span><b style={{ color: 'var(--text-primary)' }}>All courts</b> · {revenue.bookedHours} of {revenue.sellableHours} hours</span>
-          <span>{pct}% of the day&apos;s possible</span>
+      <div className="mt-4 flex items-center gap-3" data-testid="court-revenue-total">
+        <span className="text-[13px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>Club total</span>
+        <div className="flex-1 rounded-full overflow-hidden" style={{ height: 10, background: 'var(--board-cell)' }}>
+          <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: SOLD, borderRadius: 99 }} />
         </div>
-        <div className="rounded-full overflow-hidden" style={{ height: 12, background: 'var(--bg-raised)' }}>
-          <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: 'var(--brand-primary)', borderRadius: 99 }} />
-        </div>
+        <b className="text-[13px] whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{money(revenue.booked, currency)} booked of {money(revenue.possible, currency)}</b>
       </div>
     </section>
   )
