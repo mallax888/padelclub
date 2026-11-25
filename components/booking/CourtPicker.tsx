@@ -20,7 +20,6 @@ export default function CourtPicker({ courts, listed, freeIds, priceLabel, timeL
 }) {
   const layout = courtLayout(courts, listed)
   const picked = pickedId ? courts.find(c => c.id === pickedId) ?? null : null
-  const anyPrice = (() => { const first = layout.cells.find(c => freeIds.has(c.court.id)); return first ? priceLabel(first.court.id) : '' })()
   const tight = layout.cols >= 3
   return (
     <div className="flex flex-col gap-3.5 animate-fade-in" data-testid="court-picker">
@@ -28,12 +27,12 @@ export default function CourtPicker({ courts, listed, freeIds, priceLabel, timeL
         className="flex items-center gap-3.5 rounded-[20px] px-4 py-3 text-left"
         style={picked ? { background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' } : { background: FACE, border: '1.5px solid #6ea0ff', color: '#ffffff', boxShadow: '0 0 0 3px rgba(110,160,255,0.28)' }}>
         <span className="flex items-center justify-center shrink-0 font-black text-[16px]" aria-hidden
-          style={{ width: 48, height: 48, borderRadius: 15, background: picked ? 'var(--brand-primary)' : 'rgba(255,255,255,0.16)', color: '#ffffff' }}>Any</span>
+          style={{ width: 48, height: 48, borderRadius: 15, background: picked ? 'var(--brand-primary)' : 'rgba(255,255,255,0.16)', color: '#ffffff', fontSize: 22 }}>A</span>
         <span className="min-w-0 flex-1">
           <span className="block text-[16px] font-extrabold">Any court</span>
           <span className="block text-[12.5px]" style={{ color: picked ? 'var(--text-muted)' : '#cfe0ff' }}>We pick a free one for you</span>
         </span>
-        {anyPrice && <span className="text-[14px] font-extrabold shrink-0" style={{ color: picked ? 'var(--go-text)' : '#ffffff' }}>{picked ? '' : '✓ '}{anyPrice}</span>}
+        {!picked && <span className="text-[16px] font-extrabold shrink-0" aria-hidden>✓</span>}
       </button>
 
       <div className="grid gap-3" data-testid="court-grid" data-layout={layout.fromVenue ? 'venue' : 'order'}
@@ -56,13 +55,12 @@ export default function CourtPicker({ courts, listed, freeIds, priceLabel, timeL
               <span className="flex items-start justify-between gap-1">
                 <span className="flex items-center justify-center font-black" aria-hidden
                   style={{ width: tight ? 50 : 62, height: tight ? 50 : 62, borderRadius: tight ? 15 : 18, background: free ? '#ffffff' : 'var(--bg-raised)', color: free ? '#1d3f8d' : 'var(--text-subtle)', fontSize: short.length > 2 ? 18 : tight ? 28 : 36, boxShadow: free ? '0 2px 0 rgba(0,0,0,0.2)' : 'none' }}>{short}</span>
-                {!tight && free && <span className="text-[14px] font-extrabold" style={{ color: on ? '#ffffff' : 'var(--go-text)' }}>{on ? '✓ ' : ''}{priceLabel(court.id)}</span>}
-                {tight && on && <span className="text-[14px] font-extrabold" aria-hidden>✓</span>}
+                {on && <span className="text-[16px] font-extrabold" aria-hidden>✓</span>}
               </span>
               <span className="block mt-2">
                 <span className="block text-[15px] font-extrabold">{court.name}</span>
                 <span className="block text-[12.5px]" style={{ color: on ? '#cfe0ff' : 'var(--text-muted)' }}>
-                  {free ? (tight ? priceLabel(court.id) : 'Free') : `Taken at ${timeLabel}`}
+                  {free ? 'Free' : `Taken at ${timeLabel}`}
                 </span>
               </span>
             </button>

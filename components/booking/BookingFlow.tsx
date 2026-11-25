@@ -1198,7 +1198,7 @@ export default function BookingFlow({
         <div className="animate-fade-in">
           <div className="grid gap-3 lg:grid-cols-2" data-testid="length-grid">
             {DURATIONS.map(d => (
-              <BookRow key={d.value} testid="length-dial" extra={{ 'data-minutes': d.value * 60 }} label="MIN" value={d.value * 60} title={hoursLabel(d.value)} price={fromPrice(d.value) ?? undefined}
+              <BookRow key={d.value} testid="length-dial" extra={{ 'data-minutes': d.value * 60 }} label="MIN" value={d.value * 60} title={hoursLabel(d.value)} price={fromPrice(d.value) ?? undefined} priceBig
                 picked={duration === d.value} onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }} />
             ))}
           </div>

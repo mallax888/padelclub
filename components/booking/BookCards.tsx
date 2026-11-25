@@ -13,8 +13,8 @@ const CHIP: Record<string, React.CSSProperties> = {
   lime: { background: '#d4f53c', color: '#17240a' }, green: { background: 'var(--brand-green-muted)', color: 'var(--brand-green)' },
   muted: { background: 'var(--bg-raised)', color: 'var(--text-muted)' }, blue: { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' },
 }
-export function BookRow({ label, value, muted, eyebrow, title, sub, price, chip, picked, dim, onClick, testid, extra }: {
-  label: string; value: ReactNode; muted?: boolean; eyebrow?: string; title: string; sub?: string; price?: ReactNode; chip?: RowChip; picked?: boolean; dim?: boolean
+export function BookRow({ label, value, muted, eyebrow, title, sub, price, priceBig, chip, picked, dim, onClick, testid, extra }: {
+  label: string; value: ReactNode; muted?: boolean; eyebrow?: string; title: string; sub?: string; price?: ReactNode; priceBig?: boolean; chip?: RowChip; picked?: boolean; dim?: boolean
   onClick: () => void; testid?: string; extra?: Record<string, string | number | undefined>
 }) {
   const on = !!picked
@@ -30,12 +30,14 @@ export function BookRow({ label, value, muted, eyebrow, title, sub, price, chip,
       </span>
       <span className="min-w-0 flex-1">
         {eyebrow && <span className="block text-[10.5px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: on ? '#cfe0ff' : 'var(--text-muted)' }}>{eyebrow}</span>}
-        <span className="block text-[18px] font-black leading-tight" style={{ color: on ? '#fff' : 'var(--text-primary)', letterSpacing: '-0.02em' }}>{title}</span>
+        {priceBig && price
+          ? <span className="block text-[24px] font-black leading-tight" data-testid="row-price" style={{ color: on ? '#fff' : 'var(--go-text)', letterSpacing: '-0.02em' }}>{price}</span>
+          : <span className="block text-[18px] font-black leading-tight" style={{ color: on ? '#fff' : 'var(--text-primary)', letterSpacing: '-0.02em' }}>{title}</span>}
         {sub && <span className="block text-[11.5px] mt-0.5" style={{ color: on ? '#cfe0ff' : 'var(--text-muted)' }}>{sub}</span>}
       </span>
-      {(price || chip) && (
+      {((price && !priceBig) || chip) && (
         <span className="shrink-0 flex flex-col items-end gap-1.5">
-          {price && <span className="text-[15px] font-black" data-testid="row-price" style={{ color: on ? '#fff' : 'var(--go-text)' }}>{price}</span>}
+          {price && !priceBig && <span className="text-[15px] font-black" data-testid="row-price" style={{ color: on ? '#fff' : 'var(--go-text)' }}>{price}</span>}
           {chip && <span className="text-[10px] font-black rounded-full px-2 py-0.5 whitespace-nowrap" style={CHIP[chip.kind ?? 'green']}>{chip.text}</span>}
         </span>
       )}
