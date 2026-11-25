@@ -155,7 +155,7 @@ export default function ClubAnalytics({
                     <div className="flex items-end justify-center" style={{ height: 84 }}>
                       {d.v > 0 && <div style={{ width: '58%', height: `${Math.max(8, (d.v / maxDay) * 100)}%`, borderRadius: 99, background: MONEY_HEX.wait }} />}
                     </div>
-                    <div className="mx-1.5 mt-2 mb-0.5 rounded-xl text-[11px] font-extrabold flex items-center justify-center" style={{ height: 24, ...(isToday ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { color: 'var(--text-muted)' }) }}>{DAY_LABELS[d.dow]}</div>
+                    <div className="mx-auto mt-2 mb-0.5 rounded-xl text-[11px] font-extrabold flex items-center justify-center whitespace-nowrap" style={{ height: 24, width: 'min(44px, calc(100% - 6px))', minWidth: 34, ...(isToday ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { color: 'var(--text-muted)' }) }}>{DAY_LABELS[d.dow]}</div>
                     <div className="text-[11px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{d.v}%</div>
                   </div>
                 )
@@ -171,7 +171,7 @@ export default function ClubAnalytics({
               return (
                 <div key={h.hour} data-testid="hour-row" data-quiet={isQuiet ? 'true' : undefined} className={`${show ? 'flex' : 'hidden md:flex'} items-center gap-2.5 mb-1.5`}>
                   <span className="text-[11px] font-extrabold shrink-0" style={{ width: 46, color: 'var(--text-muted)' }}>{hourLabel(h.hour)}</span>
-                  <div className="flex-1 overflow-hidden" style={{ height: 18, background: 'var(--board-cell)', borderRadius: 99, outline: isQuiet ? '2px dashed var(--text-primary)' : undefined, outlineOffset: isQuiet ? 1 : undefined }}>
+                  <div className="flex-1 overflow-hidden" style={{ height: 18, background: 'var(--board-cell)', borderRadius: 99, outline: isQuiet ? '1.5px dashed var(--text-primary)' : undefined, outlineOffset: isQuiet ? -1.5 : undefined }}>
                     {h.v > 0 && <div style={{ width: `${Math.max(3, h.v)}%`, height: '100%', borderRadius: 99, background: MONEY_HEX.wait }} />}
                   </div>
                   <b className="text-[11.5px] text-right shrink-0" style={{ width: 38, color: 'var(--text-primary)' }}>{h.v}%</b>
