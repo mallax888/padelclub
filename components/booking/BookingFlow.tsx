@@ -38,7 +38,8 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 // venue in the file regardless -- so a club PadelMate has no agreement with
 // could be picked, booked and paid for.
 // The choice you made on a step (shown when you come back to it): the same blue as the booking ticket.
-const PICKED = { background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', border: '1px solid #6ea0ff', color: '#ffffff' } as const
+// What you picked is white (ink on the light theme), never a blue ring on a blue button.
+const PICKED = { background: 'var(--today-block-bg)', border: '1px solid transparent', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } as const
 const LIVE_VENUES = VENUES.filter(v => v.isLive)
 const REGIONS = LIVE_VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
 const LIVE_COUNTRIES = COUNTRIES.filter(c => c.regions.some(r => REGIONS.includes(r)))
@@ -285,7 +286,7 @@ export default function BookingFlow({
     if (ratio === undefined) return null
     if (ratio < 0.2) return { text: 'Quiet', color: 'var(--brand-primary-text)' }
     if (ratio < 0.5) return { text: 'Moderate', color: 'var(--brand-yellow)' }
-    return { text: 'Busy', color: 'var(--brand-crimson)' }
+    return { text: 'Busy', color: 'var(--busy-amber)' }
   }
 
   const [isRebooking, setIsRebooking] = useState(false)
@@ -906,7 +907,7 @@ export default function BookingFlow({
     <div key={key} className="flex items-center gap-3.5 rounded-[20px] px-4 py-3.5" data-testid={`answered-${key}`} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
       {lead ?? <span className="flex items-center justify-center rounded-full shrink-0 text-[13px] font-extrabold" style={{ width: 26, height: 26, background: 'var(--brand-green-muted, var(--brand-primary-muted))', color: 'var(--brand-green, var(--brand-primary-text))' }} aria-hidden>✓</span>}
       <div className="min-w-0 flex-1">
-        <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--text-subtle)' }}>{label}</div>
+        <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.1em', color: 'var(--label-blue)' }}>{label}</div>
         <div className="text-[15px] font-bold sm:truncate" style={{ color: 'var(--text-primary)' }}>{value}</div>
       </div>
       {trailing}
@@ -975,7 +976,7 @@ export default function BookingFlow({
   const whereBack = step !== visibleSteps[0]
 
   return (
-    <div className="w-full lg:max-w-[680px] lg:mx-auto" data-testid="book-column">
+    <div className="book-bright w-full lg:max-w-[680px] lg:mx-auto" data-testid="book-column">
       {header}
 
       {/* Progress bar: one segment for every question this booking will ask. */}
@@ -1176,13 +1177,13 @@ export default function BookingFlow({
                   onMouseEnter={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
                   onMouseLeave={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
-                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{day}</div>
-                  <div className="text-lg font-bold" style={{ color: date === d ? '#ffffff' : 'var(--text-primary)' }}>{num}</div>
-                  <div className="text-[10px]" style={{ opacity: date === d ? 0.85 : 0.6 }}>{month}</div>
+                  <div className="text-[11px] font-bold" style={{ color: date === d ? 'var(--today-block-fg)' : 'var(--text-primary)' }}>{day}</div>
+                  <div className="date-num mx-auto my-1 flex items-center justify-center text-[19px] font-extrabold" data-testid="date-num" data-picked={date === d ? 'yes' : undefined}>{num}</div>
+                  <div className="text-[11px] font-semibold" style={{ color: date === d ? 'var(--today-block-fg)' : 'var(--text-primary)' }}>{month}</div>
                   {busy && (
                     <div className="flex items-center justify-center gap-1 mt-1.5">
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: date === d ? '#cfe0ff' : busy.color }} />
-                      <span className="text-[9px] font-semibold" style={{ color: date === d ? '#cfe0ff' : busy.color }}>{busy.text}</span>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: busy.color }} />
+                      <span className="text-[9px] font-semibold" style={{ color: busy.color }}>{busy.text}</span>
                     </div>
                   )}
                 </button>
@@ -1198,7 +1199,7 @@ export default function BookingFlow({
         <div className="animate-fade-in">
           <div className="grid gap-3 lg:grid-cols-2" data-testid="length-grid">
             {DURATIONS.map(d => (
-              <BookRow key={d.value} testid="length-dial" extra={{ 'data-minutes': d.value * 60 }} label="MIN" value={d.value * 60} title={hoursLabel(d.value)} price={fromPrice(d.value) ?? undefined}
+              <BookRow key={d.value} testid="length-dial" extra={{ 'data-minutes': d.value * 60 }} label="MIN" value={d.value * 60} title={hoursLabel(d.value)} price={fromPrice(d.value) ?? undefined} priceBig
                 picked={duration === d.value} onClick={() => { setDuration(d.value); setTime(null); setStep('time'); playSelectionSound() }} />
             ))}
           </div>
@@ -1296,7 +1297,7 @@ export default function BookingFlow({
                     </div>
                   ) : available && (
                     <div className="text-[10px] mt-0.5 font-bold" data-testid="time-kind"
-                      style={{ color: time === t ? '#cfe0ff' : peak ? 'var(--brand-accent)' : 'var(--go-text)' }}>
+                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--go-text)' }}>
                       {peak ? '⚡ Peak' : '✓ Off-peak'}
                     </div>
                   )}
@@ -1657,15 +1658,15 @@ export default function BookingFlow({
               ['Venue', venue?.name],
               ['Court', assignedCourt ? `${assignedCourt.name} — ${assignedCourt.type}` : '—'],
               ['Date', date ? formatDate(date) : ''],
-              ['Time', time && duration ? time + ' — ' + addHoursDecimal(time, duration) : ''],
+              ['Time', time && duration ? fmtClockRange(time, addHoursDecimal(time, duration)) : ''],
               ['Duration', duration ? durationLabel(duration) : ''],
               ['Pricing', isPeak ? '⚡ Peak rate' : '✓ Off-peak rate'],
               ...(confirmOffer ? [['Deal', confirmOffer.offer.discount_percent + '% off']] : discount > 0 ? [['Discount', (discount * 100).toFixed(0) + '% off']] : []),
             ].map(([label, value]) => (
               <div key={label} className="flex justify-between py-2 text-sm"
                 style={{ borderBottom: '1px solid var(--border)' }}>
-                <span style={{ color: 'var(--text-muted)' }}>{label}</span>
-                <span className="font-medium text-right ml-4" style={{ color: 'var(--text-primary)' }}>{value}</span>
+                <span className="font-semibold" style={{ color: 'var(--label-blue)' }}>{label}</span>
+                <span className="font-semibold text-right ml-4" style={{ color: 'var(--text-primary)' }}>{value}</span>
               </div>
             ))}
             <div className="flex justify-between pt-3">

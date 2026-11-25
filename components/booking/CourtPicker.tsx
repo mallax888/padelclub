@@ -20,20 +20,19 @@ export default function CourtPicker({ courts, listed, freeIds, priceLabel, timeL
 }) {
   const layout = courtLayout(courts, listed)
   const picked = pickedId ? courts.find(c => c.id === pickedId) ?? null : null
-  const anyPrice = (() => { const first = layout.cells.find(c => freeIds.has(c.court.id)); return first ? priceLabel(first.court.id) : '' })()
   const tight = layout.cols >= 3
   return (
     <div className="flex flex-col gap-3.5 animate-fade-in" data-testid="court-picker">
       <button type="button" onClick={() => onPick(null)} aria-pressed={!picked} data-testid="court-any"
         className="flex items-center gap-3.5 rounded-[20px] px-4 py-3 text-left"
-        style={picked ? { background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' } : { background: FACE, border: '1.5px solid #6ea0ff', color: '#ffffff', boxShadow: '0 0 0 3px rgba(110,160,255,0.28)' }}>
+        style={picked ? { background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-primary)' } : { background: 'var(--today-block-bg)', border: '1px solid transparent', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' }}>
         <span className="flex items-center justify-center shrink-0 font-black text-[16px]" aria-hidden
-          style={{ width: 48, height: 48, borderRadius: 15, background: picked ? 'var(--brand-primary)' : 'rgba(255,255,255,0.16)', color: '#ffffff' }}>Any</span>
+          style={{ width: 48, height: 48, borderRadius: 15, background: FACE, color: '#ffffff', fontSize: 22 }}>A</span>
         <span className="min-w-0 flex-1">
           <span className="block text-[16px] font-extrabold">Any court</span>
-          <span className="block text-[12.5px]" style={{ color: picked ? 'var(--text-muted)' : '#cfe0ff' }}>We pick a free one for you</span>
+          <span className="block text-[12.5px]" style={{ color: picked ? 'var(--text-muted)' : 'var(--today-block-fg)' }}>We pick a free one for you</span>
         </span>
-        {anyPrice && <span className="text-[14px] font-extrabold shrink-0" style={{ color: picked ? 'var(--go-text)' : '#ffffff' }}>{picked ? '' : '✓ '}{anyPrice}</span>}
+        {!picked && <span className="text-[16px] font-extrabold shrink-0" aria-hidden>✓</span>}
       </button>
 
       <div className="grid gap-3" data-testid="court-grid" data-layout={layout.fromVenue ? 'venue' : 'order'}
@@ -46,25 +45,23 @@ export default function CourtPicker({ courts, listed, freeIds, priceLabel, timeL
           return (
             <button key={court.id} type="button" disabled={!free} onClick={() => onPick(court.id)} aria-pressed={on}
               data-testid={`court-tile-${num ?? court.name}`} data-court={court.name} data-free={free ? 'yes' : 'no'}
-              className={`relative flex flex-col justify-between text-left rounded-[22px] ${tight ? 'p-3' : 'p-3.5'}`}
+              className={`relative flex items-center gap-3 text-left rounded-[20px] ${tight ? 'p-2.5' : 'p-3'}`}
               style={{
-                gridColumn: col + 1, gridRow: row + 1, minHeight: tight ? 128 : 148,
-                background: on ? FACE : 'var(--bg-surface)', color: on ? '#ffffff' : 'var(--text-primary)',
-                border: on ? '1.5px solid #6ea0ff' : '1px solid var(--border)', boxShadow: on ? '0 0 0 3px rgba(110,160,255,0.28)' : 'none',
+                gridColumn: col + 1, gridRow: row + 1, minHeight: tight ? 64 : 72,
+                background: on ? 'var(--today-block-bg)' : 'var(--bg-surface)', color: on ? 'var(--today-block-fg)' : 'var(--text-primary)',
+                border: on ? '1px solid transparent' : '1px solid var(--border)', boxShadow: on ? 'var(--today-block-shadow)' : 'none',
                 opacity: free ? 1 : 0.42, cursor: free ? 'pointer' : 'not-allowed',
               }}>
-              <span className="flex items-start justify-between gap-1">
-                <span className="flex items-center justify-center font-black" aria-hidden
-                  style={{ width: tight ? 50 : 62, height: tight ? 50 : 62, borderRadius: tight ? 15 : 18, background: free ? '#ffffff' : 'var(--bg-raised)', color: free ? '#1d3f8d' : 'var(--text-subtle)', fontSize: short.length > 2 ? 18 : tight ? 28 : 36, boxShadow: free ? '0 2px 0 rgba(0,0,0,0.2)' : 'none' }}>{short}</span>
-                {!tight && free && <span className="text-[14px] font-extrabold" style={{ color: on ? '#ffffff' : 'var(--go-text)' }}>{on ? '✓ ' : ''}{priceLabel(court.id)}</span>}
-                {tight && on && <span className="text-[14px] font-extrabold" aria-hidden>✓</span>}
-              </span>
-              <span className="block mt-2">
-                <span className="block text-[15px] font-extrabold">{court.name}</span>
-                <span className="block text-[12.5px]" style={{ color: on ? '#cfe0ff' : 'var(--text-muted)' }}>
-                  {free ? (tight ? priceLabel(court.id) : 'Free') : `Taken at ${timeLabel}`}
+              {/* The court number in its tile, with the name and Free / Taken beside it (saves the height of a stacked card). */}
+              <span className="flex items-center justify-center font-black shrink-0" aria-hidden
+                style={{ width: tight ? 40 : 48, height: tight ? 40 : 48, borderRadius: tight ? 12 : 14, background: !free ? 'var(--bg-raised)' : on ? FACE : '#ffffff', color: !free ? 'var(--text-subtle)' : on ? '#ffffff' : '#1d3f8d', fontSize: short.length > 2 ? 15 : tight ? 20 : 24, boxShadow: free ? '0 2px 0 rgba(0,0,0,0.2)' : 'none' }}>{short}</span>
+              <span className="min-w-0 flex-1">
+                <span className={`block font-extrabold truncate ${tight ? 'text-[13px]' : 'text-[15px]'}`}>{court.name}</span>
+                <span className="block text-[12px]" style={{ color: on ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>
+                  {free ? 'Free' : `Taken at ${timeLabel}`}
                 </span>
               </span>
+              {on && <span className="text-[16px] font-extrabold shrink-0" aria-hidden>✓</span>}
             </button>
           )
         })}
