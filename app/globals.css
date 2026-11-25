@@ -459,5 +459,5 @@ html { overscroll-behavior-y: none; }
   .bd-mcell { background: var(--board-cell) !important; border: 0 !important; border-radius: 14px; }
   .bd-mcell[data-over="true"] { background: var(--brand-primary-muted) !important; }
   .bd-todaynum { background: var(--today-block-bg) !important; color: var(--today-block-fg) !important; box-shadow: var(--today-block-shadow); }
-  .bd-seg[data-on="true"] { background: var(--today-block-bg) !important; color: var(--today-block-fg) !important; box-shadow: var(--today-block-shadow); }
+  .bd-seg[data-on="true"] { border-color: transparent !important; background: var(--today-block-bg) !important; color: var(--today-block-fg) !important; box-shadow: var(--today-block-shadow); }
 }

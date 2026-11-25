@@ -107,7 +107,7 @@ function BoardCategoryLegend() {
     { label: 'Blocked', color: 'var(--brand-crimson)' },
   ]
   return (
-    <div className="md:hidden" style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+    <div className="flex md:hidden" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
       {items.map(item => (
         <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 99, padding: '4px 11px' }}>
           <div style={{ width: 9, height: 9, borderRadius: 99, background: item.color }} />
@@ -1265,8 +1265,8 @@ function BoardView({
               d.setDate(d.getDate() + i - 2)
               return localDateStr(d)
             }).map(d => (
-              <button key={d} onClick={() => setBoardDate(d)}
-                className="py-2 rounded-lg text-sm font-medium whitespace-nowrap text-center shrink-0 transition-colors"
+              <button key={d} onClick={() => setBoardDate(d)} data-on={d === boardDate ? 'true' : undefined}
+                className="bd-seg py-2 rounded-lg text-sm font-medium whitespace-nowrap text-center shrink-0 transition-colors"
                 style={{
                   width: 78,
                   background: d === boardDate ? 'var(--brand-primary)' : 'var(--bg-raised)',
@@ -1374,7 +1374,7 @@ function BoardView({
               })()}
             </div>
             <BoardStatusLegend />
-            <div className="md:hidden" style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+            <div className="flex md:hidden" style={{ gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
               {venueCourts.map((court: any, i: number) => (
                 <div key={court.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 700, color: 'var(--text-primary)', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 99, padding: '4px 11px' }}>
                   <div style={{ width: 9, height: 9, borderRadius: 99, background: courtColors[i % courtColors.length] }} />
@@ -1403,7 +1403,7 @@ function BoardView({
                 <tbody>
                   {venueCourts.map((court: any, rowIdx: number) => (
                     <tr key={court.id}>
-                      <td className="px-3 font-medium whitespace-nowrap text-center" style={{ height: MONTH_CELL_HEIGHT, fontSize: 12, background: 'transparent', color: 'var(--text-primary)', borderBottom: rowIdx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)', borderRight: 'none' }}>
+                      <td className="px-3 font-medium whitespace-nowrap text-center" style={{ height: MONTH_CELL_HEIGHT, fontSize: 12, background: 'transparent', color: 'var(--text-primary)', borderBottom: 'none', borderRight: 'none' }}>
                         <CourtTile name={court.name} plain />
                       </td>
                       {weekDates.map((d, colIdx) => {
@@ -1448,7 +1448,7 @@ function BoardView({
                                     setDraggedId(b.id)
                                   }}
                                   onDragEnd={() => { setDraggedId(null); setDragOverCell(null) }}
-                                  style={{ ...moneyVars(boardKind(b)), fontSize: 11.5, fontWeight: 800, padding: '4px 11px', borderRadius: 99, marginBottom: 4, textAlign: 'center', cursor: b.status === 'blocked' ? 'default' : d >= today ? 'grab' : 'pointer', opacity: draggedId === b.id ? 0.4 : d === today ? 1 : d < today ? 0.4 : 0.55 }}
+                                  style={{ ...moneyVars(boardKind(b)), fontSize: 11, fontWeight: 800, padding: '4px 8px', borderRadius: 99, marginBottom: 4, textAlign: 'center', letterSpacing: '-0.01em', cursor: b.status === 'blocked' ? 'default' : d >= today ? 'grab' : 'pointer', opacity: draggedId === b.id ? 0.4 : d === today ? 1 : d < today ? 0.4 : 0.55 }}
                                   title={b.status === 'blocked' ? undefined : 'Click to view players and payment status; drag to another day or court'}
                                   onClick={() => {
                                     if (b.status === 'blocked') return
