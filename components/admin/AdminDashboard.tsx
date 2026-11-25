@@ -1373,7 +1373,7 @@ function BoardView({
                         moveBooking(id, { newDate: date })
                       }}
                       style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
-                      <div style={{ marginBottom: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}><span className={isToday ? 'bd-todaynum' : undefined} data-testid={isToday ? 'month-today' : undefined} style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#ffffff' : 'var(--text-primary)', background: isToday ? 'var(--brand-primary)' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span>{busy && <span data-testid="month-busy-count" className="hidden md:inline-block money-bubble" style={{ ...moneyVars('wait'), fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 99 }}>{dayBookings.length} bookings</span>}</div>
+                      <div style={{ marginBottom: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}><span className={isToday ? 'bd-todaynum' : undefined} data-testid={isToday ? 'month-today' : undefined} style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#ffffff' : 'var(--text-primary)', background: isToday ? 'var(--brand-primary)' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span>{busy && <span data-testid="month-busy-count" className="hidden md:inline-block money-bubble" style={{ ...moneyVars('wait'), whiteSpace: 'nowrap', fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 99 }}>{dayBookings.length} bookings</span>}</div>
                       <div className={busy ? 'md:hidden' : undefined}>
                       {show.map((b: any) => {
                         const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
@@ -1660,9 +1660,9 @@ function BoardView({
             <table className="bd-table w-full table-fixed text-sm border-collapse" style={{ minWidth: 68 + venueCourts.length * 150 }}>
               <thead>
                 <tr>
-                  <th className="bd-th px-2 py-2 text-left" style={{ width: 68, position: 'sticky', top: 0, zIndex: 2, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Time</th>
+                  <th className="bd-th bd-sticky px-2 py-2 text-left" style={{ width: 68, position: 'sticky', top: 0, zIndex: 2, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, background: 'var(--bg-raised)', color: 'var(--text-primary)', borderBottom: '1px solid var(--border)', borderRight: '1px solid var(--border)' }}>Time</th>
                   {venueCourts.map((court: any, idx: number) => (
-                    <th key={court.id} className="bd-th px-2 py-2 text-center" style={{ position: 'sticky', top: 0, zIndex: 2, fontSize: 12, fontWeight: 700, letterSpacing: 0.2, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}><CourtTile name={court.name} /></th>
+                    <th key={court.id} className="bd-th bd-sticky px-2 py-2 text-center" style={{ position: 'sticky', top: 0, zIndex: 2, fontSize: 12, fontWeight: 700, letterSpacing: 0.2, color: 'var(--text-primary)', background: 'var(--bg-raised)', borderBottom: '1px solid var(--border)', borderRight: idx === venueCourts.length - 1 ? 'none' : '1px solid var(--border)' }}><CourtTile name={court.name} /></th>
                   ))}
                 </tr>
               </thead>
