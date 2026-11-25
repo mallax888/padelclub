@@ -97,7 +97,7 @@ function YourLevelCard({ rating, matches }: { rating: number; matches: number | 
   const reliability = reliabilityOf(matches)
   const TIERS = ['Beginner', 'Improver', 'Intermediate', 'Advanced', 'Elite']
   return (
-    <div className="rounded-[20px] p-4 mb-4" data-testid="your-level" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+    <div className="rounded-[20px] p-5 mb-4" data-testid="your-level" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
       <div className="flex items-center gap-3.5">
         <span className="inline-flex flex-col items-center justify-center text-white shrink-0" style={{ width: 66, height: 60, borderRadius: 16, background: TILE, boxShadow: TILE_SHADOW, lineHeight: 1 }}>
           <span className="font-black" style={{ fontSize: 8.5, letterSpacing: '0.12em', color: '#dbe7ff', marginBottom: 3 }}>LEVEL</span>
