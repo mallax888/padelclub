@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtClock } from '@/lib/clock'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
+import MoneyBubble from '@/components/ui/MoneyBubble'
+import { bookingKind } from '@/lib/money-colours'
 
 // The Bookings list on a phone: one small card per booking (court tile, who, when, amount and status). Swipe a card left
 // (or press and hold it) and a red Cancel appears behind it. The swipe only reveals the button: cancelling is still the
@@ -23,18 +25,8 @@ const OPEN_AT = 40          // how far a swipe must go to stay open
 const HOLD_MS = 550         // press and hold
 const HINT_KEY = 'padelmate-swipe-hint'
 
-const BALL = '#d4f53c'
-const INK = '#17240a'
-
 const day = (date: string) => new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', day: 'numeric', month: 'short' }).format(new Date(date + 'T12:00:00Z'))
 const courtNumber = (name: string | undefined | null) => (name?.match(/\d+/)?.[0] ?? (name ?? '?').slice(0, 1))
-
-function chip(status: string): { background: string; color: string } {
-  if (status === 'confirmed') return { background: 'var(--brand-green-muted)', color: 'var(--brand-green)' }
-  if (status === 'pending') return { background: BALL, color: INK }
-  if (status === 'cancelled') return { background: 'rgba(229,72,77,0.16)', color: 'var(--brand-crimson)' }
-  return { background: 'var(--bg-raised)', color: 'var(--text-muted)' }
-}
 
 const canCancel = (status: string) => status !== 'cancelled' && status !== 'blocked'
 
@@ -131,7 +123,6 @@ export default function BookingCards({ rows, showMoney, currencyFor, onCancel, e
           const x = drag?.id === b.id ? Math.max(-PANEL, Math.min(0, base + drag.dx)) : base
           const name = b.profiles?.full_name ?? '—'
           const price = showMoney && b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyFor(b.courts?.venue_slug)).replace(/\.00$/, '') : null
-          const st = chip(b.status)
           return (
             <div key={b.id} data-testid="booking-card" data-booking-id={b.id} data-status={b.status} data-open={openId === b.id ? 'yes' : 'no'}
               className="relative overflow-hidden" style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
@@ -156,8 +147,10 @@ export default function BookingCards({ rows, showMoney, currencyFor, onCancel, e
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  {showMoney && <div className="text-[14px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{price ?? '—'}</div>}
-                  <span className="inline-block text-[10.5px] font-extrabold rounded-full px-2 py-0.5 mt-0.5" style={st}>{b.status}</span>
+                  {showMoney && (price
+                    ? <MoneyBubble kind={bookingKind(b.status)} size={13} testId="booking-card-amount" strike={b.status === 'cancelled'}>{price}</MoneyBubble>
+                    : <div className="text-[14px] font-extrabold" style={{ color: 'var(--text-primary)' }}>—</div>)}
+                  <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-muted)' }} data-testid="booking-card-status">{b.status}</div>
                 </div>
               </div>
             </div>
