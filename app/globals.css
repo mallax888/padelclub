@@ -37,6 +37,8 @@
   --brand-accent-muted: #D8380F1A;
   /* The "Change" link on an answered question: not the primary blue, so it reads as an action. */
   --link-change:        var(--brand-accent);
+  --label-blue:         #2f5fb8;
+  --busy-amber:         #b86e00;
   --glow-primary:       0 0 16px 0 #1F5FB533;
   --glow-accent:        0 0 16px 0 #D8380F3D;
   --brand-blue:         #2563EB;
@@ -82,6 +84,8 @@
   --brand-primary:      #2F70CC;
   --brand-primary-on:   #FFFFFF;
   --brand-primary-text: #86BBF7;
+  --label-blue:         #9cc2ff;
+  --busy-amber:         #ffb547;
   --brand-accent:       #FF5233;
   --brand-accent-on:    #2B0800;
   --brand-primary-muted:#86BBF726;
@@ -485,3 +489,9 @@ html { overscroll-behavior-y: none; }
 .bk-row[data-today="true"] td:last-child { box-shadow: inset 0 1px 0 var(--today-edge), inset 0 -1px 0 var(--today-edge), inset -1px 0 0 var(--today-edge); }
 /* The white "on" state of a switch, at every width (Analytics period, Bookings Upcoming / Past / Cancelled). */
 .wh-seg[data-on="true"] { background: var(--today-block-bg) !important; color: var(--today-block-fg) !important; box-shadow: var(--today-block-shadow); }
+
+/* Book a court: brighter words in the dark theme (players asked for less grey). */
+.dark .book-bright { --text-muted: #E6EBF1; --text-subtle: #CDD6DF; }
+/* The date on each date tile sits in a blue tile like COURT 3; the picked date's tile goes white. */
+.date-num { width: 40px; height: 38px; border-radius: 12px; color: #fff; background: linear-gradient(160deg, #3a73dc, #1d3f8d); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 6px 14px rgba(11,30,74,0.35); }
+.date-num[data-picked="yes"] { background: #fff; color: #1d3f8d; }
