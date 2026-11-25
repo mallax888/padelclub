@@ -827,7 +827,7 @@ export default function AdminDashboard({
                     const initials = String(b.profiles?.full_name ?? '?').split(' ').filter(Boolean).slice(0, 2).map((x: string) => x[0]).join('').toUpperCase()
                     const dot = b.status === 'confirmed' || b.status === 'completed' ? MONEY_HEX.gain : b.status === 'pending' ? MONEY_HEX.wait : b.status === 'cancelled' ? MONEY_HEX.loss : MONEY_HEX.none
                     return (
-                      <tr key={b.id} className="bk-row" data-testid="booking-row" data-today={g.date === today ? 'true' : undefined}>
+                      <tr key={b.id} className="bk-row" data-testid="booking-row" data-booking-id={b.id} data-today={g.date === today ? 'true' : undefined}>
                         <td style={{ width: 70 }}><CourtTile name={b.courts?.name ?? ''} plain /></td>
                         <td>
                           <span className="flex items-center gap-3 min-w-0">
