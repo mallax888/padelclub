@@ -13,6 +13,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { loadWaitlistDemand } from '@/lib/waitlist'
 import { loadOfferRows } from '@/lib/offers'
 import { loadPlanRows } from '@/lib/club-plans'
+import { loadCostsFor } from '@/lib/running-costs-server'
 
 export const metadata = { title: 'Club dashboard' }
 
@@ -158,6 +159,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
     isOwner ? loadOfferRows(createAdminClient(), scopeSlugs) : Promise.resolve(null),
     loadPlanRows(createAdminClient(), scopeSlugs),
     loadVenueSettings(supabase),
+    isOwner ? loadCostsFor(createAdminClient(), scopeSlugs) : Promise.resolve(null),
   ])
   extrasP.catch(() => {})
 
@@ -178,7 +180,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   // Owners only: how many people waited for full times (null hides the card), the offers they have sent and what came of them
   // (null hides the Fill it buttons), the membership plans for the clubs this person covers (null before the club plans change),
   // and the clubs' opening hours.
-  const [waitDemand, offers, plans, venueSettings] = await extrasP
+  const [waitDemand, offers, plans, venueSettings, runningCosts] = await extrasP
 
   const publicBookingIds = (openMatchRows ?? []).map((m: any) => m.booking_id as string)
 
@@ -212,6 +214,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { tab
   }))
 
   return (
-    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} reportBookings={isOwner ? (reportRows ?? []) : []} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} offers={offers} plans={plans} venueSettings={venueSettings} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} initialPlan={/^[a-z0-9_-]{1,40}$/i.test(searchParams?.plan ?? '') ? searchParams!.plan : undefined} todayStr={localDateStr()} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
+    <AdminDashboard bookings={isOwner ? (bookings ?? []) : (bookings ?? []).map((b: any) => ({ ...b, price_nzd: 0 }))} canSeeMoney={isOwner} members={members ?? []} courts={courts ?? []} managedVenueSlug={managedVenueSlug} managedCountry={managedCountry} analytics={analytics} courtPerfBookings={courtPerfBookings} creditTransactions={creditTransactions} reportBookings={isOwner ? (reportRows ?? []) : []} publicBookingIds={publicBookingIds} unpaidShares={unpaidShares} waitDemand={waitDemand} offers={offers} plans={plans} venueSettings={venueSettings} runningCosts={runningCosts} initialTab={(ADMIN_TABS as readonly string[]).includes(searchParams?.tab ?? '') ? (searchParams!.tab as typeof ADMIN_TABS[number]) : undefined} initialVenue={VENUES.some(v => v.slug === searchParams?.venue) ? searchParams!.venue : undefined} initialPlan={/^[a-z0-9_-]{1,40}$/i.test(searchParams?.plan ?? '') ? searchParams!.plan : undefined} todayStr={localDateStr()} staffName={(profile as any).nickname ?? (profile as any).full_name ?? null} />
   )
 }
