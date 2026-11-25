@@ -736,7 +736,7 @@ export default function AdminDashboard({
               <MoneyBubble kind={kind} size={16} testId={id}>{text}</MoneyBubble></div>
           )
           return (
-            <div className="rounded-2xl px-4 py-3.5 mb-4 flex flex-wrap gap-x-8 gap-y-3" data-testid="bookings-week" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="rounded-2xl p-5 mb-4 flex flex-wrap gap-x-8 gap-y-3" data-testid="bookings-week" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
               {cell('Taken this week', 'week-taken', w.taken > 0 ? 'gain' : 'none', w.taken > 0 ? `+${m(w.taken)}` : m(0))}
               {cell('Refunded this week', 'week-refunded', w.refunded > 0 ? 'loss' : 'none', w.refunded > 0 ? `\u2212${m(w.refunded)}` : m(0))}
               {cell('Overdue', 'week-overdue', overdue > 0 ? 'loss' : 'none', m(overdue))}
