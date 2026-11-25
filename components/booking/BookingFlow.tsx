@@ -38,7 +38,8 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 // venue in the file regardless -- so a club PadelMate has no agreement with
 // could be picked, booked and paid for.
 // The choice you made on a step (shown when you come back to it): the same blue as the booking ticket.
-const PICKED = { background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)', border: '1px solid #6ea0ff', color: '#ffffff' } as const
+// What you picked is white (ink on the light theme), never a blue ring on a blue button.
+const PICKED = { background: 'var(--today-block-bg)', border: '1px solid transparent', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } as const
 const LIVE_VENUES = VENUES.filter(v => v.isLive)
 const REGIONS = LIVE_VENUES.map(v => v.region).filter((r, i, arr) => arr.indexOf(r) === i)
 const LIVE_COUNTRIES = COUNTRIES.filter(c => c.regions.some(r => REGIONS.includes(r)))
@@ -1176,13 +1177,13 @@ export default function BookingFlow({
                   onMouseEnter={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--brand-primary)' }}
                   onMouseLeave={e => { if (date !== d) e.currentTarget.style.borderColor = 'var(--border)' }}
                 >
-                  <div className="text-[11px] font-bold" style={{ color: date === d ? '#ffffff' : 'var(--text-primary)' }}>{day}</div>
+                  <div className="text-[11px] font-bold" style={{ color: date === d ? 'var(--today-block-fg)' : 'var(--text-primary)' }}>{day}</div>
                   <div className="date-num mx-auto my-1 flex items-center justify-center text-[19px] font-extrabold" data-testid="date-num" data-picked={date === d ? 'yes' : undefined}>{num}</div>
-                  <div className="text-[11px] font-semibold" style={{ color: date === d ? '#ffffff' : 'var(--text-primary)' }}>{month}</div>
+                  <div className="text-[11px] font-semibold" style={{ color: date === d ? 'var(--today-block-fg)' : 'var(--text-primary)' }}>{month}</div>
                   {busy && (
                     <div className="flex items-center justify-center gap-1 mt-1.5">
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: date === d ? '#cfe0ff' : busy.color }} />
-                      <span className="text-[9px] font-semibold" style={{ color: date === d ? '#cfe0ff' : busy.color }}>{busy.text}</span>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: busy.color }} />
+                      <span className="text-[9px] font-semibold" style={{ color: busy.color }}>{busy.text}</span>
                     </div>
                   )}
                 </button>
@@ -1296,7 +1297,7 @@ export default function BookingFlow({
                     </div>
                   ) : available && (
                     <div className="text-[10px] mt-0.5 font-bold" data-testid="time-kind"
-                      style={{ color: time === t ? '#cfe0ff' : peak ? 'var(--brand-accent)' : 'var(--go-text)' }}>
+                      style={{ color: peak ? 'var(--brand-accent)' : 'var(--go-text)' }}>
                       {peak ? '⚡ Peak' : '✓ Off-peak'}
                     </div>
                   )}
