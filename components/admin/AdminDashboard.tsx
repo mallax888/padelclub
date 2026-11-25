@@ -817,6 +817,8 @@ export default function AdminDashboard({
                           : <span className="text-sm font-extrabold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)}</span>}
                         {g.date === today && <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{formatDate(g.date)}</span>}
                         <span className="flex-1" />
+                        <StatusDots kinds={g.rows.map(b => (b.status === 'confirmed' || b.status === 'completed' ? 'gain' : b.status === 'pending' ? 'wait' : b.status === 'cancelled' ? 'loss' : 'none') as MoneyKind)} max={12} />
+                        <button type="button" data-testid="booking-day-board" className="bd-more" onClick={() => { setBoardDate(g.date); setViewMode('day'); setTab('board') }}>View on Board</button>
                         <MoneyBubble kind="wait" size={11.5} testId="booking-day-count">{g.rows.length} {g.rows.length === 1 ? 'booking' : 'bookings'}</MoneyBubble>
                       </div>
                     </td>
