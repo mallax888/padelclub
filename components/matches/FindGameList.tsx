@@ -520,6 +520,7 @@ export default function FindGameList({
                     </div>
                   </div>
 
+                  {match.notes && <div className="text-[12.5px] font-semibold italic mt-2 truncate" style={{ color: 'var(--text-primary)' }}>&ldquo;{match.notes}&rdquo;</div>}
                   <LevelBar min={Number(match.skill_min)} max={Number(match.skill_max)} you={viewerRating} testId="game-level-bar" />
                   <div className="flex items-center justify-between text-[12px] font-extrabold">
                     <span style={{ color: isFull ? 'var(--text-primary)' : 'var(--brand-primary-text)' }}>{isFull ? 'Full' : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`}</span>
@@ -573,7 +574,7 @@ export default function FindGameList({
                     </div>
                   )}
 
-                  {(levelPlayers.length > 0 || match.notes) && (
+                  {levelPlayers.length > 0 && (
                     <div className="mt-2.5">
                       <button type="button" aria-expanded={open} aria-label={open ? 'Hide level details' : 'Level details'} onClick={() => setOpenDetails(open ? null : match.id)}
                         className="text-[12.5px] font-extrabold inline-flex items-center gap-1.5" style={{ color: 'var(--brand-primary-text)' }}>
@@ -584,8 +585,7 @@ export default function FindGameList({
                         <>
                           {quality && <div className="mt-2"><QualityChip quality={quality} title={youIfJoin ? 'With you in it' : undefined} /></div>}
                           {levelPlayers.length > 0 && <LevelDetails players={levelPlayers} counts={matchCounts} youIfJoin={youIfJoin} />}
-                          {match.notes && <div className="text-[12.5px] mt-2.5 font-semibold" style={{ color: 'var(--text-primary)' }}>&ldquo;{match.notes}&rdquo;</div>}
-                        </>
+                                                </>
                       )}
                     </div>
                   )}
