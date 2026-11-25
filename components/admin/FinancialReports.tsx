@@ -273,10 +273,10 @@ export default function FinancialReports({
           </>
         )}
         {costs && !hasCosts && (
-          <div className="flex flex-wrap items-center gap-3 rounded-[16px] p-4 mt-4" style={row} data-testid="report-breakeven-prompt">
-            <i aria-hidden style={{ display: 'inline-block', width: 18, borderTop: '2px dashed var(--text-primary)' }} />
-            <span className="flex-1 min-w-[180px] text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>Add your running costs to see which days made money</span>
-            <button type="button" className="rounded-full px-4 py-2 text-[12px] font-extrabold uppercase tracking-wide" style={{ border: '1px solid var(--border-strong, var(--border))', color: 'var(--text-primary)' }} data-testid="report-breakeven-add" onClick={openBox}>Add running costs</button>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-[16px] p-4 mt-4" style={row} data-testid="report-breakeven-prompt">
+            <span className="flex items-center gap-3 flex-1 min-w-0"><i aria-hidden style={{ display: 'inline-block', width: 18, flex: 'none', borderTop: '2px dashed var(--text-primary)' }} />
+            <span className="text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>Add your running costs to see which days made money</span></span>
+            <button type="button" className="w-full sm:w-auto rounded-full px-4 py-2.5 text-[12px] font-extrabold uppercase tracking-wide" style={{ border: '1px solid var(--border-strong, var(--border))', color: 'var(--text-primary)' }} data-testid="report-breakeven-add" onClick={openBox}>Add running costs</button>
           </div>
         )}
         {boxOpen && (
