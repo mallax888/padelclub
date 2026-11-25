@@ -293,7 +293,7 @@ export default function FinancialReports({
               <input id="report-costs-input" data-testid="report-costs-input" inputMode="decimal" autoFocus value={costText} placeholder="$7,000" disabled={savingCosts}
                 onChange={e => setCostText(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') void saveCosts() }}
                 className="flex-1 min-w-0 bg-transparent text-[20px] font-extrabold outline-none" style={{ color: 'var(--text-primary)' }} />
-              {typedOk && <span className="text-[12.5px] font-bold shrink-0" style={{ color: 'var(--text-primary)' }} data-testid="report-costs-daily">= {whole(dailyBreakeven(typed))} a day</span>}
+              {typedOk && <span className="text-[12.5px] font-bold shrink-0" style={{ color: 'var(--text-primary)' }} data-testid="report-costs-daily">= about {whole(Math.round(dailyBreakeven(typed)))} a day</span>}
             </div>
             <button type="button" className="btn-main btn-main-lime mt-4 uppercase !text-[13px] tracking-wide" data-testid="report-costs-save" disabled={!typedOk || savingCosts} onClick={() => void saveCosts()}>{savingCosts ? 'Saving…' : 'Save and show the line'}</button>
           </div>
