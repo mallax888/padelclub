@@ -464,7 +464,7 @@ export default function FindGameList({
             style={{ letterSpacing: '0.14em', color: 'var(--text-primary)' }}>
             {dayLabel(day.date)}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {day.matches.map(match => {
               const allPlayers = match.open_match_players ?? []
               const acceptedPlayers = allPlayers.filter(p => p.status === 'accepted')
@@ -499,7 +499,7 @@ export default function FindGameList({
                 )
 
               return (
-                <div key={match.id} className="rounded-[20px] p-3.5" data-testid="open-game" data-fit={fit ?? undefined}
+                <div key={match.id} className="rounded-[20px] p-5" data-testid="open-game" data-fit={fit ?? undefined}
                   style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
                   {/* The time in a blue tile, like the courts; the court, the club and the kind of game beside it. */}
                   <div className="flex items-center gap-3">
