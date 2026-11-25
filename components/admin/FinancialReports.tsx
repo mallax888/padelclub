@@ -350,7 +350,7 @@ export default function FinancialReports({
         </div>
       )}
 
-      <div className="rounded-[20px] p-4 px-5 items-center gap-3 flex-wrap hidden md:flex" data-testid="report-credits" style={tile}>
+      <div className="rounded-[20px] p-4 items-center gap-3 flex-wrap hidden md:flex" data-testid="report-credits" style={tile}>
         <h3 className="text-[11.5px] font-extrabold uppercase mr-2" style={label}>Session credits</h3>
         <span className="sr-only">in this period:</span>
         <MoneyBubble kind="none" size={12}>{credits.issued} issued</MoneyBubble>
