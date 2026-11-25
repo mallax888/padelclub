@@ -18,16 +18,14 @@ import { buildWorkbook } from '@/lib/report-xlsx'
 import CardHeading from '@/components/ui/CardHeading'
 import { drawRevenueChart } from '@/lib/report-chart'
 import { NO_COSTS, breakevenView, type RunningCosts } from '@/lib/running-costs'
+import MoneyBubble from '@/components/ui/MoneyBubble'
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
 const short = (s: string) => format(parseISO(s), 'd MMM')
 const long = (s: string) => format(parseISO(s), 'd MMM yyyy')
 
-// The money colours: green made money, red lost it, blue still going, grey is a figure you set yourself.
-const MADE = '#1f9a5f', LOST = '#c4343a', GOING = '#2f6fd6', SET = '#4a535d'
-const Bubble = ({ colour, children, testId }: { colour: string; children: React.ReactNode; testId?: string }) => (
-  <span data-testid={testId} className="inline-block rounded-full px-2.5 py-0.5 text-[10.5px] font-extrabold whitespace-nowrap" style={{ background: colour, color: '#fff' }}>{children}</span>
-)
+// The bar colours (see lib/money-colours.ts): green made money, red lost it, blue still going.
+const MADE = '#1f9a5f', LOST = '#c4343a', GOING = '#2f6fd6'
 
 function save(name: string, csv: string) {
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
@@ -37,13 +35,15 @@ function save(name: string, csv: string) {
   URL.revokeObjectURL(url)
 }
 
-function Delta({ c, goodWhenUp = true, previousText }: { c: Change; goodWhenUp?: boolean; previousText?: string }) {
-  const good = c.dir === 'up' ? goodWhenUp : c.dir === 'down' ? !goodWhenUp : null
-  return (
-    <span className="text-[11px] font-bold" style={{ color: good === null ? 'var(--text-subtle)' : good ? 'var(--brand-green)' : 'var(--brand-crimson)' }}>
-      {describeChange(c, previousText)}
-    </span>
-  )
+// A change since the period before, as a bubble. The arrow follows the manager's money: more money is a green up arrow, less is a red
+// down arrow. So cancellations rising is a red down arrow ('outflow'); counts such as bookings stay blue ('count').
+function Delta({ c, kind, previousText }: { c: Change; kind: 'money' | 'count' | 'outflow'; previousText?: string }) {
+  const text = describeChange(c, previousText)
+  if (c.dir !== 'up' && c.dir !== 'down') return <span className="text-[11px] font-bold" style={{ color: 'var(--text-subtle)' }}>{text}</span>
+  const up = c.dir === 'up'
+  const shown = kind === 'outflow' ? text.replace(up ? '▲' : '▼', up ? '▼' : '▲') : text
+  const colour = kind === 'count' ? 'wait' : kind === 'money' ? (up ? 'gain' : 'loss') : (up ? 'loss' : 'gain')
+  return <MoneyBubble kind={colour} size={11} wrap testId="report-delta">{shown}</MoneyBubble>
 }
 
 function Bars({ title, items, money }: { title: string; items: { name: string; amount: number; bookings: number }[]; money: (n: number) => string }) {
@@ -140,10 +140,10 @@ export default function FinancialReports({
     } finally { setExporting(false) }
   }
   const kpis = [
-    { id: 'revenue', label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), goodWhenUp: true, was: money(prev.revenue) },
-    { id: 'bookings', label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), goodWhenUp: true, was: String(prev.bookings) },
-    { id: 'average', label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), goodWhenUp: true, was: money(prev.average) },
-    { id: 'cancelled', label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), goodWhenUp: false, was: money(prev.cancelled) },
+    { id: 'revenue', label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), kind: 'money' as const, was: money(prev.revenue) },
+    { id: 'bookings', label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), kind: 'count' as const, was: String(prev.bookings) },
+    { id: 'average', label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), kind: 'money' as const, was: money(prev.average) },
+    { id: 'cancelled', label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), kind: 'outflow' as const, was: money(prev.cancelled) },
   ]
 
   return (
@@ -175,8 +175,8 @@ export default function FinancialReports({
         {kpis.map(k => (
           <div key={k.id} className="rounded-2xl p-4" data-testid={`report-kpi-${k.id}`} style={card}>
             <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{k.label}</div>
-            <div className="text-xl font-semibold" style={{ color: k.id === 'cancelled' && summary.cancelled > 0 ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>{k.value}</div>
-            <div className="mt-0.5"><Delta c={k.c} goodWhenUp={k.goodWhenUp} previousText={k.was} /></div>
+            <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{k.value}</div>
+            <div className="mt-0.5"><Delta c={k.c} kind={k.kind} previousText={k.was} /></div>
           </div>
         ))}
       </div>
@@ -194,14 +194,14 @@ export default function FinancialReports({
             <div className="rounded-2xl p-4" data-testid="report-be-costs" style={card}>
               <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Running costs</div>
               <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{whole(be.costs)}</div>
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{whole(be.daily)} a day <Bubble colour={SET}>set by you</Bubble></div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{whole(be.daily)} a day <MoneyBubble kind="none" size={10}>set by you</MoneyBubble></div>
             </div>
             <div className="rounded-2xl p-4 col-span-2 sm:col-span-1" data-testid="report-be-left" data-sign={be.left > 0 ? 'profit' : be.left < 0 ? 'loss' : 'even'} style={card}>
               <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Left over</div>
               <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{be.left < 0 ? '\u2212' : be.left > 0 ? '+' : ''}{whole(Math.abs(be.left))}</div>
               <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
                 {be.madeDays} of {be.countedDays} days made money
-                <Bubble colour={be.left > 0 ? MADE : be.left < 0 ? LOST : SET}>{be.left > 0 ? 'profit' : be.left < 0 ? 'loss' : 'even'}</Bubble>
+                <MoneyBubble kind={be.left > 0 ? 'gain' : be.left < 0 ? 'loss' : 'none'} size={10}>{be.left > 0 ? 'profit' : be.left < 0 ? 'loss' : 'even'}</MoneyBubble>
               </div>
             </div>
           </div>

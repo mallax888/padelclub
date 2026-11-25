@@ -1,5 +1,6 @@
 'use client'
 
+import MoneyBubble from '@/components/ui/MoneyBubble'
 import { fmtClock, fmtClockRange } from '@/lib/clock'
 import { GO } from '@/lib/accent'
 import CardHeading from '@/components/ui/CardHeading'
@@ -110,7 +111,7 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
       ) : (
         <>
           <div className="mt-2 flex items-baseline gap-2 flex-wrap">
-            <span className="text-[40px] leading-none" style={bigTotal}>{formatPrice(s.overdueTotal, currency)}</span>
+            <MoneyBubble kind="loss" size={30} testId="overdue-total">{formatPrice(s.overdueTotal, currency)}</MoneyBubble>
             <span className="text-sm" style={{ color: 'var(--text-muted)' }}>across {s.overdue.length} {s.overdue.length === 1 ? 'share' : 'shares'}</span>
           </div>
           <p className="text-xs mt-2 mb-1" style={{ color: 'var(--text-muted)' }}>Friends who joined a game and are past the time they had to pay their part.</p>
@@ -127,7 +128,7 @@ function OverdueCard({ venueSlug, rows, now, currency }: { venueSlug: string; ro
               </div>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0" style={{ width: ACTION_W }}>
-              <div className="text-right leading-tight"><div className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>owes</div><div className="text-[17px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }} data-testid="overdue-amount">{formatPrice(r.amount, currency)}</div></div>
+              <div className="text-right leading-tight"><div className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>owes</div><MoneyBubble kind="loss" size={14} testId="overdue-amount">{formatPrice(r.amount, currency)}</MoneyBubble></div>
               <button type="button" disabled={sent[r.id] === 'busy' || sent[r.id] === 'sent'} onClick={() => remind(r.id)}
                 className="w-full text-center text-xs font-extrabold px-2 py-2 rounded-full disabled:opacity-60" style={LIME} data-testid="remind-both">
                 {sent[r.id] === 'sent' ? 'Reminded' : sent[r.id] === 'busy' ? 'Sending…' : 'Remind both'}
@@ -217,7 +218,7 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
       ) : (
         <>
           <div className="mt-2 flex items-baseline gap-2 flex-wrap">
-            <span className="text-[40px] leading-none" style={bigTotal}>{formatPrice(e.potential, currency)}</span>
+            <MoneyBubble kind="wait" size={30} testId="slots-total">{formatPrice(e.potential, currency)}</MoneyBubble>
             <span className="text-sm" style={{ color: 'var(--text-muted)' }}>if they all filled</span>
           </div>
           <p className="text-xs mt-2 mb-1" style={{ color: 'var(--text-muted)' }}>
@@ -234,7 +235,7 @@ function BestSlotsCard({ venueSlug, courts, bookings, now, currency, week, onFil
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{formatDate(g.date)} · {g.fillPct}% full · {g.empty} of {g.courts} {g.courts === 1 ? 'court' : 'courts'} free · {g.kind === 'peak' ? 'peak' : 'quiet'}</div>
             </div>
             <div className="flex flex-col items-end gap-1.5 shrink-0" style={{ width: ACTION_W }}>
-              <div className="text-right leading-tight"><div className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>up to</div><div className="text-[17px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{formatPrice(g.potential, currency)}</div></div>
+              <div className="text-right leading-tight"><div className="text-[11px] font-bold" style={{ color: 'var(--text-muted)' }}>up to</div><MoneyBubble kind="wait" size={14} testId="slot-potential">{formatPrice(g.potential, currency)}</MoneyBubble></div>
               {onFill && (
                 <button type="button" onClick={() => onFill({ date: g.date, from: g.from, to: g.to })}
                   className="w-full text-center text-xs font-extrabold px-2 py-2 rounded-full" style={LIME}>Fill it</button>
@@ -294,8 +295,8 @@ function OffersCard({ offers, currency, today, onChanged, onFill }: { offers: Of
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-1 mt-2 text-[12px]" style={{ color: 'var(--text-muted)' }}>
               <span><b style={{ color: 'var(--text-primary)' }}>{o.results.courtsBooked}</b> {o.results.courtsBooked === 1 ? 'court' : 'courts'} booked</span>
-              <span>Earned <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.earned, currency)}</b></span>
-              <span>Given away <b style={{ color: 'var(--text-primary)' }}>{formatPrice(o.results.givenAway, currency)}</b></span>
+              <span>Earned <MoneyBubble kind={o.results.earned > 0 ? 'gain' : 'none'} size={11} testId="offer-earned">{formatPrice(o.results.earned, currency)}</MoneyBubble></span>
+              <span>Given away <MoneyBubble kind={o.results.givenAway > 0 ? 'loss' : 'none'} size={11} testId="offer-given">{formatPrice(o.results.givenAway, currency)}</MoneyBubble></span>
               <span><b style={{ color: 'var(--text-primary)' }}>{o.results.newPlayers}</b> new · <b style={{ color: 'var(--text-primary)' }}>{o.results.returning}</b> returning</span>
             </div>
           </div>
