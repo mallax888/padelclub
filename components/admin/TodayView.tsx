@@ -13,6 +13,7 @@ import type { CourtDay } from '@/lib/court-day'
 import type { Briefing } from '@/lib/briefing'
 import AnnouncementCard from '@/components/admin/AnnouncementCard'
 import type { FillGap, OverdueLine } from '@/lib/today-actions'
+import MoneyBubble from '@/components/ui/MoneyBubble'
 
 const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as const
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)' } as const
@@ -51,7 +52,7 @@ export type TodayViewProps = {
   } | null
 }
 
-function AttentionRow({ href, tone, mark, title, text }: { href: string; tone: 'red' | 'yellow' | 'blue'; mark: string; title: string; text: string }) {
+function AttentionRow({ href, tone, mark, title, text, bubble }: { href: string; tone: 'red' | 'yellow' | 'blue'; mark: string; title: string; text: string; bubble?: React.ReactNode }) {
   const color = tone === 'red' ? 'var(--brand-crimson)' : tone === 'yellow' ? 'var(--text-primary)' : 'var(--brand-primary-text)'
   const bg = tone === 'red' ? 'var(--brand-crimson-muted)' : tone === 'yellow' ? 'var(--brand-yellow-muted)' : 'var(--brand-primary-muted)'
   return (
@@ -61,7 +62,8 @@ function AttentionRow({ href, tone, mark, title, text }: { href: string; tone: '
         <span className="block text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
         <span className="block text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{text}</span>
       </span>
-      <span aria-hidden className="ml-auto text-lg" style={{ color: 'var(--text-subtle)' }}>›</span>
+      {bubble && <span className="ml-auto shrink-0">{bubble}</span>}
+      <span aria-hidden className={`${bubble ? '' : 'ml-auto '}text-lg`} style={{ color: 'var(--text-subtle)' }}>›</span>
     </Link>
   )
 }
@@ -77,7 +79,8 @@ export default function TodayView(p: TodayViewProps) {
   } else if (unpaid.count > 0) {
     attention.push(
       <AttentionRow key="unpaid" href={p.showMoney ? `/admin?tab=analytics&${q}` : `/admin?tab=bookings&${q}`} tone="red" mark="$"
-        title={`${unpaid.count} unpaid ${unpaid.count === 1 ? 'share' : 'shares'}${unpaid.total !== null ? ` · ${formatPrice(unpaid.total, p.currency)}` : ''}`}
+        title={`${unpaid.count} unpaid ${unpaid.count === 1 ? 'share' : 'shares'}`}
+        bubble={unpaid.total !== null ? <MoneyBubble kind="wait" size={13} testId="unpaid-amount">{formatPrice(unpaid.total, p.currency)}</MoneyBubble> : undefined}
         text={act ? 'None are overdue yet. Those remind themselves.' : unpaid.oldestDays !== null ? `Oldest is ${unpaid.oldestDays === 0 ? 'from today' : unpaid.oldestDays === 1 ? '1 day old' : `${unpaid.oldestDays} days old`}` : ''} />,
     )
   }
@@ -123,12 +126,7 @@ export default function TodayView(p: TodayViewProps) {
               <div className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{n.courtName} · {n.bookerName ?? 'Booking'}</div>
               <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{n.players} {n.players === 1 ? 'player' : 'players'}</div>
             </div>
-            <span className="ml-auto text-[10.5px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap"
-              style={n.unpaid > 0
-                ? { background: 'var(--brand-yellow-muted)', color: 'var(--text-primary)', border: '1px solid var(--brand-yellow)' }
-                : { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
-              {n.unpaid > 0 ? `${n.unpaid} unpaid` : 'All paid'}
-            </span>
+            <span className="ml-auto"><MoneyBubble kind={n.unpaid > 0 ? 'wait' : 'gain'} size={11} testId="next-up-paid">{n.unpaid > 0 ? `${n.unpaid} unpaid` : 'All paid'}</MoneyBubble></span>
           </div>
         ))}
         {s.nextUpMore > 0 && (

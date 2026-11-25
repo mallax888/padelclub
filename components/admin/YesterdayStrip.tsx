@@ -1,5 +1,6 @@
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import type { Briefing } from '@/lib/briefing'
+import MoneyBubble from '@/components/ui/MoneyBubble'
 
 const money = (n: number, c: CurrencyCode) => formatPrice(n, c).replace(/\.00$/, '')
 const card = { background: 'linear-gradient(135deg, var(--brand-primary-muted), var(--bg-surface))', border: '1px solid var(--brand-primary)' } as const
@@ -10,8 +11,8 @@ function Delta({ diff, money: isMoney, currency }: { diff: number | null; money:
   if (diff === null || diff === 0) return null
   const up = diff > 0
   const n = Math.abs(diff)
-  // A white pill with green (up) or red (down) text: it reads clearly on the blue card, and down is a true red, not pink.
-  return <span className="font-bold text-[13px] rounded-full px-2.5 py-0.5 ml-2 whitespace-nowrap" data-testid={up ? 'delta-up' : 'delta-down'} style={{ background: '#ffffff', color: up ? '#0b7a43' : '#c4161c' }}>{up ? '▲' : '▼'} {isMoney ? money(n, currency) : n}</span>
+  // Money: up is a green bubble, down a red one (white text, arrow follows the money). A count of bookings is blue either way.
+  return <span className="ml-2"><MoneyBubble kind={isMoney ? (up ? 'gain' : 'loss') : 'wait'} size={13} testId={up ? 'delta-up' : 'delta-down'}>{up ? '▲' : '▼'} {isMoney ? money(n, currency) : n}</MoneyBubble></span>
 }
 
 export default function YesterdayStrip({ b, currency, weekday, label, brandNew, hero }: { b: Briefing; currency: CurrencyCode; weekday: string; label: string; brandNew?: boolean; hero?: boolean }) {

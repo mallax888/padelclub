@@ -192,7 +192,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
           return (
             <div className="mt-3 lg:mt-4" data-testid="map-title">
               <div data-testid="map-hot">
-                <span className="block font-black leading-none text-[56px] lg:text-[84px]" style={{ letterSpacing: '-0.05em', color: hot ? '#d4f53c' : '#ffffff' }}>{hot ? money(day.openValue, currency) : day.openNow}</span>
+                <span className="block font-black leading-none text-[56px] lg:text-[84px]" style={{ letterSpacing: '-0.05em', color: '#ffffff' }}>{hot ? money(day.openValue, currency) : day.openNow}</span>
                 <span className="block text-[18px] lg:text-[20px] font-extrabold mt-1.5" data-testid="court-day-summary">
                   {none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? 'still to sell today' : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
                 </span>

@@ -125,6 +125,10 @@
 }
 
 @layer components {
+  /* The money colour rule's bubble (components/ui/MoneyBubble.tsx): white text, solid on the light theme, soft and outlined on the dark. */
+  .money-bubble { background: var(--mb-hex); border: 1px solid var(--mb-hex); color: #ffffff; }
+  .dark .money-bubble { background: var(--mb-soft); }
+
   .btn {
     @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer select-none disabled:opacity-40 disabled:cursor-not-allowed;
     border: 1px solid var(--border);
@@ -288,8 +292,14 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 640px) {
-  html, body {
+  html {
     overflow-x: hidden;
+    max-width: 100vw;
+  }
+  /* clip, not hidden: "hidden" turns body into its own scroll container, and together with overscroll-behavior that
+     traps touch scrolling on Android Chrome (the page would not move at all). Clip never makes a scroll container. */
+  body {
+    overflow-x: clip;
     max-width: 100vw;
   }
 }
@@ -411,5 +421,6 @@ h1, h2, h3, h4, h5, h6 {
 /* the "Yesterday" line when it sits inside the blue card at the top of Today: same words, light colours */
 .yesterday-hero{--text-primary:#ffffff;--text-muted:#cfe0ff;--text-subtle:#cfe0ff;--brand-crimson:#ffc2c2;--success:#a6f3cb}
 
-/* The page and the bottom tab bar never bounce or slide: no rubber-band at the end of a page, no pull-to-refresh drag. */
-html, body { overscroll-behavior-y: none; }
+/* The page and the bottom tab bar never bounce or slide: no rubber-band at the end of a page, no pull-to-refresh drag.
+   On html only: setting it on body as well, with body clipping sideways overflow, stopped Android Chrome scrolling at all. */
+html { overscroll-behavior-y: none; }

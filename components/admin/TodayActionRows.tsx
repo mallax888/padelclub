@@ -8,12 +8,13 @@ import OfferSheet from '@/components/admin/OfferSheet'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import { formatDate } from '@/lib/utils'
 import { reminderButton, reminderCounts, type FillGap, type OverdueLine } from '@/lib/today-actions'
+import MoneyBubble from '@/components/ui/MoneyBubble'
 
 // The two jobs an owner can do from Needs attention on Today, each right where it is listed: send a reminder to
 // everyone who owes, and offer a discount to fill the biggest gap. Each opens a sheet over Today, does the job,
 // and then the row says what was done.
 
-function Shell({ tone, mark, title, text, children, done, testid }: { tone: 'red' | 'blue'; mark: string; title: string; text: string; children?: React.ReactNode; done?: boolean; testid: string }) {
+function Shell({ tone, mark, title, text, children, done, testid, bubble }: { tone: 'red' | 'blue'; mark: string; title: string; text: string; children?: React.ReactNode; done?: boolean; testid: string; bubble?: React.ReactNode }) {
   const color = done ? 'var(--brand-primary-text)' : tone === 'red' ? 'var(--brand-crimson)' : 'var(--brand-primary-text)'
   const bg = done ? 'var(--brand-primary-muted)' : tone === 'red' ? 'var(--brand-crimson-muted)' : 'var(--brand-primary-muted)'
   return (
@@ -23,6 +24,7 @@ function Shell({ tone, mark, title, text, children, done, testid }: { tone: 'red
         <span className="block text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
         <span className="block text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{text}</span>
       </span>
+      {bubble}
       {children}
     </div>
   )
@@ -90,14 +92,14 @@ export function OverdueRow({ currency, lines, total, notDueCount, notDueTotal, a
     router.refresh()
   }
 
-  const title = `${lines.length} ${lines.length === 1 ? 'share' : 'shares'} overdue · ${money(total)}`
+  const title = `${lines.length} ${lines.length === 1 ? 'share' : 'shares'} overdue`
   const more = notDueCount > 0 ? `${notDueCount} more (${money(notDueTotal)}) ${notDueCount === 1 ? 'is' : 'are'} not due yet. Those remind themselves.` : 'Friends past the time they had to pay their part.'
   const allCounts = reminderCounts(lines)
   return (
     <>
       {sent
         ? <Shell tone="red" mark="$" done testid="overdue-row" title="Reminders sent" text={`${allCounts.friends} ${allCounts.friends === 1 ? 'friend' : 'friends'} and ${allCounts.organisers === 1 ? 'the organiser' : 'the organisers'} have been told, just now.`} />
-        : <Shell tone="red" mark="$" testid="overdue-row" title={title} text={more}><Action testid="remind-all" onClick={() => setOpen(true)}>Remind all</Action></Shell>}
+        : <Shell tone="red" mark="$" testid="overdue-row" title={title} text={more} bubble={<MoneyBubble kind="loss" size={14} testId="overdue-amount">{money(total)}</MoneyBubble>}><Action testid="remind-all" onClick={() => setOpen(true)}>Remind all</Action></Shell>}
       {open && (
         <Dialog label="Remind overdue shares" onClose={() => { if (!busy) setOpen(false) }}>
           <div className="flex items-start justify-between gap-3">
@@ -114,7 +116,7 @@ export function OverdueRow({ currency, lines, total, notDueCount, notDueTotal, a
                   <div className="text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{l.playerName}</div>
                   <div className="text-[11.5px]" style={{ color: 'var(--text-muted)' }}>{l.courtName} · {formatDate(l.date)} {fmtClock(String(l.startTime))}{l.organiserName ? ` · booked by ${l.organiserName}` : ''}</div>
                 </div>
-                <div className="text-[13px] font-extrabold tabular-nums" style={{ color: 'var(--text-primary)' }}>{money(l.amount)}</div>
+                <MoneyBubble kind="loss" size={12} testId="overdue-line-amount">{money(l.amount)}</MoneyBubble>
                 {one[l.id] === 'sent'
                   ? <span data-testid="remind-done" className="shrink-0 rounded-[10px] px-3 text-[12px] font-extrabold inline-flex items-center" style={{ minHeight: 36, background: 'var(--brand-green-muted)', color: 'var(--brand-green)', border: '1px solid var(--brand-green)' }}>✓ Reminded</span>
                   : <button type="button" onClick={() => void remindOne(l.id)} disabled={busy || one[l.id] === 'busy'} data-testid="remind-one" aria-label={`Remind about ${l.playerName}, ${money(l.amount)}`}

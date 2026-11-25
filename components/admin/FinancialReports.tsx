@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import toast from 'react-hot-toast'
 import { createPortal } from 'react-dom'
 import { format, parseISO } from 'date-fns'
 import { localDateStr } from '@/lib/utils'
@@ -15,10 +17,15 @@ import ReportSheet from '@/components/admin/ReportSheet'
 import { buildWorkbook } from '@/lib/report-xlsx'
 import CardHeading from '@/components/ui/CardHeading'
 import { drawRevenueChart } from '@/lib/report-chart'
+import { NO_COSTS, breakevenView, type RunningCosts } from '@/lib/running-costs'
+import MoneyBubble from '@/components/ui/MoneyBubble'
 
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
 const short = (s: string) => format(parseISO(s), 'd MMM')
 const long = (s: string) => format(parseISO(s), 'd MMM yyyy')
+
+// The bar colours (see lib/money-colours.ts): green made money, red lost it, blue still going.
+const MADE = '#1f9a5f', LOST = '#c4343a', GOING = '#2f6fd6'
 
 function save(name: string, csv: string) {
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
@@ -28,13 +35,15 @@ function save(name: string, csv: string) {
   URL.revokeObjectURL(url)
 }
 
-function Delta({ c, goodWhenUp = true, previousText }: { c: Change; goodWhenUp?: boolean; previousText?: string }) {
-  const good = c.dir === 'up' ? goodWhenUp : c.dir === 'down' ? !goodWhenUp : null
-  return (
-    <span className="text-[11px] font-bold" style={{ color: good === null ? 'var(--text-subtle)' : good ? 'var(--brand-green)' : 'var(--brand-crimson)' }}>
-      {describeChange(c, previousText)}
-    </span>
-  )
+// A change since the period before, as a bubble. The arrow follows the manager's money: more money is a green up arrow, less is a red
+// down arrow. So cancellations rising is a red down arrow ('outflow'); counts such as bookings stay blue ('count').
+function Delta({ c, kind, previousText }: { c: Change; kind: 'money' | 'count' | 'outflow'; previousText?: string }) {
+  const text = describeChange(c, previousText)
+  if (c.dir !== 'up' && c.dir !== 'down') return <span className="text-[11px] font-bold" style={{ color: 'var(--text-subtle)' }}>{text}</span>
+  const up = c.dir === 'up'
+  const shown = kind === 'outflow' ? text.replace(up ? '▲' : '▼', up ? '▼' : '▲') : text
+  const colour = kind === 'count' ? 'wait' : kind === 'money' ? (up ? 'gain' : 'loss') : (up ? 'loss' : 'gain')
+  return <MoneyBubble kind={colour} size={11} wrap testId="report-delta">{shown}</MoneyBubble>
 }
 
 function Bars({ title, items, money }: { title: string; items: { name: string; amount: number; bookings: number }[]; money: (n: number) => string }) {
@@ -66,12 +75,15 @@ export default function FinancialReports({
   creditTransactions,
   todayStr,
   venueSlug,
+  runningCosts = null,
 }: {
   rows: ReportRow[]
   creditTransactions: FinancialCreditTx[]
   // "Today" as the page already has it (matches the server's first render; see AdminDashboard).
   todayStr?: string
   venueSlug: string
+  // Each club's running costs, for the breakeven line. Null before the 042 database change: the chart then looks as it always did.
+  runningCosts?: Record<string, RunningCosts> | null
 }) {
   const [key, setKey] = useState<PeriodKey>('30')
   // The printable sheet goes straight into <body> so printing can show it alone; only once the page is in the browser.
@@ -93,7 +105,25 @@ export default function FinancialReports({
   })()
 
   const best = summary.byDay.reduce((m, x) => (x.revenue > m.revenue ? x : m), summary.byDay[0] ?? { date: '', revenue: 0, bookings: 0 })
-  const max = Math.max(1, ...summary.byDay.map(x => x.revenue))
+  const costs = runningCosts ? (runningCosts[venueSlug] ?? NO_COSTS) : null
+  const hasCosts = !!costs && costs.monthly > 0
+  // The on/off switch is saved with the club (same setting as Club settings); until the page reloads, what was flipped here wins.
+  const [flipped, setFlipped] = useState<Record<string, boolean>>({})
+  const [flipping, setFlipping] = useState(false)
+  const lineOn = hasCosts && (flipped[venueSlug] ?? costs!.show)
+  const be = lineOn ? breakevenView(summary.byDay, costs!.monthly, today) : null
+  const max = Math.max(1, ...summary.byDay.map(x => x.revenue), be?.daily ?? 0)
+  const whole = (n: number) => money(n).replace(/\.00$/, '')
+  const flipLine = async () => {
+    const next = !lineOn
+    setFlipped(f => ({ ...f, [venueSlug]: next })); setFlipping(true)
+    try {
+      const res = await fetch('/api/admin/running-costs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ venueSlug, show: next }) })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setFlipped(f => ({ ...f, [venueSlug]: !next })); toast.error(data.error ?? 'Could not save.') }
+    } catch { setFlipped(f => ({ ...f, [venueSlug]: !next })); toast.error('Could not save. Check your connection and try again.') }
+    setFlipping(false)
+  }
   const mid = summary.byDay[Math.floor(summary.byDay.length / 2)]
   const file = (what: string) => `padelmate-${what}-${clubName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-${range.from}-to-${range.to}.csv`
   const [exporting, setExporting] = useState(false)
@@ -110,10 +140,10 @@ export default function FinancialReports({
     } finally { setExporting(false) }
   }
   const kpis = [
-    { id: 'revenue', label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), goodWhenUp: true, was: money(prev.revenue) },
-    { id: 'bookings', label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), goodWhenUp: true, was: String(prev.bookings) },
-    { id: 'average', label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), goodWhenUp: true, was: money(prev.average) },
-    { id: 'cancelled', label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), goodWhenUp: false, was: money(prev.cancelled) },
+    { id: 'revenue', label: 'Revenue', value: money(summary.revenue), c: change(summary.revenue, prev.revenue), kind: 'money' as const, was: money(prev.revenue) },
+    { id: 'bookings', label: 'Bookings', value: String(summary.bookings), c: change(summary.bookings, prev.bookings), kind: 'count' as const, was: String(prev.bookings) },
+    { id: 'average', label: 'Average booking', value: money(summary.average), c: change(summary.average, prev.average), kind: 'money' as const, was: money(prev.average) },
+    { id: 'cancelled', label: 'Cancelled (estimate)', value: money(summary.cancelled), c: change(summary.cancelled, prev.cancelled), kind: 'outflow' as const, was: money(prev.cancelled) },
   ]
 
   return (
@@ -145,38 +175,104 @@ export default function FinancialReports({
         {kpis.map(k => (
           <div key={k.id} className="rounded-2xl p-4" data-testid={`report-kpi-${k.id}`} style={card}>
             <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>{k.label}</div>
-            <div className="text-xl font-semibold" style={{ color: k.id === 'cancelled' && summary.cancelled > 0 ? 'var(--brand-crimson)' : 'var(--text-primary)' }}>{k.value}</div>
-            <div className="mt-0.5"><Delta c={k.c} goodWhenUp={k.goodWhenUp} previousText={k.was} /></div>
+            <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{k.value}</div>
+            <div className="mt-0.5"><Delta c={k.c} kind={k.kind} previousText={k.was} /></div>
           </div>
         ))}
       </div>
 
+      {be && (
+        be.countedDays === 0 ? (
+          <div className="rounded-2xl px-4 py-3 text-sm" data-testid="report-breakeven-wait" style={{ ...card, color: 'var(--text-muted)' }}>The breakeven numbers appear once a full day of this period has finished. Today is still going.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4" data-testid="report-breakeven-tiles">
+            <div className="rounded-2xl p-4" data-testid="report-be-taken" style={card}>
+              <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Taken</div>
+              <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{whole(be.taken)}</div>
+              <div className="mt-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{be.countedDays} {be.countedDays === 1 ? 'day' : 'days'}{be.todayInRange ? ', not counting today' : ''}</div>
+            </div>
+            <div className="rounded-2xl p-4" data-testid="report-be-costs" style={card}>
+              <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Running costs</div>
+              <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{whole(be.costs)}</div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>{whole(be.daily)} a day <MoneyBubble kind="none" size={10}>set by you</MoneyBubble></div>
+            </div>
+            <div className="rounded-2xl p-4 col-span-2 sm:col-span-1" data-testid="report-be-left" data-sign={be.left > 0 ? 'profit' : be.left < 0 ? 'loss' : 'even'} style={card}>
+              <div className="text-xs mb-1" style={{ color: 'var(--text-subtle)' }}>Left over</div>
+              <div className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>{be.left < 0 ? '\u2212' : be.left > 0 ? '+' : ''}{whole(Math.abs(be.left))}</div>
+              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                {be.madeDays} of {be.countedDays} days made money
+                <MoneyBubble kind={be.left > 0 ? 'gain' : be.left < 0 ? 'loss' : 'none'} size={10}>{be.left > 0 ? 'profit' : be.left < 0 ? 'loss' : 'even'}</MoneyBubble>
+              </div>
+            </div>
+          </div>
+        )
+      )}
+
       <div className="rounded-2xl p-5" style={card}>
-        <div className="flex items-baseline justify-between gap-2 mb-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mb-4">
           <CardHeading className="">Revenue by day</CardHeading>
-          {summary.bestWeekday && <div className="text-xs" style={{ color: 'var(--text-muted)' }} data-testid="report-best-weekday">Strongest day: {summary.bestWeekday.name}</div>}
+          <div className="flex items-center gap-3">
+            {summary.bestWeekday && <div className="text-xs" style={{ color: 'var(--text-muted)' }} data-testid="report-best-weekday">Strongest day: {summary.bestWeekday.name}</div>}
+            {hasCosts && (
+              <span className="flex items-center gap-2">
+                <span className="text-xs font-bold" style={{ color: 'var(--text-muted)' }}>Breakeven line</span>
+                <button type="button" role="switch" aria-checked={lineOn} aria-label="Breakeven line" disabled={flipping} onClick={() => void flipLine()}
+                  className="shrink-0 relative rounded-full disabled:opacity-60" data-testid="report-breakeven-switch"
+                  style={{ width: 46, height: 28, background: lineOn ? GOING : 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+                  <span aria-hidden className="absolute rounded-full" style={{ top: 3, left: lineOn ? 21 : 3, width: 20, height: 20, background: lineOn ? '#ffffff' : 'var(--text-subtle)', transition: 'left .15s' }} />
+                </button>
+              </span>
+            )}
+          </div>
         </div>
         {summary.revenue === 0 ? (
           <div className="text-sm text-center py-8" style={{ color: 'var(--text-subtle)' }}>No revenue in this period yet.</div>
         ) : (
           <>
-            <div className="flex items-end gap-[3px] h-32 border-b" role="img" data-testid="report-chart" style={{ borderColor: 'var(--border)' }}
-              aria-label={`Revenue for each day from ${long(range.from)} to ${long(range.to)}. The best day was ${best.date ? `${weekdayName(best.date)} ${short(best.date)}` : 'none'} with ${money(best.revenue)}.`}>
-              {summary.byDay.map(x => (
-                <div key={x.date} className="flex-1 rounded-t-sm" title={`${weekdayName(x.date).slice(0, 3)} ${short(x.date)}: ${money(x.revenue)} · ${x.bookings} ${x.bookings === 1 ? 'booking' : 'bookings'}`}
-                  style={{ height: `${x.revenue > 0 ? Math.max(3, (x.revenue / max) * 100) : 1}%`, background: x.date === best.date ? 'var(--brand-yellow)' : 'var(--brand-primary)', opacity: x.revenue > 0 ? 1 : 0.35 }} />
-              ))}
+            <div className="relative flex items-end gap-[3px] h-32 border-b" role="img" data-testid="report-chart" data-breakeven={be ? 'on' : 'off'} style={{ borderColor: 'var(--border)' }}
+              aria-label={`Revenue for each day from ${long(range.from)} to ${long(range.to)}. The best day was ${best.date ? `${weekdayName(best.date)} ${short(best.date)}` : 'none'} with ${money(best.revenue)}.${be ? ` The dashed line is breakeven, ${whole(be.daily)} a day: green days made money, red days did not.` : ''}`}>
+              {summary.byDay.map((x, i) => {
+                const state = be?.marks[i]?.state
+                return (
+                  <div key={x.date} className="flex-1 rounded-t-sm" data-day={x.date} data-state={state ?? undefined}
+                    title={`${weekdayName(x.date).slice(0, 3)} ${short(x.date)}: ${money(x.revenue)} · ${x.bookings} ${x.bookings === 1 ? 'booking' : 'bookings'}${state === 'today' ? ' (today, still going)' : ''}`}
+                    style={{
+                      height: `${x.revenue > 0 || state ? Math.max(3, (x.revenue / max) * 100) : 1}%`,
+                      background: state ? (state === 'made' ? MADE : state === 'below' ? LOST : GOING) : x.date === best.date ? 'var(--brand-yellow)' : 'var(--brand-primary)',
+                      opacity: state || x.revenue > 0 ? 1 : 0.35,
+                    }} />
+                )
+              })}
+              {be && <div aria-hidden data-testid="report-breakeven-line" className="absolute left-0 right-0 pointer-events-none" style={{ bottom: `${(be.daily / max) * 100}%`, borderTop: '2px dashed var(--text-primary)' }} />}
             </div>
             <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--text-subtle)' }}>
               <span>{short(range.from)}</span>{mid && summary.byDay.length > 6 && <span>{short(mid.date)}</span>}<span>{short(range.to)}</span>
             </div>
-            <div className="text-[11px] mt-1" style={{ color: 'var(--text-subtle)' }}>
-              <span aria-hidden style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--brand-yellow)', marginRight: 5 }} />
-              Best day: {weekdayName(best.date).slice(0, 3)} {short(best.date)}, {money(best.revenue)}
-            </div>
+            {be ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] mt-2" data-testid="report-breakeven-legend" style={{ color: 'var(--text-muted)' }}>
+                <span><i aria-hidden style={{ display: 'inline-block', width: 20, borderTop: '2px dashed var(--text-primary)', verticalAlign: 'middle', marginRight: 6 }} />Breakeven: {whole(be.daily)} a day</span>
+                <span><i aria-hidden style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: MADE, marginRight: 5 }} />made money</span>
+                <span><i aria-hidden style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: LOST, marginRight: 5 }} />below costs</span>
+                {be.todayInRange && <span><i aria-hidden style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 2, background: GOING, marginRight: 5 }} />today, still going</span>}
+              </div>
+            ) : (
+              <div className="text-[11px] mt-1" style={{ color: 'var(--text-subtle)' }}>
+                <span aria-hidden style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--brand-yellow)', marginRight: 5 }} />
+                Best day: {weekdayName(best.date).slice(0, 3)} {short(best.date)}, {money(best.revenue)}
+              </div>
+            )}
           </>
         )}
       </div>
+
+      {costs && !hasCosts && (
+        <div className="rounded-2xl p-5 text-center" data-testid="report-breakeven-prompt" style={card}>
+          <CardHeading className="">Breakeven</CardHeading>
+          <div className="text-base font-extrabold mt-1" style={{ color: 'var(--text-primary)' }}>See which days made money</div>
+          <p className="text-sm mx-auto mt-1.5 mb-4 max-w-sm" style={{ color: 'var(--text-muted)' }}>Add what it costs to run your club and the chart above shows a dashed breakeven line. Until then it shows your best day.</p>
+          <Link href={`/admin/setup?venue=${encodeURIComponent(venueSlug)}`} className="btn btn-primary btn-sm" data-testid="report-breakeven-add">Add running costs</Link>
+        </div>
+      )}
 
       <div className="grid sm:grid-cols-2 gap-4">
         <Bars title="By court" money={money} items={summary.byCourt.map(c => ({ name: c.name, amount: c.revenue, bookings: c.bookings }))} />
