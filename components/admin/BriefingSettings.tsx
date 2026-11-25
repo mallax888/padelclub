@@ -41,8 +41,8 @@ export default function BriefingSettings({ venueSlug, settings }: { venueSlug: s
         {s && (
           <button type="button" role="switch" aria-checked={s.enabled} aria-label="Morning briefing" disabled={busy} onClick={() => void save({ enabled: !s.enabled })}
             className="ml-auto shrink-0 relative rounded-full disabled:opacity-60" data-testid="briefing-switch"
-            style={{ width: 46, height: 28, background: s.enabled ? '#1f9a5f' : 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-            <span aria-hidden className="absolute rounded-full" style={{ top: 3, left: s.enabled ? 21 : 3, width: 20, height: 20, background: s.enabled ? '#ffffff' : 'var(--text-subtle)', transition: 'left .15s' }} />
+            style={{ width: 46, height: 28, background: s.enabled ? 'var(--today-block-bg)' : 'var(--bg-raised)', boxShadow: s.enabled ? 'var(--today-block-shadow)' : 'none', border: '1px solid var(--border)' }}>
+            <span aria-hidden className="absolute rounded-full" style={{ top: 3, left: s.enabled ? 21 : 3, width: 20, height: 20, background: s.enabled ? 'var(--today-block-fg)' : 'var(--text-subtle)', transition: 'left .15s' }} />
           </button>
         )}
       </div>

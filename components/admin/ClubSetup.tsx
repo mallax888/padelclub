@@ -61,8 +61,8 @@ function Switch({ on, onClick, label, disabled }: { on: boolean; onClick: () => 
   return (
     <button type="button" role="switch" aria-checked={on} aria-label={label} onClick={onClick} disabled={disabled}
       className="shrink-0 relative rounded-full disabled:opacity-60"
-      style={{ width: 46, height: 26, background: on ? '#1f9a5f' : 'var(--bg-raised)', border: on ? 'none' : '1px solid var(--border)' }}>
-      <span style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: on ? '#ffffff' : 'var(--text-subtle)', transition: 'left 120ms' }} />
+      style={{ width: 46, height: 26, background: on ? 'var(--today-block-bg)' : 'var(--bg-raised)', border: on ? 'none' : '1px solid var(--border)', boxShadow: on ? 'var(--today-block-shadow)' : 'none' }}>
+      <span style={{ position: 'absolute', top: 3, left: on ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: on ? 'var(--today-block-fg)' : 'var(--text-subtle)', transition: 'left 120ms' }} />
     </button>
   )
 }

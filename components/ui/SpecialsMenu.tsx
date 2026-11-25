@@ -47,9 +47,9 @@ export default function SpecialsMenu() {
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] font-semibold whitespace-nowrap transition-colors cursor-pointer select-none"
-        style={{ color: 'var(--brand-accent)', background: open ? 'var(--brand-accent-muted)' : 'transparent' }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'var(--brand-accent-muted)')}
-        onMouseLeave={e => (e.currentTarget.style.background = open ? 'var(--brand-accent-muted)' : 'transparent')}
+        style={{ color: 'var(--busy-amber)', background: open ? 'var(--amber-muted)' : 'transparent' }}
+        onMouseEnter={e => (e.currentTarget.style.background = 'var(--amber-muted)')}
+        onMouseLeave={e => (e.currentTarget.style.background = open ? 'var(--amber-muted)' : 'transparent')}
       >
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
           <path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7c-2-4-8-4-8 0s6 0 8 0zM12 7c2-4 8-4 8 0s-6 0-8 0z"/>
@@ -87,8 +87,8 @@ export default function SpecialsMenu() {
                     at {s.partnerName}
                   </div>
                   <div className="inline-flex items-center gap-1 mt-1.5 text-[9.5px] font-bold px-1.5 py-0.5 rounded-full"
-                    style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)', letterSpacing: '0.02em' }}>
-                    {pill.live && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--brand-accent)' }} />}
+                    style={{ background: 'var(--amber-muted)', color: 'var(--busy-amber)', letterSpacing: '0.02em' }}>
+                    {pill.live && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--busy-amber)' }} />}
                     {pill.text.toUpperCase()}
                   </div>
                   {s.howToRedeem && (

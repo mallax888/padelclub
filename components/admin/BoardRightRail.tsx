@@ -1,7 +1,6 @@
 'use client'
 
 import { fmtClock } from '@/lib/clock'
-import { GO } from '@/lib/accent'
 import CardHeading from '@/components/ui/CardHeading'
 import { formatDate } from '@/lib/utils'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
@@ -51,7 +50,7 @@ export type RailBooking = {
 }
 
 export default function BoardRightRail({
-  overviewLabel = "Today's Bookings",
+  overviewLabel = "Today's bookings",
   todayCounts,
   upcomingBookings,
   onBlockCourt,
@@ -75,7 +74,7 @@ export default function BoardRightRail({
   return (
     <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <CardHeading>{overviewLabel} Overview</CardHeading>
+        <CardHeading>{overviewLabel}</CardHeading>
         <div className="flex items-center gap-4">
           <Donut slices={slices} total={total} />
           <div className="space-y-2 flex-1 min-w-0">
@@ -91,9 +90,9 @@ export default function BoardRightRail({
       </div>
 
       <div className="rounded-2xl p-5" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        <CardHeading>Quick Actions</CardHeading>
+        <CardHeading>Quick actions</CardHeading>
         <div className="flex flex-col gap-4">
-          <button onClick={onBlockCourt} className="btn-main !justify-between px-4" style={GO}>
+          <button onClick={onBlockCourt} className="btn-main btn-main-lime !justify-between px-4">
             🔒 Block a court <span>→</span>
           </button>
           <button onClick={onAddCourt} className="btn-main btn-main-quiet !justify-between px-4">
@@ -104,7 +103,7 @@ export default function BoardRightRail({
 
       <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
         <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
-          <CardHeading className="">Upcoming Bookings</CardHeading>
+          <CardHeading className="">Upcoming bookings</CardHeading>
         </div>
         {upcomingBookings.length === 0 ? (
           <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--text-subtle)' }}>Nothing booked yet.</div>

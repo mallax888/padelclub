@@ -254,7 +254,7 @@ export default function RecordMatchForm({
     const others = n === 1 ? [team2p1, team2p2] : [team1p1, team1p2]
     return (
       <div data-testid={`team-${n}`}>
-        <div className="text-xs font-extrabold uppercase tracking-wide mb-2" style={{ color: n === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}>Team {n}</div>
+        <div className="text-xs font-extrabold uppercase tracking-wide mb-2" style={{ color: n === 1 ? 'var(--brand-primary-text)' : 'var(--team2)' }}>Team {n}</div>
         <div className={`grid gap-3 ${format === 'doubles' ? 'sm:grid-cols-2' : ''}`}>
           <PlayerSelect players={players} value={p1} onChange={setP1} exclude={[p2, ...others]} label={`Team ${n} player 1`} />
           {format === 'doubles' && <PlayerSelect players={players} value={p2} onChange={setP2} exclude={[p1, ...others]} label={`Team ${n} player 2`} />}
@@ -291,13 +291,15 @@ export default function RecordMatchForm({
                 <button key={f.value} type="button" role="radio" aria-checked={format === f.value} onClick={() => changeFormat(f.value)}
                   className="flex flex-col items-center justify-center text-center px-3 py-3 rounded-xl transition-all"
                   style={{
-                    background: format === f.value ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
-                    border: `1px solid ${format === f.value ? 'var(--brand-primary)' : 'var(--border)'}`,
-                    boxShadow: format === f.value ? 'var(--glow-primary)' : 'none',
+                    // Picked turns white (ink on the light theme), never a blue ring on a blue button.
+                    background: format === f.value ? 'var(--today-block-bg)' : 'var(--bg-raised)',
+                    border: `1px solid ${format === f.value ? 'transparent' : 'var(--border)'}`,
+                    boxShadow: format === f.value ? 'var(--today-block-shadow)' : 'none',
+                    color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-primary)',
                   }}>
-                  <div className="leading-none mb-1" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{f.icon}</div>
-                  <div className="text-base font-bold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{f.label}</div>
-                  <div className="text-xs mt-0.5 font-semibold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-muted)', opacity: format === f.value ? 0.85 : 1 }}>{f.desc}</div>
+                  <div className="leading-none mb-1" style={{ color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>{f.icon}</div>
+                  <div className="text-base font-bold">{f.label}</div>
+                  <div className="text-xs mt-0.5 font-semibold" style={{ color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>{f.desc}</div>
                 </button>
               ))}
             </div>
@@ -314,7 +316,7 @@ export default function RecordMatchForm({
                 {sets.map((score, i) => i === activeSetIndex ? null : (
                   <button key={i} type="button" onClick={() => openSet(i)}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}>
+                    style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--team2-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary-text)' : 'var(--team2)' }}>
                     Set {i + 1}: {score.t1}–{score.t2}
                   </button>
                 ))}
@@ -327,12 +329,12 @@ export default function RecordMatchForm({
                 <div className="flex items-center gap-2 mb-2 text-sm font-bold">
                   <span className="flex-1 text-center truncate" style={{ color: 'var(--brand-primary-text)' }}>{team1Name}</span>
                   <span className="w-8" />
-                  <span className="flex-1 text-center truncate" style={{ color: 'var(--brand-accent)' }}>{team2Name}</span>
+                  <span className="flex-1 text-center truncate" style={{ color: 'var(--team2)' }}>{team2Name}</span>
                 </div>
                 <div className="flex items-center justify-center gap-4 mb-3">
                   <ScoreStepper value={draftT1} onChange={setDraftT1} color="var(--brand-primary-text)" label="Team 1" />
                   <span style={{ fontSize: 22, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
-                  <ScoreStepper value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" label="Team 2" />
+                  <ScoreStepper value={draftT2} onChange={setDraftT2} color="var(--team2)" label="Team 2" />
                 </div>
                 <div className="text-center text-xs font-medium mb-3" data-testid="set-hint" style={{ color: draftValid ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>
                   {draftT1 === draftT2 ? 'Scores can’t be tied' : draftValid ? `Valid — ${draftT1 > draftT2 ? team1Name : team2Name} win this set` : 'Not a valid padel score yet'}
@@ -354,7 +356,7 @@ export default function RecordMatchForm({
           <AskCard n={promptNo} total={STEPS.length} title={LABEL.check} subtitle="This updates the leaderboard straight away.">
             {matchWinner && (
               <div className="text-center text-sm font-semibold py-3 rounded-xl" data-testid="result"
-                style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: matchWinner === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}` }}>
+                style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--team2-muted)', color: matchWinner === 1 ? 'var(--brand-primary-text)' : 'var(--team2)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--team2)'}` }}>
                 🏆 {winnerName} win {scoreText}
               </div>
             )}

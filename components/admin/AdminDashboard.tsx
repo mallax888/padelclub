@@ -655,7 +655,7 @@ export default function AdminDashboard({
             </div>
             <div className="text-[10.5px] mt-1.5" style={{ color: sub }}>{trendLabel}</div>
           </div>
-          <Sparkline data={spark} color={fill ? '#ffffff' : 'var(--brand-accent)'} />
+          <Sparkline data={spark} color={fill ? '#ffffff' : 'var(--label-blue)'} />
         </div>
       )
     })}
@@ -723,7 +723,7 @@ export default function AdminDashboard({
             avgDurationLabel={avgDurationLabel}
           />
           <BoardRightRail
-            overviewLabel={viewMode === 'day' ? "Today's Bookings" : viewMode === 'week' ? "This Week\u2019s Bookings" : "This Month\u2019s Bookings"}
+            overviewLabel={viewMode === 'day' ? "Today's bookings" : viewMode === 'week' ? "This week\u2019s bookings" : "This month\u2019s bookings"}
             todayCounts={todayCounts}
             upcomingBookings={upcomingBookings}
             onBlockCourt={() => setShowBlock(true)}
@@ -897,7 +897,7 @@ export default function AdminDashboard({
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['#','Name','Membership','Credits','Role','Joined'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-medium"
+                    <th key={h} className={`text-left px-4 py-3 text-xs font-medium ${h === '#' || h === 'Role' || h === 'Joined' ? 'hidden sm:table-cell' : ''}`}
                       style={{ color: 'var(--text-subtle)' }}>{h}</th>
                   ))}
                 </tr>
@@ -915,7 +915,7 @@ export default function AdminDashboard({
                     onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
                     onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                   >
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
+                    <td className="px-4 py-3 text-xs hidden sm:table-cell" style={{ color: 'var(--text-subtle)' }}>
                       {(m as any).member_number != null ? `#${(m as any).member_number}` : '—'}
                     </td>
                     <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -932,8 +932,8 @@ export default function AdminDashboard({
                       )}
                     </td>
                     <td className="px-4 py-3" style={{ color: 'var(--brand-primary-text)' }}>{m.credits ?? 0}</td>
-                    <td className="px-4 py-3 capitalize" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-subtle)' }}>
+                    <td className="px-4 py-3 capitalize hidden sm:table-cell" style={{ color: 'var(--text-muted)' }}>{m.role}</td>
+                    <td className="px-4 py-3 text-xs hidden sm:table-cell" style={{ color: 'var(--text-subtle)' }}>
                       {(m as any).created_at ? formatDateWithYear((m as any).created_at) : '—'}
                     </td>
                   </tr>
@@ -966,7 +966,7 @@ export default function AdminDashboard({
                   <div className="mt-4 mx-auto max-w-xs">
                     <Link href={`/admin/setup?venue=${encodeURIComponent(activeVenue)}`} className="btn-main" data-testid="courts-go-setup">Set up this club</Link>
                   </div>
-                  <button type="button" className="mt-3 text-xs font-bold" style={{ color: 'var(--link-change)' }} onClick={openAddCourt}>or add a single court here</button>
+                  <button type="button" className="mt-3 text-xs font-bold" style={{ color: 'var(--label-blue)' }} onClick={openAddCourt}>or add a single court here</button>
                 </>
               ) : (
                 <div className="mt-3 mx-auto max-w-xs"><button className="btn-main" onClick={openAddCourt}>+ Add the first court</button></div>
@@ -1299,7 +1299,7 @@ function BoardView({
           {(['day', 'week', 'month'] as const).map(m => (
             <button key={m} onClick={() => setViewMode(m)} data-on={viewMode === m ? 'true' : undefined}
               className="bd-seg flex-1 sm:flex-none px-4 py-2 rounded-md text-sm font-medium capitalize transition-all"
-              style={{ background: viewMode === m ? 'var(--brand-primary)' : 'transparent', color: viewMode === m ? 'var(--brand-primary-on)' : 'var(--text-muted)' }}>
+              style={viewMode === m ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { background: 'transparent', color: 'var(--text-muted)' }}>
               {m}
             </button>
           ))}

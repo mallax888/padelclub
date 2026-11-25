@@ -108,7 +108,7 @@ export default async function BookPage({ searchParams }: { searchParams?: { [key
   return (
     <div>
       <BookingFlow
-        header={<div className="mb-6"><h1 className="text-2xl font-semibold">Book a court</h1><p className="text-sm text-gray-500 mt-1">Select a date, court and time to make your booking</p></div>}
+        header={<div className="mb-6"><h1 className="text-2xl font-semibold">Book a court</h1><p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Select a date, court and time to make your booking</p></div>}
         courts={courts ?? []} profile={profile!} userId={userId} recentPlayers={recentPlayers} venueSettings={venueSettings} rules={await loadRules(createAdminClient())}
         waits={waits} waitlistOn={waitlistOn} waitPrefill={waitPrefill}
         regularsOn={regularsOn} prepayOn={prepayOn} regularRules={regularRules} offers={offers} offerPrefill={offerPrefill} plans={plans} todayStr={localDateStr()} />

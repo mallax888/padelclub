@@ -32,7 +32,7 @@ export default function BoardFooterStrip({
         <div key={item.label} className="flex items-baseline gap-2 rounded-full px-3.5 py-2" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           <span className="text-xs" style={{ color: 'var(--text-subtle)' }}>{item.label}</span>
           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{item.value}</span>
-          {item.trend !== null && (
+          {item.trend !== null && item.trend !== 0 && (
             <span className="text-[11px] font-bold" style={{ color: item.trend > 0 ? 'var(--brand-primary-text)' : item.trend < 0 ? 'var(--brand-crimson)' : 'var(--text-subtle)' }}>
               {item.trend > 0 ? '↑' : item.trend < 0 ? '↓' : '–'}{Math.abs(item.trend)}%
             </span>

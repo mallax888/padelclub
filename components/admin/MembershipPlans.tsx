@@ -197,8 +197,8 @@ export default function MembershipPlans({ venueSlug, currency, plans, stats, exa
               <span className="block text-[11.5px]" style={{ color: 'var(--text-subtle)' }}>Switch off to stop new sign-ups. Current members keep it.</span>
             </span>
             <button type="button" role="switch" aria-checked={active} aria-label="Offer this plan" onClick={() => setActive(a => !a)}
-              className="shrink-0 relative rounded-full" style={{ width: 46, height: 26, background: active ? 'var(--brand-primary)' : 'var(--bg-raised)', border: active ? 'none' : '1px solid var(--border)' }}>
-              <span style={{ position: 'absolute', top: 3, left: active ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: active ? '#fff' : 'var(--text-subtle)', transition: 'left 0.15s' }} />
+              className="shrink-0 relative rounded-full" style={{ width: 46, height: 26, background: active ? 'var(--today-block-bg)' : 'var(--bg-raised)', boxShadow: active ? 'var(--today-block-shadow)' : 'none', border: active ? 'none' : '1px solid var(--border)' }}>
+              <span style={{ position: 'absolute', top: 3, left: active ? 23 : 3, width: 20, height: 20, borderRadius: '50%', background: active ? 'var(--today-block-fg)' : 'var(--text-subtle)', transition: 'left 0.15s' }} />
             </button>
           </div>
         )}

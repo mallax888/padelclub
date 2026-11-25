@@ -43,7 +43,7 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
               {player.member_number != null ? `#${player.member_number} · ` : ''}{skillLabelForRating(player.skill_rating)} · {player.membership_tier ?? 'casual'}
             </div>
           </div>
-          {index < 3 && (
+          {index < 3 && (player.ranking_points ?? 0) > 0 && (
             <div className="text-xl">
               {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
             </div>
@@ -64,7 +64,7 @@ export default function PlayerCard({ player, index }: { player: any; index: numb
             <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Wins</div>
           </div>
           <div className="rounded-lg p-2" style={{ background: 'var(--bg-raised)' }}>
-            <div className="text-lg font-semibold" style={{ color: 'var(--brand-accent)' }}>
+            <div className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
               {player.losses ?? 0}
             </div>
             <div className="text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>Losses</div>
