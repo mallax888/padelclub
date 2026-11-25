@@ -2,6 +2,7 @@
 
 import { clockAt, fmtClock, fmtClockRange, fmtUntil } from '@/lib/clock'
 import { GO } from '@/lib/accent'
+import { moneyVars } from '@/components/ui/MoneyBubble'
 import { createContext, useContext, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -827,11 +828,11 @@ function MyBookingsListInner({
           on a pill below it that only revealed past bookings — so tapping
           "Upcoming" did nothing visible. */}
       <div className="inline-flex gap-1 p-1 rounded-full mb-4" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-        <button onClick={() => setShowHistory(false)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
+        <button onClick={() => setShowHistory(false)} data-on={showHistory ? undefined : 'true'} className="wh-seg text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
           style={showHistory ? { color: 'var(--text-subtle)' } : { background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>
           Upcoming · {upcoming.length + upcomingJoined.length}
         </button>
-        <button onClick={() => setShowHistory(true)} className="text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
+        <button onClick={() => setShowHistory(true)} data-on={showHistory ? 'true' : undefined} className="wh-seg text-xs font-bold px-3.5 py-1.5 rounded-full transition-colors"
           style={showHistory ? { background: 'var(--bg-raised)', color: 'var(--text-primary)' } : { color: 'var(--text-subtle)' }}>
           Past · {pastCount}
         </button>
@@ -961,16 +962,20 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
       : b.stripe_payment_id ? { text: 'Paid', kind: 'paid' } : null
     const chipStyle = chip?.kind === 'owe' ? { background: '#d4f53c', color: '#17240a' }
       : chip?.kind === 'reg' ? { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }
-      : { background: 'var(--brand-green-muted)', color: 'var(--brand-green)' }
+      : moneyVars('gain')
+    // Today's game is lit white (the same today as the Board), and says so.
+    const isToday = new Intl.DateTimeFormat('en-CA', { timeZone: timezoneForVenueSlug((b.courts as any)?.venue_slug) }).format(new Date()) === b.date
     return (
       <button
         onClick={() => setExpanded(true)}
-        data-testid="booking-row"
+        data-testid="booking-row" data-today={isToday ? 'true' : undefined}
         className="w-full flex items-center gap-3 rounded-[20px] p-4 text-left transition-colors"
-        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        style={isToday ? { background: 'var(--today-grad)', border: '1px solid var(--today-edge)' } : { background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
         <MiniCourt name={b.courts?.name} />
         <span className="min-w-0 flex-1">
-          <span className="block text-[10.5px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{longDate(b.date)}</span>
+          {isToday
+            ? <span data-testid="booking-today" className="inline-block text-[10px] font-extrabold uppercase rounded-lg px-2 py-0.5" style={{ letterSpacing: '0.08em', background: 'var(--today-block-bg)', color: 'var(--today-block-fg)' }}>Today</span>
+            : <span className="block text-[10.5px] font-extrabold uppercase" style={{ letterSpacing: '0.08em', color: 'var(--text-muted)' }}>{longDate(b.date)}</span>}
           <span className="block text-[19px] font-black leading-tight" style={{ color: 'var(--text-primary)', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>{fmtClock(b.start_time)}</span>
           <span className="block text-[11.5px] truncate" style={{ color: 'var(--text-muted)' }}>
             {[namedCourt ? b.courts?.name : null, venue ? venue.name.split(' ').slice(-1)[0] : null, durationLabel(b.duration_minutes)].filter(Boolean).join(' · ')}{splits.length > 0 ? ' · split' : ''}
@@ -978,7 +983,7 @@ function BookingRow({ booking: b, onCancel, cancelling, past, isNext, collapsibl
         </span>
         <span className="shrink-0 flex flex-col items-end gap-1.5">
           <span className="text-[15px] font-black" style={{ color: 'var(--text-primary)' }}>{formatPrice(Math.round(yourShare ?? b.price_nzd), bookingCurrency)}</span>
-          {chip && <span className="text-[10px] font-black rounded-full px-2 py-0.5 whitespace-nowrap" style={chipStyle}>{chip.text}</span>}
+          {chip && <span data-testid="booking-chip" data-chip={chip.kind} className={`text-[10px] font-black rounded-full px-2 py-0.5 whitespace-nowrap${chip.kind === 'paid' ? ' money-bubble' : ''}`} style={chipStyle}>{chip.text}</span>}
         </span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--text-subtle)', flexShrink: 0 }}><path d="M6 9l6 6 6-6"/></svg>
       </button>
