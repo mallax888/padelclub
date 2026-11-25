@@ -94,7 +94,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
               <span>🏆</span>
               <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Leaderboard</span>
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>by pts</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>by pts</div>
           </div>
 
           {leaderboard.map((player, index) => (

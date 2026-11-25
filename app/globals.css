@@ -38,8 +38,8 @@
   /* The "Change" link on an answered question: not the primary blue, so it reads as an action. */
   --link-change:        var(--brand-accent);
   --label-blue:         #2f5fb8;
-  --busy-amber:         #b86e00;
-  --team2:              #b86e00;
+  --busy-amber:         #965a00;
+  --team2:              #965a00;
   --team2-muted:        rgba(184,110,0,0.12);
   --amber-muted:        rgba(184,110,0,0.12);
   --glow-primary:       0 0 16px 0 #1F5FB533;

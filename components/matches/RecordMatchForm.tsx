@@ -298,7 +298,7 @@ export default function RecordMatchForm({
                     color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-primary)',
                   }}>
                   <div className="leading-none mb-1" style={{ color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>{f.icon}</div>
-                  <div className="text-base font-bold">{f.label}</div>
+                  <div className="text-base font-bold" style={{ color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-primary)' }}>{f.label}</div>
                   <div className="text-xs mt-0.5 font-semibold" style={{ color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>{f.desc}</div>
                 </button>
               ))}
