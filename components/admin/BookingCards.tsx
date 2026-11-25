@@ -137,7 +137,7 @@ export default function BookingCards({ rows, showMoney, currencyFor, onCancel, e
           const price = showMoney && b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyFor(b.courts?.venue_slug)).replace(/\.00$/, '') : null
           return (
             <div key={b.id} data-testid="booking-card" data-booking-id={b.id} data-status={b.status} data-open={openId === b.id ? 'yes' : 'no'}
-              className="relative overflow-hidden rounded-[18px] mb-2.5" style={{ border: '1px solid var(--border)' }}>
+              className="relative overflow-hidden rounded-[16px] mb-2.5" style={{ border: '1px solid var(--border)' }}>
               {cancellable && (
                 <button type="button" data-testid="booking-cancel" aria-label={`Cancel the ${fmtClock(b.start_time)} booking for ${name}`}
                   tabIndex={openId === b.id ? 0 : -1}
