@@ -22,7 +22,8 @@ export default function LaunchHome() {
       sessionStorage.setItem('pc_launched', '1')
       // In a browser, only a page that was opened directly (typed, bookmarked, new tab), not one a link or a refresh brought you to.
       const nav = (performance.getEntriesByType?.('navigation')?.[0] as PerformanceNavigationTiming | undefined)?.type
-      const opened = installed || (nav === 'navigate' && !document.referrer)
+      // Automated browsers (tests, crawlers) are left alone: they open /book on purpose, and no person is waiting for Home.
+      const opened = installed || (nav === 'navigate' && !document.referrer && !(navigator as any).webdriver)
       if (opened && pathname === '/book' && !window.location.search) router.replace('/')
     } catch { /* private mode or no storage: leave the page alone */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
