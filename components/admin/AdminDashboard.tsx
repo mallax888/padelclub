@@ -2,7 +2,7 @@
 
 import { fmtClock, fmtClockRange, fmtHour } from '@/lib/clock'
 import CardHeading from '@/components/ui/CardHeading'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -28,7 +28,7 @@ import type { WaitDemand } from '@/lib/waitlist-rules'
 import FinancialReports from '@/components/admin/FinancialReports'
 import type { RunningCosts } from '@/lib/running-costs'
 import MoneyBubble, { moneyVars } from '@/components/ui/MoneyBubble'
-import { bookingKind, countChange, moneyChange, weekMoney, type MoneyKind } from '@/lib/money-colours'
+import { bookingKind, countChange, moneyChange, weekMoney, MONEY_HEX, type MoneyKind } from '@/lib/money-colours'
 import { splitOverdueShares } from '@/lib/money-demand'
 import type { ReportRow } from '@/lib/report-rules'
 import AdminSidebar from '@/components/admin/AdminSidebar'
@@ -96,6 +96,15 @@ function BoardStatusLegend() {
           {item.label}
         </div>
       ))}
+    </div>
+  )
+}
+
+// One dot per booking, in its status colour.
+function StatusDots({ kinds, max = 14 }: { kinds: MoneyKind[]; max?: number }) {
+  return (
+    <div data-testid="board-dots" style={{ display: 'flex', flexWrap: 'wrap', gap: 3, lineHeight: 1 }}>
+      {kinds.slice(0, max).map((k, i) => <span key={i} style={{ width: 8, height: 8, borderRadius: 99, background: MONEY_HEX[k], display: 'inline-block' }} />)}
     </div>
   )
 }
@@ -700,7 +709,7 @@ export default function AdminDashboard({
 {/* Board tab */}
       {tab === 'board' && (
         <div className="flex flex-col gap-4">
-          <BoardView stats={statCards} today={today} setupHref={canSeeMoney && activeVenue ? `/admin/setup?venue=${encodeURIComponent(activeVenue)}` : null} week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
+          <BoardView stats={statCards} canSeeMoney={canSeeMoney} today={today} setupHref={canSeeMoney && activeVenue ? `/admin/setup?venue=${encodeURIComponent(activeVenue)}` : null} week={activeWeek} bookings={bookings} venueCourts={venueCourts} boardDate={boardDate} setBoardDate={setBoardDate} viewMode={viewMode} setViewMode={setViewMode} publicBookingIds={publicBookingIds} members={members} />
           <BoardFooterStrip
             rangeLabel={boardRange.label}
             thisWeekCount={thisWeekVenueBookings.length}
@@ -1086,9 +1095,10 @@ export default function AdminDashboard({
 
 
 function BoardView({
-  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members, today, setupHref = null, stats = null,
+  week, bookings, venueCourts, viewMode, setViewMode, boardDate, setBoardDate, publicBookingIds, members, today, setupHref = null, stats = null, canSeeMoney = false,
 }: {
   stats?: React.ReactNode
+  canSeeMoney?: boolean
   week: WeekHours
   bookings: any[]
   venueCourts: Court[]
@@ -1111,7 +1121,11 @@ function BoardView({
   const [dayLayout, setDayLayout] = useState<'grid' | 'list'>('grid')
   // The hour it is now, for the lime marker on today's grid. Set in the browser only, so the server and the page agree on first paint.
   const [nowHour, setNowHour] = useState<number | null>(null)
-  useEffect(() => { setNowHour(new Date().getHours()); const t = setInterval(() => setNowHour(new Date().getHours()), 60000); return () => clearInterval(t) }, [])
+  const [nowMin, setNowMin] = useState(0)
+  useEffect(() => { const tick = () => { const d = new Date(); setNowHour(d.getHours()); setNowMin(d.getMinutes()) }; tick(); const t = setInterval(tick, 60000); return () => clearInterval(t) }, [])
+  // Where the white "now" line sits on the web day grid, in pixels from the top of the grid card. Measured from the hour's own row.
+  const dayCardRef = useRef<HTMLDivElement | null>(null)
+  const [nowTop, setNowTop] = useState<number | null>(null)
   const [rosterBooking, setRosterBooking] = useState<{ id: string; title: string; subtitle: string } | null>(null)
   const publicBookingIdSet = new Set(publicBookingIds)
   const venueCurrency = currencyForVenueSlug(venueCourts[0]?.venue_slug)
@@ -1164,6 +1178,14 @@ function BoardView({
     else { base.setDate(base.getDate() + dir * (viewMode === 'day' ? 1 : 7)); setBoardDate(localDateStr(base)) }
   }
   const unitName = viewMode === 'day' ? 'day' : viewMode === 'week' ? 'week' : 'month'
+  // The web day grid's white "now" line: from the top of the current hour's row, down by the minutes gone.
+  useEffect(() => {
+    const card = dayCardRef.current
+    const cell = viewMode === 'day' && dayLayout === 'grid' && boardDate === today ? card?.querySelector('td[data-now="true"]') as HTMLElement | null : null
+    if (!card || !cell) { setNowTop(null); return }
+    const c = card.getBoundingClientRect(), r = cell.getBoundingClientRect()
+    setNowTop(r.top - c.top + card.scrollTop - card.clientTop + r.height * (nowMin / 60))
+  }, [viewMode, dayLayout, boardDate, today, nowHour, nowMin, bookings.length, venueCourts.length, rosterBooking])
 
   const getWeekDates = () => {
     const base = new Date(boardDate + 'T00:00:00')
@@ -1331,6 +1353,9 @@ function BoardView({
                   const dayNum = parseInt(date.slice(8, 10))
                   const show = dayBookings.slice(0, 2)
                   const extra = dayBookings.length - 2
+                  // A busy day (more than two) is summarised on the web: a count, a dot per booking, the first and last time, and a way into that day.
+                  const busy = dayBookings.length > 2
+                  const startTimes = dayBookings.map((b: any) => b.start_time as string).sort()
                   const isPast = date < today
                   const isDragOver = dragOverDate === date && !isPast
                   return (
@@ -1348,7 +1373,8 @@ function BoardView({
                         moveBooking(id, { newDate: date })
                       }}
                       style={{ borderRight: (idx + 1) % 7 === 0 ? 'none' : '1px solid var(--border)', borderBottom: '1px solid var(--border)', minHeight: 76, padding: 4, background: isDragOver ? 'var(--brand-primary-muted)' : 'var(--bg-surface)', boxShadow: isDragOver ? 'inset 0 0 0 2px var(--brand-primary)' : 'none', opacity: otherMonth ? 0.4 : 1, cursor: dayBookings.length > 0 ? 'pointer' : 'default', transition: 'background 0.1s' }}>
-                      <div style={{ marginBottom: 3 }}><span className={isToday ? 'bd-todaynum' : undefined} data-testid={isToday ? 'month-today' : undefined} style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#ffffff' : 'var(--text-primary)', background: isToday ? 'var(--brand-primary)' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span></div>
+                      <div style={{ marginBottom: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}><span className={isToday ? 'bd-todaynum' : undefined} data-testid={isToday ? 'month-today' : undefined} style={{ display: 'inline-block', fontSize: 12, fontWeight: isToday ? 800 : 600, color: isToday ? '#ffffff' : 'var(--text-primary)', background: isToday ? 'var(--brand-primary)' : 'transparent', borderRadius: 99, padding: isToday ? '1px 7px' : 0 }}>{dayNum}</span>{busy && <span data-testid="month-busy-count" className="hidden md:inline-block money-bubble" style={{ ...moneyVars('wait'), fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 99 }}>{dayBookings.length} bookings</span>}</div>
+                      <div className={busy ? 'md:hidden' : undefined}>
                       {show.map((b: any) => {
                         const color = colorMap[b.court_id] ?? 'var(--brand-primary)'
                         return (
@@ -1368,6 +1394,14 @@ function BoardView({
                         )
                       })}
                       {extra > 0 && <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand-primary-text)', padding: '0 4px' }}>+{extra} more</div>}
+                      </div>
+                      {busy && (
+                        <div className="hidden md:flex flex-col" data-testid="month-busy" style={{ gap: 8, marginTop: 8 }}>
+                          <StatusDots kinds={dayBookings.map(boardKind)} />
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)' }}>{fmtClock(startTimes[0])} to {fmtClock(startTimes[startTimes.length - 1])}</div>
+                          <button type="button" data-testid="month-open-day" className="bd-more self-start" onClick={e => { e.stopPropagation(); setBoardDate(date); setViewMode('day') }}>Open day</button>
+                        </div>
+                      )}
                     </div>
                   )
                 })
@@ -1410,6 +1444,7 @@ function BoardView({
                         const dayBookings = bookings.filter((b: any) => b.date === d && b.court_id === court.id && b.status !== 'cancelled')
                         const show = dayBookings.slice(0, 2)
                         const extra = dayBookings.length - show.length
+                        const busy = dayBookings.length > 2
                         return (
                           <td key={d} className="bd-td align-middle" data-today={d === today ? 'true' : undefined}
                             // Day and Month both let you drag a booking to a new
@@ -1437,7 +1472,14 @@ function BoardView({
                               : 'var(--board-cell)',
                             borderRadius: 14,
                           }}>
-                            {show.map((b: any) => {
+                            {busy && (
+                              <div data-testid="week-busy" className="flex flex-col" style={{ gap: 5 }}>
+                                <span className="money-bubble self-start" style={{ ...moneyVars('wait'), fontSize: 10.5, fontWeight: 800, padding: '2px 9px', borderRadius: 99 }}>{dayBookings.length} bookings</span>
+                                <StatusDots kinds={dayBookings.map(boardKind)} max={12} />
+                                <button type="button" data-testid="week-open-day" className="bd-more self-start" onClick={() => { setBoardDate(d); setViewMode('day') }}>Open day</button>
+                              </div>
+                            )}
+                            {!busy && show.map((b: any) => {
                               const appearance = cellAppearance(b)
                               return (
                                 <div key={b.id} className="truncate money-bubble" data-kind={boardKind(b)}
@@ -1462,7 +1504,7 @@ function BoardView({
                                 </div>
                               )
                             })}
-                            {extra > 0 && (
+                            {!busy && extra > 0 && (
                               <div onClick={() => setDayDetail(d)} style={{ fontSize: 10, fontWeight: 700, color: 'var(--brand-primary-text)', padding: '0 4px', cursor: 'pointer' }}>
                                 +{extra} more
                               </div>
@@ -1587,6 +1629,26 @@ function BoardView({
           </div>
         ) : (
           <div>
+            {(() => {
+              // The day at a glance, on the web: how many bookings, what has been paid, what is waiting. Front desk sees the counts but never the money.
+              const dayAll = bookings.filter((b: any) => b.date === boardDate && b.status !== 'cancelled' && venueCourts.some((c: any) => c.id === b.court_id))
+              const real = dayAll.filter((b: any) => b.status !== 'blocked')
+              const blockedN = dayAll.length - real.length
+              const openN = real.filter((b: any) => publicBookingIdSet.has(b.id)).length
+              const sumOf = (k: MoneyKind) => real.filter((b: any) => bookingKind(b.status) === k).reduce((a: number, b: any) => a + (b.price_nzd || 0), 0)
+              const paid = sumOf('gain'), pending = sumOf('wait')
+              return (
+                <div className="hidden md:flex" data-testid="day-summary" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '0 2px 12px' }}>
+                  <MoneyBubble kind="wait" size={12} testId="day-summary-count">{real.length} {real.length === 1 ? 'booking' : 'bookings'}</MoneyBubble>
+                  {canSeeMoney && <MoneyBubble kind="gain" size={12} testId="day-summary-paid">{formatPrice(paid, venueCurrency)} paid</MoneyBubble>}
+                  {canSeeMoney && pending > 0 && <MoneyBubble kind="wait" size={12} testId="day-summary-pending">{formatPrice(pending, venueCurrency)} pending</MoneyBubble>}
+                  {openN > 0 && <MoneyBubble kind="none" size={12}>{openN} open play</MoneyBubble>}
+                  {blockedN > 0 && <MoneyBubble kind="loss" size={12}>{blockedN} blocked</MoneyBubble>}
+                  <span style={{ flex: 1 }} />
+                  {boardDate >= today && <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>Drag a booking to another court or time</span>}
+                </div>
+              )
+            })()}
             {/* Courts across the top, hours down the side. The other way round
                 -- sixteen hourly columns sharing the width -- gave every
                 booking about sixty pixels to say who was playing, which is
@@ -1594,7 +1656,7 @@ function BoardView({
                 never going to fit. A court column is now several hundred
                 pixels wide, and a two-hour booking is one tall block rather
                 than a sliver. */}
-            <div className="bd-card" style={{ border: '1px solid var(--border)', borderRadius: 12, overflow: 'auto', maxHeight: '72vh' }}>
+            <div className="bd-card" ref={dayCardRef} style={{ position: 'relative', border: '1px solid var(--border)', borderRadius: 12, overflow: 'auto', maxHeight: '72vh' }}>
             <table className="bd-table w-full table-fixed text-sm border-collapse" style={{ minWidth: 68 + venueCourts.length * 150 }}>
               <thead>
                 <tr>
@@ -1715,6 +1777,7 @@ function BoardView({
                 })()}
               </tbody>
             </table>
+            {nowTop != null && <div data-testid="board-now-line" className="hidden md:block" style={{ position: 'absolute', left: 98, right: 14, top: nowTop, borderTop: '2px solid var(--text-primary)', opacity: 0.85, zIndex: 1, pointerEvents: 'none' }} />}
             </div>
             <BoardCategoryLegend />
             <BoardStatusLegend />
