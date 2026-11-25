@@ -38,9 +38,9 @@ export type Country = {
 // and Admin's venue picker, so the two never drift out of sync with each
 // other or with the regions actually used below.
 export const COUNTRIES: Country[] = [
-  { name: 'New Zealand', flag: 'https://flagcdn.com/w80/nz.png', regions: ['Auckland', 'Wellington', 'Christchurch'] },
-  { name: 'South Africa', flag: 'https://flagcdn.com/w80/za.png', regions: ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'] },
-  { name: 'Australia', flag: 'https://flagcdn.com/w80/au.png', regions: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'] },
+  { name: 'New Zealand', flag: '/flags/nz.svg', regions: ['Auckland', 'Wellington', 'Christchurch'] },
+  { name: 'South Africa', flag: '/flags/za.svg', regions: ['Nelspruit', 'Johannesburg', 'Cape Town', 'Durban', 'Pretoria'] },
+  { name: 'Australia', flag: '/flags/au.svg', regions: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide'] },
 ]
 
 export const VENUES: Venue[] = [

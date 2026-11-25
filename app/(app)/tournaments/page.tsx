@@ -36,9 +36,19 @@ export default async function TournamentsPage() {
       </div>
 
       {(tournaments ?? []).length === 0 ? (
-        <div className="rounded-2xl text-center py-12 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-          No tournaments yet{isStaff ? ' — create one to get started' : ''}
-        </div>
+        isStaff ? (
+          <div className="rounded-2xl text-center py-12 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+            No tournaments yet — create one to get started
+          </div>
+        ) : (
+          // A player with nothing here yet: say what will appear, and give them something to do now.
+          <div className="rounded-[20px] text-center px-5 py-7" data-testid="empty-tournaments" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="text-[30px] leading-none" aria-hidden>🏆</div>
+            <div className="text-[17px] font-extrabold mt-2.5" style={{ color: 'var(--text-primary)' }}>No tournaments yet</div>
+            <p className="text-[13.5px] mt-1.5 mb-4 mx-auto max-w-[280px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>When your club runs an Americano or a knockout, it shows up here and you can sign up.</p>
+            <Link href="/book" className="btn-main btn-main-lime inline-flex w-auto px-6">Book a court →</Link>
+          </div>
+        )
       ) : (
         <div className="space-y-3">
           {(tournaments ?? []).map(t => {
