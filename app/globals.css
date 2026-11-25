@@ -469,5 +469,17 @@ html { overscroll-behavior-y: none; }
   .bd-seg[data-on="true"] { border-color: transparent !important; background: var(--today-block-bg) !important; color: var(--today-block-fg) !important; box-shadow: var(--today-block-shadow); }
 }
 
-/* The white "on" state of a switch, at every width (the Analytics period switch). */
+/* Bookings (web): soft rows grouped by day. The table is only on screen from 768px up. */
+.bk-table { border-collapse: separate; border-spacing: 0 10px; }
+.bk-table td { padding: 12px 10px; }
+.bk-table .bk-ghead { padding: 18px 2px 0; }
+.bk-table { margin-top: -10px; }
+.bk-table tbody tr:first-child .bk-ghead { padding-top: 0; }
+.bk-row td { background: var(--board-cell); }
+.bk-row td:first-child { border-radius: 16px 0 0 16px; padding-left: 12px; }
+.bk-row td:last-child { border-radius: 0 16px 16px 0; padding-right: 16px; }
+.bk-row[data-today="true"] td { background: var(--today-grad); box-shadow: inset 0 1px 0 var(--today-edge), inset 0 -1px 0 var(--today-edge); }
+.bk-row[data-today="true"] td:first-child { box-shadow: inset 0 1px 0 var(--today-edge), inset 0 -1px 0 var(--today-edge), inset 1px 0 0 var(--today-edge); }
+.bk-row[data-today="true"] td:last-child { box-shadow: inset 0 1px 0 var(--today-edge), inset 0 -1px 0 var(--today-edge), inset -1px 0 0 var(--today-edge); }
+/* The white "on" state of a switch, at every width (Analytics period, Bookings Upcoming / Past / Cancelled). */
 .wh-seg[data-on="true"] { background: var(--today-block-bg) !important; color: var(--today-block-fg) !important; box-shadow: var(--today-block-shadow); }

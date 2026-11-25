@@ -29,8 +29,10 @@ const day = (date: string) => new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC'
 const courtNumber = (name: string | undefined | null) => (name?.match(/\d+/)?.[0] ?? (name ?? '?').slice(0, 1))
 
 const canCancel = (status: string) => status !== 'cancelled' && status !== 'blocked'
+const dayHeading = (date: string) => new Intl.DateTimeFormat('en-NZ', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' }).format(new Date(date + 'T12:00:00Z')).replace(',', '')
 
-export default function BookingCards({ rows, showMoney, currencyFor, onCancel, emptyText }: {
+export default function BookingCards({ rows, showMoney, currencyFor, onCancel, emptyText, today }: {
+  today: string
   rows: BookingCardRow[]
   showMoney: boolean
   currencyFor: (venueSlug: string | null | undefined) => CurrencyCode
@@ -107,17 +109,27 @@ export default function BookingCards({ rows, showMoney, currencyFor, onCancel, e
   }
 
   if (rows.length === 0) {
-    return <div className="rounded-2xl px-4 py-8 text-center text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>{emptyText}</div>
+    return <div className="rounded-[20px] px-4 py-8 text-center text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>{emptyText}</div>
   }
   const anyCancellable = rows.some(r => canCancel(r.status))
+  const groups: { date: string; rows: BookingCardRow[] }[] = []
+  for (const r of rows) { const last = groups[groups.length - 1]; if (last && last.date === r.date) last.rows.push(r); else groups.push({ date: r.date, rows: [r] }) }
 
   return (
     <div data-testid="booking-cards">
       {hintLeft && anyCancellable && (
         <p className="text-[12px] mb-2 px-1" data-testid="swipe-hint" style={{ color: 'var(--text-muted)' }}>Swipe a booking left to cancel it</p>
       )}
-      <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-        {rows.map((b, i) => {
+      {groups.map(g => (
+      <section key={g.date} data-testid="booking-day" data-date={g.date}>
+        <div className="flex items-center justify-between gap-2 mt-4 mb-2 px-0.5">
+          {g.date === today
+            ? <span data-testid="booking-day-today" className="inline-block text-[12px] font-extrabold rounded-xl px-3 py-1.5" style={{ background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' }}>Today</span>
+            : <span className="text-[12px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{dayHeading(g.date)}</span>}
+          <MoneyBubble kind="wait" size={11} testId="booking-day-count">{g.rows.length} {g.rows.length === 1 ? 'booking' : 'bookings'}</MoneyBubble>
+        </div>
+      <div>
+        {g.rows.map((b) => {
           const cancellable = canCancel(b.status)
           const base = openId === b.id ? -PANEL : 0
           const x = drag?.id === b.id ? Math.max(-PANEL, Math.min(0, base + drag.dx)) : base
@@ -125,7 +137,7 @@ export default function BookingCards({ rows, showMoney, currencyFor, onCancel, e
           const price = showMoney && b.price_nzd > 0 ? formatPrice(b.price_nzd, currencyFor(b.courts?.venue_slug)).replace(/\.00$/, '') : null
           return (
             <div key={b.id} data-testid="booking-card" data-booking-id={b.id} data-status={b.status} data-open={openId === b.id ? 'yes' : 'no'}
-              className="relative overflow-hidden" style={{ borderTop: i ? '1px solid var(--border)' : 'none' }}>
+              className="relative overflow-hidden rounded-[16px] mb-2.5" style={{ border: '1px solid var(--border)' }}>
               {cancellable && (
                 <button type="button" data-testid="booking-cancel" aria-label={`Cancel the ${fmtClock(b.start_time)} booking for ${name}`}
                   tabIndex={openId === b.id ? 0 : -1}
@@ -134,29 +146,30 @@ export default function BookingCards({ rows, showMoney, currencyFor, onCancel, e
                   className="absolute top-0 right-0 bottom-0 flex items-center justify-center text-[13px] font-black text-white"
                   style={{ width: PANEL, background: '#e5484d' }}>Cancel</button>
               )}
-              <div className="relative flex items-center gap-3 px-4 py-3" data-testid="booking-face"
-                style={{ background: 'var(--bg-surface)', touchAction: 'pan-y', transform: `translateX(${x}px)`, transition: drag?.id === b.id ? 'none' : 'transform 180ms ease', userSelect: 'none', WebkitUserSelect: 'none' }}
+              <div className="relative flex items-center gap-3.5 px-3.5 py-3.5" data-testid="booking-face"
+                style={{ background: g.date === today ? 'var(--today-grad), var(--bg-surface)' : 'var(--bg-surface)', touchAction: 'pan-y', transform: `translateX(${x}px)`, transition: drag?.id === b.id ? 'none' : 'transform 180ms ease', userSelect: 'none', WebkitUserSelect: 'none' }}
                 onPointerDown={e => down(e, b.id, cancellable)} onPointerMove={e => move(e, b.id)}
                 onPointerUp={() => up(b.id)} onPointerCancel={() => { clearHold(); start.current = null; dragNow.current = null; setDrag(null) }}>
                 <span className="shrink-0 inline-flex items-center justify-center rounded-[10px] font-black text-white" aria-label={`Court ${courtNumber(b.courts?.name)}`}
-                  style={{ width: 38, height: 38, background: '#1d3f8d', fontSize: 20, lineHeight: 1 }}>{courtNumber(b.courts?.name)}</span>
+                  style={{ width: 42, height: 42, background: 'linear-gradient(160deg,#3a73dc,#1d3f8d)', fontSize: 20, lineHeight: 1, boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.28)' }}>{courtNumber(b.courts?.name)}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{name}</div>
-                  <div className="text-[12px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                    <b style={{ color: 'var(--brand-primary-text)' }}>{fmtClock(b.start_time)}</b> · {day(b.date)}
-                  </div>
+                  <div className="text-[15px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{name}</div>
+                  <div className="text-[13.5px] mt-0.5 font-extrabold" style={{ color: 'var(--text-primary)' }}>{fmtClock(b.start_time)}</div>
                 </div>
                 <div className="shrink-0 text-right">
                   {showMoney && (price
                     ? <MoneyBubble kind={bookingKind(b.status)} size={13} testId="booking-card-amount" strike={b.status === 'cancelled'}>{price}</MoneyBubble>
-                    : <div className="text-[14px] font-extrabold" style={{ color: 'var(--text-primary)' }}>—</div>)}
-                  <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-muted)' }} data-testid="booking-card-status">{b.status}</div>
+                    : <div className="text-[12px] font-extrabold" style={{ color: 'var(--text-muted)' }}>{b.status === 'blocked' ? 'Blocked' : '—'}</div>)}
+                  {/* The amount bubble carries the status; the word stays for screen readers and for no-money front desk. */}
+                  <div className={showMoney && (price || b.status === 'blocked') ? 'sr-only' : 'text-[11px] mt-1 font-bold'} style={{ color: 'var(--text-muted)' }} data-testid="booking-card-status">{b.status}</div>
                 </div>
               </div>
             </div>
           )
         })}
       </div>
+      </section>
+      ))}
     </div>
   )
 }
