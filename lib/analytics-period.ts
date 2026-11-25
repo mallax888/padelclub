@@ -120,8 +120,8 @@ export const MIN_BOOKINGS_FOR_QUIET = 8
 // An hour nobody ever books is not "regular", so it is never suggested. Needs enough
 // history to mean something. Earlier days and hours win a tie so the answer is steady.
 export const REGULAR_HOUR_MIN_PCT = 10
-export function quietestSlot(cells: OccupancyCell[], openHours: number[], bookingsInPeriod: number): QuietSlot | null {
-  if (bookingsInPeriod < MIN_BOOKINGS_FOR_QUIET || openHours.length === 0) return null
+export function quietestSlots(cells: OccupancyCell[], openHours: number[], bookingsInPeriod: number, n: number): QuietSlot[] {
+  if (bookingsInPeriod < MIN_BOOKINGS_FOR_QUIET || openHours.length === 0 || n < 1) return []
   const open = new Set(openHours)
   const avg = new Map<number, number>()
   for (const h of Array.from(open)) {
@@ -129,14 +129,14 @@ export function quietestSlot(cells: OccupancyCell[], openHours: number[], bookin
     avg.set(h, row.length ? row.reduce((a, c) => a + c.occupancyPct, 0) / row.length : 0)
   }
   const order = (c: { dayOfWeek: number; hour: number }) => (c.dayOfWeek === 0 ? 7 : c.dayOfWeek) * 100 + c.hour
-  let best: QuietSlot | null = null
-  for (const c of cells) {
-    if (!open.has(c.hour) || (avg.get(c.hour) ?? 0) < REGULAR_HOUR_MIN_PCT) continue
-    if (best === null || c.occupancyPct < best.pct || (c.occupancyPct === best.pct && order(c) < order(best))) {
-      best = { dayOfWeek: c.dayOfWeek, hour: c.hour, pct: c.occupancyPct }
-    }
-  }
-  return best
+  return cells
+    .filter(c => open.has(c.hour) && (avg.get(c.hour) ?? 0) >= REGULAR_HOUR_MIN_PCT)
+    .sort((a, b) => a.occupancyPct - b.occupancyPct || order(a) - order(b))
+    .slice(0, n)
+    .map(c => ({ dayOfWeek: c.dayOfWeek, hour: c.hour, pct: c.occupancyPct }))
+}
+export function quietestSlot(cells: OccupancyCell[], openHours: number[], bookingsInPeriod: number): QuietSlot | null {
+  return quietestSlots(cells, openHours, bookingsInPeriod, 1)[0] ?? null
 }
 
 // The next time that weekday comes round after today.

@@ -1,9 +1,10 @@
 'use client'
 
 import MoneyBubble from '@/components/ui/MoneyBubble'
-import { fmtClock } from '@/lib/clock'
+import { MONEY_HEX } from '@/lib/money-colours'
+import { fmtClock, fmtHour } from '@/lib/clock'
 import CardHeading from '@/components/ui/CardHeading'
-import { useState, Fragment, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { formatDate } from '@/lib/utils'
 import { formatPrice, currencyForRegion } from '@/lib/currency'
@@ -11,7 +12,7 @@ import { getVenue } from '@/lib/venues'
 import OfferSheet from '@/components/admin/OfferSheet'
 import { weekBounds, type WeekHours } from '@/lib/venue-hours'
 import {
-  PERIODS, computePeriodStats, describeVersusBefore, heatmapFor, nextDateOnWeekday, quietestSlot, rangeLabel,
+  PERIODS, computePeriodStats, describeVersusBefore, heatmapFor, nextDateOnWeekday, quietestSlot, quietestSlots, rangeLabel,
   type Compared, type PeriodBooking, type PeriodMember,
 } from '@/lib/analytics-period'
 
@@ -57,6 +58,18 @@ export default function ClubAnalytics({
   const byCell = new Map(heatmap.map(c => [`${c.dayOfWeek}-${c.hour}`, c.occupancyPct]))
   const shownHours = openHours.length > 0 ? openHours : Array.from(new Set(heatmap.map(c => c.hour))).sort((a, b) => a - b)
   const quiet = quietestSlot(heatmap, openHours, stats.bookings.value)
+  const quietSlots = quietestSlots(heatmap, openHours, stats.bookings.value, 3)
+  const [showAllHours, setShowAllHours] = useState(false)
+  const hasData = stats.bookings.value > 0
+  const todayDow = new Date(todayStr + 'T00:00:00').getDay()
+  const hourLabel = (h: number) => fmtHour(`${String(h).padStart(2, '0')}:00`)
+  const hourAvg = shownHours.map(h => ({ hour: h, v: Math.round(DAY_LABELS.reduce((a, _, d) => a + (byCell.get(`${d}-${h}`) ?? 0), 0) / 7) }))
+  const dayAvg = [1, 2, 3, 4, 5, 6, 0].map(d => ({ dow: d, v: shownHours.length ? Math.round(shownHours.reduce((a, h) => a + (byCell.get(`${d}-${h}`) ?? 0), 0) / shownHours.length) : 0 }))
+  const maxDay = Math.max(1, ...dayAvg.map(d => d.v))
+  const quietHours = new Set(hasData ? [...hourAvg].sort((a, b) => a.v - b.v || a.hour - b.hour).slice(0, 3).map(x => x.hour) : [])
+  const busyHours = new Set(hasData ? [...hourAvg].sort((a, b) => b.v - a.v || a.hour - b.hour).slice(0, 3).map(x => x.hour) : [])
+  const collapsible = hourAvg.length > 8
+  const busiest = heatmap.filter(c => shownHours.includes(c.hour)).reduce<typeof heatmap[number] | null>((best, c) => (c.occupancyPct > 0 && (best === null || c.occupancyPct > best.occupancyPct) ? c : best), null)
   const maxTrend = Math.max(1, ...stats.trend.map(t => t.bookings))
 
   const kpis: { label: string; value: string | number; cmp?: { c: Compared; points?: boolean }; fixed?: string }[] = [
@@ -74,8 +87,8 @@ export default function ClubAnalytics({
         <CardHeading as="h2" size="section" className="">Analytics</CardHeading>
         <div className="flex gap-1 rounded-lg p-1 w-full sm:w-auto" style={{ background: 'var(--bg-raised)' }} role="radiogroup" aria-label="Period">
           {PERIODS.map(p => (
-            <button key={p} type="button" role="radio" aria-checked={days === p} data-testid={`period-${p}`} onClick={() => setDays(p)}
-              className="flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all"
+            <button key={p} type="button" role="radio" aria-checked={days === p} data-testid={`period-${p}`} onClick={() => setDays(p)} data-on={days === p ? 'true' : undefined}
+              className="wh-seg flex-1 sm:flex-none px-3 py-1.5 rounded-md text-xs font-medium transition-all"
               style={{ background: days === p ? 'var(--brand-primary)' : 'transparent', color: days === p ? 'var(--brand-primary-on, #fff)' : 'var(--text-muted)' }}>
               {p} days
             </button>
@@ -101,45 +114,79 @@ export default function ClubAnalytics({
         })}
       </div>
 
-      {/* Busy and quiet hours */}
-      <div className="rounded-2xl p-5 mb-5 overflow-x-auto scrollbar-thin" style={card} data-testid="heatmap">
-        <CardHeading className="mb-2">Busy and quiet hours</CardHeading>
-        <div className="text-xs mb-3" style={{ color: 'var(--text-subtle)' }}>How full the courts were by day and hour, last {days} days</div>
-        {quiet && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl px-3 py-2.5 mb-4" data-testid="quiet-callout"
-            style={{ background: 'color-mix(in srgb, var(--brand-yellow) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--brand-yellow) 40%, transparent)' }}>
-            <div className="text-[13px]" style={{ color: 'var(--text-primary)' }}>
-              <b>Quietest regular slot:</b> {DAY_PLURAL[quiet.dayOfWeek]} {String(quiet.hour).padStart(2, '0')}:00, only {quiet.pct}% full.
-            </div>
-            {offersOn && (
-              <button type="button" data-testid="quiet-offer" onClick={() => setOffer({ date: nextDateOnWeekday(todayStr, quiet.dayOfWeek), from: `${String(quiet.hour).padStart(2, '0')}:00`, to: `${String(quiet.hour + 1).padStart(2, '0')}:00` })}
-                className="text-xs font-extrabold px-3 py-1.5 rounded-full" style={{ background: 'var(--brand-primary)', color: '#fff' }}>Send an offer</button>
-            )}
+      {/* Busy and quiet hours: how full by hour and by day, and the quiet slots to fill. On a phone the quiet slots come first and the hours are cut to the six that matter. */}
+      <div className="rounded-[20px] p-5 mb-5" style={{ background: 'var(--board-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }} data-testid="heatmap">
+        <CardHeading className="mb-1">Busy and quiet hours</CardHeading>
+        <div className="text-xs mb-3" style={{ color: 'var(--text-subtle)' }}>How full the courts were, last {days} days</div>
+        {hasData && (
+          <div className="flex flex-wrap gap-2 mb-4" data-testid="hours-chips">
+            {busiest && <MoneyBubble kind="wait" size={12} testId="chip-busiest">Busiest <b>{DAY_LABELS[busiest.dayOfWeek]} {hourLabel(busiest.hour)}</b> · {busiest.occupancyPct}% full</MoneyBubble>}
+            {quietSlots[0] && <MoneyBubble kind="none" size={12} testId="chip-quietest">Quietest <b>{DAY_LABELS[quietSlots[0].dayOfWeek]} {hourLabel(quietSlots[0].hour)}</b> · {quietSlots[0].pct}% full</MoneyBubble>}
+            <span className="hidden md:inline-block"><MoneyBubble kind="wait" size={12}>Courts full <b>{stats.utilisation.value}%</b></MoneyBubble></span>
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: `44px repeat(7, 1fr)`, gap: 3, minWidth: 420 }}>
-          <div />
-          {DAY_LABELS.map(d => (
-            <div key={d} className="text-center text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{d}</div>
-          ))}
-          {shownHours.map(hour => (
-            <Fragment key={hour}>
-              <div className="text-[10px] font-medium flex items-center" style={{ color: 'var(--text-muted)' }}>{String(hour).padStart(2, '0')}:00</div>
-              {DAY_LABELS.map((_, dow) => {
-                const pct = byCell.get(`${dow}-${hour}`) ?? 0
-                const isQuiet = quiet && quiet.dayOfWeek === dow && quiet.hour === hour
+        <div className="grid gap-4 md:gap-x-8 md:grid-cols-[1.15fr_1fr]">
+          {quietSlots.length > 0 && (
+            <div className="order-1 md:order-3 md:col-start-2 md:row-start-2" data-testid="quiet-callout">
+              <div className="text-[11px] font-extrabold uppercase tracking-widest mb-1" style={{ color: 'var(--text-subtle)' }}>Quiet slots worth filling</div>
+              {quietSlots.map((q, i) => (
+                <div key={`${q.dayOfWeek}-${q.hour}`} className="flex items-center gap-3 py-2.5" style={{ borderTop: '1px solid var(--border)' }} data-testid="quiet-slot">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{DAY_PLURAL[q.dayOfWeek]} {hourLabel(q.hour)}</div>
+                    <div className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>only {q.pct}% full over the last {days} days</div>
+                  </div>
+                  {offersOn && (
+                    <button type="button" data-testid={i === 0 ? 'quiet-offer' : `quiet-offer-${i + 1}`} onClick={() => setOffer({ date: nextDateOnWeekday(todayStr, q.dayOfWeek), from: `${String(q.hour).padStart(2, '0')}:00`, to: `${String(q.hour + 1).padStart(2, '0')}:00` })}
+                      className="text-xs font-extrabold uppercase tracking-wide px-4 py-2 rounded-full" style={{ background: 'var(--lime, #d4f53c)', color: '#17240a' }}>Offer</button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="order-2 md:order-2 md:col-start-2 md:row-start-1" data-testid="by-day">
+            <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-subtle)' }}>By day</div>
+            <div className="flex gap-1.5">
+              {dayAvg.map(d => {
+                const isToday = d.dow === todayDow
                 return (
-                  <div key={`${dow}-${hour}`} title={`${DAY_LABELS[dow]} ${String(hour).padStart(2, '0')}:00 · ${pct}% full`} data-quiet={isQuiet ? 'true' : undefined}
-                    style={{ height: 16, borderRadius: 3, background: pct === 0 ? 'var(--bg-raised)' : 'var(--brand-primary)', opacity: pct === 0 ? 1 : Math.max(0.18, pct / 100), outline: isQuiet ? '2px solid var(--brand-yellow)' : undefined }} />
+                  <div key={d.dow} className="flex-1 min-w-0 text-center rounded-2xl pt-2 pb-1.5" data-today={isToday ? 'true' : undefined} data-testid="by-day-col"
+                    style={isToday ? { background: 'var(--today-grad)', boxShadow: 'inset 0 0 0 1px var(--today-edge)' } : { background: 'var(--board-cell)' }}>
+                    <div className="flex items-end justify-center" style={{ height: 84 }}>
+                      {d.v > 0 && <div style={{ width: '58%', height: `${Math.max(8, (d.v / maxDay) * 100)}%`, borderRadius: 99, background: MONEY_HEX.wait }} />}
+                    </div>
+                    <div className="mx-auto mt-2 mb-0.5 rounded-xl text-[11px] font-extrabold flex items-center justify-center whitespace-nowrap" style={{ height: 24, width: 'min(44px, calc(100% - 6px))', minWidth: 34, ...(isToday ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { color: 'var(--text-muted)' }) }}>{DAY_LABELS[d.dow]}</div>
+                    <div className="text-[11px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{d.v}%</div>
+                  </div>
                 )
               })}
-            </Fragment>
-          ))}
-        </div>
-        <div className="flex items-center gap-2 mt-3 text-[10px]" style={{ color: 'var(--text-subtle)' }}>
-          <span>Quiet</span>
-          <div style={{ width: 60, height: 8, borderRadius: 4, background: 'linear-gradient(90deg, var(--bg-raised), var(--brand-primary))' }} />
-          <span>Busy</span>
+            </div>
+          </div>
+
+          <div className="order-3 md:order-1 md:col-start-1 md:row-start-1 md:row-span-2" data-testid="by-hour">
+            <div className="text-[11px] font-extrabold uppercase tracking-widest mb-2" style={{ color: 'var(--text-subtle)' }}>By hour, all days</div>
+            {hourAvg.map(h => {
+              const isQuiet = quietHours.has(h.hour)
+              const show = !collapsible || showAllHours || isQuiet || busyHours.has(h.hour)
+              return (
+                <div key={h.hour} data-testid="hour-row" data-quiet={isQuiet ? 'true' : undefined} className={`${show ? 'flex' : 'hidden md:flex'} items-center gap-2.5 mb-1.5`}>
+                  <span className="text-[11px] font-extrabold shrink-0" style={{ width: 46, color: 'var(--text-muted)' }}>{hourLabel(h.hour)}</span>
+                  <div className="flex-1 overflow-hidden" style={{ height: 18, background: 'var(--board-cell)', borderRadius: 99, outline: isQuiet ? '1.5px dashed var(--text-primary)' : undefined, outlineOffset: isQuiet ? -1.5 : undefined }}>
+                    {h.v > 0 && <div style={{ width: `${Math.max(3, h.v)}%`, height: '100%', borderRadius: 99, background: MONEY_HEX.wait }} />}
+                  </div>
+                  <b className="text-[11.5px] text-right shrink-0" style={{ width: 38, color: 'var(--text-primary)' }}>{h.v}%</b>
+                </div>
+              )
+            })}
+            {collapsible && (
+              <button type="button" data-testid="hours-toggle" onClick={() => setShowAllHours(v => !v)} className="md:hidden text-xs font-bold mt-1 underline" style={{ color: 'var(--text-muted)' }}>
+                {showAllHours ? 'Show fewer hours' : 'See every hour'}
+              </button>
+            )}
+            <div className="flex items-center gap-1.5 mt-2 text-[10.5px] font-semibold" style={{ color: 'var(--text-muted)' }}>
+              <span style={{ width: 22, height: 10, borderRadius: 99, border: '2px dashed var(--text-primary)', display: 'inline-block' }} />Quietest hours
+            </div>
+          </div>
         </div>
       </div>
 
