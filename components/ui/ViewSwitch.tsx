@@ -49,7 +49,7 @@ export default function ViewSwitch({ mode, variant = 'pill', onNavigate }: {
           style={{ color: 'var(--text-primary)', background: 'var(--bg-raised)' }}>
           <span className="min-w-0 text-left">
             <span className="block">View as <b style={{ color: 'var(--brand-primary-text)' }}>{label}</b></span>
-            <span className="block text-[11.5px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>Tap to switch to {mode === 'manager' ? 'Player' : 'Manager'}</span>
+            <span className="block text-[11.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>Tap to switch to {mode === 'manager' ? 'Player' : 'Manager'}</span>
           </span>
           <span aria-hidden style={{ color: 'var(--text-subtle)' }}>⇄</span>
         </button>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { GO } from '@/lib/accent'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { getInitials } from '@/lib/utils'
@@ -228,7 +227,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
         <div className={`${tile} text-white`} style={{ background: 'linear-gradient(160deg, #2c5fc4, #1d3f8d)' }} data-testid="role-owners">
           <div className="min-w-0">
             <div className="text-[11px] font-extrabold" style={{ letterSpacing: '0.14em', opacity: 0.8 }}>OWNERS</div>
-            <div className="flex items-baseline gap-2 mt-1"><span className="text-[44px] font-extrabold leading-none">{owners.length}</span><span className="text-base font-bold" style={{ opacity: 0.9 }}>{owners.length === 1 ? 'person' : 'people'}</span></div>
+            <div className="flex items-baseline gap-2 mt-1"><span className="text-[44px] font-extrabold leading-none">{owners.length}</span><span className="text-base font-bold" style={{ color: '#ffffff', opacity: 0.9 }}>{owners.length === 1 ? 'person' : 'people'}</span></div>
             <div className="text-[13px] mt-1.5" style={{ opacity: 0.85 }}>Everything, including money and settings</div>
           </div>
           <button type="button" className={addBtn} style={{ background: '#ffffff', color: '#1d3f8d' }} onClick={() => openAdd('admin')}>+ Add owner</button>
@@ -239,7 +238,7 @@ export default function TeamView({ members, clubs, countries, canGrantAll, defau
             <div className="flex items-baseline gap-2 mt-1"><span className="text-[44px] font-extrabold leading-none" style={{ color: 'var(--text-primary)' }}>{desk.length}</span><span className="text-base font-bold" style={{ color: 'var(--text-muted)' }}>{desk.length === 1 ? 'person' : 'people'}</span></div>
             <div className="text-[13px] mt-1.5" style={{ color: 'var(--text-muted)' }}>Runs the day. No money, no settings</div>
           </div>
-          <button type="button" className={addBtn} style={GO} onClick={() => openAdd('staff')}>+ Add front desk</button>
+          <button type="button" className={addBtn} style={{ background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' }} onClick={() => openAdd('staff')}>+ Add front desk</button>
         </div>
       </div>
 

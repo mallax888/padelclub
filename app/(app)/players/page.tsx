@@ -94,7 +94,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
               <span>🏆</span>
               <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Leaderboard</span>
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-subtle)' }}>by pts</div>
+            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>by pts</div>
           </div>
 
           {leaderboard.map((player, index) => (
@@ -105,7 +105,9 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
                   background: index === 0 ? 'var(--brand-primary-muted)' : 'transparent',
                 }}>
                 <div className="w-5 text-center shrink-0">
-                  {index === 0 ? <span className="text-base">🥇</span>
+                  {/* Medals only once someone has points; a table of zeros has no winners yet. */}
+                  {(player.ranking_points ?? 0) === 0 ? <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{index + 1}</span>
+                    : index === 0 ? <span className="text-base">🥇</span>
                     : index === 1 ? <span className="text-base">🥈</span>
                     : index === 2 ? <span className="text-base">🥉</span>
                     : <span className="text-xs font-medium" style={{ color: 'var(--text-subtle)' }}>{index + 1}</span>
@@ -138,7 +140,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
           ))}
 
           <div className="px-4 py-2 text-center text-[10px]" style={{ color: 'var(--text-subtle)' }}>
-            Updates after each match · {leaderboard.length} members
+            Updates after each match · {leaderboard.length} {leaderboard.length === 1 ? 'member' : 'members'}
           </div>
         </div>
       </div>

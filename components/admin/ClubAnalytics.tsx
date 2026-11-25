@@ -108,7 +108,7 @@ export default function ClubAnalytics({
                 ? <div className="text-[11px] mt-1 font-semibold" style={{ color: TONE.flat }}>{d.text}</div>
                 // these are counts (utilisation, bookings, players, members), so the bubble is blue; the arrow shows which way it went
                 : <div className="mt-1.5" data-testid="kpi-change"><MoneyBubble kind="wait" size={11} wrap>{d.text}</MoneyBubble></div>)}
-              {k.fixed && <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-subtle)' }}>{k.fixed} · doesn&apos;t change with the period</div>}
+              {k.fixed && <div className="text-[10.5px] mt-1" style={{ color: 'var(--text-muted)' }}>{k.fixed} · doesn&apos;t change with the period</div>}
             </div>
           )
         })}
@@ -216,7 +216,7 @@ export default function ClubAnalytics({
         <div className="lg:col-span-2 rounded-2xl overflow-hidden" style={card} data-testid="drifting">
           <div className="px-4 py-3" style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
             <CardHeading className="mb-2">Members drifting away</CardHeading>
-            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-subtle)' }}>No booking in the last 30 days · doesn&apos;t change with the period</div>
+            <div className="text-[11px] mt-0.5" style={{ color: 'var(--text-muted)' }}>No booking in the last 30 days · doesn&apos;t change with the period</div>
           </div>
           {stats.drifting.length === 0 ? (
             <div className="px-4 py-6 text-sm text-center" style={{ color: 'var(--text-subtle)' }}>Nobody&apos;s drifting. Everyone has booked recently.</div>
@@ -226,7 +226,7 @@ export default function ClubAnalytics({
                 <div className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{m.name}</div>
                 <div className="text-[10px] capitalize" style={{ color: 'var(--text-subtle)' }}>{m.tier}</div>
               </div>
-              <div className="text-[10px] font-medium shrink-0 pl-2 text-right" style={{ color: 'var(--brand-accent)' }}>
+              <div className="text-[10px] font-bold shrink-0 pl-2 text-right" style={{ color: 'var(--busy-amber)' }}>
                 {m.daysSince === null ? 'No activity in 90+ days' : `${m.daysSince} days ago`}
               </div>
             </div>

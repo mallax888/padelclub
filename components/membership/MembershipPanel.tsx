@@ -169,9 +169,12 @@ export default function MembershipPanel({
                 disabled={isCurrent || upgrading}
                 style={{
                   cursor: isCurrent ? 'default' : 'pointer',
-                  background: isCurrent ? 'var(--brand-primary-muted)' : undefined,
-                  color: isCurrent ? 'var(--brand-primary-text)' : undefined,
-                  borderColor: isCurrent ? 'var(--brand-primary)' : undefined,
+                  // Your plan turns white (ink on light), never a blue ring on a blue button.
+                  background: isCurrent ? 'var(--today-block-bg)' : undefined,
+                  color: isCurrent ? 'var(--today-block-fg)' : undefined,
+                  borderColor: isCurrent ? 'transparent' : undefined,
+                  boxShadow: isCurrent ? 'var(--today-block-shadow)' : undefined,
+                  opacity: 1,
                 }}
                 onClick={() => handleUpgrade(mem.key)}
               >
@@ -211,7 +214,7 @@ export default function MembershipPanel({
                 {formatPrice(localPriceFromNzd(pack.priceNzd, memberCurrency), memberCurrency)}
               </div>
               {pack.save && (
-                <div className="text-xs mt-0.5" style={{ color: 'var(--brand-accent)' }}>{pack.save}</div>
+                <div className="text-xs mt-0.5 font-bold" style={{ color: 'var(--go-text)' }}>{pack.save}</div>
               )}
             </div>
           )
@@ -261,7 +264,7 @@ export default function MembershipPanel({
                       {tx.description}
                     </td>
                     <td className="px-4 py-2.5 text-right font-medium"
-                      style={{ color: tx.amount > 0 ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}>
+                      style={{ color: tx.amount > 0 ? 'var(--label-blue)' : 'var(--text-muted)' }}>
                       {tx.amount > 0 ? '+' : ''}{tx.amount}
                     </td>
                   </tr>

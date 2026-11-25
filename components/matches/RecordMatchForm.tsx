@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useId } from 'react'
 import { createClient } from '@/lib/supabase-browser'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -27,33 +27,42 @@ function isValidSet(t1: number, t2: number): boolean {
 function setWinner(s: SetScore): 1 | 2 { return s.t1 > s.t2 ? 1 : 2 }
 function setsWon(sets: SetScore[], team: 1 | 2) { return sets.filter(s => setWinner(s) === team).length }
 
-// A padel racket, not a tennis one: solid perforated head, no strings, short
-// handle. Drawn rather than borrowed from an emoji because the closest ones
-// available are a tennis racket, a ping-pong bat and a badminton racket --
-// all of them the wrong sport on a padel app. Strokes use currentColor so the
-// icon follows the button's selected state like every other icon here.
-function Racket({ size = 22, style }: { size?: number; style?: React.CSSProperties }) {
+// A padel racket, not a tennis one (option H): a wide rounded face with nine holes and the open
+// triangle throat, a dark grip with a lime tip. Blue gradient face with a soft shine, like the
+// court and date tiles. Ids come from useId so two rackets on one page never share a gradient.
+const RACKET_FACE = 'M24 2.5 C33.5 2.5 39.5 9 39.5 17.5 C39.5 25.5 34 30.5 28.2 32.4 L26.8 36 L21.2 36 L19.8 32.4 C14 30.5 8.5 25.5 8.5 17.5 C8.5 9 14.5 2.5 24 2.5 Z'
+const RACKET_HOLES = [-5, 0, 5].flatMap(y => [-5, 0, 5].map(x => [24 + x, 16 + y] as const))
+function RacketBody() {
+  const id = useId().replace(/:/g, '')
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={style} aria-hidden>
-      <ellipse cx="12" cy="8.4" rx="5.9" ry="6.6" />
-      <path d="M12 15v5.4" />
-      <path d="M10.4 20.8h3.2" />
-      <circle cx="9.7" cy="7" r="0.85" fill="currentColor" stroke="none" />
-      <circle cx="14.3" cy="7" r="0.85" fill="currentColor" stroke="none" />
-      <circle cx="12" cy="10.6" r="0.85" fill="currentColor" stroke="none" />
-    </svg>
+    <>
+      <defs>
+        <linearGradient id={`${id}f`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#5b8ff0" /><stop offset=".55" stopColor="#2c5fc4" /><stop offset="1" stopColor="#173678" />
+        </linearGradient>
+        <filter id={`${id}s`} x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="1.6" floodColor="#000" floodOpacity=".35" /></filter>
+        <mask id={`${id}m`}><rect width="48" height="48" fill="#fff" /><path d="M24 27.2 L26.6 33 L21.4 33 Z" fill="#000" /></mask>
+      </defs>
+      <g filter={`url(#${id}s)`} mask={`url(#${id}m)`}>
+        <path d={RACKET_FACE} fill={`url(#${id}f)`} />
+        {RACKET_HOLES.map(([cx, cy]) => <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="1.6" fill="#0f2a66" />)}
+        <ellipse cx="19" cy="9" rx="8" ry="4.2" fill="#ffffff" opacity=".28" transform="rotate(-25 19 9)" />
+        <rect x="20.6" y="35" width="6.8" height="11.5" rx="3.4" fill="#141a22" />
+        <rect x="20.6" y="42.5" width="6.8" height="4" rx="2" fill="#d4f53c" />
+      </g>
+    </>
   )
 }
-
-// Two of them, leaning apart the way a pair sits on a bench. Offset as well as
-// rotated so the heads read as two separate rackets rather than one thick one.
+function Racket() {
+  return <svg width="46" height="46" viewBox="0 0 48 48" aria-hidden><RacketBody /></svg>
+}
+// Two of them fanned out from the grips, for doubles.
 function RacketPair() {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'flex-end' }}>
-      <Racket size={22} style={{ transform: 'rotate(-20deg)', marginRight: -9 }} />
-      <Racket size={22} style={{ transform: 'rotate(20deg)' }} />
-    </span>
+    <svg width="70" height="46" viewBox="-6 0 60 48" aria-hidden>
+      <g transform="rotate(-16 24 40) translate(-7 0)"><RacketBody /></g>
+      <g transform="rotate(16 24 40) translate(7 0)"><RacketBody /></g>
+    </svg>
   )
 }
 
@@ -254,7 +263,7 @@ export default function RecordMatchForm({
     const others = n === 1 ? [team2p1, team2p2] : [team1p1, team1p2]
     return (
       <div data-testid={`team-${n}`}>
-        <div className="text-xs font-extrabold uppercase tracking-wide mb-2" style={{ color: n === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}>Team {n}</div>
+        <div className="text-xs font-extrabold uppercase tracking-wide mb-2" style={{ color: n === 1 ? 'var(--brand-primary-text)' : 'var(--team2)' }}>Team {n}</div>
         <div className={`grid gap-3 ${format === 'doubles' ? 'sm:grid-cols-2' : ''}`}>
           <PlayerSelect players={players} value={p1} onChange={setP1} exclude={[p2, ...others]} label={`Team ${n} player 1`} />
           {format === 'doubles' && <PlayerSelect players={players} value={p2} onChange={setP2} exclude={[p1, ...others]} label={`Team ${n} player 2`} />}
@@ -291,13 +300,15 @@ export default function RecordMatchForm({
                 <button key={f.value} type="button" role="radio" aria-checked={format === f.value} onClick={() => changeFormat(f.value)}
                   className="flex flex-col items-center justify-center text-center px-3 py-3 rounded-xl transition-all"
                   style={{
-                    background: format === f.value ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
-                    border: `1px solid ${format === f.value ? 'var(--brand-primary)' : 'var(--border)'}`,
-                    boxShadow: format === f.value ? 'var(--glow-primary)' : 'none',
+                    // Picked turns white (ink on the light theme), never a blue ring on a blue button.
+                    background: format === f.value ? 'var(--today-block-bg)' : 'var(--bg-raised)',
+                    border: `1px solid ${format === f.value ? 'transparent' : 'var(--border)'}`,
+                    boxShadow: format === f.value ? 'var(--today-block-shadow)' : 'none',
+                    color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-primary)',
                   }}>
-                  <div className="leading-none mb-1" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>{f.icon}</div>
-                  <div className="text-base font-bold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-primary)' }}>{f.label}</div>
-                  <div className="text-xs mt-0.5 font-semibold" style={{ color: format === f.value ? 'var(--brand-primary-text)' : 'var(--text-muted)', opacity: format === f.value ? 0.85 : 1 }}>{f.desc}</div>
+                  <div className="leading-none mb-1.5 flex items-end justify-center" style={{ height: 48 }}>{f.icon}</div>
+                  <div className="text-base font-bold" style={{ color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-primary)' }}>{f.label}</div>
+                  <div className="text-xs mt-0.5 font-semibold" style={{ color: format === f.value ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>{f.desc}</div>
                 </button>
               ))}
             </div>
@@ -314,7 +325,7 @@ export default function RecordMatchForm({
                 {sets.map((score, i) => i === activeSetIndex ? null : (
                   <button key={i} type="button" onClick={() => openSet(i)}
                     className="text-xs font-semibold px-3 py-1.5 rounded-lg"
-                    style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)' }}>
+                    style={{ background: setWinner(score) === 1 ? 'var(--brand-primary-muted)' : 'var(--team2-muted)', color: setWinner(score) === 1 ? 'var(--brand-primary-text)' : 'var(--team2)' }}>
                     Set {i + 1}: {score.t1}–{score.t2}
                   </button>
                 ))}
@@ -327,12 +338,12 @@ export default function RecordMatchForm({
                 <div className="flex items-center gap-2 mb-2 text-sm font-bold">
                   <span className="flex-1 text-center truncate" style={{ color: 'var(--brand-primary-text)' }}>{team1Name}</span>
                   <span className="w-8" />
-                  <span className="flex-1 text-center truncate" style={{ color: 'var(--brand-accent)' }}>{team2Name}</span>
+                  <span className="flex-1 text-center truncate" style={{ color: 'var(--team2)' }}>{team2Name}</span>
                 </div>
                 <div className="flex items-center justify-center gap-4 mb-3">
                   <ScoreStepper value={draftT1} onChange={setDraftT1} color="var(--brand-primary-text)" label="Team 1" />
                   <span style={{ fontSize: 22, fontWeight: 200, color: 'var(--text-muted)' }}>–</span>
-                  <ScoreStepper value={draftT2} onChange={setDraftT2} color="var(--brand-accent)" label="Team 2" />
+                  <ScoreStepper value={draftT2} onChange={setDraftT2} color="var(--team2)" label="Team 2" />
                 </div>
                 <div className="text-center text-xs font-medium mb-3" data-testid="set-hint" style={{ color: draftValid ? 'var(--brand-primary-text)' : 'var(--text-muted)' }}>
                   {draftT1 === draftT2 ? 'Scores can’t be tied' : draftValid ? `Valid — ${draftT1 > draftT2 ? team1Name : team2Name} win this set` : 'Not a valid padel score yet'}
@@ -354,7 +365,7 @@ export default function RecordMatchForm({
           <AskCard n={promptNo} total={STEPS.length} title={LABEL.check} subtitle="This updates the leaderboard straight away.">
             {matchWinner && (
               <div className="text-center text-sm font-semibold py-3 rounded-xl" data-testid="result"
-                style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--brand-accent-muted)', color: matchWinner === 1 ? 'var(--brand-primary-text)' : 'var(--brand-accent)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--brand-accent)'}` }}>
+                style={{ background: matchWinner === 1 ? 'var(--brand-primary-muted)' : 'var(--team2-muted)', color: matchWinner === 1 ? 'var(--brand-primary-text)' : 'var(--team2)', border: `1px solid ${matchWinner === 1 ? 'var(--brand-primary)' : 'var(--team2)'}` }}>
                 🏆 {winnerName} win {scoreText}
               </div>
             )}

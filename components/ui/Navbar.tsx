@@ -448,7 +448,7 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
               )}
               {!manager && SPECIALS.length > 0 && (
                 <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                  <div className="px-3 pb-2 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--brand-accent)' }}>
+                  <div className="px-3 pb-2 text-xs font-bold uppercase tracking-wide" style={{ color: 'var(--busy-amber)' }}>
                     Specials
                   </div>
                   {SPECIALS.map(s => {
@@ -473,8 +473,8 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
                           <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{s.title}</div>
                           <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>at {s.partnerName}</div>
                           <div className="inline-flex items-center gap-1 mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                            style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)', letterSpacing: '0.02em' }}>
-                            {pill.live && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--brand-accent)' }} />}
+                            style={{ background: 'var(--amber-muted)', color: 'var(--busy-amber)', letterSpacing: '0.02em' }}>
+                            {pill.live && <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--busy-amber)' }} />}
                             {pill.text.toUpperCase()}
                           </div>
                         </div>

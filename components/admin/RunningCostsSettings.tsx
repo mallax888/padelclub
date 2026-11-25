@@ -65,8 +65,8 @@ export default function RunningCostsSettings({ venueSlug, costs, currency }: { v
             <span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>Show the breakeven line on Reports</span>
             <button type="button" role="switch" aria-checked={c.show} aria-label="Show the breakeven line on Reports" disabled={busy} onClick={flip}
               className="shrink-0 relative rounded-full disabled:opacity-60" data-testid="running-costs-switch"
-              style={{ width: 46, height: 28, background: c.show ? '#2f6fd6' : 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-              <span aria-hidden className="absolute rounded-full" style={{ top: 3, left: c.show ? 21 : 3, width: 20, height: 20, background: c.show ? '#ffffff' : 'var(--text-subtle)', transition: 'left .15s' }} />
+              style={{ width: 46, height: 28, background: c.show ? 'var(--today-block-bg)' : 'var(--bg-raised)', boxShadow: c.show ? 'var(--today-block-shadow)' : 'none', border: '1px solid var(--border)' }}>
+              <span aria-hidden className="absolute rounded-full" style={{ top: 3, left: c.show ? 21 : 3, width: 20, height: 20, background: c.show ? 'var(--today-block-fg)' : 'var(--text-subtle)', transition: 'left .15s' }} />
             </button>
           </div>
         </div>

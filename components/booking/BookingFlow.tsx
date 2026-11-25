@@ -1021,7 +1021,7 @@ export default function BookingFlow({
                   // Desktop: two centred lines, as before.
                   return <>
                     <div className="lg:hidden">
-                      <div className="text-[11.5px] font-extrabold mb-0.5" style={{ color: courtCount > 0 ? 'var(--go-text)' : 'var(--brand-accent)' }}>{courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}</div>
+                      <div className="text-[11.5px] font-extrabold mb-0.5" style={{ color: courtCount > 0 ? 'var(--label-blue)' : 'var(--busy-amber)' }}>{courtCount > 0 ? `${courtCount} courts` : 'courts coming soon'}</div>
                       <div className="text-[11px]">{cities} cities · {venueCount} venues</div>
                     </div>
                     <div className="hidden lg:block text-center">
@@ -1034,11 +1034,11 @@ export default function BookingFlow({
               </div>
             </button>
           ))}
-            <div className="rounded-2xl lg:rounded-[20px] p-3 lg:p-5 flex flex-col items-center justify-center lg:justify-start gap-1.5 lg:gap-3 opacity-80 min-h-[112px] lg:min-h-[180px] bg-[var(--bg-base)] lg:bg-[var(--bg-surface)]"
-              style={{ border: '1px dashed var(--brand-accent)', position: 'relative', cursor: 'default' }}>
+            <div className="rounded-2xl lg:rounded-[20px] p-3 lg:p-5 flex flex-col items-center justify-center lg:justify-start gap-1.5 lg:gap-3 min-h-[112px] lg:min-h-[180px] bg-[var(--bg-base)] lg:bg-[var(--bg-surface)]"
+              style={{ border: '1px dashed var(--border)', position: 'relative', cursor: 'default' }}>
               <div className="text-[26px] lg:text-4xl leading-none">🌍</div>
               <div className="text-sm lg:text-lg font-bold text-center" style={{ color: 'var(--text-muted)' }}>New country</div>
-              <div className="text-xs text-center px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</div>
+              <div className="text-xs text-center px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--amber-muted)', color: 'var(--busy-amber)' }}>Coming soon</div>
               
             </div>  
         </div>
@@ -1071,18 +1071,18 @@ export default function BookingFlow({
                   {courtCount > 0 ? (
                     <>
                       <div className="text-[34px] font-black leading-none" style={{ color: 'var(--text-primary)' }}>{courtCount}</div>
-                      <div className="text-[13px] font-extrabold mt-0.5" style={{ color: 'var(--go-text)' }}>courts</div>
+                      <div className="text-[13px] font-extrabold mt-0.5" style={{ color: 'var(--label-blue)' }}>courts</div>
                     </>
-                  ) : <div className="text-[13px] font-extrabold" style={{ color: 'var(--brand-accent)' }}>Courts coming soon</div>}
+                  ) : <div className="text-[13px] font-extrabold" style={{ color: 'var(--busy-amber)' }}>Courts coming soon</div>}
                 </div>
                 <span className="text-[22px] shrink-0" aria-hidden style={{ color: 'var(--text-subtle)' }}>›</span>
               </button>
             )
           })}
-          <div className="flex items-center justify-center gap-3 rounded-[20px] px-4 py-3 opacity-80 bg-[var(--bg-surface)]" style={{ border: '1px dashed var(--brand-accent)', cursor: 'default' }}>
+          <div className="flex items-center justify-center gap-3 rounded-[20px] px-4 py-3 bg-[var(--bg-surface)]" style={{ border: '1px dashed var(--border)', cursor: 'default' }}>
             <span className="text-[22px] leading-none" aria-hidden>🌍</span>
             <span className="text-[15px] font-bold" style={{ color: 'var(--text-muted)' }}>New country</span>
-            <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}>Coming soon</span>
+            <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: 'var(--amber-muted)', color: 'var(--busy-amber)' }}>Coming soon</span>
           </div>
         </div>
         </>
