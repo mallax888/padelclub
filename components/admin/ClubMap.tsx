@@ -195,7 +195,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-start" data-testid="court-day">
       {/* the day in one blue card */}
-      <section className="order-1 lg:col-start-1 lg:row-start-1 rounded-[20px] p-4 lg:p-6" style={{ background: 'var(--board-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)', color: 'var(--text-primary)' }} aria-label="Today so far">
+      <section className="order-1 lg:col-start-1 lg:row-start-1 rounded-[20px] p-5 lg:p-6" style={{ background: 'var(--board-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)', color: 'var(--text-primary)' }} aria-label="Today so far">
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="inline-block text-[11px] font-extrabold uppercase rounded-xl px-3 py-1.5" style={{ letterSpacing: '0.1em', background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' }}>{isNow ? `Today so far · ${clock12(nowMinutes)}` : 'Your club at'}</span>
           {isNow && none && showMoney && <MoneyBubble kind="gain" size={12} testId="map-soldout">{day.finished ? 'Today is finished' : 'Sold out from now'}</MoneyBubble>}
@@ -260,7 +260,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
           <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Courts right now</div>
           <div className="text-[12px]" style={{ color: 'var(--text-subtle)' }}>Tap a court for its briefing</div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-3">
           {courts.map(c => {
             const st = states.get(c.id)!
             const r = c.row
@@ -268,7 +268,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
             return (
               <div key={c.id} role="button" tabIndex={0} onClick={() => setSel(sel === c.id ? null : c.id)} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); setSel(sel === c.id ? null : c.id) } }} data-testid="court-tile" aria-pressed={sel === c.id}
                 aria-label={`${c.name}: ${st.state === 'playing' ? `${st.who ?? 'booked'} until ${fmtMinutes(st.until!)}` : st.state === 'blocked' ? 'blocked' : 'free'}${r.openNow > 0 ? `, ${r.openNow} ${r.openNow === 1 ? 'hour' : 'hours'} to sell` : ''}`}
-                className="text-left rounded-[20px] p-4 lg:p-5 transition-shadow cursor-pointer"
+                className="text-left rounded-[20px] p-5 transition-shadow cursor-pointer"
                 style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: sel === c.id ? '0 0 0 2px var(--text-primary)' : 'var(--shadow-float)' }}>
                 <span className="flex items-center justify-between gap-2">
                   <CourtBadge name={c.name} />

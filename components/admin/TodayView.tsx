@@ -57,7 +57,7 @@ function AttentionRow({ href, tone, mark, title, text, bubble }: { href: string;
   const color = tone === 'red' ? 'var(--brand-crimson)' : tone === 'yellow' ? 'var(--text-primary)' : 'var(--brand-primary-text)'
   const bg = tone === 'red' ? 'var(--brand-crimson-muted)' : tone === 'yellow' ? 'var(--brand-yellow-muted)' : 'var(--brand-primary-muted)'
   return (
-    <Link href={href} className="flex items-center gap-3 px-3.5 py-3 rounded-2xl mb-2" style={{ minHeight: 60, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+    <Link href={href} className="flex items-center gap-3 p-4 rounded-[16px] mb-2" style={{ minHeight: 60, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
       <span aria-hidden className="inline-flex items-center justify-center rounded-[11px] font-extrabold shrink-0" style={{ width: 34, height: 34, background: bg, color }}>{mark}</span>
       <span className="min-w-0">
         <span className="block text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>{title}</span>
