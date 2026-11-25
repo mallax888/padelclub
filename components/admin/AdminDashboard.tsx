@@ -837,7 +837,7 @@ export default function AdminDashboard({
                         </td>
                         <td className="text-[15px] font-extrabold whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{fmtClock(b.start_time)}</td>
                         <td>
-                          {b.price_nzd > 0
+                          {canSeeMoney && b.price_nzd > 0
                             ? <MoneyBubble kind={bookingKind(b.status)} size={13} testId="booking-amount" strike={b.status === 'cancelled'}>{formatPrice(b.price_nzd, currencyForVenueSlug(b.courts?.venue_slug))}</MoneyBubble>
                             : <span style={{ color: 'var(--text-muted)', fontWeight: 800 }}>—</span>}
                         </td>
