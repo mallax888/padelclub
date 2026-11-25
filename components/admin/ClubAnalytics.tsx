@@ -115,7 +115,7 @@ export default function ClubAnalytics({
       </div>
 
       {/* Busy and quiet hours: how full by hour and by day, and the quiet slots to fill. On a phone the quiet slots come first and the hours are cut to the six that matter. */}
-      <div className="rounded-3xl p-3.5 md:p-4 mb-5" style={{ background: 'var(--board-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }} data-testid="heatmap">
+      <div className="rounded-[20px] p-3.5 md:p-4 mb-5" style={{ background: 'var(--board-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }} data-testid="heatmap">
         <CardHeading className="mb-1">Busy and quiet hours</CardHeading>
         <div className="text-xs mb-3" style={{ color: 'var(--text-subtle)' }}>How full the courts were, last {days} days</div>
         {hasData && (
