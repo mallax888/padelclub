@@ -66,7 +66,7 @@ export default function BookingTicket({ courtName, dateLabel, time, endTime, len
           <span style={{ position: 'absolute', left: -13, top: -13, width: 26, height: 26, borderRadius: 13, background: 'var(--bg-base)' }} />
           <span style={{ position: 'absolute', right: -13, top: -13, width: 26, height: 26, borderRadius: 13, background: 'var(--bg-base)' }} />
         </div>
-        <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-4" style={{ minHeight: 86 }}>
+        <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-4" style={{ minHeight: 94 }}>
           <div className="min-w-0 flex flex-col gap-1.5 items-start">
             {who !== undefined && (
               <button type="button" onClick={onChangePlayers} aria-label="Change Playing with" data-testid="answered-players" className="flex items-center gap-2.5 text-left min-w-0">
