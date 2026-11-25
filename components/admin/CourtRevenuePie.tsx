@@ -23,7 +23,7 @@ function Pie({ row, colour, currency }: { row: CourtRevenueRow; colour: string; 
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <b className="text-[22px] font-extrabold leading-none" style={{ color: 'var(--text-primary)' }}>{money(row.booked, currency)}</b>
-        <span className="text-[11.5px] mt-1 font-bold" style={{ color: 'var(--text-muted)' }}>of {money(row.possible, currency)}</span>
+        <span className="text-[11.5px] mt-1 font-bold" style={{ color: 'var(--text-muted)' }}>booked of {money(row.possible, currency)}</span>
       </div>
     </div>
   )
@@ -86,7 +86,7 @@ export default function CourtRevenuePie({ revenue, currency }: { revenue: CourtR
         <div className="flex-1 rounded-full overflow-hidden" style={{ height: 10, background: 'var(--board-cell)' }}>
           <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: SOLD, borderRadius: 99 }} />
         </div>
-        <b className="text-[13px] whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{money(revenue.booked, currency)} of {money(revenue.possible, currency)}</b>
+        <b className="text-[13px] whitespace-nowrap" style={{ color: 'var(--text-primary)' }}>{money(revenue.booked, currency)} booked of {money(revenue.possible, currency)}</b>
       </div>
     </section>
   )
