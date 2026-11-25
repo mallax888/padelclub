@@ -52,7 +52,7 @@ export default async function FindGamePage() {
     <div className="max-w-[880px] mx-auto">
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Open play</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm mt-1 font-semibold" style={{ color: 'var(--text-primary)' }}>
           Games you can join, soonest first — or open one of your own when you book
         </p>
       </div>

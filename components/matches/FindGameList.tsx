@@ -9,11 +9,12 @@ import toast from 'react-hot-toast'
 import { formatDate, getInitials, localDateStr } from '@/lib/utils'
 import { skillLabelForRating } from '@/lib/skill-levels'
 import {
-  joinWarning, levelFit, levelNumber, qualityOf, QUALITY_LABEL, rankForYou, reliabilityOf, spreadOf, suggestTeams,
-  RELIABLE_MATCHES, type GameLite, type JoinWarning, type Quality,
+  joinWarning, levelFit, levelNumber, qualityOf, QUALITY_LABEL, reliabilityOf, spreadOf, suggestTeams,
+  RELIABLE_MATCHES, type JoinWarning, type Quality,
 } from '@/lib/matchmaking'
 import { getVenue } from '@/lib/venues'
 import { timezoneForVenueSlug, venueInstant } from '@/lib/timezone'
+import MoneyBubble from '@/components/ui/MoneyBubble'
 
 type MatchPlayer = {
   id: string
@@ -52,7 +53,23 @@ function skillLabelForRange(min: number, max: number) {
 }
 
 type Fit = ReturnType<typeof levelFit>
-const FIT_LABEL = { fits: 'Fits your level', above: 'Above your level', below: 'Below your level' } as const
+const FIT_LABEL = { fits: 'Fits you', above: 'A step up', below: 'Easier game' } as const
+const FIT_KIND = { fits: 'gain', above: 'wait', below: 'none' } as const
+
+// The level scale every bar on this page uses (ratings run from about 0.5 to 7).
+const pos = (r: number) => Math.min(Math.max(((r - 0.5) / 6.5) * 100, 0), 100)
+const TILE = 'linear-gradient(160deg, #3a73dc, #1d3f8d)'
+const TILE_SHADOW = 'inset 0 1px 0 rgba(255,255,255,0.28), 0 6px 14px rgba(11,30,74,0.35)'
+
+// A bar along the level scale: the game's range in blue, and where you sit as a white marker.
+function LevelBar({ min, max, you, testId }: { min: number; max: number; you: number | null; testId?: string }) {
+  return (
+    <div className="relative h-2 rounded-full my-2.5" data-testid={testId} style={{ background: 'var(--bg-raised)' }}>
+      <span className="absolute top-0 bottom-0 rounded-full" style={{ left: `${pos(min)}%`, width: `${Math.max(pos(max) - pos(min), 3)}%`, background: TILE }} />
+      {you !== null && <span className="absolute rounded-full" aria-hidden style={{ left: `calc(${pos(you)}% - 7px)`, top: -4, width: 14, height: 16, background: '#ffffff', boxShadow: '0 0 0 3px var(--bg-surface)' }} />}
+    </div>
+  )
+}
 
 const QUALITY_STYLE: Record<Quality, { bg: string; fg: string }> = {
   even: { bg: 'var(--brand-green-muted)', fg: 'var(--brand-green)' },
@@ -80,28 +97,26 @@ function YourLevelCard({ rating, matches }: { rating: number; matches: number | 
   const reliability = reliabilityOf(matches)
   const TIERS = ['Beginner', 'Improver', 'Intermediate', 'Advanced', 'Elite']
   return (
-    <div className="rounded-2xl p-5 mb-4" data-testid="your-level" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
-      <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Your level</div>
-      <div className="flex items-baseline gap-2.5 mt-1.5">
-        <span className="text-[38px] leading-none font-extrabold" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', letterSpacing: '-0.03em', color: 'var(--text-primary)' }}>{levelNumber(rating)}</span>
-        <span className="text-sm font-bold" style={{ color: 'var(--brand-primary-text)' }}>{skillLabelForRating(rating)}</span>
-        {reliability && (
-          <span className="ml-auto text-[11px] font-extrabold px-2.5 py-1 rounded-full" data-testid="reliability"
-            style={reliability === 'reliable' ? { background: 'var(--brand-green-muted)', color: 'var(--brand-green)' } : { background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-            {reliability === 'reliable' ? 'Reliable' : 'New'}
-          </span>
-        )}
+    <div className="rounded-[20px] p-5 mb-4" data-testid="your-level" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+      <div className="flex items-center gap-3.5">
+        <span className="inline-flex flex-col items-center justify-center text-white shrink-0" style={{ width: 66, height: 60, borderRadius: 16, background: TILE, boxShadow: TILE_SHADOW, lineHeight: 1 }}>
+          <span className="font-black" style={{ fontSize: 8.5, letterSpacing: '0.12em', color: '#dbe7ff', marginBottom: 3 }}>LEVEL</span>
+          <span className="font-black" style={{ fontSize: 24 }}>{levelNumber(rating)}</span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--label-blue, var(--brand-primary-text))' }}>Your level</div>
+          <div className="text-[19px] font-extrabold leading-tight" style={{ color: 'var(--text-primary)' }}>{skillLabelForRating(rating)}</div>
+        </div>
+        {reliability && <MoneyBubble kind={reliability === 'reliable' ? 'gain' : 'none'} size={11} testId="reliability">{reliability === 'reliable' ? 'Reliable' : 'New'}</MoneyBubble>}
       </div>
-      <div className="relative mt-3.5 h-2 rounded-full" style={{ background: 'var(--bg-raised)' }}>
-        <span className="absolute -top-1 rounded-full" style={{ left: `calc(${Math.min(Math.max(((rating - 0.5) / 6.5) * 100, 0), 100)}% - 8px)`, width: 16, height: 16, background: 'var(--brand-primary)', border: '3px solid var(--bg-surface)' }} />
-      </div>
-      <div className="flex justify-between text-[10px] mt-1.5" style={{ color: 'var(--text-subtle)' }}>{TIERS.map(t => <span key={t}>{t}</span>)}</div>
-      <div className="text-xs mt-2.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+      <LevelBar min={rating} max={rating} you={rating} />
+      <div className="flex justify-between text-[10px] font-bold" style={{ color: 'var(--text-primary)' }}>{TIERS.map(t => <span key={t}>{t}</span>)}</div>
+      <div className="text-xs mt-2.5 leading-relaxed font-semibold" style={{ color: 'var(--text-primary)' }}>
         {matches === null ? 'Your level moves as you record matches.'
           : matches >= RELIABLE_MATCHES ? `From your last ${matches} recorded matches. Win an even game and it moves up.`
           : matches === 0 ? "You haven't recorded a match yet, so this is the level you chose. It moves as you play."
           : `Based on ${matches} recorded ${matches === 1 ? 'match' : 'matches'} so far. It settles after ${RELIABLE_MATCHES}.`}
-        {' '}<Link href="/record-match" style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>Record a match</Link>
+        {' '}<Link href="/record-match" style={{ color: 'var(--brand-primary-text)', fontWeight: 800, textDecoration: 'underline' }}>Record a match</Link>
       </div>
     </div>
   )
@@ -118,23 +133,23 @@ function LevelDetails({ players, counts, youIfJoin }: { players: DetailPlayer[];
   const spread = spreadOf(rated.map(p => p.rating))
   const teams = all.length === 4 && rated.length === 4 ? suggestTeams(rated) : null
   return (
-    <div className="rounded-xl p-3 mt-3" data-testid="level-details" style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
+    <div className="rounded-[16px] p-3 mt-3" data-testid="level-details" style={{ background: 'var(--bg-raised)' }}>
       {all.map(p => {
         const note = p === youIfJoin ? null : matchesText(counts?.[p.id])
         return (
           <div key={p.id} className="flex items-center justify-between py-1.5 text-xs" style={{ borderTop: '1px solid var(--border)' }}>
-            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{p === youIfJoin ? 'You, if you join' : p.name}{note && <span style={{ color: 'var(--text-subtle)', fontWeight: 400 }}> · {note}</span>}</span>
+            <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{p === youIfJoin ? 'You, if you join' : p.name}{note && <span style={{ color: 'var(--text-primary)', opacity: 0.8, fontWeight: 500 }}> · {note}</span>}</span>
             <span style={{ color: 'var(--brand-primary-text)', fontWeight: 700 }}>{p.rating !== null && Number.isFinite(p.rating) ? `${levelNumber(p.rating)} · ${skillLabelForRating(p.rating)}` : 'Not rated'}</span>
           </div>
         )
       })}
       {teams && (
         <div className="mt-2.5 pt-2.5" style={{ borderTop: '1px solid var(--border)' }}>
-          <div className="text-[10px] font-extrabold uppercase mb-1.5" style={{ letterSpacing: '0.12em', color: 'var(--text-subtle)' }}>Suggested teams</div>
+          <div className="text-[10px] font-extrabold uppercase mb-1.5" style={{ letterSpacing: '0.12em', color: 'var(--label-blue, var(--brand-primary-text))' }}>Teams if everyone plays</div>
           <div className="grid grid-cols-2 gap-2">
             {[teams.a, teams.b].map((team, i) => (
-              <div key={i} className="rounded-lg p-2.5 text-xs" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
-                <div className="text-[10px] font-extrabold uppercase" style={{ color: 'var(--text-subtle)', letterSpacing: '0.12em' }}>Team {i + 1}</div>
+              <div key={i} className="rounded-[12px] p-2.5 text-xs" style={{ background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
+                <div className="text-[10px] font-extrabold uppercase" style={{ color: 'var(--label-blue, var(--brand-primary-text))', letterSpacing: '0.12em' }}>Team {i + 1}</div>
                 {team.map(p => <div key={p.id} className="flex justify-between mt-1"><span>{p.name}</span><b>{levelNumber(p.rating)}</b></div>)}
                 <div className="mt-1.5 pt-1.5 font-bold" style={{ borderTop: '1px solid var(--border)', color: 'var(--brand-primary-text)' }}>Average {(i === 0 ? teams.avgA : teams.avgB).toFixed(2).replace(/0$/, '')}</div>
               </div>
@@ -143,7 +158,7 @@ function LevelDetails({ players, counts, youIfJoin }: { players: DetailPlayer[];
         </div>
       )}
       {quality && spread !== null && (
-        <div className="text-[11px] mt-2.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+        <div className="text-[11px] mt-2.5 leading-relaxed font-semibold" style={{ color: 'var(--text-primary)' }}>
           {QUALITY_LABEL[quality]}. The gap between the strongest and weakest player is {spread.toFixed(1)}.{teams ? ' Pairing the strongest with the weakest keeps it close.' : ''}
         </div>
       )}
@@ -176,20 +191,10 @@ function JoinWarningDialog({ warning, rating, range, onCloser, onAnyway, onClose
 function FilterChip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button type="button" aria-pressed={on} onClick={onClick}
-      className="inline-flex items-center gap-2 text-xs font-bold px-4 rounded-full whitespace-nowrap"
-      style={{
-        minHeight: 40,
-        background: on ? 'var(--brand-primary-muted)' : 'var(--bg-raised)',
-        border: `1px solid ${on ? 'var(--brand-primary)' : 'var(--border)'}`,
-        color: on ? 'var(--brand-primary-text)' : 'var(--text-muted)',
-      }}>
-      {/* The indicator is always there and only changes colour, so turning a
-          filter on never changes the chip's width or shoves its neighbours. */}
-      <span style={{
-        width: 8, height: 8, borderRadius: 999, flexShrink: 0,
-        background: on ? 'var(--brand-primary)' : 'transparent',
-        border: `1.5px solid ${on ? 'var(--brand-primary)' : 'var(--text-subtle)'}`,
-      }} />
+      className="inline-flex items-center text-[13px] font-extrabold px-4 rounded-full whitespace-nowrap"
+      style={on
+        ? { minHeight: 38, background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)', border: '1px solid transparent' }
+        : { minHeight: 38, background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>
       {children}
     </button>
   )
@@ -428,55 +433,13 @@ export default function FindGameList({
   const detailPlayers = (m: OpenMatch): DetailPlayer[] => (m.open_match_players ?? [])
     .filter(p => p.status === 'accepted')
     .map(p => ({ id: p.player_id, name: p.profiles?.nickname ?? p.profiles?.full_name?.split(' ')[0] ?? 'Player', rating: ratingOf(p.profiles?.skill_rating) }))
-  // Games to suggest: ones that fit your level and have room, evenly matched first.
-  const forYou = rankForYou(ordered.map(m => {
-    const players = (m.open_match_players ?? [])
-    const spotsLeft = m.spots_total - players.filter(p => p.status === 'accepted').length
-    return {
-      id: m.id, date: m.date, start_time: m.start_time, venue_slug: m.venue_slug, skill_min: Number(m.skill_min), skill_max: Number(m.skill_max), spotsLeft,
-      ratings: detailPlayers(m).map(p => p.rating).filter((r): r is number => r !== null),
-      mine: m.organizer_id === currentUserId || players.some(p => p.player_id === currentUserId),
-      match: m,
-    } as GameLite & { match: OpenMatch }
-  }), viewerRating, homeVenueSlug)
-
   const clearFilters = () => { setFitsOnly(false); setMyClubOnly(false); setTodayOnly(false) }
 
   return (
     <div>
       {viewerRating !== null && <YourLevelCard rating={viewerRating} matches={matchCounts ? (matchCounts[currentUserId] ?? 0) : null} />}
 
-      {forYou.length > 0 && (
-        <section className="mb-5" data-testid="for-you">
-          <div className="text-[11px] font-extrabold uppercase mb-2.5 px-0.5" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>For you</div>
-          <div className="space-y-4">
-            {forYou.map(g => {
-              const m = g.match
-              const q = qualityOf([...g.ratings, viewerRating as number])
-              return (
-                <div key={g.id} className="rounded-2xl p-4 flex items-center justify-between gap-3" data-testid="for-you-game"
-                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--brand-primary)', boxShadow: '0 0 0 1px var(--brand-primary-muted), var(--shadow-float)' }}>
-                  <div className="min-w-0">
-                    <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{dayLabel(m.date)} · {fmtClock(m.start_time)} · {getVenue(m.venue_slug).name}</div>
-                    <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
-                      {skillLabelForRange(m.skill_min, m.skill_max)}{m.venue_slug === homeVenueSlug ? ' · Your club' : ''} · {g.spotsLeft} {g.spotsLeft === 1 ? 'spot' : 'spots'} left
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    {q && <QualityChip quality={q} title="With you in it" />}
-                    <button type="button" onClick={() => tryJoin(m)} disabled={loading === m.id + '-request'}
-                      className="rounded-full px-3.5 text-xs font-extrabold disabled:opacity-60" style={{ minHeight: 40, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}>
-                      Request to join
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
-      <div className="flex flex-wrap gap-2 mb-5">
+      <div className="flex flex-wrap gap-2 mb-5" data-testid="open-play-filters">
         {viewerRating !== null && <FilterChip on={fitsOnly} onClick={() => setFitsOnly(v => !v)}>Fits my level</FilterChip>}
         {homeVenueSlug && <FilterChip on={myClubOnly} onClick={() => setMyClubOnly(v => !v)}>My club</FilterChip>}
         <FilterChip on={todayOnly} onClick={() => setTodayOnly(v => !v)}>Today</FilterChip>
@@ -497,8 +460,8 @@ export default function FindGameList({
 
       {days.map(day => (
         <section key={day.date} className="mb-6">
-          <div className="text-[11px] font-extrabold uppercase mb-2.5 px-0.5"
-            style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>
+          <div className="text-[11.5px] font-extrabold uppercase mb-2.5 px-0.5" data-testid="open-play-day"
+            style={{ letterSpacing: '0.14em', color: 'var(--text-primary)' }}>
             {dayLabel(day.date)}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -517,192 +480,115 @@ export default function FindGameList({
               const levelPlayers = detailPlayers(match)
               const quality = qualityOf([...levelPlayers.map(p => p.rating).filter((r): r is number => r !== null), ...(youIfJoin ? [viewerRating as number] : [])])
 
+              const [hh, ap] = fmtClock(match.start_time).split(' ')
+              const open = openDetails === match.id
+              const rangeText = skillLabelForRange(match.skill_min, match.skill_max)
+              const action = isOrganizer ? null
+                : myEntry?.status === 'accepted' ? (
+                  <button type="button" className="rounded-full px-4 text-[13px] font-extrabold shrink-0" style={{ minHeight: 38, background: 'transparent', color: '#ff8a8f', border: '1px solid rgba(255,138,143,0.5)' }}
+                    disabled={loading === match.id + '-leave'} onClick={() => handleLeave(match.id)}>{loading === match.id + '-leave' ? '…' : 'Leave match'}</button>
+                ) : myEntry?.status === 'pending' ? (
+                  <span className="rounded-full px-3.5 inline-flex items-center text-[12px] font-extrabold shrink-0" style={{ minHeight: 34, background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>Request pending</span>
+                ) : (
+                  <button type="button" aria-label={isFull ? 'Match full' : 'Request to join'} data-testid="join"
+                    className="rounded-full px-5 text-[13.5px] font-black shrink-0 disabled:opacity-50"
+                    style={isFull ? { minHeight: 40, background: 'var(--bg-raised)', color: 'var(--text-primary)' } : { minHeight: 40, background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' }}
+                    disabled={isFull || loading === match.id + '-request'} onClick={() => tryJoin(match)}>
+                    {loading === match.id + '-request' ? '…' : isFull ? 'Full' : 'Join'}
+                  </button>
+                )
+
               return (
-                <div key={match.id} className="rounded-2xl p-5"
-                  style={{
-                    background: 'var(--bg-surface)',
-                    border: `1px solid ${fit === 'fits' ? 'var(--brand-primary)' : 'var(--border)'}`,
-                    boxShadow: fit === 'fits' ? '0 0 0 1px var(--brand-primary-muted), var(--shadow-float)' : 'var(--shadow-float)',
-                  }}>
-
-                  {/* When leads: it is the first thing anyone is deciding on. */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="leading-none" style={{ fontFamily: 'var(--font-display), Manrope, sans-serif', color: 'var(--text-primary)' }}>
-                      <span className="text-[30px] font-extrabold" style={{ letterSpacing: '-0.02em' }}>{fmtClock(match.start_time)}</span>
-                      <span className="text-sm font-semibold ml-1" style={{ color: 'var(--text-muted)' }}>–{fmtClock(match.end_time)}</span>
+                <div key={match.id} className="rounded-[20px] p-5" data-testid="open-game" data-fit={fit ?? undefined}
+                  style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
+                  {/* The time in a blue tile, like the courts; the court, the club and the kind of game beside it. */}
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex flex-col items-center justify-center text-white shrink-0" data-testid="game-time"
+                      style={{ width: 62, height: 56, borderRadius: 15, background: TILE, boxShadow: TILE_SHADOW, lineHeight: 1 }}>
+                      <span className="font-black" style={{ fontSize: hh.length > 4 ? 17 : 19 }}>{hh}</span>
+                      <span className="font-black" style={{ fontSize: 9.5, letterSpacing: '0.1em', marginTop: 3, color: '#dbe7ff' }}>{(ap ?? '').toUpperCase()}</span>
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[15px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{match.courts?.name}</span>
+                        {isOrganizer ? <span className="text-[11.5px] font-black rounded-full px-2.5 py-0.5 shrink-0" style={{ background: 'var(--today-block-bg)', color: 'var(--today-block-fg)' }}>Your game</span>
+                          : fit ? <MoneyBubble kind={FIT_KIND[fit]} size={11.5} testId="fit">{FIT_LABEL[fit]}</MoneyBubble> : null}
+                      </div>
+                      <div className="text-[12.5px] font-semibold mt-0.5" style={{ color: 'var(--text-primary)' }}>
+                        {venue.name} · until {fmtClock(match.end_time)} · <span className="capitalize" style={match.match_type === 'competitive' ? { color: 'var(--busy-amber)', fontWeight: 800 } : undefined}>{match.match_type}</span>
+                      </div>
                     </div>
-                    {fit && (
-                      <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-full whitespace-nowrap shrink-0"
-                        style={fit === 'fits'
-                          ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }
-                          : { background: 'var(--bg-raised)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-                        {FIT_LABEL[fit]}
+                  </div>
+
+                  {match.notes && <div className="text-[12.5px] font-semibold italic mt-2 truncate" style={{ color: 'var(--text-primary)' }}>&ldquo;{match.notes}&rdquo;</div>}
+                  <LevelBar min={Number(match.skill_min)} max={Number(match.skill_max)} you={viewerRating} testId="game-level-bar" />
+                  <div className="flex items-center justify-between text-[12px] font-extrabold">
+                    <span style={{ color: isFull ? 'var(--text-primary)' : 'var(--brand-primary-text)' }}>{isFull ? 'Full' : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`}</span>
+                    <span style={{ color: 'var(--text-primary)' }}>{rangeText}</span>
+                  </div>
+
+                  {/* Who is in, each with their level, the open seats, and the one action. */}
+                  <div className="flex items-end gap-2.5 mt-3">
+                    {acceptedPlayers.map(p => {
+                      const r = ratingOf(p.profiles?.skill_rating)
+                      return (
+                        <span key={p.player_id} className="inline-flex flex-col items-center gap-1" data-testid="game-player" title={p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}>
+                          <span className="w-[34px] h-[34px] rounded-full inline-flex items-center justify-center text-[11.5px] font-extrabold text-white" style={{ background: TILE }}>{getInitials(p.profiles?.full_name ?? '?')}</span>
+                          <span className="text-[10px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{r !== null ? levelNumber(r) : '–'}</span>
+                        </span>
+                      )
+                    })}
+                    {Array.from({ length: Math.max(spotsLeft, 0) }).map((_, i) => (
+                      <span key={`empty-${i}`} className="inline-flex flex-col items-center gap-1">
+                        <span className="w-[34px] h-[34px] rounded-full inline-flex items-center justify-center text-[14px] font-extrabold" style={{ border: '1.5px dashed var(--text-subtle)', color: 'var(--text-primary)' }}>+</span>
+                        <span className="text-[10px] font-extrabold" style={{ color: 'var(--text-primary)', opacity: 0.75 }}>open</span>
                       </span>
-                    )}
+                    ))}
+                    <span className="flex-1" />
+                    {action}
                   </div>
 
-                  <div className="text-[13px] font-semibold mt-2.5" style={{ color: 'var(--text-primary)' }}>
-                    {match.courts?.name}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}> · {venue.name}</span>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5 mt-2.5">
-                    <span className="text-[11px] font-semibold px-2 py-1 rounded-lg"
-                      style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                      {skillLabelForRange(match.skill_min, match.skill_max)}
-                    </span>
-                    <span className="text-[11px] font-semibold px-2 py-1 rounded-lg capitalize"
-                      style={{
-                        background: match.match_type === 'competitive' ? 'var(--brand-accent-muted)' : 'var(--bg-raised)',
-                        border: `1px solid ${match.match_type === 'competitive' ? 'transparent' : 'var(--border)'}`,
-                        color: match.match_type === 'competitive' ? 'var(--brand-accent)' : 'var(--text-muted)',
-                      }}>
-                      {match.match_type}
-                    </span>
-                    {quality && <QualityChip quality={quality} title={youIfJoin ? 'With you in it' : undefined} />}
-                  </div>
-
-                  {/* Who is in, and how many seats are left. */}
-                  <div className="flex items-center justify-between mt-3.5">
-                    <div className="flex -space-x-2">
-                      {acceptedPlayers.map(p => (
-                        <div key={p.player_id}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold"
-                          style={{ background: 'var(--brand-primary)', color: 'var(--brand-primary-on)', border: '2px solid var(--bg-surface)' }}
-                          title={p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}>
-                          {getInitials(p.profiles?.full_name ?? '?')}
-                        </div>
-                      ))}
-                      {Array.from({ length: Math.max(spotsLeft, 0) }).map((_, i) => (
-                        <div key={`empty-${i}`}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs"
-                          style={{ background: 'var(--bg-surface)', border: '1.5px dashed var(--text-subtle)', color: 'var(--text-subtle)', fontWeight: 700 }}>
-                          +
-                        </div>
-                      ))}
-                    </div>
-                    {/* Accent text, not the yellow: yellow is fine on dark and close
-                        to unreadable on a light ground. */}
-                    <span className="text-xs font-bold" style={{ color: isFull ? 'var(--text-subtle)' : 'var(--brand-primary-text)' }}>
-                      {isFull ? 'Full' : `${spotsLeft} ${spotsLeft === 1 ? 'spot' : 'spots'} left`}
-                    </span>
-                  </div>
-
-                  {/* Who exactly, and at what level -- worth knowing before
-                      asking to join, and kept from the old card. */}
-                  {acceptedPlayers.length > 0 && (
-                    <div className="space-y-1 mt-3">
-                      {acceptedPlayers.map(p => (
-                        <div key={p.player_id} className="flex items-center justify-between text-xs">
-                          <span style={{ color: 'var(--text-primary)' }}>
-                            {p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
-                            {p.player_id === match.organizer_id && (
-                              <span style={{ color: 'var(--text-subtle)' }}> · organizer</span>
-                            )}
-                          </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium"
-                            style={{ background: 'var(--bg-raised)', color: 'var(--brand-primary-text)' }}>
-                            {skillLabelForRating(p.profiles?.skill_rating)}
-                          </span>
+                  {/* Pending requests: only the organiser sees these, right on the card. */}
+                  {isOrganizer && pendingPlayers.length > 0 && (
+                    <div className="rounded-[16px] p-3 mt-3" style={{ background: 'var(--bg-raised)' }}>
+                      <div className="text-[11px] font-extrabold uppercase mb-2" style={{ letterSpacing: '0.12em', color: 'var(--label-blue, var(--brand-primary-text))' }}>
+                        {pendingPlayers.length} pending request{pendingPlayers.length > 1 ? 's' : ''}
+                      </div>
+                      {pendingPlayers.map(p => (
+                        <div key={p.player_id} className="py-1.5">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="w-8 h-8 rounded-full inline-flex items-center justify-center text-[11px] font-extrabold text-white shrink-0" style={{ background: TILE }}>{getInitials(p.profiles?.full_name ?? '?')}</span>
+                            <div className="min-w-0">
+                              <div className="text-[13.5px] font-extrabold truncate" style={{ color: 'var(--text-primary)' }}>{p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}</div>
+                              <div className="text-[11.5px] font-semibold" style={{ color: 'var(--text-primary)' }}>{skillLabelForRating(p.profiles?.skill_rating)}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2">
+                            <button className="rounded-full px-4 text-[13px] font-black" style={{ minHeight: 36, background: 'var(--today-block-bg)', color: 'var(--today-block-fg)' }}
+                              disabled={loading === match.id + '-' + p.player_id} onClick={() => handleResponse(match, p.player_id, true)}>Accept</button>
+                            <button className="text-[13px] font-extrabold px-1" style={{ minHeight: 36, color: '#ff8a8f' }}
+                              disabled={loading === match.id + '-' + p.player_id} onClick={() => handleResponse(match, p.player_id, false)}>Decline</button>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
 
                   {levelPlayers.length > 0 && (
-                    <div>
-                      <button type="button" aria-expanded={openDetails === match.id} onClick={() => setOpenDetails(openDetails === match.id ? null : match.id)}
-                        className="text-xs font-bold mt-3" style={{ color: 'var(--brand-primary-text)' }}>
-                        {openDetails === match.id ? 'Hide level details' : 'Level details'}
+                    <div className="mt-2.5">
+                      <button type="button" aria-expanded={open} aria-label={open ? 'Hide level details' : 'Level details'} onClick={() => setOpenDetails(open ? null : match.id)}
+                        className="text-[12.5px] font-extrabold inline-flex items-center gap-1.5" style={{ color: 'var(--brand-primary-text)' }}>
+                        {open ? 'Hide players and teams' : 'Players and teams'}
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : undefined }}><path d="M6 9l6 6 6-6" /></svg>
                       </button>
-                      {openDetails === match.id && <LevelDetails players={levelPlayers} counts={matchCounts} youIfJoin={youIfJoin} />}
+                      {open && (
+                        <>
+                          {quality && <div className="mt-2"><QualityChip quality={quality} title={youIfJoin ? 'With you in it' : undefined} /></div>}
+                          {levelPlayers.length > 0 && <LevelDetails players={levelPlayers} counts={matchCounts} youIfJoin={youIfJoin} />}
+                                                </>
+                      )}
                     </div>
                   )}
-
-                  {/* Pending requests — only visible to organizer */}
-                  {isOrganizer && pendingPlayers.length > 0 && (
-                    <div className="rounded-lg p-3 mt-3"
-                      style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)' }}>
-                      <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-muted)' }}>
-                        {pendingPlayers.length} pending request{pendingPlayers.length > 1 ? 's' : ''}
-                      </div>
-                      {pendingPlayers.map(p => (
-                        <div key={p.player_id} className="flex items-center justify-between gap-2 py-1.5"
-                          style={{ borderTop: '1px solid var(--border)' }}>
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
-                              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                              {getInitials(p.profiles?.full_name ?? '?')}
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                                {p.profiles?.nickname ?? p.profiles?.full_name ?? 'Player'}
-                              </div>
-                              <div className="text-[10px]" style={{ color: 'var(--text-subtle)' }}>
-                                {skillLabelForRating(p.profiles?.skill_rating)}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-1.5 shrink-0">
-                            <button
-                              className="text-xs px-3 rounded-lg font-semibold transition-all"
-                              style={{ minHeight: 36, background: 'var(--brand-primary)', color: 'var(--brand-primary-on)' }}
-                              disabled={loading === match.id + '-' + p.player_id}
-                              onClick={() => handleResponse(match, p.player_id, true)}
-                            >
-                              Accept
-                            </button>
-                            <button
-                              className="text-xs px-3 rounded-lg font-semibold transition-all"
-                              style={{ minHeight: 36, background: 'var(--brand-accent-muted)', color: 'var(--brand-accent)' }}
-                              disabled={loading === match.id + '-' + p.player_id}
-                              onClick={() => handleResponse(match, p.player_id, false)}
-                            >
-                              Decline
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {match.notes && (
-                    <div className="text-xs mt-3 italic" style={{ color: 'var(--text-subtle)' }}>
-                      &quot;{match.notes}&quot;
-                    </div>
-                  )}
-
-                  {/* Action button: one clear action per card, full width. */}
-                  <div className="mt-3.5">
-                    {isOrganizer ? (
-                      <div className="text-xs text-center py-3 rounded-xl"
-                        style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', fontWeight: 600 }}>
-                        You&apos;re organizing this match
-                      </div>
-                    ) : myEntry?.status === 'accepted' ? (
-                      <button
-                        className="btn btn-danger w-full justify-center"
-                        style={{ minHeight: 44 }}
-                        disabled={loading === match.id + '-leave'}
-                        onClick={() => handleLeave(match.id)}
-                      >
-                        {loading === match.id + '-leave' ? '…' : 'Leave match'}
-                      </button>
-                    ) : myEntry?.status === 'pending' ? (
-                      <div className="text-xs text-center py-3 rounded-xl"
-                        style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>
-                        Request pending — waiting for organizer
-                      </div>
-                    ) : (
-                      <button
-                        className={isFull || fit === 'above' || fit === 'below' ? 'btn-main btn-main-quiet' : 'btn-main'}
-                        disabled={isFull || loading === match.id + '-request'}
-                        onClick={() => tryJoin(match)}
-                      >
-                        {loading === match.id + '-request' ? '…' : isFull ? 'Match full' : 'Request to join'}
-                      </button>
-                    )}
-                  </div>
                 </div>
               )
             })}
