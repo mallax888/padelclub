@@ -13,10 +13,11 @@ const dayIn = (tz: string, ms: number) => new Intl.DateTimeFormat('en-CA', { tim
 
 export async function loadClubPlayers(admin: Admin, venueSlug: string, nowMs: number = Date.now()): Promise<{ today: string; players: ClubPlayer[] }> {
   const today = dayIn(timezoneForVenueSlug(venueSlug), nowMs)
-  const { data: courts } = await admin.from('courts').select('id').eq('venue_slug', venueSlug)
+  const { data: courts } = await admin.from('courts').select('id, name').eq('venue_slug', venueSlug)
   const courtIds = ((courts ?? []) as any[]).map(c => c.id as string)
+  const courtName = new Map<string, string>(((courts ?? []) as any[]).map(c => [c.id as string, (c.name as string) ?? 'Court']))
   const { data: bk } = courtIds.length
-    ? await admin.from('bookings').select('id, user_id, date, start_time, end_time, price_nzd, status').in('court_id', courtIds).in('status', ['confirmed', 'completed'])
+    ? await admin.from('bookings').select('id, user_id, court_id, date, start_time, end_time, price_nzd, status').in('court_id', courtIds).in('status', ['confirmed', 'completed'])
     : { data: [] as any[] }
   const bookings = (bk ?? []) as any[]
   const ids = new Set<string>(await homeClubIds(admin, venueSlug))
@@ -27,7 +28,7 @@ export async function loadClubPlayers(admin: Admin, venueSlug: string, nowMs: nu
 
   const profiles: any[] = []
   for (const part of chunks(Array.from(ids), 150)) {
-    const { data } = await admin.from('profiles').select('id, full_name, nickname, membership_tier, role, created_at').in('id', part)
+    const { data } = await admin.from('profiles').select('id, full_name, nickname, membership_tier, role, created_at, credits').in('id', part)
     profiles.push(...((data ?? []) as any[]))
   }
 
@@ -37,22 +38,32 @@ export async function loadClubPlayers(admin: Admin, venueSlug: string, nowMs: nu
   const { data: via, error: viaErr } = await admin.from('profiles').select('id').eq('joined_via_venue', venueSlug)
   if (!viaErr) for (const r of ((via ?? []) as any[])) viaLink.add(r.id)
 
-  const stats = new Map<string, { last: string | null; games: number; booked: number }>()
+  const stats = new Map<string, { last: string | null; games: number; booked: number; recent: { date: string; start: string; court: string }[] }>()
+  const byId = new Map<string, any>(bookings.map(b => [b.id as string, b]))
   const upcoming = new Set<string>() // bookings still to be played, the only ones a share can still be owed on
   for (const b of bookings) {
     const ended = gameHasEnded(b.date, b.end_time ?? b.start_time, venueSlug, nowMs)
     if (!ended) { upcoming.add(b.id); continue }
     if (!b.user_id) continue
-    const s = stats.get(b.user_id) ?? { last: null, games: 0, booked: 0 }
+    const s = stats.get(b.user_id) ?? { last: null, games: 0, booked: 0, recent: [] }
     s.games += 1; s.booked += Number(b.price_nzd) || 0
+    s.recent.push({ date: b.date, start: String(b.start_time ?? '').slice(0, 5), court: courtName.get(b.court_id) ?? 'Court' })
     if (!s.last || b.date > s.last) s.last = b.date
     stats.set(b.user_id, s)
   }
 
   const owes = new Map<string, number>()
+  const owing = new Map<string, { date: string; start: string; amount: number }[]>()
   for (const part of chunks(Array.from(upcoming), 150)) {
-    const { data } = await admin.from('booking_splits').select('user_id, booking_id, status').in('booking_id', part).eq('status', 'pending')
-    for (const s of ((data ?? []) as any[])) if (s.user_id) owes.set(s.user_id, (owes.get(s.user_id) ?? 0) + 1)
+    const { data } = await admin.from('booking_splits').select('user_id, booking_id, status, amount_nzd').in('booking_id', part).eq('status', 'pending')
+    for (const s of ((data ?? []) as any[])) {
+      if (!s.user_id) continue
+      owes.set(s.user_id, (owes.get(s.user_id) ?? 0) + 1)
+      const b = byId.get(s.booking_id)
+      const list = owing.get(s.user_id) ?? []
+      list.push({ date: b?.date ?? '', start: String(b?.start_time ?? '').slice(0, 5), amount: Math.round((Number(s.amount_nzd) || 0) * 100) / 100 })
+      owing.set(s.user_id, list)
+    }
   }
 
   const players: ClubPlayer[] = profiles.filter(p => p.role === 'member').map(p => {
@@ -61,7 +72,11 @@ export async function loadClubPlayers(admin: Admin, venueSlug: string, nowMs: nu
     return {
       id: p.id, name: (p.nickname || p.full_name || 'Player') as string, member: tier !== 'casual', planLabel: tier !== 'casual' ? tierLabel(tier) : null,
       lastPlayed: s?.last ?? null, games: s?.games ?? 0, booked: Math.round((s?.booked ?? 0) * 100) / 100, owes: owes.get(p.id) ?? 0,
-      viaLink: viaLink.has(p.id),
+      viaLink: viaLink.has(p.id), tier,
+      owedAmount: Math.round((owing.get(p.id) ?? []).reduce((t, x) => t + x.amount, 0) * 100) / 100,
+      owing: (owing.get(p.id) ?? []).sort((x, y) => (x.date + x.start).localeCompare(y.date + y.start)),
+      credits: Number(p.credits) || 0,
+      recent: (s?.recent ?? []).sort((x, y) => (y.date + y.start).localeCompare(x.date + x.start)).slice(0, 4),
       joined: p.created_at ? dayIn(timezoneForVenueSlug(venueSlug), Date.parse(p.created_at)) : null,
     }
   })

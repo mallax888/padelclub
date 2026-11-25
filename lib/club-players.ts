@@ -16,6 +16,11 @@ export type ClubPlayer = {
   owes: number               // how many shares of other people's games they have not paid yet
   joined: string | null      // YYYY-MM-DD they signed up
   viaLink?: boolean          // signed up through this club's booking link
+  tier?: string              // plan key ('casual', 'club', 'pro' or the club's own), for the plan colour on their tile
+  owedAmount?: number        // what those unpaid shares add up to, in the club's currency
+  credits?: number           // session credits left
+  recent?: { date: string; start: string; court: string }[]          // their latest games here, newest first (up to 4)
+  owing?: { date: string; start: string; amount: number }[]           // the games they still owe a share of
 }
 
 export type Segment = 'all' | 'members' | 'owes' | 'new' | 'link' | 'quiet'

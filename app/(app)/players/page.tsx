@@ -11,6 +11,8 @@ import { VENUES, getVenue } from '@/lib/venues'
 import { currencyForRegion } from '@/lib/currency'
 import { loadClubPlayers } from '@/lib/club-players-server'
 import ClubPlayers from '@/components/players/ClubPlayers'
+import { effectivePlans, type Plan } from '@/lib/plan-rules'
+import { loadPlanRows } from '@/lib/club-plans'
 import { contactsAvailable, loadContacts } from '@/lib/contacts-server'
 import { contactSummary, type Contact, type ContactSummary } from '@/lib/contact-rules'
 
@@ -40,7 +42,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
   }
 
   // A club's owner or front desk gets a working list of the club's players, with what they have really done there.
-  let club: { slug: string; name: string; currency: any; today: string; list: any[]; choices: { slug: string; name: string }[]; contacts: Contact[]; contactInfo: ContactSummary | null } | null = null
+  let club: { slug: string; name: string; currency: any; today: string; list: any[]; choices: { slug: string; name: string }[]; contacts: Contact[]; contactInfo: ContactSummary | null; plans: Plan[] | null } | null = null
   if (managing && caller) {
     try {
       const admin = createAdminClient() as any
@@ -54,7 +56,9 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
         // People the owner imported who have not joined yet (owner only). Quietly absent until the database change is run.
         let contacts: Contact[] = [], contactInfo: ContactSummary | null = null
         if (caller.role === 'admin' && (await contactsAvailable(admin))) { contacts = await loadContacts(admin, slug); contactInfo = contactSummary(contacts, Date.now()) }
-        club = { slug, name: v.name, currency: currencyForRegion(v.region), today: loaded.today, list: loaded.players, choices, contacts, contactInfo }
+        // The club's plans, so the owner can change a player's plan from their card. Owners only; front desk never sees money.
+        const plans = caller.role === 'admin' ? effectivePlans(await loadPlanRows(admin, [slug]), slug) : null
+        club = { slug, name: v.name, currency: currencyForRegion(v.region), today: loaded.today, list: loaded.players, choices, contacts, contactInfo, plans }
       }
     } catch (e) { console.error('Club players error:', e) }
   }
@@ -65,7 +69,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
     <div>
       <div className="mb-6" style={{ userSelect: 'none' }}>
         <h1 className="text-2xl font-semibold" style={{ color: 'var(--text-primary)' }}>Players</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{managing ? 'Your club\u2019s players, with their stats and ranking' : 'Everyone on PadelMate, with their stats and ranking'}</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{club ? `${club.list.length} ${club.list.length === 1 ? 'player' : 'players'} at ${club.name}` : managing ? 'Your club\u2019s players, with their stats and ranking' : 'Everyone on PadelMate, with their stats and ranking'}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -81,12 +85,12 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
                 ))}
               </div>
             )}
-            <ClubPlayers players={club.list} today={club.today} venueSlug={club.slug} club={club.name} currency={club.currency} showMoney={caller!.role === 'admin'} canMessage={caller!.role === 'admin'} contacts={club.contacts} contactInfo={club.contactInfo} canImport={caller!.role === 'admin'} emailReady={!!process.env.RESEND_API_KEY} />
+            <ClubPlayers players={club.list} today={club.today} venueSlug={club.slug} club={club.name} currency={club.currency} showMoney={caller!.role === 'admin'} canMessage={caller!.role === 'admin'} contacts={club.contacts} contactInfo={club.contactInfo} canImport={caller!.role === 'admin'} emailReady={!!process.env.RESEND_API_KEY} plans={club.plans} />
           </div>
         ) : <PlayersDirectory players={players} />}
 
-        {/* Leaderboard — full width on mobile, sidebar on desktop */}
-        <div className="w-full lg:w-64 lg:shrink-0 rounded-2xl overflow-hidden"
+        {/* Leaderboard — full width on mobile, sidebar on desktop. A club's own team gets the player panel there instead. */}
+        {!club && <div className="w-full lg:w-64 lg:shrink-0 rounded-2xl overflow-hidden"
           style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' }}>
           <div className="px-4 py-3 flex items-center justify-between"
             style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-raised)' }}>
@@ -142,7 +146,7 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
           <div className="px-4 py-2 text-center text-[10px]" style={{ color: 'var(--text-subtle)' }}>
             Updates after each match · {leaderboard.length} {leaderboard.length === 1 ? 'member' : 'members'}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   )
