@@ -45,24 +45,23 @@ export default function CourtPicker({ courts, listed, freeIds, priceLabel, timeL
           return (
             <button key={court.id} type="button" disabled={!free} onClick={() => onPick(court.id)} aria-pressed={on}
               data-testid={`court-tile-${num ?? court.name}`} data-court={court.name} data-free={free ? 'yes' : 'no'}
-              className={`relative flex flex-col justify-between text-left rounded-[22px] ${tight ? 'p-3' : 'p-3.5'}`}
+              className={`relative flex items-center gap-3 text-left rounded-[20px] ${tight ? 'p-2.5' : 'p-3'}`}
               style={{
-                gridColumn: col + 1, gridRow: row + 1, minHeight: tight ? 128 : 148,
+                gridColumn: col + 1, gridRow: row + 1, minHeight: tight ? 64 : 72,
                 background: on ? 'var(--today-block-bg)' : 'var(--bg-surface)', color: on ? 'var(--today-block-fg)' : 'var(--text-primary)',
                 border: on ? '1px solid transparent' : '1px solid var(--border)', boxShadow: on ? 'var(--today-block-shadow)' : 'none',
                 opacity: free ? 1 : 0.42, cursor: free ? 'pointer' : 'not-allowed',
               }}>
-              <span className="flex items-start justify-between gap-1">
-                <span className="flex items-center justify-center font-black" aria-hidden
-                  style={{ width: tight ? 50 : 62, height: tight ? 50 : 62, borderRadius: tight ? 15 : 18, background: !free ? 'var(--bg-raised)' : on ? FACE : '#ffffff', color: !free ? 'var(--text-subtle)' : on ? '#ffffff' : '#1d3f8d', fontSize: short.length > 2 ? 18 : tight ? 28 : 36, boxShadow: free ? '0 2px 0 rgba(0,0,0,0.2)' : 'none' }}>{short}</span>
-                {on && <span className="text-[16px] font-extrabold" aria-hidden>✓</span>}
-              </span>
-              <span className="block mt-2">
-                <span className="block text-[15px] font-extrabold">{court.name}</span>
-                <span className="block text-[12.5px]" style={{ color: on ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>
+              {/* The court number in its tile, with the name and Free / Taken beside it (saves the height of a stacked card). */}
+              <span className="flex items-center justify-center font-black shrink-0" aria-hidden
+                style={{ width: tight ? 40 : 48, height: tight ? 40 : 48, borderRadius: tight ? 12 : 14, background: !free ? 'var(--bg-raised)' : on ? FACE : '#ffffff', color: !free ? 'var(--text-subtle)' : on ? '#ffffff' : '#1d3f8d', fontSize: short.length > 2 ? 15 : tight ? 20 : 24, boxShadow: free ? '0 2px 0 rgba(0,0,0,0.2)' : 'none' }}>{short}</span>
+              <span className="min-w-0 flex-1">
+                <span className={`block font-extrabold truncate ${tight ? 'text-[13px]' : 'text-[15px]'}`}>{court.name}</span>
+                <span className="block text-[12px]" style={{ color: on ? 'var(--today-block-fg)' : 'var(--text-muted)' }}>
                   {free ? 'Free' : `Taken at ${timeLabel}`}
                 </span>
               </span>
+              {on && <span className="text-[16px] font-extrabold shrink-0" aria-hidden>✓</span>}
             </button>
           )
         })}
