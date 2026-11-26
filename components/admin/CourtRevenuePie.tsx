@@ -37,12 +37,12 @@ function DayStrip({ row, nowMinutes }: { row: CourtRevenueRow; nowMinutes?: numb
   const nowAt = nowMinutes === undefined ? null : (nowMinutes / 60 - first) / n
   const marks = [0, 0.25, 0.5, 0.75, 1].map(f => first + Math.round(f * n))
   return (
-    <div className="mt-5" data-testid="court-day">
+    <div className="mt-5" data-testid="court-day-strip">
       <div className="relative grid gap-[3px]" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
         {row.hours.map(x => (
           <span key={x.hour} className="rounded-[4px]" data-booked={x.state === 'booked' ? 'yes' : 'no'} style={{ height: 14, background: x.state === 'booked' ? 'linear-gradient(180deg,#34d58a,#1f9a5f)' : x.state === 'blocked' ? 'repeating-linear-gradient(45deg, rgba(196,52,58,0.45) 0 3px, rgba(196,52,58,0.15) 3px 6px)' : 'var(--board-cell-strong, rgba(127,140,155,0.18))' }} />
         ))}
-        {nowAt !== null && nowAt > 0 && nowAt < 1 && <span aria-hidden className="absolute rounded-full" data-testid="court-day-now" style={{ left: `${nowAt * 100}%`, top: -4, bottom: -4, width: 2, background: 'var(--text-primary)' }} />}
+        {nowAt !== null && nowAt > 0 && nowAt < 1 && <span aria-hidden className="absolute rounded-full" data-testid="court-day-strip-now" style={{ left: `${nowAt * 100}%`, top: -4, bottom: -4, width: 2, background: 'var(--text-primary)' }} />}
       </div>
       <div className="flex justify-between mt-1.5 text-[10.5px] font-bold" style={{ color: 'var(--text-muted)' }}>{marks.map((h, i) => <span key={i}>{fmtClock12(h)}</span>)}</div>
     </div>
