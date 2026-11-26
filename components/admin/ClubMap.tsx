@@ -188,19 +188,16 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
           return (
             <div className="mt-3 lg:mt-4" data-testid="map-title">
               <div data-testid="map-hot">
-                <span className="flex items-baseline gap-3">
-                  <span className="block font-black leading-none text-[52px] lg:text-[72px]" style={{ letterSpacing: '-0.05em', color: 'var(--text-primary)' }}>{hot || takenBig ? money(takings, currency) : day.openNow}</span>
-                  {hot && <span className="text-[20px] lg:text-[24px] font-extrabold" style={{ color: soft }}>taken</span>}
-                </span>
-                <span className="block text-[16px] lg:text-[18px] font-bold mt-2" style={hot ? { color: soft } : undefined} data-testid="court-day-summary">
-                  {takenBig ? `taken of ${money(potential, currency)} possible` : none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? <><b style={{ color: 'var(--text-primary)' }}>{money(day.openValue, currency)}</b> still to sell · {day.openNow} court-{day.openNow === 1 ? 'hour' : 'hours'} open</> : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
+                <span className="block font-black leading-none text-[52px] lg:text-[72px]" style={{ letterSpacing: '-0.05em', color: 'var(--text-primary)' }}>{hot ? money(day.openValue, currency) : takenBig ? money(takings, currency) : day.openNow}</span>
+                <span className="block text-[18px] lg:text-[20px] font-extrabold mt-1.5" data-testid="court-day-summary">
+                  {takenBig ? `taken of ${money(potential, currency)} possible` : none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? <>still to sell today <span className="text-[13px] lg:text-[14px] font-bold" style={{ color: soft }}>· {day.openNow} court-{day.openNow === 1 ? 'hour' : 'hours'} open</span></> : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
                 </span>
               </div>
               {goal && (
                 <>
                   <div className="h-[12px] rounded-full overflow-hidden mt-4" style={{ background: 'var(--board-cell)' }} aria-hidden><div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: '#1f9a5f' }} /></div>
                   {hot
-                    ? <div className="flex justify-between text-[12px] font-bold mt-1.5" style={{ color: soft }} data-testid="map-taken"><span className="sr-only">{money(takings, currency)} taken </span><span aria-hidden>{money(0, currency)}</span><span>of {money(potential, currency)} possible</span></div>
+                    ? <div className="flex justify-between text-[12.5px] font-bold mt-2" style={{ color: soft }} data-testid="map-taken"><b style={{ color: 'var(--go-text)' }}>{money(takings, currency)} taken</b><span>{money(potential, currency)} possible</span></div>
                     : <div className={`text-[14px] font-bold mt-2.5${takenBig ? ' sr-only' : ''}`} style={{ color: soft }} data-testid="map-taken"><b style={{ color: 'var(--text-primary)' }}>{money(takings, currency)}</b> taken of {money(potential, currency)} possible</div>}
                 </>
               )}
@@ -210,9 +207,18 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
         })() : (
           <div className="font-black leading-none mt-1.5" style={{ fontSize: 44, letterSpacing: '-0.03em' }} data-testid="map-title">{fmtMinutes(at)}</div>
         )}
-        {/* PC: three number tiles. Phone: the same as one line. */}
+        <div className={`text-[13px] font-bold mt-2.5${isNow ? ' lg:hidden' : ''}`} style={{ color: soft }} data-testid="map-sub">
+          {isNow
+            ? `${bookedPct !== null ? `${bookedPct}% of court-hours booked · ` : ''}${playing} ${playing === 1 ? 'court' : 'courts'} playing · ${free} free${stillToPlay > 0 ? ` · ${stillToPlay} still to play` : ''}`
+            : `${playing} of ${courts.length} courts booked at ${fmtMinutes(at)}${playing === courts.length ? ': your courts are full' : ''}`}
+        </div>
+        {!isNow && <div className="text-[13px] font-bold mt-3" style={{ color: day.openValue > 0 ? '#ffe566' : soft }} data-testid="court-day-summary">{summary}</div>}
+        {unpaidChase !== null && unpaidChase > 0 && <div className="text-[13px] font-bold mt-1" style={{ color: soft }}>{unpaidChase} {unpaidChase === 1 ? 'share' : 'shares'} to chase</div>}
+        {/* PC: three number tiles, then the green Fill them under them. Phone: the tiles are one line (above) and Fill them sits under it. */}
+        {(isNow || fill) && (
+          <div className={`flex flex-col gap-4${fill ? ' mt-4' : ''} ${isNow ? 'lg:mt-5' : ''}`}>
         {isNow && (
-          <div className="hidden lg:grid grid-cols-3 gap-2.5 mt-5" data-testid="map-tiles">
+          <div className="hidden lg:grid grid-cols-3 gap-2.5" data-testid="map-tiles">
             {[
               { k: 'Bookings today', v: String(bookingsToday), b: <MoneyBubble kind="wait" size={11}>{comparison(bookingsToday - bookingsLastWeek, weekdayShort)}</MoneyBubble> },
               { k: 'Court-hours booked', v: bookedPct !== null ? `${bookedPct}%` : '—', b: <MoneyBubble kind="wait" size={11}>{stillToPlay > 0 ? `${stillToPlay} still to play` : 'none left to play'}</MoneyBubble> },
@@ -226,14 +232,9 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
             ))}
           </div>
         )}
-        <div className={`text-[13px] font-bold mt-2.5${isNow ? ' lg:hidden' : ''}`} style={{ color: soft }} data-testid="map-sub">
-          {isNow
-            ? `${bookedPct !== null ? `${bookedPct}% of court-hours booked · ` : ''}${playing} ${playing === 1 ? 'court' : 'courts'} playing · ${free} free${stillToPlay > 0 ? ` · ${stillToPlay} still to play` : ''}`
-            : `${playing} of ${courts.length} courts booked at ${fmtMinutes(at)}${playing === courts.length ? ': your courts are full' : ''}`}
-        </div>
-        {!isNow && <div className="text-[13px] font-bold mt-3" style={{ color: day.openValue > 0 ? '#ffe566' : soft }} data-testid="court-day-summary">{summary}</div>}
-        {unpaidChase !== null && unpaidChase > 0 && <div className="text-[13px] font-bold mt-1" style={{ color: soft }}>{unpaidChase} {unpaidChase === 1 ? 'share' : 'shares'} to chase</div>}
-        {fill && <div className="mt-4 flex flex-wrap gap-2.5">{fill}</div>}
+            {fill && <div className="flex flex-wrap gap-2.5">{fill}</div>}
+          </div>
+        )}
         {yesterday && <div className="mt-3 pt-3 lg:mt-5 lg:pt-4" style={{ borderTop: '1px solid var(--border)' }}>{yesterday}</div>}
       </section>
 
