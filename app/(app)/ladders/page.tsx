@@ -16,13 +16,13 @@ export default async function LaddersPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Ladders</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Challenge players above you and climb the club ranking</p>
         </div>
         {isStaff && (
-          <Link href="/ladders/new" className="btn-main btn-main-lime shrink-0 w-auto px-5" style={{ minHeight: 46 }} data-testid="new-ladder">+ New ladder</Link>
+          <Link href="/ladders/new" className="btn-main btn-main-lime shrink-0 sm:w-auto sm:px-5" style={{ minHeight: 46 }} data-testid="new-ladder">+ New ladder</Link>
         )}
       </div>
 
