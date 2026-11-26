@@ -25,20 +25,22 @@ export default async function TournamentsPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-5 mb-6">
+      <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Tournaments</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Tournament days at your club: Americano, round robin, groups and knockouts</p>
         </div>
         {isStaff && (
-          <Link href="/tournaments/new" className="btn-main" data-testid="new-tournament">+ New tournament</Link>
+          <Link href="/tournaments/new" className="btn-main btn-main-lime shrink-0 w-auto px-5" style={{ minHeight: 46 }} data-testid="new-tournament">+ New tournament</Link>
         )}
       </div>
 
       {(tournaments ?? []).length === 0 ? (
         isStaff ? (
-          <div className="rounded-2xl text-center py-12 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            No tournaments yet — create one to get started
+          <div className="rounded-[20px] text-center px-5 py-7" data-testid="empty-tournaments-staff" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="text-[30px] leading-none" aria-hidden>🏆</div>
+            <div className="text-[17px] font-extrabold mt-2.5" style={{ color: 'var(--text-primary)' }}>No tournaments yet</div>
+            <p className="text-[13.5px] mt-1.5 mx-auto max-w-[420px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>Run an Americano, a round robin or a knockout. Players sign up from their phones and the draw is made for you.</p>
           </div>
         ) : (
           // A player with nothing here yet: say what will appear, and give them something to do now.

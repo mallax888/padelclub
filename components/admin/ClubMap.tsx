@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { GO } from '@/lib/accent'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import OfferSheet from '@/components/admin/OfferSheet'
@@ -308,7 +307,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                       const offerable = r.openRanges.find(g => g.from.length === 5 && parseInt(g.from.slice(0, 2), 10) * 60 - nowMinutes >= MIN_LEAD_HOURS * 60)
                       return offerable ? (
                         <button type="button" data-testid="court-fill" onClick={e => { e.stopPropagation(); setSel(c.id); setOffer({ from: offerable.from, to: offerable.to }) }} className="hidden sm:inline-flex shrink-0 rounded-full px-4 py-2 text-[12px] font-black"
-                          style={GO}>Fill it</button>
+                          style={{ background: '#d4f53c', color: '#17240a' }}>Fill it</button>
                       ) : (
                         <span data-testid="court-too-late" className="hidden sm:inline-flex shrink-0 text-[11.5px] font-bold text-right leading-tight" style={{ color: 'var(--text-muted)' }}>Too late<br />to offer</span>
                       )

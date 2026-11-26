@@ -2,7 +2,6 @@
 
 import MoneyBubble from '@/components/ui/MoneyBubble'
 import { fmtClock, fmtClockRange } from '@/lib/clock'
-import { GO } from '@/lib/accent'
 import CardHeading from '@/components/ui/CardHeading'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -25,7 +24,7 @@ const MAX_ROWS = 6
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-float)' } as const
 const eyebrow = { letterSpacing: '0.14em', color: 'var(--text-subtle)' } as const
 
-const LIME = GO
+const LIME = { background: '#d4f53c', color: '#17240a' } as const
 const cardEyebrow = { fontSize: 11, letterSpacing: '0.14em', fontWeight: 800, color: 'var(--text-subtle)' } as const
 const bigTotal = { fontFamily: 'var(--font-display), Manrope, sans-serif', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text-primary)' } as const
 const WK = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
