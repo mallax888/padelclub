@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createServerClient } from '@/lib/supabase-server'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { getVenue } from '@/lib/venues'
-import { loadVenueSettings, isOpenForBooking, weekFor } from '@/lib/venue-settings'
+import { loadVenueSettings, isOpenForBooking, weekFor, closedLine } from '@/lib/venue-settings'
 import { dayHours } from '@/lib/venue-hours'
 import { timezoneForVenueSlug } from '@/lib/timezone'
 import { bookPathFor, isLiveClub, loginPathFor, signupPathFor } from '@/lib/club-link'
@@ -33,6 +33,8 @@ export default async function ClubLinkPage({ params }: { params: { slug: string 
   ])
   const courts = ((courtRows ?? []) as any[]).filter(c => c.is_active !== false).length
   const open = isOpenForBooking(settings, venue.slug) && courts > 0
+  // Has courts but the owner has switched booking off: say so, rather than "coming soon" (which is for a club with no courts yet).
+  const switchedOff = courts > 0 && !isOpenForBooking(settings, venue.slug)
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: timezoneForVenueSlug(venue.slug) }).format(new Date())
   const hrs = dayHours(weekFor(settings, venue.slug), today)
   const go = session ? bookPathFor(venue.slug) : signupPathFor(venue.slug)
@@ -73,8 +75,8 @@ export default async function ClubLinkPage({ params }: { params: { slug: string 
           </>
         ) : (
           <div className="rounded-2xl mt-4 px-4 py-5 text-center" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }} data-testid="club-link-closed">
-            <div className="text-[16px] font-extrabold">Courts coming soon</div>
-            <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>{venue.name} isn&apos;t taking bookings through PadelMate yet.</p>
+            <div className="text-[16px] font-extrabold">{switchedOff ? 'Not taking bookings right now' : 'Courts coming soon'}</div>
+            <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>{switchedOff ? `${venue.name} has paused online booking. Please check back soon.` : `${venue.name} isn't taking bookings through PadelMate yet.`}</p>
           </div>
         )}
       </div>

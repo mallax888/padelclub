@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   const { data: courts } = await admin.from('courts').select('id').eq('venue_slug', venueSlug).eq('is_active', true)
   const courtIds = ((courts ?? []) as any[]).map(c => c.id as string)
   const settings = await loadVenueSettings(admin)
-  if (courtIds.length === 0 || !isOpenForBooking(settings, venueSlug)) return NextResponse.json({ error: "This club isn't open for booking yet." }, { status: 400 })
+  if (courtIds.length === 0 || !isOpenForBooking(settings, venueSlug)) return NextResponse.json({ error: "This club isn't taking bookings right now." }, { status: 400 })
 
   const tz = timezoneForVenueSlug(venueSlug)
   const now = Date.now()

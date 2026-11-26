@@ -95,8 +95,8 @@ export default function TodayView(p: TodayViewProps) {
   if (p.notOpenYet) {
     attention.unshift(
       <AttentionRow key="notopen" href={`/admin/setup?${q}`} tone="yellow" mark="!"
-        title="This club isn't open for booking yet"
-        text="Players see Courts coming soon. Open it when you're ready." />,
+        title="Booking is switched off for this club"
+        text="Players see it as not taking bookings. Switch it back on in Club settings when you're ready." />,
     )
   }
   // Empty court time lives on the court card below (with the Fill them button), not in this list.
