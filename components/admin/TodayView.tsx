@@ -7,7 +7,6 @@ import { AutoRefresh, VenuePicker } from '@/components/admin/TodayControls'
 import YesterdayStrip from '@/components/admin/YesterdayStrip'
 import { FillButton, OverdueRow } from '@/components/admin/TodayActionRows'
 import ClubMap, { CourtBadge } from '@/components/admin/ClubMap'
-import CourtRevenuePie from '@/components/admin/CourtRevenuePie'
 import type { CourtRevenue } from '@/lib/court-revenue'
 import type { MapBooking } from '@/lib/club-map'
 import type { CourtDay } from '@/lib/court-day'
@@ -81,7 +80,7 @@ export default function TodayView(p: TodayViewProps) {
     attention.push(
       <AttentionRow key="unpaid" href={p.showMoney ? `/admin?tab=analytics&${q}` : `/admin?tab=bookings&${q}`} tone="red" mark="$"
         title={`${unpaid.count} unpaid ${unpaid.count === 1 ? 'share' : 'shares'}`}
-        bubble={unpaid.total !== null ? <MoneyBubble kind="wait" size={13} testId="unpaid-amount">{formatPrice(unpaid.total, p.currency)}</MoneyBubble> : undefined}
+        bubble={unpaid.total !== null ? <MoneyBubble kind="loss" size={13} testId="unpaid-amount">{formatPrice(unpaid.total, p.currency)}</MoneyBubble> : undefined}
         text={act ? 'None are overdue yet. Those remind themselves.' : unpaid.oldestDays !== null ? `Oldest is ${unpaid.oldestDays === 0 ? 'from today' : unpaid.oldestDays === 1 ? '1 day old' : `${unpaid.oldestDays} days old`}` : ''} />,
     )
   }
@@ -127,7 +126,7 @@ export default function TodayView(p: TodayViewProps) {
               <div className="text-[19px] font-extrabold leading-tight" style={{ ...display, color: 'var(--text-primary)' }}>{fmtClock(n.start)}</div>
               <div className="text-[13px] font-bold truncate mt-0.5" style={{ color: 'var(--text-muted)' }}><span className="sr-only">{n.courtName} · </span>{n.bookerName ?? 'Booking'} · {n.players} {n.players === 1 ? 'player' : 'players'}</div>
             </div>
-            <span className="ml-auto"><MoneyBubble kind={n.unpaid > 0 ? 'wait' : 'gain'} size={11} testId="next-up-paid">{n.unpaid > 0 ? `${n.unpaid} unpaid` : 'All paid'}</MoneyBubble></span>
+            <span className="ml-auto"><MoneyBubble kind={n.unpaid > 0 ? 'loss' : 'gain'} size={11} testId="next-up-paid">{n.unpaid > 0 ? `${n.unpaid} unpaid` : 'All paid'}</MoneyBubble></span>
           </div>
         ))}
         {s.nextUpMore > 0 && (
@@ -181,11 +180,9 @@ export default function TodayView(p: TodayViewProps) {
             offersOn={!!act?.offersOn} bounds={p.map.bounds} boardHref={`/admin?tab=board&${q}`} weekdayShort={p.lastWeekLabel} bookingsToday={s.bookings.today} bookingsLastWeek={s.bookings.lastWeek}
             takings={s.revenue.today} fill={fillButton} aside={aside}
             yesterday={p.briefing ? <YesterdayStrip hero b={p.briefing.b} currency={p.currency} weekday={p.briefing.weekday} label={p.briefing.yesterdayLabel} brandNew={p.briefing.brandNew} /> : null}
-            revenueByCourt={p.showMoney && p.courtRevenue ? Object.fromEntries(p.courtRevenue.rows.map(r => [r.id, { booked: r.booked, possible: r.possible, pct: r.pct }])) : null}
+            revenueByCourt={p.showMoney && p.courtRevenue ? Object.fromEntries(p.courtRevenue.rows.map(r => [r.id, r])) : null}
             stillToPlay={s.bookings.remaining} bookedPct={p.courtDay.pct} unpaidChase={p.showMoney ? null : unpaid.count}
             courts={p.courtDay.rows.map(r => ({ id: r.id, name: r.name, row: r, today: p.map.courts.find(c => c.id === r.id)?.today ?? 0, lastWeek: p.map.courts.find(c => c.id === r.id)?.lastWeek ?? 0 }))} />
-          {/* PC, owners only: today's takings court by court, as pies or hour by hour. */}
-          {p.showMoney && p.courtRevenue && <div className="hidden lg:block mt-6"><CourtRevenuePie revenue={p.courtRevenue} currency={p.currency} nowMinutes={p.nowMinutes} /></div>}
         </div>
       )}
     </div>

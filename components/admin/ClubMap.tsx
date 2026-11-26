@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import OfferSheet from '@/components/admin/OfferSheet'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import type { CourtDay, CourtDayCell, CourtDayRow } from '@/lib/court-day'
@@ -10,6 +10,8 @@ import { fmtClockRange, fmtHour, fmtMinutes } from '@/lib/clock'
 import { bookingsWord, clock12, comparison, courtAt, gapSentence, hhmm, initialsOf, nextBookings, slotChips, type MapBooking } from '@/lib/club-map'
 import { MIN_LEAD_HOURS } from '@/lib/offer-rules'
 import MoneyBubble from '@/components/ui/MoneyBubble'
+import { DayStrip, GlowRing, Hours } from '@/components/admin/CourtMoney'
+import type { CourtRevenueRow } from '@/lib/court-revenue'
 
 // The court as a blue tile: COURT over the number (a named court keeps its name). The text reads "Court 3" to a screen reader.
 export function CourtBadge({ name, testId = 'court-name' }: { name: string; testId?: string }) {
@@ -59,8 +61,8 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   fill: React.ReactNode
   // the cards that sit beside the big blue card on a computer (Needs attention, Next up), and the Yesterday line inside it
   aside: React.ReactNode; yesterday: React.ReactNode; stillToPlay: number; bookedPct: number | null; unpaidChase: number | null
-  // owners only: what each court has taken today against what it could take, drawn as a ring on its card
-  revenueByCourt?: Record<string, { booked: number; possible: number; pct: number | null }> | null
+  // owners only: what each court has taken today against what it could take, hour by hour, drawn on its card
+  revenueByCourt?: Record<string, CourtRevenueRow> | null
 }) {
   const router = useRouter()
   // The time on show. Until someone moves the slider it simply follows the clock, so when the page refreshes itself each
@@ -71,35 +73,14 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
   const [sel, setSel] = useState<string | null>(null)
   const [offer, setOffer] = useState<{ from: string; to: string } | null>(null)
   const [sent, setSent] = useState<string[]>([])
-  // Phone: while the map is on screen the time slider rides just above the bottom bar, so you can drag it without scrolling back.
-  const rootRef = useRef<HTMLDivElement>(null)
-  const slotRef = useRef<HTMLDivElement>(null)
-  const [pinned, setPinned] = useState(false)
-  const [slotH, setSlotH] = useState(0)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 1023px)')
-    const update = () => {
-      const root = rootRef.current, slot = slotRef.current
-      if (!root || !slot || !mq.matches) { setPinned(false); return }
-      const vh = window.innerHeight
-      const r = root.getBoundingClientRect(), sl = slot.getBoundingClientRect()
-      setPinned(sl.bottom > vh - 84 && r.top < vh - 260)
-      setSlotH(h => (h === sl.height || pinnedRef.current ? h : sl.height))
-    }
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    return () => { window.removeEventListener('scroll', update); window.removeEventListener('resize', update) }
-  }, [])
-  const pinnedRef = useRef(false)
-  pinnedRef.current = pinned
   const n = day.endHour - day.firstHour
   const isNow = at === nowMinutes
   const states = useMemo(() => new Map(courts.map(c => [c.id, courtAt(bookings, c.id, at)])), [courts, bookings, at])
   const playing = courts.filter(c => states.get(c.id)?.state === 'playing').length
   const free = courts.filter(c => states.get(c.id)?.state === 'free').length
   const chips = slotChips(nowMinutes, day.firstHour, day.endHour)
-  const nowPct = n > 0 ? Math.min(100, Math.max(0, ((nowMinutes / 60 - day.firstHour) / n) * 100)) : 0
+  const [graph, setGraph] = useState(false) // owners: each court's day as hour columns instead of the ring and strip
+  const maxFee = Math.max(0, ...Object.values(revenueByCourt ?? {}).flatMap(r => r.hours.map(h => h.fee)))
   const potential = takings + day.openValue
   const selected = courts.find(c => c.id === sel) ?? null
   const none = day.openNow === 0
@@ -207,15 +188,20 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
           return (
             <div className="mt-3 lg:mt-4" data-testid="map-title">
               <div data-testid="map-hot">
-                <span className="block font-black leading-none text-[52px] lg:text-[72px]" style={{ letterSpacing: '-0.05em', color: 'var(--text-primary)' }}>{hot ? money(day.openValue, currency) : takenBig ? money(takings, currency) : day.openNow}</span>
-                <span className="block text-[18px] lg:text-[20px] font-extrabold mt-1.5" data-testid="court-day-summary">
-                  {takenBig ? `taken of ${money(potential, currency)} possible` : none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? 'still to sell today' : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
+                <span className="flex items-baseline gap-3">
+                  <span className="block font-black leading-none text-[52px] lg:text-[72px]" style={{ letterSpacing: '-0.05em', color: 'var(--text-primary)' }}>{hot || takenBig ? money(takings, currency) : day.openNow}</span>
+                  {hot && <span className="text-[20px] lg:text-[24px] font-extrabold" style={{ color: soft }}>taken</span>}
+                </span>
+                <span className="block text-[16px] lg:text-[18px] font-bold mt-2" style={hot ? { color: soft } : undefined} data-testid="court-day-summary">
+                  {takenBig ? `taken of ${money(potential, currency)} possible` : none ? (day.finished ? 'Today is finished' : 'Sold out from now') : hot ? <><b style={{ color: 'var(--text-primary)' }}>{money(day.openValue, currency)}</b> still to sell · {day.openNow} court-{day.openNow === 1 ? 'hour' : 'hours'} open</> : `court-${day.openNow === 1 ? 'hour' : 'hours'} open from now`}
                 </span>
               </div>
               {goal && (
                 <>
                   <div className="h-[12px] rounded-full overflow-hidden mt-4" style={{ background: 'var(--board-cell)' }} aria-hidden><div className="h-full rounded-full" style={{ width: `${Math.min(100, (takings / potential) * 100)}%`, background: '#1f9a5f' }} /></div>
-                  <div className={`text-[14px] font-bold mt-2.5${takenBig ? ' sr-only' : ''}`} style={{ color: soft }} data-testid="map-taken"><b style={{ color: 'var(--text-primary)' }}>{money(takings, currency)}</b> taken of {money(potential, currency)} possible{hot ? ` · ${day.openNow} court-${day.openNow === 1 ? 'hour' : 'hours'} open` : ''}</div>
+                  {hot
+                    ? <div className="flex justify-between text-[12px] font-bold mt-1.5" style={{ color: soft }} data-testid="map-taken"><span className="sr-only">{money(takings, currency)} taken </span><span aria-hidden>{money(0, currency)}</span><span>of {money(potential, currency)} possible</span></div>
+                    : <div className={`text-[14px] font-bold mt-2.5${takenBig ? ' sr-only' : ''}`} style={{ color: soft }} data-testid="map-taken"><b style={{ color: 'var(--text-primary)' }}>{money(takings, currency)}</b> taken of {money(potential, currency)} possible</div>}
                 </>
               )}
               <div className="text-[13px] font-bold mt-2.5 lg:hidden" style={{ color: soft }}><span data-testid="map-number">{bookingsToday}</span> {bookingsToday === 1 ? 'booking' : 'bookings'} · <span data-testid="map-compare">{comparison(bookingsToday - bookingsLastWeek, weekdayShort)}</span></div>
@@ -253,25 +239,88 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
 
       <div className="order-3 lg:col-start-2 lg:row-start-1 flex flex-col gap-6">{aside}</div>
 
-      {/* the courts */}
-      <section ref={rootRef} className="order-2 lg:col-span-2 lg:row-start-2" aria-label="Courts right now">
-        <div className="flex items-baseline justify-between gap-3 mb-2.5 px-0.5">
-          <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Courts right now</div>
-          <div className="text-[12px]" style={{ color: 'var(--text-subtle)' }}>Tap a court for its briefing</div>
+      {/* the courts: each one once, with (owners) its money for the day */}
+      <section className="order-2 lg:col-span-2 lg:row-start-2" aria-label="Courts today">
+        <div className="flex items-center justify-between gap-3 mb-2.5 px-0.5">
+          <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Courts today</div>
+          <span className="lg:hidden text-[12px]" style={{ color: 'var(--text-subtle)' }}>Tap a court for its briefing</span>
+          {/* PC: see the courts at another time today, and (owners) switch the cards between the ring and hour columns */}
+          <span className="hidden lg:flex items-center gap-1.5 flex-wrap justify-end" data-testid="time-scrub">
+            <button type="button" onClick={() => setAt(nowMinutes)} data-testid="time-now" aria-pressed={isNow} className="text-[11.5px] font-extrabold rounded-full px-3 py-1"
+              style={isNow ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', border: '1.5px solid transparent' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>Now</button>
+            {chips.map(m => (
+              <button key={m} type="button" onClick={() => setAt(m)} data-testid="time-chip" aria-pressed={at === m} className="text-[11.5px] font-extrabold rounded-full px-3 py-1"
+                style={at === m ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', border: '1.5px solid transparent' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>{fmtMinutes(m)}</button>
+            ))}
+            {revenueByCourt && (
+              <span className="inline-flex p-[3px] rounded-full ml-2" style={{ background: 'var(--bg-raised)' }}>
+                {([[false, 'Pie', 'court-revenue-pie'], [true, 'Graph', 'court-revenue-graph']] as const).map(([g, t, id]) => (
+                  <button key={id} type="button" onClick={() => setGraph(g)} aria-pressed={graph === g} data-testid={id} className="text-[11.5px] font-extrabold px-3 py-1 rounded-full"
+                    style={graph === g ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { color: 'var(--text-primary)', opacity: 0.8 }}>{t}</button>
+                ))}
+              </span>
+            )}
+          </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-3">
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4${courts.length >= 3 ? ' lg:grid-cols-3' : ''}`}>
           {courts.map(c => {
             const st = states.get(c.id)!
             const r = c.row
+            const rv = revenueByCourt?.[c.id]
             const soldOut = r.sellable > 0 && r.openNow === 0 && !day.finished
+            // Fill it opens the offer for the first gap that is still far enough away to sell. If every gap starts too soon
+            // it says so, instead of a button that only reopens the briefing.
+            const fillEl = r.openNow > 0 && showMoney && offersOn ? (() => {
+              const offerable = r.openRanges.find(g => g.from.length === 5 && parseInt(g.from.slice(0, 2), 10) * 60 - nowMinutes >= MIN_LEAD_HOURS * 60)
+              return offerable ? (
+                <button type="button" data-testid="court-fill" onClick={e => { e.stopPropagation(); setSel(c.id); setOffer({ from: offerable.from, to: offerable.to }) }} className="hidden sm:inline-flex shrink-0 rounded-full px-4 py-2 text-[12px] font-black"
+                  style={{ background: '#d4f53c', color: '#17240a' }}>Fill it</button>
+              ) : (
+                <span data-testid="court-too-late" className="hidden sm:inline-flex shrink-0 text-[11.5px] font-bold text-right leading-tight" style={{ color: 'var(--text-muted)' }}>Too late<br />to offer</span>
+              )
+            })() : null
+            const dot = <i aria-hidden style={{ width: 8, height: 8, borderRadius: 99, display: 'inline-block', background: st.state === 'playing' ? '#1f9a5f' : st.state === 'blocked' ? '#c4343a' : '#8a94a0', boxShadow: st.state === 'playing' && isNow ? '0 0 0 4px rgba(31,154,95,0.22)' : undefined }} />
             return (
               <div key={c.id} role="button" tabIndex={0} onClick={() => setSel(sel === c.id ? null : c.id)} onKeyDown={e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); setSel(sel === c.id ? null : c.id) } }} data-testid="court-tile" aria-pressed={sel === c.id}
                 aria-label={`${c.name}: ${st.state === 'playing' ? `${st.who ?? 'booked'} until ${fmtMinutes(st.until!)}` : st.state === 'blocked' ? 'blocked' : 'free'}${r.openNow > 0 ? `, ${r.openNow} ${r.openNow === 1 ? 'hour' : 'hours'} to sell` : ''}`}
                 className="text-left rounded-[20px] p-5 transition-shadow cursor-pointer"
-                style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: sel === c.id ? '0 0 0 2px var(--text-primary)' : 'var(--shadow-float)' }}>
+                style={{ background: rv ? 'linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015)), var(--bg-surface)' : 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: sel === c.id ? '0 0 0 2px var(--text-primary)' : 'var(--shadow-float)' }}>
+                {rv ? (
+                  <>
+                    {/* Owners: each court once. Who is on, the money booked against what it could earn, what is still to sell, and the day. */}
+                    <span className="flex items-center gap-3">
+                      <CourtBadge name={c.name} />
+                      <span className="min-w-0">
+                        <span className="text-[11px] font-black whitespace-nowrap inline-flex items-center gap-1.5" style={{ letterSpacing: '0.08em', color: st.state === 'playing' ? 'var(--go-text)' : 'var(--text-muted)' }} data-testid="court-status">{dot}{st.state === 'playing' ? (isNow ? 'PLAYING NOW' : 'PLAYING') : st.state === 'blocked' ? 'BLOCKED' : isNow ? 'FREE NOW' : 'FREE'}</span>
+                        <span className="block text-[14px] font-extrabold truncate mt-0.5" style={{ color: 'var(--text-primary)' }}>
+                          {st.state === 'playing' ? (st.who ?? 'Booked') : st.state === 'blocked' ? 'Blocked' : st.next ? (st.next.who ?? 'Next booking') : 'Free'}
+                          <span className="font-semibold text-[12.5px]" style={{ color: 'var(--text-muted)' }}> · {st.state === 'playing' || st.state === 'blocked' ? `until ${fmtMinutes(st.until!)}` : st.next ? `next at ${fmtMinutes(st.next.start)}` : 'nothing more today'}</span>
+                        </span>
+                      </span>
+                      {fillEl && <span className="ml-auto">{fillEl}</span>}
+                    </span>
+                    {graph ? <span className="block mt-4"><Hours row={rv} colour="#1f9a5f" maxFee={maxFee} /></span> : (
+                      <span className="flex items-center gap-5 mt-4">
+                        <GlowRing row={rv} />
+                        <span className="min-w-0">
+                          <span className="block text-[32px] font-black leading-none" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }} data-testid="court-booked">{money(rv.booked, currency)}</span>
+                          <span className="block text-[12.5px] mt-1.5" style={{ color: 'var(--text-muted)' }}>booked of {money(rv.possible, currency)} · {rv.bookedHours} of {rv.sellableHours} h</span>
+                          <span className="flex flex-wrap gap-1.5 mt-2">
+                            {rv.share !== null && rv.booked > 0 && <MoneyBubble kind="gain" size={11}>{rv.share}% of today</MoneyBubble>}
+                            {r.openNow > 0 ? (
+                              <span data-testid="court-coin" className="text-[11px] font-extrabold rounded-full px-2.5 py-[2px] whitespace-nowrap" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>{r.openValue > 0 ? `${money(r.openValue, currency)} still to sell` : `${r.openNow} ${r.openNow === 1 ? 'hour' : 'hours'} open`}</span>
+                            ) : soldOut ? <MoneyBubble kind="gain" size={11} testId="court-soldout">Sold out</MoneyBubble> : null}
+                          </span>
+                        </span>
+                      </span>
+                    )}
+                    {graph ? <span className="block text-[11.5px] mt-1 font-semibold" style={{ color: 'var(--text-muted)' }}>{money(rv.booked, currency)} of {money(rv.possible, currency)} · each column is an hour</span> : <DayStrip row={rv} nowMinutes={nowMinutes} />}
+                  </>
+                ) : (
+                  <>
                 <span className="flex items-center justify-between gap-2">
                   <CourtBadge name={c.name} />
-                  <span className="text-[11px] font-black whitespace-nowrap inline-flex items-center gap-1.5" style={{ letterSpacing: '0.08em', color: 'var(--text-primary)' }}><i aria-hidden style={{ width: 8, height: 8, borderRadius: 99, display: 'inline-block', background: st.state === 'playing' ? '#1f9a5f' : st.state === 'blocked' ? '#c4343a' : '#8a94a0' }} />{st.state === 'playing' ? (isNow ? 'LIVE' : <><span className="sm:hidden">BUSY</span><span className="hidden sm:inline">PLAYING</span></>) : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
+                  <span className="text-[11px] font-black whitespace-nowrap inline-flex items-center gap-1.5" style={{ letterSpacing: '0.08em', color: 'var(--text-primary)' }}>{dot}{st.state === 'playing' ? (isNow ? 'LIVE' : <><span className="sm:hidden">BUSY</span><span className="hidden sm:inline">PLAYING</span></>) : st.state === 'blocked' ? 'BLOCKED' : 'FREE'}</span>
                 </span>
                 <span className="flex items-center gap-2.5 mt-3 min-h-[38px]">
                   {ringEl(c, 'hidden sm:inline-flex order-last ml-auto')}
@@ -301,17 +350,7 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                         <span className="block text-[12.5px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{r.openNow} {r.openNow === 1 ? 'hour' : 'hours'} open</span>
                       )}
                     </span>
-                    {showMoney && offersOn && (() => {
-                      // Fill it opens the offer for the first gap that is still far enough away to sell. If every gap starts too soon
-                      // it says so, instead of a button that only reopens the briefing.
-                      const offerable = r.openRanges.find(g => g.from.length === 5 && parseInt(g.from.slice(0, 2), 10) * 60 - nowMinutes >= MIN_LEAD_HOURS * 60)
-                      return offerable ? (
-                        <button type="button" data-testid="court-fill" onClick={e => { e.stopPropagation(); setSel(c.id); setOffer({ from: offerable.from, to: offerable.to }) }} className="hidden sm:inline-flex shrink-0 rounded-full px-4 py-2 text-[12px] font-black"
-                          style={{ background: '#d4f53c', color: '#17240a' }}>Fill it</button>
-                      ) : (
-                        <span data-testid="court-too-late" className="hidden sm:inline-flex shrink-0 text-[11.5px] font-bold text-right leading-tight" style={{ color: 'var(--text-muted)' }}>Too late<br />to offer</span>
-                      )
-                    })()}
+                    {fillEl}
                     </span>
                   ) : soldOut ? (
                     <MoneyBubble kind="gain" size={11} testId="court-soldout">Sold out</MoneyBubble>
@@ -320,33 +359,13 @@ export default function ClubMap({ venueSlug, date, courts, day, bookings, nowMin
                   )}
                   {ringEl(c, 'inline-flex sm:hidden ml-auto')}
                 </span>
+                  </>
+                )}
               </div>
             )
           })}
         </div>
-
-        {/* the time slider */}
-        <div ref={slotRef} className="hidden lg:block" style={pinned && slotH ? { height: slotH } : undefined}>
-        <div className={pinned ? 'px-4 pt-3 pb-2 rounded-[20px] lg:rounded-none' : 'pt-4'} data-testid="time-scrub" data-pinned={pinned ? 'true' : 'false'}
-          style={pinned ? { position: 'fixed', left: 12, right: 12, bottom: 'calc(80px + env(safe-area-inset-bottom))', zIndex: 30, background: 'var(--bg-surface)', border: '1px solid var(--border)', boxShadow: '0 10px 30px rgba(0,0,0,0.28)' } : undefined}>
-          <div className="flex items-center justify-between gap-3 mb-2.5">
-            <span className="text-[13px] font-extrabold" style={{ color: 'var(--text-primary)' }}>Drag to see another time today</span>
-            <span className="flex gap-1.5 flex-wrap justify-end">
-              <button type="button" onClick={() => setAt(nowMinutes)} data-testid="time-now" aria-pressed={isNow} className="text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
-                style={isNow ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', border: '1.5px solid transparent' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>Now</button>
-              {chips.map(m => (
-                <button key={m} type="button" onClick={() => setAt(m)} data-testid="time-chip" aria-pressed={at === m} className="hidden sm:inline-block text-[11.5px] font-extrabold rounded-full px-2.5 py-1"
-                  style={at === m ? { background: 'var(--brand-primary)', color: 'var(--brand-primary-on, #fff)', border: '1.5px solid var(--brand-primary)' } : { color: 'var(--text-muted)', border: '1.5px solid var(--border)' }}>{fmtMinutes(m)}</button>
-              ))}
-            </span>
-          </div>
-          <input type="range" className="time-slider" data-testid="time-slider" aria-label="Time of day" min={day.firstHour * 60} max={day.endHour * 60 - 15} step={15} value={at}
-            onChange={e => setAt(Number(e.target.value))} style={{ background: `linear-gradient(90deg, var(--brand-primary-muted) ${nowPct}%, var(--bg-raised) ${nowPct}%)` }} />
-          <div className="relative text-[10.5px] mt-1.5" style={{ height: 14, color: 'var(--text-subtle)' }} aria-hidden>
-            {ticks.map(h => <span key={h} className="absolute -translate-x-1/2" style={{ left: `${((h - day.firstHour) / n) * 100}%` }}>{fmtHour(`${String(h).padStart(2, '0')}:00`)}</span>)}
-          </div>
-        </div>
-        </div>
+        <div className="hidden lg:block text-[12px] mt-2.5 px-0.5" style={{ color: 'var(--text-subtle)' }}>Tap a court for its briefing · tap a time to see the courts then</div>
 
         {/* computer: the briefing opens under the courts */}
         <div className="hidden lg:block">
