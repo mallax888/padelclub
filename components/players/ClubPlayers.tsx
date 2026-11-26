@@ -8,8 +8,9 @@ import MemberPlanDialog from '@/components/admin/MemberPlanDialog'
 import type { Plan } from '@/lib/plan-rules'
 import { fmtClock } from '@/lib/clock'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
-import { SEGMENTS, countSegments, filterPlayers, groupBooked, lastPlayedLabel, matchesQuery, sortFor, type ClubPlayer, type Segment } from '@/lib/club-players'
+import { SEGMENTS, countSegments, daysSince, filterPlayers, groupBooked, lastPlayedLabel, matchesQuery, sortFor, type ClubPlayer, type Segment } from '@/lib/club-players'
 import MessageSheet, { type MessageTarget } from '@/components/players/MessageSheet'
+import AnnouncementCard from '@/components/admin/AnnouncementCard'
 import ReminderSheet from '@/components/players/ReminderSheet'
 import { contactLabel, type Contact, type ContactSummary } from '@/lib/contact-rules'
 
@@ -50,6 +51,9 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
   const pick = (s: Segment | 'contacts') => { setView(s); setShown(PAGE) }
   const liveContacts = useMemo(() => contacts.filter(c => !c.unsubscribedAt && !c.userId && c.status !== 'joined').filter(c => !query.trim() || c.name.toLowerCase().includes(query.trim().toLowerCase()) || c.email.includes(query.trim().toLowerCase())), [contacts, query])
   const owingTotal = useMemo(() => players.reduce((t, p) => t + (p.owedAmount ?? 0), 0), [players])
+  const names = (ps: ClubPlayer[]) => { const n = ps.map(p => p.name.split(/\s+/)[0] || p.name); return n.length > 3 ? `${n.slice(0, 3).join(', ')} and ${n.length - 3} more` : n.join(', ') }
+  const money = (n: number) => formatPrice(n, currency).replace(/\.00$/, '')
+  const quietPeople = sortFor(filterPlayers(players, 'quiet', today), 'quiet')
   const needs = [
     ...(showMoney && counts.owes > 0 ? [{ key: 'owes' as Segment, title: 'Owe money', people: filterPlayers(players, 'owes', today), button: counts.owes === 1 ? 'Remind them' : `Remind all ${counts.owes}`, testId: 'remind-owes',
       badge: <MoneyBubble kind="loss" size={12}>{formatPrice(owingTotal, currency).replace(/\.00$/, '')}</MoneyBubble>, act: () => setTarget({ segment: 'owes', count: counts.owes }) }] : []),
@@ -59,26 +63,39 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
       badge: <span className="text-[11.5px] font-extrabold rounded-full px-2.5 py-0.5" style={{ background: 'rgba(156,194,255,0.14)', color: 'var(--label-blue)' }}>{counts.new} new</span>, act: () => setTarget({ segment: 'new', count: counts.new }) }] : []),
   ]
 
+  // One line per group that needs the owner: what it is, who, and one button. Tapping the words shows that group in the list.
+  const needLine = (n: typeof needs[number]) => {
+    const one = n.people.length === 1 ? n.people[0] : null
+    const text = n.key === 'quiet'
+      ? { t: one ? `${one.name} hasn\u2019t played in ${daysSince(one.lastPlayed!, today)} days` : `${n.people.length} players haven\u2019t played in 30 days`, s: `${one ? '' : names(n.people) + ' · '}${showMoney ? `${money(groupBooked(n.people))} booked with you so far` : 'Gone quiet'}` }
+      : n.key === 'owes'
+        ? { t: `${n.people.length} ${n.people.length === 1 ? 'player owes' : 'players owe'} money`, s: `Owe money · ${names(n.people)}` }
+        : { t: `${n.people.length} new ${n.people.length === 1 ? 'player' : 'players'} this month`, s: `New this month · ${names(n.people)}` }
+    const tone = n.key === 'owes' ? { bg: 'var(--brand-crimson-muted)', fg: 'var(--brand-crimson)', edge: 'color-mix(in srgb, #c4343a 45%, transparent)', mark: '$' } : n.key === 'quiet' ? { bg: 'var(--amber-muted)', fg: 'var(--busy-amber)', edge: 'color-mix(in srgb, var(--busy-amber) 45%, transparent)', mark: '\u21ba' } : { bg: 'rgba(156,194,255,0.14)', fg: 'var(--label-blue)', edge: 'var(--border)', mark: '+' }
+    return (
+      <div key={n.key} className="rounded-[18px] px-4 py-3.5 flex items-center gap-3.5 mb-2.5" style={{ background: 'var(--bg-surface)', border: `1px solid ${tone.edge}` }} data-testid={`needs-${n.key}`}>
+        <button type="button" onClick={() => pick(n.key)} className="flex items-center gap-3.5 min-w-0 flex-1 text-left" aria-label={`Show ${n.title.toLowerCase()}`}>
+          <span aria-hidden className="inline-flex items-center justify-center rounded-[11px] font-extrabold shrink-0" style={{ width: 36, height: 36, background: tone.bg, color: tone.fg }}>{tone.mark}</span>
+          <span className="min-w-0">
+            <span className="block text-[14px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{text.t}</span>
+            <span className="block text-[12.5px] mt-0.5 font-semibold truncate" style={{ color: 'var(--text-muted)' }}>{text.s}</span>
+          </span>
+        </button>
+        {n.key === 'owes' && <span className="shrink-0">{n.badge}</span>}
+        {canMessage && <button type="button" onClick={n.act} data-testid={n.testId} className="shrink-0 rounded-[11px] px-3.5 text-[12.5px] font-black" style={{ minHeight: 38, background: '#d4f53c', color: '#17240a' }}>{n.button}</button>}
+      </div>
+    )
+  }
+  const groupsToMessage = ([['quiet', 'Gone quiet'], ['members', 'Members'], ['new', 'New'], ...(showMoney ? [['owes', 'Owe money']] : [])] as [Segment, string][])
+    .filter(([k]) => counts[k] > 0).map(([k, label]) => ({ key: k, label, count: counts[k] }))
+
   return (
-    <div className="w-full lg:flex-1 min-w-0 lg:flex lg:gap-6 lg:items-start" data-testid="club-players">
+    <div className="w-full lg:flex-1 min-w-0 flex flex-col lg:flex-row gap-6 lg:items-start" data-testid="club-players">
       <div className="flex-1 min-w-0">
       {needs.length > 0 && !viewContacts && (
         <>
           <div className="text-[11px] font-extrabold uppercase mb-2.5 px-0.5" style={{ letterSpacing: '0.12em', color: 'var(--label-blue)' }}>Needs you</div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" data-testid="needs-you">
-            {needs.map(n => (
-              <div key={n.key} className="rounded-[20px] p-5 flex flex-col" style={card} data-testid={`needs-${n.key}`}>
-                <button type="button" onClick={() => pick(n.key)} className="text-left" aria-label={`Show ${n.title.toLowerCase()}`}>
-                  <span className="flex items-center justify-between gap-2"><span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{n.title}</span>{n.badge}</span>
-                  <span className="flex items-center mt-3">
-                    {n.people.slice(0, 4).map((p, i) => <span key={p.id} style={{ marginLeft: i ? -10 : 0, borderRadius: 13, boxShadow: '0 0 0 2px var(--bg-surface)' }}><Tile name={p.name} tier={p.tier} size={36} /></span>)}
-                    <span className="ml-2.5 text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{n.people.length} {n.people.length === 1 ? 'player' : 'players'}</span>
-                  </span>
-                </button>
-                {canMessage && <button type="button" onClick={n.act} data-testid={n.testId} className="mt-4 rounded-[14px] py-2.5 text-[13.5px] font-extrabold" style={{ ...card, background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>{n.button}</button>}
-              </div>
-            ))}
-          </div>
+          <div className="mb-6" data-testid="needs-you">{needs.map(needLine)}</div>
         </>
       )}
       <div className="flex items-center justify-between mb-2.5 px-0.5">
@@ -207,6 +224,12 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
       </>)}
       </div>
 
+      {/* Owners: message your players, in the right-hand column on a computer (under the list on a phone). It makes way for a player you tap. */}
+      {canMessage && (
+        <div id="news" className={`scroll-mt-24 w-full lg:w-[360px] shrink-0 lg:sticky lg:top-6${open ? ' lg:hidden' : ''}`}>
+          <AnnouncementCard venueSlug={venueSlug} venueName={club} groups={groupsToMessage} onGroup={k => setTarget({ segment: k as Segment, count: counts[k as Segment] })} />
+        </div>
+      )}
       {/* On a computer: the player you tapped, beside the list. Their plan, their money and their latest games, with the actions. */}
       {open && (
         <aside className="hidden lg:block w-[360px] shrink-0 sticky top-6" data-testid="player-panel">
