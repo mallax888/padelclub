@@ -11,7 +11,7 @@ const display = { fontFamily: 'var(--font-display), Manrope, sans-serif' } as co
 // choice is remembered (cookie) so the next visit opens on the same side.
 export default function ViewSwitch({ mode, variant = 'pill', onNavigate }: {
   mode: ViewMode
-  variant?: 'pill' | 'row'
+  variant?: 'pill' | 'row' | 'segment'
   onNavigate?: () => void
 }) {
   const router = useRouter()
@@ -37,7 +37,15 @@ export default function ViewSwitch({ mode, variant = 'pill', onNavigate }: {
 
   return (
     <>
-      {variant === 'pill' ? (
+      {variant === 'segment' ? (
+        <div className="flex p-[3px] rounded-full" style={{ background: 'var(--bg-raised)' }} role="group" aria-label="View the app as">
+          <span className="sr-only">View as {label}. Tap to switch to {mode === 'manager' ? 'Player' : 'Manager'}.</span>
+          {(['player', 'manager'] as const).map(m => (
+            <button key={m} type="button" onClick={() => choose(m)} aria-pressed={mode === m} data-testid={`view-${m}`} className="flex-1 rounded-full py-1.5 text-[12.5px] font-extrabold"
+              style={mode === m ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)' } : { color: 'var(--text-primary)', opacity: 0.85 }}>{m === 'player' ? 'Player' : 'Manager'}</button>
+          ))}
+        </div>
+      ) : variant === 'pill' ? (
         <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog"
           className="inline-flex items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-extrabold shrink-0"
           style={{ minHeight: 40, background: 'var(--brand-primary-muted)', border: '1px solid var(--brand-primary)', color: 'var(--brand-primary-text)' }}>

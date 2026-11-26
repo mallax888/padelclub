@@ -46,14 +46,16 @@ export default function SpecialsMenu() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] font-semibold whitespace-nowrap transition-colors cursor-pointer select-none"
+        className="w-full flex items-center gap-2.5 px-1.5 py-1.5 rounded-[14px] text-[13.5px] font-extrabold whitespace-nowrap transition-colors cursor-pointer select-none"
         style={{ color: 'var(--busy-amber)', background: open ? 'var(--amber-muted)' : 'transparent' }}
         onMouseEnter={e => (e.currentTarget.style.background = 'var(--amber-muted)')}
         onMouseLeave={e => (e.currentTarget.style.background = open ? 'var(--amber-muted)' : 'transparent')}
       >
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-          <path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7c-2-4-8-4-8 0s6 0 8 0zM12 7c2-4 8-4 8 0s-6 0-8 0z"/>
-        </svg>
+        <span className="inline-flex items-center justify-center shrink-0 rounded-[10px]" style={{ width: 30, height: 30, background: 'var(--amber-muted)' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7c-2-4-8-4-8 0s6 0 8 0zM12 7c2-4 8-4 8 0s-6 0-8 0z"/>
+          </svg>
+        </span>
         Specials
       </button>
 

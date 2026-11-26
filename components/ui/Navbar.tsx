@@ -8,7 +8,7 @@ import PushNotificationToggle from '@/components/ui/PushNotificationToggle'
 import NotificationBell from '@/components/ui/NotificationBell'
 import SpecialsMenu from '@/components/ui/SpecialsMenu'
 import { SPECIALS, cadencePill } from '@/lib/specials'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ViewSwitch from '@/components/ui/ViewSwitch'
 import { homePathFor, roleLabel, type ViewMode } from '@/lib/view-mode'
 import { tierLabel } from '@/lib/plan-rules'
@@ -129,22 +129,60 @@ const CLUB_NAV_ITEMS = NAV_ITEMS.filter(i => !['/home', '/book', '/find-a-game',
 
 function SidebarLink({ href, label, active }: { href: string; label: string; active: boolean }) {
   return (
-    <Link href={href}
-      className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13.5px] transition-colors relative"
+    // The page you are on is a white pill (dark words); every page has its icon in a soft rounded tile.
+    <Link href={href} aria-current={active ? 'page' : undefined}
+      className="flex items-center gap-2.5 px-1.5 py-1.5 rounded-[14px] text-[13.5px] transition-colors relative"
       style={{
-        background: active ? 'var(--bg-raised)' : 'transparent',
-        color: active ? 'var(--brand-primary-text)' : 'var(--text-muted)',
-        fontWeight: active ? 650 : 500,
+        background: active ? 'var(--today-block-bg)' : 'transparent',
+        color: active ? 'var(--today-block-fg)' : 'var(--text-primary)',
+        boxShadow: active ? 'var(--today-block-shadow)' : undefined,
+        fontWeight: active ? 800 : 600,
       }}
-      onMouseEnter={e => { if (!active) e.currentTarget.style.color = 'var(--text-primary)' }}
-      onMouseLeave={e => { if (!active) e.currentTarget.style.color = 'var(--text-muted)' }}
+      onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--bg-raised)' }}
+      onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent' }}
     >
-      {active && (
-        <span style={{ position: 'absolute', left: -12, top: 8, bottom: 8, width: 3, borderRadius: '0 3px 3px 0', background: 'var(--brand-primary)' }} />
-      )}
-      <span style={{ width: 17, height: 17, flexShrink: 0 }}>{ICONS[href]}</span>
+      <span className="inline-flex items-center justify-center shrink-0 rounded-[10px]" style={{ width: 30, height: 30, background: active ? '#0f151c' : 'var(--bg-raised)', color: active ? '#ffffff' : 'var(--text-muted)' }}>
+        <span style={{ width: 16, height: 16, display: 'inline-flex' }}>{ICONS[href]}</span>
+      </span>
       {label}
     </Link>
+  )
+}
+
+// You, at the bottom of the sidebar. The dots open a small menu: phone alerts and Sign out (red, last, so it is hard to hit by mistake).
+function ProfileCard({ initials, name, who, onSignOut }: { initials: string; name: string; who: string; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const away = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', away); window.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('mousedown', away); window.removeEventListener('keydown', esc) }
+  }, [open])
+  return (
+    <div ref={ref} className="relative mt-3" data-testid="profile-card">
+      {open && (
+        <div role="menu" className="absolute left-0 right-0 bottom-full mb-2 rounded-[16px] p-2 z-50" data-testid="profile-menu"
+          style={{ background: 'var(--bg-raised)', border: '1px solid var(--border)', boxShadow: '0 18px 40px rgba(0,0,0,0.45)' }}>
+          <PushNotificationToggle variant="row" />
+          <div style={{ borderTop: '1px solid var(--border)', margin: '4px 0' }} />
+          <button type="button" role="menuitem" onClick={onSignOut} className="flex items-center gap-2.5 w-full px-2 py-2.5 rounded-[10px] text-[13.5px] font-extrabold whitespace-nowrap" style={{ color: 'var(--brand-crimson)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 16l-4-4 4-4M6 12h10"/></svg>
+            Sign out
+          </button>
+        </div>
+      )}
+      <button type="button" onClick={() => setOpen(o => !o)} aria-haspopup="menu" aria-expanded={open} aria-label="Your account"
+        className="flex items-center gap-2.5 w-full p-2 rounded-[16px] text-left" style={{ background: open ? 'var(--bg-raised)' : 'transparent', border: '1px solid var(--border)' }}>
+        <span className="inline-flex items-center justify-center shrink-0 font-extrabold text-white" style={{ width: 34, height: 34, borderRadius: 11, fontSize: 11.5, background: 'linear-gradient(160deg,#3a73dc,#1d3f8d)' }}>{initials}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[13px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{name}</span>
+          <span className="inline-block text-[10.5px] font-extrabold capitalize rounded-full px-2 mt-0.5" style={{ background: 'rgba(156,194,255,0.14)', color: 'var(--label-blue)' }}>{who}</span>
+        </span>
+        <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" style={{ color: 'var(--text-muted)', flexShrink: 0 }}><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+      </button>
+    </div>
   )
 }
 
@@ -170,7 +208,7 @@ function TabBarLink({ href, label, active, icon, onClick }: { href: string; labe
 
 function SidebarGroupLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-2.5 pt-4 pb-1.5 text-[10.5px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-subtle)' }}>
+    <div className="px-2.5 pt-5 pb-1.5 text-[10.5px] font-extrabold uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.14em' }}>
       {children}
     </div>
   )
@@ -293,12 +331,17 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
       <aside className="hidden md:flex flex-col fixed left-0 top-0 h-screen z-40 w-[220px]"
         style={{ background: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}>
         <div className="px-3 py-4 flex flex-col h-full overflow-y-auto">
-          <Link href={homeHref} className="flex items-center gap-2 font-bold text-sm px-1.5 mb-5">
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#d4f53c', boxShadow: '0 0 8px #d4f53c99' }} />
-            <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
-              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span>
-            </span>
-          </Link>
+          {/* Logo, then light/dark and the bell up top, like most apps */}
+          <div className="flex items-center gap-1 mb-5">
+            <Link href={homeHref} className="flex items-center gap-2 font-bold text-sm px-1.5 min-w-0 mr-auto">
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#d4f53c', boxShadow: '0 0 8px #d4f53c99' }} />
+              <span style={{ color: 'var(--text-primary)', letterSpacing: '2px' }}>
+                PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span>
+              </span>
+            </Link>
+            <span className="sidebar-icon-btn" data-testid="sidebar-theme"><ThemeToggle /></span>
+            {profile && <span className="sidebar-icon-btn" data-testid="sidebar-bell"><NotificationBell userId={profile.id} panelPosition="flyout" /></span>}
+          </div>
 
           {manager ? (
             <>
@@ -354,40 +397,11 @@ export default function Navbar({ viewMode = 'player', isOwner = false, canSwitch
 
           {isStaff && canSwitchView && (
             <div className="pt-3">
-              <ViewSwitch mode={viewMode} variant="row" />
+              <ViewSwitch mode={viewMode} variant="segment" />
             </div>
           )}
 
-          {profile && (
-            <div className="pt-3 mt-2" style={{ borderTop: '1px solid var(--border)' }}>
-              <div className="flex items-center gap-2.5 px-1.5 mb-2.5">
-                <div style={{
-                  width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                  background: 'var(--brand-primary)', color: 'var(--brand-primary-on)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, fontWeight: 700, boxShadow: 'var(--glow-primary)',
-                }}>
-                  {getInitials(profile.full_name)}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[12.5px] font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                    {profile.full_name}
-                  </div>
-                  <div className="text-[10.5px] capitalize" style={{ color: 'var(--text-muted)' }}>
-                    {whoLabel(profile)}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-1 px-1.5">
-                <ThemeToggle />
-                <PushNotificationToggle />
-                <NotificationBell userId={profile.id} panelPosition="flyout" />
-                <button onClick={handleSignOut} className="btn btn-sm btn-danger ml-auto whitespace-nowrap shrink-0">
-                  Sign out
-                </button>
-              </div>
-            </div>
-          )}
+          {profile && <ProfileCard initials={getInitials(profile.full_name)} name={profile.full_name ?? ''} who={whoLabel(profile)} onSignOut={handleSignOut} />}
         </div>
       </aside>
 

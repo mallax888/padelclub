@@ -500,3 +500,7 @@ html { overscroll-behavior-y: none; }
 .dark .book-bright { --text-muted: #E6EBF1; --text-subtle: #CDD6DF; }
 /* The date on each date tile sits in a blue tile like COURT 3 (the picked card turns white around it). */
 .date-num { width: 40px; height: 38px; border-radius: 12px; color: #fff; background: linear-gradient(160deg, #3a73dc, #1d3f8d); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 6px 14px rgba(11,30,74,0.35); }
+
+/* Sidebar: the light/dark and bell buttons up by the logo sit in soft rounded tiles */
+.sidebar-icon-btn > button,
+.sidebar-icon-btn > div > button:first-child { width: 34px; height: 34px; border-radius: 11px; background: var(--bg-raised); color: var(--text-primary); display: inline-flex; align-items: center; justify-content: center; }
