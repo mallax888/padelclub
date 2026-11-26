@@ -136,10 +136,6 @@ export default function TodayView(p: TodayViewProps) {
         )}
       </div>
 
-      <Link href={`/admin?tab=board&${q}`} className="btn-main btn-main-quiet mt-4 hidden lg:flex">
-        Open the full dashboard
-      </Link>
-
       {/* owners only: front desk does not message players */}
       {p.showMoney && !noCourts && <div className="mt-4"><AnnouncementCard venueSlug={p.venueSlug} venueName={p.venues.find(v => v.slug === p.venueSlug)?.name ?? 'your club'} /></div>}
 
