@@ -20,6 +20,8 @@
   --today-grad:         linear-gradient(180deg,rgba(15,21,28,0.14),rgba(15,21,28,0.04));
   --today-edge:         rgba(15,21,28,0.22);
   --today-block-bg:     linear-gradient(180deg,#2a3541,#0F151C);
+  --nav-tile-bg:        linear-gradient(160deg, rgba(31,154,95,0.16), rgba(31,154,95,0.10));
+  --nav-tile-fg:        #1a7a4b;
   --today-block-fg:     #FFFFFF;
   --today-block-shadow: 0 8px 18px rgba(15,21,28,0.28);
   --text-primary:       #0F151C;
@@ -76,6 +78,8 @@
   --today-grad:         linear-gradient(180deg,rgba(255,255,255,0.17),rgba(255,255,255,0.04));
   --today-edge:         rgba(255,255,255,0.28);
   --today-block-bg:     linear-gradient(180deg,#FFFFFF,#D6DCE4);
+  --nav-tile-bg:        linear-gradient(160deg, rgba(52,213,138,0.35), rgba(31,154,95,0.35));
+  --nav-tile-fg:        #c9f5df;
   --today-block-fg:     #17202A;
   --today-block-shadow: 0 8px 18px rgba(255,255,255,0.18);
   --text-primary:       #F7F8FA;
