@@ -10,7 +10,6 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { VENUES, getVenue } from '@/lib/venues'
 import { currencyForRegion } from '@/lib/currency'
 import { loadClubPlayers } from '@/lib/club-players-server'
-import AnnouncementCard from '@/components/admin/AnnouncementCard'
 import ClubPlayers from '@/components/players/ClubPlayers'
 import { effectivePlans, type Plan } from '@/lib/plan-rules'
 import { loadPlanRows } from '@/lib/club-plans'
@@ -87,8 +86,6 @@ export default async function PlayersPage({ searchParams }: { searchParams?: { v
               </div>
             )}
             <ClubPlayers players={club.list} today={club.today} venueSlug={club.slug} club={club.name} currency={club.currency} showMoney={caller!.role === 'admin'} canMessage={caller!.role === 'admin'} contacts={club.contacts} contactInfo={club.contactInfo} canImport={caller!.role === 'admin'} emailReady={!!process.env.RESEND_API_KEY} plans={club.plans} />
-            {/* Owners: news for everyone at the club (closures, events), which can also sit on players' Home screens. */}
-            {caller!.role === 'admin' && <div className="mt-6 scroll-mt-24" id="news"><AnnouncementCard venueSlug={club.slug} venueName={club.name} /></div>}
           </div>
         ) : <PlayersDirectory players={players} />}
 

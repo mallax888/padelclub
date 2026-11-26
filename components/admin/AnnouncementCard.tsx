@@ -9,10 +9,13 @@ type Recent = { id: string; title: string; created_at: string; expires_at: strin
 const card = { background: 'var(--bg-surface)', border: '1px solid var(--border)' } as const
 const muted = { color: 'var(--text-muted)' } as const
 
-// "Message your players": an owner writes one short message that goes to everyone who plays at the club.
-export default function AnnouncementCard({ venueSlug, venueName }: { venueSlug: string; venueName: string }) {
+// "Message your players": an owner writes one short message that goes to everyone who plays at the club. On the Players page
+// it can also pick a group first (gone quiet, members...), which hands over to that group's message instead.
+export type MessageGroup = { key: string; label: string; count: number }
+export default function AnnouncementCard({ venueSlug, venueName, groups, onGroup }: { venueSlug: string; venueName: string; groups?: MessageGroup[]; onGroup?: (key: string) => void }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [who, setWho] = useState<string>('all')
   const [info, setInfo] = useState<{ reach: number; available: boolean; recent: Recent[] } | null>(null)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
@@ -55,12 +58,24 @@ export default function AnnouncementCard({ venueSlug, venueName }: { venueSlug: 
 
   return (
     <>
-      <div className="rounded-[20px] p-5" style={card} data-testid="announcement-card">
-        <div className="text-[11px] font-extrabold uppercase mb-2" style={{ letterSpacing: '0.14em', color: 'var(--text-subtle)' }}>Message your players</div>
-        <p className="text-sm" style={muted}>Tell everyone who plays at {venueName} about a closure, an event or news.{info && info.available ? ` Reaches ${info.reach} ${info.reach === 1 ? 'person' : 'people'}.` : ''}</p>
-        <button type="button" onClick={() => setOpen(true)} className="btn-main btn-main-lime mt-3" data-testid="announce-open" disabled={info !== null && !info.available}>
-          {info !== null && !info.available ? 'Not switched on yet' : 'Write a message'}
+      <div className="rounded-[20px] p-5" style={groups ? { ...card, background: 'radial-gradient(120% 120% at 100% 0%, rgba(212,245,60,0.08), transparent 60%), var(--bg-surface)', boxShadow: 'var(--shadow-float)' } : card} data-testid="announcement-card">
+        <div className="text-[11px] font-extrabold uppercase mb-2" style={{ letterSpacing: '0.14em', color: groups ? 'var(--label-blue)' : 'var(--text-subtle)' }}>Message your players</div>
+        {groups && groups.length > 0 && (
+          <>
+            <div className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>Who to?</div>
+            <div className="flex flex-wrap gap-1.5 mt-2 mb-3" role="radiogroup" aria-label="Who to message">
+              {[{ key: 'all', label: 'Everyone', count: info?.reach ?? null as number | null }, ...groups].map(g => (
+                <button key={g.key} type="button" role="radio" aria-checked={who === g.key} onClick={() => setWho(g.key)} data-testid={`who-${g.key}`} className="text-[12.5px] font-extrabold rounded-full px-3 py-1.5"
+                  style={who === g.key ? { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', boxShadow: 'var(--today-block-shadow)', border: '1.5px solid transparent' } : { color: 'var(--text-primary)', border: '1.5px solid var(--border)' }}>{g.label}{g.count !== null && g.count !== undefined ? ` · ${g.count}` : ''}</button>
+              ))}
+            </div>
+          </>
+        )}
+        <p className="text-sm" style={muted}>{who === 'all' ? <>{groups ? 'A closure, an event or news.' : `Tell everyone who plays at ${venueName} about a closure, an event or news.`}{info && info.available ? ` Reaches ${info.reach} ${info.reach === 1 ? 'person' : 'people'}.` : ''}{groups ? ' It can also sit on their Home screen.' : ''}</> : `A note to just these players, by app notification and, if you like, email.`}</p>
+        <button type="button" onClick={() => (who === 'all' ? setOpen(true) : onGroup?.(who))} className="btn-main btn-main-lime mt-3" data-testid="announce-open" disabled={who === 'all' && info !== null && !info.available}>
+          {who === 'all' && info !== null && !info.available ? 'Not switched on yet' : groups ? 'Write a message \u2192' : 'Write a message'}
         </button>
+        {groups && info?.recent?.[0] && <div className="text-[12px] mt-4 pt-3" style={{ ...muted, borderTop: '1px solid var(--border)' }} data-testid="last-sent">Last sent: <b style={{ color: 'var(--text-primary)' }}>{info.recent[0].title}</b> · {ageLabel(info.recent[0].created_at, Date.now())}</div>}
         {info && !info.available && <p className="text-[11px] mt-2" style={{ color: 'var(--text-subtle)' }}>Run the 038 database change first.</p>}
         {active.length > 0 && (
           <div className="mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
