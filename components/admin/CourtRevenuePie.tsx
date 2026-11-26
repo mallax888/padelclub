@@ -113,7 +113,7 @@ export default function CourtRevenuePie({ revenue, currency, nowMinutes }: { rev
                 <div className="min-w-0">
                   <div className="text-[34px] font-black leading-none" style={{ letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>{money(r.booked, currency)}</div>
                   <div className="text-[12.5px] mt-1.5" style={{ color: 'var(--text-muted)' }}>booked of {money(r.possible, currency)}</div>
-                  <div className="mt-2"><MoneyBubble kind={(r.pct ?? 0) > 0 ? 'gain' : 'none'} size={11}>{r.pct ?? 0}% sold{share !== null ? ` · ${share}% of today` : ''}</MoneyBubble></div>
+                  {share !== null && <div className="mt-2"><MoneyBubble kind="gain" size={11}>{share}% of today</MoneyBubble></div>}
                 </div>
               </div>
               <DayStrip row={r} nowMinutes={nowMinutes} />
