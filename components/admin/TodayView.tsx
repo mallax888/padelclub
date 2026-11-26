@@ -11,7 +11,7 @@ import type { CourtRevenue } from '@/lib/court-revenue'
 import type { MapBooking } from '@/lib/club-map'
 import type { CourtDay } from '@/lib/court-day'
 import type { Briefing } from '@/lib/briefing'
-import AnnouncementCard from '@/components/admin/AnnouncementCard'
+import QuietPlayersRow from '@/components/admin/QuietPlayersRow'
 import type { FillGap, OverdueLine } from '@/lib/today-actions'
 import MoneyBubble from '@/components/ui/MoneyBubble'
 
@@ -50,6 +50,8 @@ export type TodayViewProps = {
     fill: { gap: FillGap; bounds: { from: string; to: string } } | null // null: nothing left that can be offered today
     autoOpen: 'fill' | 'remind' | null // opened from a phone or email link
   } | null
+  // Owners only: players who have gone quiet, for a "Message them" row at the top of Needs attention.
+  quiet?: { count: number; names: string[]; booked: number } | null
 }
 
 function AttentionRow({ href, tone, mark, title, text, bubble }: { href: string; tone: 'red' | 'yellow' | 'blue'; mark: string; title: string; text: string; bubble?: React.ReactNode }) {
@@ -98,6 +100,10 @@ export default function TodayView(p: TodayViewProps) {
         text="Players see it as not taking bookings. Switch it back on in Club settings when you're ready." />,
     )
   }
+  // Owners: players who have gone quiet come first, because a message to them is the one that brings bookings back.
+  if (p.showMoney && p.quiet && p.quiet.count > 0) {
+    attention.splice(p.notOpenYet ? 1 : 0, 0, <QuietPlayersRow key="quiet" venueSlug={p.venueSlug} club={p.venues.find(v => v.slug === p.venueSlug)?.name ?? 'your club'} count={p.quiet.count} names={p.quiet.names} booked={p.quiet.booked} currency={p.currency} />)
+  }
   // Empty court time lives on the court card below (with the Fill them button), not in this list.
   const fillButton = act?.offersOn && act.fill
     ? <FillButton venueSlug={p.venueSlug} gap={act.fill.gap} bounds={act.fill.bounds} autoOpen={act.autoOpen === 'fill'} hero />
@@ -136,8 +142,8 @@ export default function TodayView(p: TodayViewProps) {
         )}
       </div>
 
-      {/* owners only: front desk does not message players */}
-      {p.showMoney && !noCourts && <div className="mt-4"><AnnouncementCard venueSlug={p.venueSlug} venueName={p.venues.find(v => v.slug === p.venueSlug)?.name ?? 'your club'} /></div>}
+      {/* owners only: news for everyone (closures, events) is written on the Players page */}
+      {p.showMoney && !noCourts && <div className="text-[12.5px] mt-4 px-0.5" style={{ color: 'var(--text-muted)' }} data-testid="news-link">Closures, events and news: <Link href={`/players?${q}#news`} className="font-extrabold" style={{ color: 'var(--brand-primary-text)' }}>Players › Club news</Link></div>}
 
       </div>
     </>

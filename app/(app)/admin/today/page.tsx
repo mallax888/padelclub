@@ -19,6 +19,8 @@ import TodayView, { type TodayViewProps } from '@/components/admin/TodayView'
 import PlayerPageNotice from '@/components/admin/PlayerPageNotice'
 import { PLAYER_PAGES } from '@/lib/club-guard'
 import Link from 'next/link'
+import { loadClubPlayers } from '@/lib/club-players-server'
+import { filterPlayers, groupBooked, sortFor } from '@/lib/club-players'
 import { loadVenueSettings, weekFor } from '@/lib/venue-settings'
 import { dayHours } from '@/lib/venue-hours'
 
@@ -99,6 +101,11 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
   const ownerNow = isOwnerRole((profile as any).role)
   const briefingP = ownerNow ? loadBriefing(createAdminClient(), venueSlug, nowMs).then(v => ({ ok: true as const, v }), (err: unknown) => ({ ok: false as const, err })) : null
   const offersP = ownerNow ? offersReady(createAdminClient()) : null
+  // Owners: players who have gone quiet (30 days without a game here), for the "Message them" row in Needs attention.
+  const quietP = ownerNow ? loadClubPlayers(createAdminClient(), venueSlug, nowMs).then(({ today, players }) => {
+    const q = sortFor(filterPlayers(players, 'quiet', today), 'quiet')
+    return q.length ? { count: q.length, names: q.map(p => p.name.split(/\s+/)[0] || p.name), booked: groupBooked(q) } : null
+  }).catch(err => { console.error('Could not load quiet players for Today', err); return null }) : null
   offersP?.catch(() => {})
   const lastWeek = addDaysStr(clock.date, -7)
   const courts = (courtRows ?? []).filter((c: any) => c.venue_slug === venueSlug)
@@ -228,6 +235,7 @@ export default async function TodayPage({ searchParams }: { searchParams?: { ven
       map={{ courts: mapCourts, bookings: mapBookings, takings: summary.revenue.today, bounds: hoursToday ? { from: hoursToday.open, to: hoursToday.close } : null, date: clock.date }}
       nowMinutes={clock.minutes}
       actions={actions}
+      quiet={quietP ? await quietP : null}
     />
     </>
   )
