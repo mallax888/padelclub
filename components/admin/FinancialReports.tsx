@@ -187,7 +187,7 @@ export default function FinancialReports({
   return (
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:flex-wrap md:items-center justify-between gap-3">
-        <div className="flex gap-1 rounded-full p-1 w-full md:w-auto overflow-x-auto" role="group" aria-label="Period" style={{ background: 'var(--bg-raised)' }}>
+        <div className="grid grid-cols-3 md:flex gap-1 rounded-[20px] md:rounded-full p-1 w-full md:w-auto" role="group" aria-label="Period" style={{ background: 'var(--bg-raised)' }}>
           {PERIOD_OPTIONS.map(p => (
             <button key={p.key} type="button" aria-pressed={key === p.key} data-on={key === p.key ? 'true' : undefined} data-testid={`report-period-${p.key}`} onClick={() => setKey(p.key)}
               className="wh-seg flex-1 md:flex-none px-4 py-2 rounded-full text-[13px] font-bold transition-all shrink-0 whitespace-nowrap"

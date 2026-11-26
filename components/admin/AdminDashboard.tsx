@@ -1254,6 +1254,14 @@ function BoardView({
   // table; this keeps the whole trading day on one screen while giving each
   // cell several times the width it had when the hours were columns.
   const DAY_ROW_HEIGHT = 50
+  // A booking's block is exactly as long as the booking: an hour of Day view is one row plus the 8px gap between rows.
+  // A 3:00 to 4:30 booking ends halfway down the 4 pm row, and one that starts at :30 starts halfway down its row.
+  const HOUR_PX = DAY_ROW_HEIGHT + 8
+  const dayBlockSize = (b: any, span: number) => {
+    const startMin = parseInt(String(b.start_time ?? '').slice(3, 5), 10) || 0
+    const mins = Number(b.duration_minutes) || span * 60
+    return { height: Math.max(26, (mins / 60) * HOUR_PX - 8), marginTop: (startMin / 60) * HOUR_PX }
+  }
 
   const shortDay = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' })
   const atNow = viewMode === 'day' ? boardDate === today : viewMode === 'week' ? weekDates.includes(today) : boardDate.slice(0, 7) === today.slice(0, 7)
@@ -1792,7 +1800,7 @@ function BoardView({
                               // for the times underneath now, which saves
                               // opening the panel to answer "when does this
                               // one finish?".
-                              style={{ ...moneyVars(boardKind(b)), height: DAY_ROW_HEIGHT * slot.span - 8, fontSize: 12, fontWeight: 600, borderRadius: 6, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
+                              style={{ ...moneyVars(boardKind(b)), ...dayBlockSize(b, slot.span), fontSize: 12, fontWeight: 600, borderRadius: 6, background: appearance.background, color: appearance.color, cursor: isPastDay ? 'default' : 'grab', opacity: draggedId === b.id ? 0.4 : 1 }}>
                               <span className="truncate max-w-full">{appearance.label}</span>
                               <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.72 }}>
                                 {fmtClockRange(b.start_time, b.end_time)}
