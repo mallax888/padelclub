@@ -317,7 +317,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
                 <div className="min-w-0 flex-1">
                   <div className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: '#cfe0ff' }}>Open for booking</div>
                   <div className="font-black leading-tight mt-1.5 text-[30px]" style={{ letterSpacing: '-0.03em' }}>{isOpen ? "You're open" : 'Not open yet'}</div>
-                  <div className="text-[13px] mt-1" style={{ color: '#cfe0ff' }}>{isOpen ? 'Players can see and book your courts' : 'Players see "Courts coming soon" until you switch this on'}</div>
+                  <div className="text-[13px] mt-1" style={{ color: '#cfe0ff' }}>{isOpen ? 'Players can see and book your courts' : 'Players see "Not taking bookings right now" until you switch this on'}</div>
                 </div>
                 <Switch on={isOpen} label="Open for booking" disabled={busy || courts.length === 0}
                   onClick={() => { void run('/api/admin/venue-settings', { venueSlug: venue.slug, isOpen: !isOpen }, !isOpen ? `${venue.name} is open for booking` : 'Closed to players') }} />
@@ -387,7 +387,7 @@ export default function ClubSetup({ clubs, venue, listed, currency, hours: saved
       <div className="flex items-center gap-3 rounded-2xl mt-4 px-3.5 py-3.5" style={{ ...card, border: '1px solid var(--brand-primary)', minHeight: 72 }}>
         <span className="min-w-0">
           <span className="block text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>Open for booking</span>
-          <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{isOpen ? 'Players can see and book your courts' : 'Players see "Courts coming soon" until you switch this on'}</span>
+          <span className="block text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{isOpen ? 'Players can see and book your courts' : 'Players see "Not taking bookings right now" until you switch this on'}</span>
         </span>
         <span className="ml-auto">
           <Switch on={isOpen} label="Open for booking" disabled={busy || courts.length === 0}

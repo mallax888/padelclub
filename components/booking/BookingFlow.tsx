@@ -15,7 +15,7 @@ import CourtPicker from '@/components/booking/CourtPicker'
 import { sortCourts } from '@/lib/court-pick'
 import { weeksPhrase } from '@/lib/regular-pay'
 import { planWeeks, seriesDates, weekdayPlural, WEEK_OPTIONS, type DatedBusy } from '@/lib/regulars-rules'
-import { isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
+import { CLOSED_SHORT, closedLine, isOpenForBooking, weekFor, type VenueSettingsMap } from '@/lib/venue-settings'
 import { currencyForRegion, formatPrice } from '@/lib/currency'
 import { isPeakTime, computeCourtPrice, basePricePerHour } from '@/lib/pricing'
 import { bestOfferFor, priceWithOffer, type OfferLite } from '@/lib/offer-rules'
@@ -313,6 +313,7 @@ export default function BookingFlow({
     const v = LIVE_VENUES.find(x => x.slug === waitPrefill.venueSlug)
     if (!v) return
     appliedPrefill.current = key
+    if (!isOpenForBooking(venueSettings, v.slug)) { toast.error(closedLine(v.name)); return }   // switched off since the link was sent
     setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null)
     setRegion(v.region)
     setVenue(v)
@@ -333,6 +334,7 @@ export default function BookingFlow({
     const v = LIVE_VENUES.find(x => x.slug === offerPrefill.venueSlug)
     if (!v) return
     appliedOffer.current = key
+    if (!isOpenForBooking(venueSettings, v.slug)) { toast.error(closedLine(v.name)); return }
     setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null)
     setRegion(v.region)
     setVenue(v)
@@ -351,6 +353,7 @@ export default function BookingFlow({
     const v = LIVE_VENUES.find(x => x.slug === clubParam)
     if (!v) return
     appliedClub.current = clubParam
+    if (!isOpenForBooking(venueSettings, v.slug)) { forgetClub(); toast.error(closedLine(v.name)); return }   // the club has paused booking
     setCountry(COUNTRIES.find(c => c.regions.includes(v.region))?.name ?? null)
     setRegion(v.region)
     setVenue(v)
@@ -418,6 +421,7 @@ export default function BookingFlow({
     const rebookCourt = courts.find(c => c.id === courtId)
     const rebookVenue = rebookCourt ? VENUES.find(v => v.slug === (rebookCourt as any).venue_slug) : undefined
     if (!rebookCourt || !rebookVenue) return
+    if (!isOpenForBooking(venueSettings, rebookVenue.slug)) { toast.error(closedLine(rebookVenue.name)); return }
     const rebookCountry = COUNTRIES.find(c => c.regions.includes(rebookVenue.region))?.name ?? null
 
     setCountry(rebookCountry)
@@ -652,6 +656,16 @@ export default function BookingFlow({
     const sb = supabase
     const endTime = addHoursDecimal(time, duration)
 
+    // The owner may have switched this club off while this screen was open. Ask again right now, so a booking is never made in a
+    // club that has stopped taking them (the database refuses it too, for anything that gets past this).
+    if (venue) {
+      const { data: live } = await (sb as any).from('venue_settings').select('is_open_for_booking').eq('venue_slug', venue.slug).maybeSingle()
+      if (live && live.is_open_for_booking === false) {
+        toast.error(closedLine(venue.name)); setStep('venue'); setSubmitting(false)
+        return
+      }
+    }
+
     // Try every court that looked free, not just the one named on the confirm
     // screen. Nobody picked that court -- it was assigned -- so if someone
     // else took it while this screen was open, the next identical court is a
@@ -697,6 +711,7 @@ export default function BookingFlow({
         !error ? 'That time has just gone — pick another.'
         : error.code === '23505' || error.code === '23P01'
           ? (pickedCourtId ? `${pickedName} has just gone — pick another.` : 'Every court at that time has just gone — pick another.')
+        : /isn't taking bookings/i.test(String(error.message)) ? closedLine(venue?.name ?? 'This club')
         : error.message
       )
       setSubmitting(false)
@@ -1105,15 +1120,16 @@ export default function BookingFlow({
       {step === 'venue' && (
         <div className="grid gap-3 lg:grid-cols-2 animate-fade-in" data-testid="venue-grid">
           {regionVenues.map(v => {
-            // A club that has courts but isn't open for booking yet looks the same to players as one with no courts: "coming soon".
-            const realCourtCount = isOpenForBooking(venueSettings, v.slug)
-              ? courts.filter(c => (c as any).venue_slug === v.slug).length
-              : 0
+            // A club with no courts is "coming soon". A club that has courts but whose owner has switched booking off says so plainly.
+            const courtsHere = courts.filter(c => (c as any).venue_slug === v.slug).length
+            const switchedOff = courtsHere > 0 && !isOpenForBooking(venueSettings, v.slug)
+            const realCourtCount = switchedOff ? 0 : courtsHere
             return (
               <BookRow key={v.slug} testid={`venue-${v.slug}`} label={realCourtCount === 1 ? 'COURT' : 'COURTS'} value={realCourtCount > 0 ? realCourtCount : '–'} muted={realCourtCount === 0} dim={realCourtCount === 0}
-                eyebrow={v.region} title={v.name} sub={realCourtCount === 0 ? 'Courts coming soon' : v.address.split(',').slice(0, 2).join(',')}
+                eyebrow={v.region} title={v.name} sub={switchedOff ? CLOSED_SHORT : realCourtCount === 0 ? 'Courts coming soon' : v.address.split(',').slice(0, 2).join(',')}
                 chip={v.slug === homeSlug ? { text: 'Your club', kind: 'lime' } : undefined}
                 onClick={() => {
+                  if (switchedOff) { toast.error(closedLine(v.name)); return }
                   if (realCourtCount === 0) { toast.error(`${v.name} doesn't have any courts set up yet.`); return }
                   setVenue(v); setDate(null); setCourtTypeFilter(null); setTime(null); setStep('date'); playSelectionSound()
                 }} />

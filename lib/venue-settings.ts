@@ -22,4 +22,8 @@ export async function loadVenueSettings(supabase: any): Promise<VenueSettingsMap
 
 // No row means open: a club only closes when someone closes it.
 export const isOpenForBooking = (s: VenueSettingsMap | undefined, slug: string): boolean => s?.[slug]?.isOpen !== false
+// What players are told when the owner has switched a club's booking off (as opposed to a club with no courts yet, which is "coming soon").
+export const closedLine = (clubName: string): string => `${clubName} isn't taking bookings right now.`
+export const CLOSED_SHORT = 'Not taking bookings right now'
+export const CLOSED_API = "This club isn't taking bookings right now."
 export const weekFor = (s: VenueSettingsMap | undefined, slug: string): WeekHours => weekOrDefault(s?.[slug]?.hours)

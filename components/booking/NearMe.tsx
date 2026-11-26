@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { Venue } from '@/lib/venues'
 import type { OfferLite } from '@/lib/offer-rules'
-import { isOpenForBooking, type VenueSettingsMap } from '@/lib/venue-settings'
+import { CLOSED_SHORT, isOpenForBooking, type VenueSettingsMap } from '@/lib/venue-settings'
 import { NEAR_RADIUS_KM, dealAt, dealLabel, formatKm, rankNearby, withinRadius, type LatLng } from '@/lib/nearby'
 import { localDateStr } from '@/lib/utils'
 
@@ -43,7 +43,7 @@ export default function NearMe({ venues, courtCounts, settings, offers, homeSlug
 
   const nowMs = Date.now(), today = localDateStr()
   const items = venues.map(v => {
-    return { v, slug: v.slug, lat: v.lat, lng: v.lng, approx: v.approx, bookable: isOpenForBooking(settings, v.slug) && (courtCounts[v.slug] ?? 0) > 0 }
+    return { v, slug: v.slug, lat: v.lat, lng: v.lng, approx: v.approx, bookable: isOpenForBooking(settings, v.slug) && (courtCounts[v.slug] ?? 0) > 0, switchedOff: !isOpenForBooking(settings, v.slug) && (courtCounts[v.slug] ?? 0) > 0 }
   })
   const ranked = pos ? rankNearby(items, pos).map(r => ({ ...r, deal: dealAt(offers, r.slug, nowMs) })) : []
   const nearby = withinRadius(ranked)
@@ -118,7 +118,7 @@ export default function NearMe({ venues, courtCounts, settings, offers, homeSlug
               <span className="flex flex-wrap gap-1.5 mt-2">
                 {r.bookable
                   ? <span className="text-[10.5px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--brand-green-muted)', color: 'var(--brand-green)' }}>Open for booking</span>
-                  : <span className="text-[10.5px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>Courts coming soon</span>}
+                  : <span className="text-[10.5px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--bg-raised)', color: 'var(--text-subtle)' }}>{(r as any).switchedOff ? CLOSED_SHORT : 'Courts coming soon'}</span>}
                 {r.deal && <span data-testid="near-deal" className="text-[10.5px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--brand-yellow-muted)', color: 'var(--brand-yellow)' }}>🏷️ {dealLabel(r.deal, today)}</span>}
                 {r.slug === homeSlug && <span className="text-[10.5px] font-extrabold rounded-full px-2 py-0.5" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>Your club</span>}
               </span>

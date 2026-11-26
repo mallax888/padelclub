@@ -74,7 +74,7 @@ export async function createRegularWeeks(admin: Admin, input: { userId: string; 
   if (venueInstant(first.date, `${startTime}:00`, tz).getTime() <= nowMs) return fail(400, 'That time has already started.')
 
   const settings = await loadVenueSettings(db)
-  if (!isOpenForBooking(settings, slug)) return fail(400, "This club isn't open for booking yet.")
+  if (!isOpenForBooking(settings, slug)) return fail(400, "This club isn't taking bookings right now.")
   const rules = (await loadRegularRules(db))[slug]
   if (rules && !rules.enabled) return fail(403, 'This club has switched regulars off.')
 

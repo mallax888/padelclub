@@ -82,7 +82,7 @@ export async function createOffer(admin: Admin, input: OfferWindow & { audience:
   if (input.audience !== 'past_players' && input.audience !== 'home_club') return fail(400, 'Invalid request.')
   const tz = timezoneForVenueSlug(input.venueSlug)
   const settings = await loadVenueSettings(db)
-  if (!isOpenForBooking(settings, input.venueSlug)) return fail(400, "This club isn't open for booking yet.")
+  if (!isOpenForBooking(settings, input.venueSlug)) return fail(400, "This club isn't taking bookings right now.")
   const hours = dayHours(weekFor(settings, input.venueSlug), input.date)
   const problem = validateOfferInput(
     { date: input.date, startTime: input.startTime, endTime: input.endTime, percent: input.percent },
