@@ -185,7 +185,7 @@ export default function TodayView(p: TodayViewProps) {
             stillToPlay={s.bookings.remaining} bookedPct={p.courtDay.pct} unpaidChase={p.showMoney ? null : unpaid.count}
             courts={p.courtDay.rows.map(r => ({ id: r.id, name: r.name, row: r, today: p.map.courts.find(c => c.id === r.id)?.today ?? 0, lastWeek: p.map.courts.find(c => c.id === r.id)?.lastWeek ?? 0 }))} />
           {/* PC, owners only: today's takings court by court, as pies or hour by hour. */}
-          {p.showMoney && p.courtRevenue && <div className="hidden lg:block mt-6"><CourtRevenuePie revenue={p.courtRevenue} currency={p.currency} /></div>}
+          {p.showMoney && p.courtRevenue && <div className="hidden lg:block mt-6"><CourtRevenuePie revenue={p.courtRevenue} currency={p.currency} nowMinutes={p.nowMinutes} /></div>}
         </div>
       )}
     </div>
