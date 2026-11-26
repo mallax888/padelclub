@@ -73,7 +73,7 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
         : { t: `${n.people.length} new ${n.people.length === 1 ? 'player' : 'players'} this month`, s: `New this month · ${names(n.people)}` }
     const tone = n.key === 'owes' ? { bg: 'var(--brand-crimson-muted)', fg: 'var(--brand-crimson)', edge: 'color-mix(in srgb, #c4343a 45%, transparent)', mark: '$' } : n.key === 'quiet' ? { bg: 'var(--amber-muted)', fg: 'var(--busy-amber)', edge: 'color-mix(in srgb, var(--busy-amber) 45%, transparent)', mark: '\u21ba' } : { bg: 'rgba(156,194,255,0.14)', fg: 'var(--label-blue)', edge: 'var(--border)', mark: '+' }
     return (
-      <div key={n.key} className="rounded-[18px] px-4 py-3.5 flex items-center gap-3.5 mb-2.5" style={{ background: 'var(--bg-surface)', border: `1px solid ${tone.edge}` }} data-testid={`needs-${n.key}`}>
+      <div key={n.key} className="rounded-[16px] px-4 py-3.5 flex items-center gap-3.5 mb-2.5" style={{ background: 'var(--bg-surface)', border: `1px solid ${tone.edge}` }} data-testid={`needs-${n.key}`}>
         <button type="button" onClick={() => pick(n.key)} className="flex items-center gap-3.5 min-w-0 flex-1 text-left" aria-label={`Show ${n.title.toLowerCase()}`}>
           <span aria-hidden className="inline-flex items-center justify-center rounded-[11px] font-extrabold shrink-0" style={{ width: 36, height: 36, background: tone.bg, color: tone.fg }}>{tone.mark}</span>
           <span className="min-w-0">
