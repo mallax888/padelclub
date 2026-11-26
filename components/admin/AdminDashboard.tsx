@@ -964,7 +964,7 @@ export default function AdminDashboard({
                 <>
                   <p className="mt-1 text-xs">Club settings sets up your hours, courts and prices together, so players can start booking.</p>
                   <div className="mt-4 mx-auto max-w-xs">
-                    <Link href={`/admin/setup?venue=${encodeURIComponent(activeVenue)}`} className="btn-main" data-testid="courts-go-setup">Set up this club</Link>
+                    <Link href={`/admin/setup?venue=${encodeURIComponent(activeVenue)}`} className="btn-main btn-main-lime" data-testid="courts-go-setup">Set up this club</Link>
                   </div>
                   <button type="button" className="mt-3 text-xs font-bold" style={{ color: 'var(--label-blue)' }} onClick={openAddCourt}>or add a single court here</button>
                 </>

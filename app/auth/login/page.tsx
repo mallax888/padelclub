@@ -153,7 +153,7 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
-              className="btn-main"
+              className="btn-main btn-main-lime"
               disabled={loading}
             >
               {loading ? 'Signing in…' : 'Sign in'}

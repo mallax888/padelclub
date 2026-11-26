@@ -16,20 +16,22 @@ export default async function LaddersPage() {
 
   return (
     <div>
-      <div className="flex flex-col gap-5 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-semibold">Ladders</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>Challenge players above you and climb the club ranking</p>
         </div>
         {isStaff && (
-          <Link href="/ladders/new" className="btn-main" data-testid="new-ladder">+ New ladder</Link>
+          <Link href="/ladders/new" className="btn-main btn-main-lime shrink-0 sm:w-auto sm:px-5" style={{ minHeight: 46 }} data-testid="new-ladder">+ New ladder</Link>
         )}
       </div>
 
       {(ladders ?? []).length === 0 ? (
         isStaff ? (
-          <div className="rounded-2xl text-center py-12 text-sm" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-            No ladders yet — create one to get started
+          <div className="rounded-[20px] text-center px-5 py-7" data-testid="empty-ladders-staff" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+            <div className="text-[30px] leading-none" aria-hidden>🪜</div>
+            <div className="text-[17px] font-extrabold mt-2.5" style={{ color: 'var(--text-primary)' }}>No ladders yet</div>
+            <p className="text-[13.5px] mt-1.5 mx-auto max-w-[420px] leading-relaxed" style={{ color: 'var(--text-muted)' }}>Players challenge the person above them and climb. Scores update the ladder on their own.</p>
           </div>
         ) : (
           // A player with nothing here yet: say what will appear, and give them something to do now.

@@ -29,9 +29,26 @@ export default function ForgotPasswordPage() {
       style={{ background: 'radial-gradient(circle at 50% 0%, var(--brand-primary-muted), var(--bg-base) 60%)' }}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <div style={{ fontFamily: 'Georgia,serif', fontSize: 32, fontWeight: 700, color: 'var(--text-primary)' }}>
-              Padel<span style={{ color: 'var(--brand-primary-text)' }}>Mate</span>
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <svg width="56" height="56" viewBox="0 0 100 100" style={{ colorScheme: 'light' }}>
+              <defs>
+                <radialGradient id="ball" cx="35%" cy="28%" r="75%">
+                  <stop offset="0%" stopColor="#F7FFD6"/>
+                  <stop offset="40%" stopColor="#D4FF3D"/>
+                  <stop offset="100%" stopColor="#8FAE1E"/>
+                </radialGradient>
+                <clipPath id="ballClip">
+                  <circle cx="50" cy="50" r="46"/>
+                </clipPath>
+              </defs>
+              <circle cx="50" cy="50" r="46" fill="url(#ball)"/>
+              <g clipPath="url(#ballClip)">
+                <path d="M 50 4 C 20 20, 20 40, 50 50 C 80 60, 80 80, 50 96" fill="none" stroke="#FFFFFF" strokeWidth="5" strokeLinecap="round" transform="rotate(25 50 50)"/>
+              </g>
+              <ellipse cx="34" cy="28" rx="14" ry="9" fill="white" opacity="0.35" transform="rotate(-25 34 28)"/>
+            </svg>
+            <div style={{ fontSize: 42, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)', userSelect: 'none' }}>
+              PADEL<span style={{ color: 'var(--brand-primary-text)' }}>MATE</span>
             </div>
           </div>
           <p className="text-xs tracking-widest uppercase" style={{ color: 'var(--text-subtle)' }}>
@@ -64,7 +81,7 @@ export default function ForgotPasswordPage() {
               </div>
               <button
                 type="submit"
-                className="btn-main"
+                className="btn-main btn-main-lime"
                 disabled={loading}
               >
                 {loading ? 'Sending…' : 'Send reset link'}

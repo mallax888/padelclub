@@ -138,7 +138,7 @@ export default function SignupPage() {
             </div>
             <button
               type="submit"
-              className="btn-main"
+              className="btn-main btn-main-lime"
               disabled={loading}
             >
               {loading ? 'Creating account…' : 'Create account'}
