@@ -20,7 +20,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
   const channelId = useId()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [open, setOpen] = useState(false)
-  const [flyoutCoords, setFlyoutCoords] = useState<{ left: number; bottom: number } | null>(null)
+  const [flyoutCoords, setFlyoutCoords] = useState<{ left: number; bottom?: number; top?: number } | null>(null)
   const ref = useRef<HTMLDivElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -81,10 +81,11 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
     }
     const buttonRect = ref.current.getBoundingClientRect()
     const asideRect = ref.current.closest('aside')?.getBoundingClientRect()
-    setFlyoutCoords({
-      left: (asideRect?.right ?? buttonRect.right) + 8,
-      bottom: window.innerHeight - buttonRect.bottom,
-    })
+    // A bell near the top of the sidebar opens downward from it; one near the bottom opens upward.
+    const high = buttonRect.top < window.innerHeight / 2
+    setFlyoutCoords(high
+      ? { left: (asideRect?.right ?? buttonRect.right) + 8, top: buttonRect.top }
+      : { left: (asideRect?.right ?? buttonRect.right) + 8, bottom: window.innerHeight - buttonRect.bottom })
   }, [open, panelPosition])
 
   const markAllRead = async () => {
@@ -269,7 +270,7 @@ export default function NotificationBell({ userId, panelPosition = 'top-right' }
 
       {open && panelPosition === 'flyout' && flyoutCoords && createPortal(
         <div ref={panelRef} className="fixed z-50 w-80 rounded-xl shadow-xl overflow-hidden"
-          style={{ left: flyoutCoords.left, bottom: flyoutCoords.bottom, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+          style={{ left: flyoutCoords.left, top: flyoutCoords.top, bottom: flyoutCoords.bottom, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
           {panelContent}
         </div>,
         document.body,

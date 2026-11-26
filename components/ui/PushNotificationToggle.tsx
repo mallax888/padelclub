@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { Smartphone } from 'lucide-react'
 import { readPushSupport, subscribeToPush, unsubscribeFromPush } from '@/lib/push-client'
 
-export default function PushNotificationToggle() {
+export default function PushNotificationToggle({ variant = 'icon' }: { variant?: 'icon' | 'row' }) {
   const [supported, setSupported] = useState(false)
   const [enabled, setEnabled] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -46,6 +46,17 @@ export default function PushNotificationToggle() {
   }
 
   if (!supported) return null
+
+  if (variant === 'row') return (
+    <button type="button" role="switch" aria-checked={enabled} onClick={enabled ? disable : enable} disabled={loading} data-testid="push-row"
+      className="flex items-center gap-2.5 w-full px-2 py-2.5 rounded-[10px] text-[13.5px] font-bold" style={{ color: 'var(--text-primary)' }}>
+      <Smartphone size={16} strokeWidth={2} style={{ color: 'var(--text-muted)' }} />
+      Phone alerts
+      <span aria-hidden className="ml-auto relative rounded-full shrink-0" style={{ width: 40, height: 24, background: enabled ? 'var(--today-block-bg)' : 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+        <span className="absolute rounded-full" style={{ top: 2, left: enabled ? 18 : 2, width: 18, height: 18, background: enabled ? 'var(--today-block-fg)' : 'var(--text-subtle)', transition: 'left .15s' }} />
+      </span>
+    </button>
+  )
 
   return (
     <button
