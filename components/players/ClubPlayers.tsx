@@ -2,6 +2,11 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import MoneyBubble from '@/components/ui/MoneyBubble'
+import MemberPlanDialog from '@/components/admin/MemberPlanDialog'
+import type { Plan } from '@/lib/plan-rules'
+import { fmtClock } from '@/lib/clock'
 import { formatPrice, type CurrencyCode } from '@/lib/currency'
 import { SEGMENTS, countSegments, filterPlayers, groupBooked, lastPlayedLabel, matchesQuery, sortFor, type ClubPlayer, type Segment } from '@/lib/club-players'
 import MessageSheet, { type MessageTarget } from '@/components/players/MessageSheet'
@@ -10,13 +15,26 @@ import { contactLabel, type Contact, type ContactSummary } from '@/lib/contact-r
 
 const initials = (n: string) => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]?.toUpperCase()).join('') || '?'
 const PAGE = 25
+const PICKED = { background: 'var(--today-block-bg)', color: 'var(--today-block-fg)', border: '1px solid transparent', boxShadow: 'var(--today-block-shadow)' } as const
+// A player's tile wears their plan colour, the same as the plan tiles in Club settings: Casual blue, Pro green, Club (and any plan the club adds) gold.
+const planFace = (tier?: string) => !tier || tier === 'casual' ? 'linear-gradient(160deg, #3a73dc, #1d3f8d)' : tier === 'pro' ? 'linear-gradient(160deg, #22b06c, #0f5c38)' : 'linear-gradient(160deg, #d8b200, #8a6f00)'
+const dayLabel = (d: string) => d ? new Intl.DateTimeFormat('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`)) : ''
+function Tile({ name, tier, size = 40 }: { name: string; tier?: string; size?: number }) {
+  return <span aria-hidden className="shrink-0 flex items-center justify-center font-black text-white" style={{ width: size, height: size, borderRadius: Math.round(size * 0.31), background: planFace(tier), fontSize: Math.round(size * 0.32), boxShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>{initials(name)}</span>
+}
 
 // The owner's list of the club's players: who they are, when they last played and what they have booked, with one tap to
 // message a whole group. Front desk gets the same list without the money and without messaging.
-export default function ClubPlayers({ players, today, venueSlug, club, currency, showMoney, canMessage, contacts = [], contactInfo = null, canImport = false, emailReady = false }: {
+export default function ClubPlayers({ players, today, venueSlug, club, currency, showMoney, canMessage, contacts = [], contactInfo = null, canImport = false, emailReady = false, plans = null }: {
   players: ClubPlayer[]; today: string; venueSlug: string; club: string; currency: CurrencyCode; showMoney: boolean; canMessage: boolean
-  contacts?: Contact[]; contactInfo?: ContactSummary | null; canImport?: boolean; emailReady?: boolean
+  contacts?: Contact[]; contactInfo?: ContactSummary | null; canImport?: boolean; emailReady?: boolean; plans?: Plan[] | null
 }) {
+  const router = useRouter()
+  const [openId, setOpenId] = useState<string | null>(null)
+  const [planFor, setPlanFor] = useState<{ id: string; name: string; tier: string } | null>(null)
+  const open = openId ? players.find(p => p.id === openId) ?? null : null
+  // On a computer a tap opens the player beside the list; on a phone it goes to their page as before.
+  const choose = (e: React.MouseEvent, id: string) => { if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) { e.preventDefault(); setOpenId(id) } }
   const [view, setView] = useState<Segment | 'contacts'>('all')
   const segment: Segment = view === 'contacts' ? 'all' : view
   const viewContacts = view === 'contacts'
@@ -31,9 +49,42 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
   const quiet = segment === 'quiet'
   const pick = (s: Segment | 'contacts') => { setView(s); setShown(PAGE) }
   const liveContacts = useMemo(() => contacts.filter(c => !c.unsubscribedAt && !c.userId && c.status !== 'joined').filter(c => !query.trim() || c.name.toLowerCase().includes(query.trim().toLowerCase()) || c.email.includes(query.trim().toLowerCase())), [contacts, query])
+  const owingTotal = useMemo(() => players.reduce((t, p) => t + (p.owedAmount ?? 0), 0), [players])
+  const needs = [
+    ...(showMoney && counts.owes > 0 ? [{ key: 'owes' as Segment, title: 'Owe money', people: filterPlayers(players, 'owes', today), button: counts.owes === 1 ? 'Remind them' : `Remind all ${counts.owes}`, testId: 'remind-owes',
+      badge: <MoneyBubble kind="loss" size={12}>{formatPrice(owingTotal, currency).replace(/\.00$/, '')}</MoneyBubble>, act: () => setTarget({ segment: 'owes', count: counts.owes }) }] : []),
+    ...(counts.quiet > 0 ? [{ key: 'quiet' as Segment, title: 'Gone quiet', people: sortFor(filterPlayers(players, 'quiet', today), 'quiet'), button: 'Send them a note', testId: 'message-quiet',
+      badge: <span className="text-[11.5px] font-extrabold rounded-full px-2.5 py-0.5" style={{ background: 'var(--amber-muted)', color: 'var(--busy-amber)' }}>30+ days</span>, act: () => setTarget({ segment: 'quiet', count: counts.quiet }) }] : []),
+    ...(counts.new > 0 ? [{ key: 'new' as Segment, title: 'New this month', people: filterPlayers(players, 'new', today), button: 'Say welcome', testId: 'message-new',
+      badge: <span className="text-[11.5px] font-extrabold rounded-full px-2.5 py-0.5" style={{ background: 'rgba(156,194,255,0.14)', color: 'var(--label-blue)' }}>{counts.new} new</span>, act: () => setTarget({ segment: 'new', count: counts.new }) }] : []),
+  ]
 
   return (
-    <div className="w-full lg:flex-1 min-w-0" data-testid="club-players">
+    <div className="w-full lg:flex-1 min-w-0 lg:flex lg:gap-6 lg:items-start" data-testid="club-players">
+      <div className="flex-1 min-w-0">
+      {needs.length > 0 && !viewContacts && (
+        <>
+          <div className="text-[11px] font-extrabold uppercase mb-2.5 px-0.5" style={{ letterSpacing: '0.12em', color: 'var(--label-blue)' }}>Needs you</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6" data-testid="needs-you">
+            {needs.map(n => (
+              <div key={n.key} className="rounded-[20px] p-5 flex flex-col" style={card} data-testid={`needs-${n.key}`}>
+                <button type="button" onClick={() => pick(n.key)} className="text-left" aria-label={`Show ${n.title.toLowerCase()}`}>
+                  <span className="flex items-center justify-between gap-2"><span className="text-[13px] font-bold" style={{ color: 'var(--text-primary)' }}>{n.title}</span>{n.badge}</span>
+                  <span className="flex items-center mt-3">
+                    {n.people.slice(0, 4).map((p, i) => <span key={p.id} style={{ marginLeft: i ? -10 : 0, borderRadius: 13, boxShadow: '0 0 0 2px var(--bg-surface)' }}><Tile name={p.name} tier={p.tier} size={36} /></span>)}
+                    <span className="ml-2.5 text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{n.people.length} {n.people.length === 1 ? 'player' : 'players'}</span>
+                  </span>
+                </button>
+                {canMessage && <button type="button" onClick={n.act} data-testid={n.testId} className="mt-4 rounded-[14px] py-2.5 text-[13.5px] font-extrabold" style={{ ...card, background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>{n.button}</button>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="flex items-center justify-between mb-2.5 px-0.5">
+        <span className="text-[11px] font-extrabold uppercase" style={{ letterSpacing: '0.12em', color: 'var(--label-blue)' }}>{viewContacts ? 'Imported' : 'Everyone'}</span>
+        {canImport && <Link href={`/players/import?venue=${venueSlug}`} data-testid="import-link" className="text-[12.5px] font-extrabold" style={{ color: 'var(--label-blue)' }}>Import players</Link>}
+      </div>
       <label className="flex items-center gap-3 rounded-2xl px-4 py-3 mb-3" style={{ ...card }}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--text-subtle)' }}><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input value={query} onChange={e => { setQuery(e.target.value); setShown(PAGE) }} placeholder="Search players" aria-label="Search players" data-testid="player-search"
@@ -46,25 +97,22 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
           return (
             <button key={s.key} type="button" role="tab" aria-selected={on} data-testid={`seg-${s.key}`} onClick={() => pick(s.key)}
               className="shrink-0 rounded-full px-4 py-2.5 text-[13px] font-extrabold whitespace-nowrap"
-              style={on ? { background: 'var(--brand-primary)', color: '#fff', border: '1px solid var(--brand-primary)' } : { ...card, color: 'var(--text-muted)' }}>
+              style={on ? PICKED : { ...card, color: 'var(--text-primary)' }}>
               <span className="lg:hidden">{s.short}</span><span className="hidden lg:inline">{s.label}</span>
-              <b className="ml-1.5" style={{ color: on ? '#fff' : 'var(--text-primary)' }}>{counts[s.key]}</b>
+              <b className="ml-1.5" style={{ color: on ? 'var(--today-block-fg)' : 'var(--label-blue)' }}>{counts[s.key]}</b>
             </button>
           )
         })}
         {contactInfo && contactInfo.notJoined > 0 && (
           <button type="button" role="tab" aria-selected={viewContacts} data-testid="seg-contacts" onClick={() => pick('contacts')}
             className="shrink-0 rounded-full px-4 py-2.5 text-[13px] font-extrabold whitespace-nowrap"
-            style={viewContacts ? { background: 'var(--brand-primary)', color: '#fff', border: '1px solid var(--brand-primary)' } : { ...card, color: 'var(--text-muted)' }}>
+            style={viewContacts ? PICKED : { ...card, color: 'var(--text-primary)' }}>
             <span className="lg:hidden">Not joined</span><span className="hidden lg:inline">Imported, not joined yet</span>
-            <b className="ml-1.5" style={{ color: viewContacts ? '#fff' : '#d4f53c' }}>{contactInfo.notJoined}</b>
+            <b className="ml-1.5" style={{ color: viewContacts ? 'var(--today-block-fg)' : 'var(--label-blue)' }}>{contactInfo.notJoined}</b>
           </button>
         )}
       </div>
 
-      {canImport && (
-        <div className="flex justify-end -mt-1 mb-3"><Link href={`/players/import?venue=${venueSlug}`} data-testid="import-link" className="rounded-full px-4 py-2 text-[12.5px] font-extrabold" style={{ ...card, color: 'var(--brand-primary-text)' }}>Import players</Link></div>
-      )}
 
       {viewContacts && contactInfo ? (
         <div data-testid="contacts-panel">
@@ -103,12 +151,11 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
       ) : (<>
 
       {quiet && counts.quiet > 0 && (
-        <div className="rounded-[18px] p-4 mb-3 flex items-center gap-4" data-testid="quiet-banner" style={{ background: 'rgba(212,245,60,0.09)', border: '1px solid rgba(212,245,60,0.45)' }}>
+        <div className="rounded-[16px] p-4 mb-3 flex items-center gap-4" data-testid="quiet-banner" style={{ ...card, borderLeft: '3px solid var(--busy-amber)' }}>
           <div className="min-w-0 flex-1">
             <div className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>{counts.quiet} {counts.quiet === 1 ? 'player hasn' : 'players haven'}&apos;t played in 30 days</div>
             <div className="text-[12.5px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{showMoney ? <>Together they have booked <b style={{ color: 'var(--text-primary)' }}>{formatPrice(groupBooked(group), currency)}</b> here. </>: null}A message is the cheapest way to bring them back.</div>
           </div>
-          {canMessage && <button type="button" onClick={() => setTarget({ segment: 'quiet', count: counts.quiet })} data-testid="message-quiet" className="hidden sm:inline-flex shrink-0 rounded-full px-5 py-3 text-[14px] font-black" style={{ background: '#d4f53c', color: '#17240a' }}>{counts.quiet === 1 ? 'Message them' : `Message all ${counts.quiet}`} →</button>}
         </div>
       )}
 
@@ -118,37 +165,35 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
         </div>
       ) : (
         <div className="rounded-[20px] overflow-hidden" style={card} data-testid="players-list">
-          <div className="hidden lg:grid items-center gap-3 px-5 py-3 text-[11px] font-extrabold uppercase" style={{ gridTemplateColumns: showMoney ? '2.4fr 1.3fr 0.7fr 0.9fr 0.9fr' : '2.4fr 1.3fr 0.7fr 0.9fr', letterSpacing: '0.1em', color: 'var(--text-subtle)', borderBottom: '1px solid var(--border)' }}>
-            <span>Player</span><span>Last played</span><span>Games</span>{showMoney && <span>Booked</span>}<span />
-          </div>
-          {list.slice(0, shown).map(p => (
-            <div key={p.id} data-testid="player-row" className="flex lg:grid items-center gap-3 px-4 lg:px-5 py-3.5" style={{ gridTemplateColumns: showMoney ? '2.4fr 1.3fr 0.7fr 0.9fr 0.9fr' : '2.4fr 1.3fr 0.7fr 0.9fr', borderBottom: '1px solid var(--border)' }}>
-              <Link href={`/players/${p.id}`} className="flex items-center gap-3 min-w-0 flex-1">
-                <span aria-hidden className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-[12px] font-black" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>{initials(p.name)}</span>
+          {list.slice(0, shown).map(p => {
+            const on = open?.id === p.id
+            return (
+            <div key={p.id} data-testid="player-row" data-open={on ? 'true' : undefined} className="flex items-center gap-3 px-4 lg:px-5" style={{ minHeight: 64, borderBottom: '1px solid var(--border)', background: on ? 'var(--bg-raised)' : undefined, boxShadow: on ? 'inset 3px 0 0 var(--today-block-fg)' : undefined }}>
+              <Link href={`/players/${p.id}`} onClick={e => choose(e, p.id)} className="flex items-center gap-3 min-w-0 flex-1 py-3">
+                <Tile name={p.name} tier={p.tier} />
                 <span className="min-w-0">
                   <span className="block text-[15px] font-bold truncate" style={{ color: 'var(--text-primary)' }}>{p.name}</span>
-                  <span className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                    <span className="text-[11.5px] lg:hidden" style={{ color: 'var(--text-muted)' }}>{lastPlayedLabel(p, today)} · {p.games} {p.games === 1 ? 'game' : 'games'}</span>
-                    <span className="text-[10px] font-black rounded-full px-2 py-0.5" style={p.member ? { background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' } : { background: 'var(--bg-raised)', color: 'var(--text-muted)' }}>{p.member ? (p.planLabel ?? 'Member') : 'Casual'}</span>
-                    {p.viaLink && <span className="text-[10px] font-black rounded-full px-2 py-0.5" data-testid="via-link-tag" style={{ background: 'rgba(212,245,60,0.14)', color: '#d4f53c', border: '1px solid rgba(212,245,60,0.45)' }}>via link</span>}
-                    {p.owes > 0 && showMoney && <span className="text-[10px] font-black rounded-full px-2 py-0.5" style={{ background: '#d4f53c', color: '#17240a' }}>owes {p.owes}</span>}
+                  <span className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[12.5px]" style={{ color: 'var(--text-muted)' }}>
+                    <span>{p.member ? (p.planLabel ?? 'Member') : 'Casual'} · {lastPlayedLabel(p, today)}</span>
+                    {p.viaLink && <span className="text-[10px] font-black rounded-full px-2 py-0.5" data-testid="via-link-tag" style={{ background: 'rgba(156,194,255,0.14)', color: 'var(--label-blue)' }}>via link</span>}
                   </span>
                 </span>
               </Link>
-              <span className="hidden lg:block text-[13.5px]" style={{ color: 'var(--text-muted)' }}>{lastPlayedLabel(p, today)}</span>
-              <b className="hidden lg:block text-[14px]" style={{ color: 'var(--text-primary)' }}>{p.games}</b>
-              {showMoney && <b className="hidden lg:block text-[14px]" style={{ color: 'var(--text-primary)' }}>{formatPrice(p.booked, currency)}</b>}
-              <span className="shrink-0 lg:text-right">
-                {canMessage ? <button type="button" onClick={() => setTarget({ playerId: p.id, name: p.name })} data-testid="message-one" className="rounded-full px-3.5 py-1.5 text-[11.5px] font-extrabold" style={{ background: 'var(--brand-primary-muted)', color: 'var(--brand-primary-text)' }}>Message</button> : <span style={{ color: 'var(--text-subtle)' }}>›</span>}
+              <span className="shrink-0 text-right">
+                {showMoney && p.owes > 0
+                  ? <MoneyBubble kind="loss" size={12} testId="row-owes">owes {formatPrice(p.owedAmount ?? 0, currency).replace(/\.00$/, '')}</MoneyBubble>
+                  : showMoney && p.booked > 0 ? <span className="text-[13.5px] font-extrabold" style={{ color: 'var(--go-text)' }}>{formatPrice(p.booked, currency)} <span className="font-semibold" style={{ color: 'var(--text-muted)' }}>booked</span></span>
+                  : <span className="text-[13px]" style={{ color: 'var(--text-muted)' }}>{p.games ? `${p.games} ${p.games === 1 ? 'game' : 'games'}` : 'not played yet'}</span>}
               </span>
+              {canMessage && <button type="button" onClick={() => setTarget({ playerId: p.id, name: p.name })} data-testid="message-one" className="shrink-0 lg:hidden rounded-full px-3 py-1.5 text-[11.5px] font-extrabold" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}>Message</button>}
             </div>
-          ))}
+          )})}
         </div>
       )}
       {list.length > shown && (
         <button type="button" onClick={() => setShown(s => s + PAGE)} data-testid="show-more" className="w-full mt-3 rounded-2xl py-3 text-[13.5px] font-extrabold" style={{ ...card, color: 'var(--brand-primary-text)' }}>Show more · {list.length - shown} left</button>
       )}
-      <p className="text-[12px] mt-3 text-center" style={{ color: 'var(--text-subtle)' }}>Showing {Math.min(shown, list.length)} of {list.length} · tap a player for their full history{showMoney ? ' · Booked is the court value of the games they played here' : ''}</p>
+      <p className="text-[12px] mt-3 text-center" style={{ color: 'var(--text-muted)' }}>Showing {Math.min(shown, list.length)} of {list.length} · tap a player for their games{showMoney ? ', plan and money · Booked is the court value of the games they played here' : ''}</p>
 
       {canMessage && group.length > 0 && segment !== 'all' && (
         <div className="sticky mt-4 rounded-[18px] px-4 py-3 flex items-center gap-3 sm:hidden" style={{ bottom: 'calc(84px + env(safe-area-inset-bottom))', background: 'var(--brand-primary)', boxShadow: '0 10px 30px rgba(0,0,0,0.4)' }}>
@@ -160,6 +205,52 @@ export default function ClubPlayers({ players, today, venueSlug, club, currency,
         <div className="hidden sm:flex justify-end mt-4"><button type="button" onClick={() => setTarget({ segment, count: group.length })} data-testid="message-group" className="rounded-full px-5 py-3 text-[14px] font-black" style={{ background: '#d4f53c', color: '#17240a' }}>{group.length === 1 ? 'Message this player' : `Message these ${group.length}`} →</button></div>
       )}
       </>)}
+      </div>
+
+      {/* On a computer: the player you tapped, beside the list. Their plan, their money and their latest games, with the actions. */}
+      {open && (
+        <aside className="hidden lg:block w-[360px] shrink-0 sticky top-6" data-testid="player-panel">
+          <div className="rounded-[20px] p-5" style={{ ...card, boxShadow: 'var(--shadow-float)' }}>
+            <div className="flex items-start gap-3.5">
+              <Tile name={open.name} tier={open.tier} size={64} />
+              <div className="min-w-0 flex-1">
+                <div className="text-[20px] font-black leading-tight truncate" style={{ color: 'var(--text-primary)' }}>{open.name}</div>
+                <div className="text-[12.5px] mt-1" style={{ color: 'var(--text-muted)' }}>{open.member ? (open.planLabel ?? 'Member') : 'Casual'}{open.joined ? ` · joined ${new Intl.DateTimeFormat('en-NZ', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${open.joined}T12:00:00Z`))}` : ''}</div>
+              </div>
+              <button type="button" onClick={() => setOpenId(null)} aria-label="Close" className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-[16px]" style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>×</button>
+            </div>
+            <div className="flex gap-2 mt-4">
+              {canMessage && <button type="button" onClick={() => setTarget({ playerId: open.id, name: open.name })} data-testid="panel-message" className="btn-main btn-main-lime flex-1" style={{ minHeight: 44 }}>Message</button>}
+              {showMoney && plans && <button type="button" onClick={() => setPlanFor({ id: open.id, name: open.name, tier: open.tier ?? 'casual' })} data-testid="panel-plan" className="flex-1 rounded-xl text-[14px] font-extrabold" style={{ minHeight: 44, background: 'var(--bg-raised)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}>Change plan</button>}
+            </div>
+            <div className="grid grid-cols-2 gap-2.5 mt-4">
+              <div className="rounded-[16px] p-3.5" style={{ background: 'var(--bg-raised)' }}><div className="text-[11.5px] font-bold" style={{ color: 'var(--text-muted)' }}>Games</div><div className="text-[24px] font-black" style={{ color: 'var(--label-blue)' }}>{open.games}</div></div>
+              <div className="rounded-[16px] p-3.5" style={{ background: 'var(--bg-raised)' }}><div className="text-[11.5px] font-bold" style={{ color: 'var(--text-muted)' }}>Credits</div><div className="text-[24px] font-black" style={{ color: 'var(--label-blue)' }}>{open.credits ?? 0}</div></div>
+              {showMoney && <div className="rounded-[16px] p-3.5" style={{ background: 'var(--bg-raised)' }}><div className="text-[11.5px] font-bold" style={{ color: 'var(--text-muted)' }}>Booked here</div><div className="text-[20px] font-black" style={{ color: 'var(--go-text)' }}>{formatPrice(open.booked, currency)}</div></div>}
+              {showMoney && <div className="rounded-[16px] p-3.5" style={{ background: 'var(--bg-raised)' }}><div className="text-[11.5px] font-bold" style={{ color: 'var(--text-muted)' }}>Owes</div><div className="mt-1">{open.owes > 0 ? <MoneyBubble kind="loss" size={15} testId="panel-owes">{formatPrice(open.owedAmount ?? 0, currency)}</MoneyBubble> : <span className="text-[15px] font-extrabold" style={{ color: 'var(--text-primary)' }}>Nothing</span>}</div></div>}
+            </div>
+            {showMoney && (open.owing ?? []).length > 0 && (
+              <>
+                <div className="text-[11px] font-extrabold uppercase mt-5 mb-1.5" style={{ letterSpacing: '0.12em', color: 'var(--label-blue)' }}>Still to pay</div>
+                {(open.owing ?? []).map((o, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 text-[13.5px]" style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>
+                    <span>{dayLabel(o.date)} · {fmtClock(o.start)}</span><MoneyBubble kind="loss" size={11.5}>{formatPrice(o.amount, currency)}</MoneyBubble>
+                  </div>
+                ))}
+              </>
+            )}
+            <div className="text-[11px] font-extrabold uppercase mt-5 mb-1.5" style={{ letterSpacing: '0.12em', color: 'var(--label-blue)' }}>Latest games</div>
+            {(open.recent ?? []).length === 0 ? <div className="text-[13px] py-2" style={{ color: 'var(--text-muted)' }}>No games here yet.</div> : (open.recent ?? []).map((g, i) => (
+              <div key={i} className="flex items-center gap-3 py-2" style={{ borderBottom: '1px solid var(--border)' }} data-testid="panel-game">
+                <span className="w-11 h-10 shrink-0 rounded-[12px] flex flex-col items-center justify-center text-white font-black leading-none" style={{ background: 'linear-gradient(160deg, #3a73dc, #1d3f8d)', fontSize: 12.5 }}>{fmtClock(g.start).split(' ')[0]}<span style={{ fontSize: 9, marginTop: 2 }}>{(fmtClock(g.start).split(' ')[1] ?? '').toUpperCase()}</span></span>
+                <span className="text-[13.5px] min-w-0 truncate" style={{ color: 'var(--text-primary)' }}><b>{dayLabel(g.date)}</b> <span style={{ color: 'var(--text-muted)' }}>· {g.court}</span></span>
+              </div>
+            ))}
+            <Link href={`/players/${open.id}`} className="block text-center text-[13px] font-extrabold mt-4" style={{ color: 'var(--label-blue)' }}>Full history →</Link>
+          </div>
+        </aside>
+      )}
+      {planFor && plans && <MemberPlanDialog member={planFor} plans={plans} onClose={() => { setPlanFor(null); router.refresh() }} />}
       {target && <MessageSheet venueSlug={venueSlug} club={club} target={target} onClose={() => setTarget(null)} />}
     </div>
   )
